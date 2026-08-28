@@ -370,27 +370,28 @@
         }
         window.formatPreviewText = formatPreviewText;
 
-function getCircledNumber(num) {
+        function getCircledNumber(num) {
             if (num <= 1) return '';
 
+            // 現在設定されているテーマカラーを取得（デフォルトは amber）
             const theme = (window.siteConfig && window.siteConfig.themeColor) || 'amber';
 
-            // テーマごとに、完全に影のないフラットな薄めカラー
-            const themeColors = {
-                amber: 'background-color: #fef3c7; color: #d97706;',
-                pink: 'background-color: #fce7f3; color: #db2777;',
-                emerald: 'background-color: #d1fae5; color: #059669;',
-                indigo: 'background-color: #e0e7ff; color: #4f46e5;',
-                blue: 'background-color: #dbeafe; color: #2563eb;',
-                purple: 'background-color: #f3e8ff; color: #9333ea;',
-                rose: 'background-color: #ffe4e6; color: #e11d48;',
-                teal: 'background-color: #ccfbf1; color: #0d9488;'
+            // カレンダーの写真の上でもくっきり見えつつ、優しく馴染むパステルカラー
+            const themeClasses = {
+                amber: 'bg-amber-100/90 text-amber-800 border border-amber-300/60',
+                pink: 'bg-pink-100/90 text-pink-800 border border-pink-300/60',
+                emerald: 'bg-emerald-100/90 text-emerald-800 border border-emerald-300/60',
+                indigo: 'bg-indigo-100/90 text-indigo-800 border border-indigo-300/60',
+                blue: 'bg-blue-100/90 text-blue-800 border border-blue-300/60',
+                purple: 'bg-purple-100/90 text-purple-800 border border-purple-300/60',
+                rose: 'bg-rose-100/90 text-rose-800 border border-rose-300/60',
+                teal: 'bg-teal-100/90 text-teal-800 border border-teal-300/60'
             };
 
-            const style = themeColors[theme] || themeColors['amber'];
+            const colorClass = themeClasses[theme] || themeClasses['amber'];
 
-            // Tailwindのクラスに頼らず、style属性で強制的に背景色と文字色を指定し、影をすべて「none」にする
-            return `<span style="${style}" class="inline-flex items-center justify-center w-4 h-4 text-[10px] font-bold rounded-full ml-1" style="box-shadow: none !important; filter: none !important;">${num}</span>`;
+            // 影（shadow）や余計なエフェクトを一切入れず、すっきりした丸バッジにする
+            return `<span class="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] sm:text-xs font-bold ${colorClass} rounded-full ml-1">${num}</span>`;
         }
         window.getCircledNumber = getCircledNumber;
 
@@ -585,7 +586,7 @@ function getCircledNumber(num) {
                 if (dayEntries && dayEntries.length > 0) {
                     const entry = dayEntries[0]; // 代表写真（1件目）を表示
                     const count = dayEntries.length;
-                    const countBadge = count > 1 ? `<span class="text-xs sm:text-sm font-bold text-amber-300 drop-shadow-md bg-black/40 px-1 rounded-md leading-none backdrop-blur-xs">${getCircledNumber(count)}</span>` : '';
+                    const countBadge = count > 1 ? getCircledNumber(count) : '';
 
                     html += `
                         <div onclick="navigateTo('detail', '${entry.id}')" class="group relative aspect-square bg-stone-100 rounded-xl overflow-hidden border border-amber-200/80 cursor-pointer shadow-sm hover:shadow-md transition-all">
