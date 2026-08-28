@@ -1787,10 +1787,11 @@ function applyCurrentThemeToUI() {
 
             const current = themes[theme] || themes['amber'];
 
-// 1. カレンダー表示ボタン（アクティブ時）の色を更新
-            document.querySelectorAll('.theme-active-btn').forEach(btn => {
-                btn.className = `theme-active-btn px-3 py-1.5 rounded-lg text-xs font-medium shadow-sm transition-all flex items-center gap-1 ${current.activeBg}`;
-            });
+    　　　　// 1. カレンダー表示ボタンの色を更新
+            const calBtn = document.getElementById('viewModeCalBtn');
+            if (calBtn) {
+                calBtn.className = `theme-active-btn px-3 py-1.5 rounded-lg text-xs font-medium shadow-sm transition-all flex items-center gap-1 ${current.activeBg}`;
+            }
 
             // 2. 「月一覧に戻る」ボタンの色を更新
             document.querySelectorAll('.theme-back-btn').forEach(btn => {
