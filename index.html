@@ -1834,11 +1834,18 @@ function getCircledNumber(num) {
             console.log("Firestore setup notice:", e);
         }
 
-        if (typeof window.applySiteConfig === 'function') {
+    if (typeof window.applySiteConfig === 'function') {
             window.applySiteConfig();
         }
+
+        // ★ここで確実にテーマカラーをUI全体に適用する！
+        if (typeof window.applyCurrentThemeToUI === 'function') {
+            window.applyCurrentThemeToUI();
+        }
+
         if (typeof window.navigateTo === 'function') {
             window.navigateTo('months');
+        }
         }
     // 確実にFirestoreから設定を読み込む関数
         async function loadConfigFromFirestore() {
