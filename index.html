@@ -431,13 +431,50 @@ function getCircledNumber(num) {
                 return;
             }
 
+            function renderMonthFolders() {
+            const container = document.getElementById('monthFolderGrid');
+            if (!container) return;
+            container.innerHTML = '';
+
+            // ★ 現在のテーマから対応するホバー用クラスを動的に取得
+            const currentTheme = (window.siteConfig && window.siteConfig.themeColor) || 'amber';
+            const themeHoverMap = {
+                amber: { border: 'hover:border-amber-300', text: 'group-hover:text-amber-700', icon: 'group-hover:text-amber-600' },
+                pink: { border: 'hover:border-pink-300', text: 'group-hover:text-pink-700', icon: 'group-hover:text-pink-600' },
+                emerald: { border: 'hover:border-emerald-300', text: 'group-hover:text-emerald-700', icon: 'group-hover:text-emerald-600' },
+                indigo: { border: 'hover:border-indigo-300', text: 'group-hover:text-indigo-700', icon: 'group-hover:text-indigo-600' },
+                blue: { border: 'hover:border-blue-300', text: 'group-hover:text-blue-700', icon: 'group-hover:text-blue-600' },
+                purple: { border: 'hover:border-purple-300', text: 'group-hover:text-purple-700', icon: 'group-hover:text-purple-600' },
+                rose: { border: 'hover:border-rose-300', text: 'group-hover:text-rose-700', icon: 'group-hover:text-rose-600' },
+                teal: { border: 'hover:border-teal-300', text: 'group-hover:text-teal-700', icon: 'group-hover:text-teal-600' }
+            };
+            const currentHover = themeHoverMap[currentTheme] || themeHoverMap['amber'];
+
+            const monthMap = {};
+            (window.entries || []).forEach(entry => {
+                if (!entry.date) return;
+                const ym = entry.date.substring(0, 7);
+                if (!monthMap[ym]) {
+                    monthMap[ym] = [];
+                }
+                monthMap[ym].push(entry);
+            });
+
+            const months = Object.keys(monthMap).sort().reverse();
+
+            if (months.length === 0) {
+                container.innerHTML = `<div class="col-span-full text-center py-12 text-stone-400 text-xs">まだ日記はありません。新しい日記を書いてみましょう！</div>`;
+                return;
+            }
+
             months.forEach(ym => {
                 const entries = monthMap[ym];
                 const [year, month] = ym.split('-');
                 const latestPhoto = entries[0]?.imageUrl || '';
 
                 const card = document.createElement('div');
-                card.className = 'group bg-white rounded-2xl border border-stone-200/80 p-4 cursor-pointer shadow-sm hover:shadow-md transition-all flex items-center gap-4 hover:border-amber-300';
+                // ★ hover:border-amber-300 を変数に置き換え
+                card.className = `group bg-white rounded-2xl border border-stone-200/80 p-4 cursor-pointer shadow-sm hover:shadow-md transition-all flex items-center gap-4 ${currentHover.border}`;
                 card.onclick = () => navigateTo('gallery', ym);
 
                 card.innerHTML = `
@@ -446,8 +483,10 @@ function getCircledNumber(num) {
                     </div>
                     <div class="flex flex-col justify-center flex-1 min-w-0">
                         <div class="flex items-center justify-between">
-                            <h3 class="text-base font-serif-title font-bold text-stone-800 group-hover:text-amber-700 transition-colors">${year}年 ${parseInt(month, 10)}月</h3>
-                            <i class="fa-solid fa-chevron-right text-xs text-stone-300 group-hover:text-amber-600 transition-colors"></i>
+                            <!-- ★ group-hover:text-amber-700 を変数に置き換え -->
+                            <h3 class="text-base font-serif-title font-bold text-stone-800 ${currentHover.text} transition-colors">${year}年 ${parseInt(month, 10)}月</h3>
+                            <!-- ★ group-hover:text-amber-600 を変数に置き換え -->
+                            <i class="fa-solid fa-chevron-right text-xs text-stone-300 ${currentHover.icon} transition-colors"></i>
                         </div>
                         <p class="text-xs text-stone-400 mt-1">${entries.length} 件の思い出</p>
                     </div>
