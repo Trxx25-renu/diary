@@ -1758,6 +1758,12 @@ function getCircledNumber(num) {
 
             function applyCurrentThemeToUI() {
             const theme = (window.siteConfig && window.siteConfig.themeColor) || 'amber';
+            
+            // デバッグ用ログ
+            console.log("【テーマ適用チェック】 検出されたテーマ:", theme);
+            console.log("【テーマ適用チェック】 見つかった戻るボタンの数:", document.querySelectorAll('.theme-back-btn').length);
+
+            // テーマごとのカラー定義
 
             // テーマごとのカラー定義
             const themes = {
