@@ -1393,11 +1393,11 @@ function updateAdminUI() {
         }
         window.escapeHtml = escapeHtml;
 
-        function triggerAdminAccess() {
-            if (typeof openAuthModal === 'function') openAuthModal();
-        }
-        window.triggerAdminAccess = triggerAdminAccess;
-    </script>
+function triggerAdminAccess() {
+        if (typeof openAuthModal === 'function') openAuthModal();
+    }
+    window.triggerAdminAccess = triggerAdminAccess;
+</script>
 </body>
 </html>
 
