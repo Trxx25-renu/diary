@@ -654,6 +654,12 @@ function getCircledNumber(num) {
 
             container.appendChild(grid);
         }
+        
+        if (typeof applyCurrentThemeToUI === 'function') {
+            applyCurrentThemeToUI();
+        }
+        }
+        
         window.renderGridPhotoLayout = renderGridPhotoLayout;
 
         function setGalleryViewMode(mode) {
