@@ -10,7 +10,7 @@
     <link rel="apple-touch-icon" id="appleTouchIcon" href="https://images.unsplash.com/photo-1522383225653-ed111181a951?auto=format&fit=crop&w=180&h=180&q=80">
     <link rel="icon" type="image/png" id="faviconIcon" href="https://images.unsplash.com/photo-1522383225653-ed111181a951?auto=format&fit=crop&w=180&h=180&q=80">
     <meta name="apple-mobile-web-app-title" id="appleAppTitle" content="写真日記">
-    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="theme-color" content="#fcfbf9">
 
@@ -423,42 +423,6 @@ function getCircledNumber(num) {
                 }
                 monthMap[ym].push(entry);
             });
-        }
-            const months = Object.keys(monthMap).sort().reverse();
-
-            if (months.length === 0) {
-                container.innerHTML = `<div class="col-span-full text-center py-12 text-stone-400 text-xs">まだ日記はありません。新しい日記を書いてみましょう！</div>`;
-                return;
-            }
-
-            function renderMonthFolders() {
-            const container = document.getElementById('monthFolderGrid');
-            if (!container) return;
-            container.innerHTML = '';
-
-            // ★ 現在のテーマから対応するホバー用クラスを動的に取得
-            const currentTheme = (window.siteConfig && window.siteConfig.themeColor) || 'amber';
-            const themeHoverMap = {
-                amber: { border: 'hover:border-amber-300', text: 'group-hover:text-amber-700', icon: 'group-hover:text-amber-600' },
-                pink: { border: 'hover:border-pink-300', text: 'group-hover:text-pink-700', icon: 'group-hover:text-pink-600' },
-                emerald: { border: 'hover:border-emerald-300', text: 'group-hover:text-emerald-700', icon: 'group-hover:text-emerald-600' },
-                indigo: { border: 'hover:border-indigo-300', text: 'group-hover:text-indigo-700', icon: 'group-hover:text-indigo-600' },
-                blue: { border: 'hover:border-blue-300', text: 'group-hover:text-blue-700', icon: 'group-hover:text-blue-600' },
-                purple: { border: 'hover:border-purple-300', text: 'group-hover:text-purple-700', icon: 'group-hover:text-purple-600' },
-                rose: { border: 'hover:border-rose-300', text: 'group-hover:text-rose-700', icon: 'group-hover:text-rose-600' },
-                teal: { border: 'hover:border-teal-300', text: 'group-hover:text-teal-700', icon: 'group-hover:text-teal-600' }
-            };
-            const currentHover = themeHoverMap[currentTheme] || themeHoverMap['amber'];
-
-            const monthMap = {};
-            (window.entries || []).forEach(entry => {
-                if (!entry.date) return;
-                const ym = entry.date.substring(0, 7);
-                if (!monthMap[ym]) {
-                    monthMap[ym] = [];
-                }
-                monthMap[ym].push(entry);
-            });
 
             const months = Object.keys(monthMap).sort().reverse();
 
@@ -473,8 +437,7 @@ function getCircledNumber(num) {
                 const latestPhoto = entries[0]?.imageUrl || '';
 
                 const card = document.createElement('div');
-                // ★ hover:border-amber-300 を変数に置き換え
-                card.className = `group bg-white rounded-2xl border border-stone-200/80 p-4 cursor-pointer shadow-sm hover:shadow-md transition-all flex items-center gap-4 ${currentHover.border}`;
+                card.className = 'group bg-white rounded-2xl border border-stone-200/80 p-4 cursor-pointer shadow-sm hover:shadow-md transition-all flex items-center gap-4 hover:border-amber-300';
                 card.onclick = () => navigateTo('gallery', ym);
 
                 card.innerHTML = `
@@ -483,10 +446,8 @@ function getCircledNumber(num) {
                     </div>
                     <div class="flex flex-col justify-center flex-1 min-w-0">
                         <div class="flex items-center justify-between">
-                            <!-- ★ group-hover:text-amber-700 を変数に置き換え -->
-                            <h3 class="text-base font-serif-title font-bold text-stone-800 ${currentHover.text} transition-colors">${year}年 ${parseInt(month, 10)}月</h3>
-                            <!-- ★ group-hover:text-amber-600 を変数に置き換え -->
-                            <i class="fa-solid fa-chevron-right text-xs text-stone-300 ${currentHover.icon} transition-colors"></i>
+                            <h3 class="text-base font-serif-title font-bold text-stone-800 group-hover:text-amber-700 transition-colors">${year}年 ${parseInt(month, 10)}月</h3>
+                            <i class="fa-solid fa-chevron-right text-xs text-stone-300 group-hover:text-amber-600 transition-colors"></i>
                         </div>
                         <p class="text-xs text-stone-400 mt-1">${entries.length} 件の思い出</p>
                     </div>
@@ -496,70 +457,41 @@ function getCircledNumber(num) {
         }
         window.renderMonthFolders = renderMonthFolders;
 
-function renderMonthFolders() {
-            const container = document.getElementById('monthFolderGrid');
-            if (!container) return;
-            container.innerHTML = '';
+        function renderBreadcrumbs() {
+            const nav = document.getElementById('breadcrumbs');
+            if (!nav) return;
 
-            // ★ 現在のテーマから対応するホバー用クラスを動的に取得
-            const currentTheme = (window.siteConfig && window.siteConfig.themeColor) || 'amber';
-            const themeHoverMap = {
-                amber: { border: 'hover:border-amber-300', text: 'group-hover:text-amber-700', icon: 'group-hover:text-amber-600' },
-                pink: { border: 'hover:border-pink-300', text: 'group-hover:text-pink-700', icon: 'group-hover:text-pink-600' },
-                emerald: { border: 'hover:border-emerald-300', text: 'group-hover:text-emerald-700', icon: 'group-hover:text-emerald-600' },
-                indigo: { border: 'hover:border-indigo-300', text: 'group-hover:text-indigo-700', icon: 'group-hover:text-indigo-600' },
-                blue: { border: 'hover:border-blue-300', text: 'group-hover:text-blue-700', icon: 'group-hover:text-blue-600' },
-                purple: { border: 'hover:border-purple-300', text: 'group-hover:text-purple-700', icon: 'group-hover:text-purple-600' },
-                rose: { border: 'hover:border-rose-300', text: 'group-hover:text-rose-700', icon: 'group-hover:text-rose-600' },
-                teal: { border: 'hover:border-teal-300', text: 'group-hover:text-teal-700', icon: 'group-hover:text-teal-600' }
-            };
-            const currentHover = themeHoverMap[currentTheme] || themeHoverMap['amber'];
+            let html = `
+                <a href="javascript:void(0)" onclick="navigateTo('months')" class="hover:text-stone-900 transition-colors flex items-center gap-1">
+                    <i class="fa-solid fa-house text-[10px]"></i> ホーム (月別)
+                </a>
+            `;
 
-            const monthMap = {};
-            (window.entries || []).forEach(entry => {
-                if (!entry.date) return;
-                const ym = entry.date.substring(0, 7);
-                if (!monthMap[ym]) {
-                    monthMap[ym] = [];
+            if (window.currentView === 'gallery' || window.currentView === 'detail') {
+                if (window.selectedYearMonth) {
+                    const [y, m] = window.selectedYearMonth.split('-');
+                    html += `
+                        <span class="text-stone-300">/</span>
+                        <a href="javascript:void(0)" onclick="navigateTo('gallery', '${window.selectedYearMonth}')" class="hover:text-stone-900 transition-colors">
+                            ${y}年${parseInt(m, 10)}月
+                        </a>
+                    `;
                 }
-                monthMap[ym].push(entry);
-            });
-
-            const months = Object.keys(monthMap).sort().reverse();
-
-            if (months.length === 0) {
-                container.innerHTML = `<div class="col-span-full text-center py-12 text-stone-400 text-xs">まだ日記はありません。新しい日記を書いてみましょう！</div>`;
-                return;
             }
 
-            months.forEach(ym => {
-                const entries = monthMap[ym];
-                const [year, month] = ym.split('-');
-                const latestPhoto = entries[0]?.imageUrl || '';
+            if (window.currentView === 'detail' && window.selectedEntryId) {
+                const entry = (window.entries || []).find(e => e.id === window.selectedEntryId);
+                if (entry) {
+                    html += `
+                        <span class="text-stone-300">/</span>
+                        <span class="text-stone-800 font-medium">${entry.date.replace(/-/g, '.')}</span>
+                    `;
+                }
+            }
 
-                const card = document.createElement('div');
-                // ★ hover:border-amber-300 を動的変数に置き換え
-                card.className = `group bg-white rounded-2xl border border-stone-200/80 p-4 cursor-pointer shadow-sm hover:shadow-md transition-all flex items-center gap-4 ${currentHover.border}`;
-                card.onclick = () => navigateTo('gallery', ym);
-
-                card.innerHTML = `
-                    <div class="w-20 h-20 rounded-xl bg-stone-100 overflow-hidden shrink-0 border border-stone-200/60 relative">
-                        ${latestPhoto ? `<img src="${latestPhoto}" alt="${ym}" draggable="false" oncontextmenu="return false;" class="protect-image w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">` : `<div class="w-full h-full flex items-center justify-center text-stone-300"><i class="fa-regular fa-image text-xl"></i></div>`}
-                    </div>
-                    <div class="flex flex-col justify-center flex-1 min-w-0">
-                        <div class="flex items-center justify-between">
-                            <!-- ★ group-hover:text-amber-700 を動的変数に置き換え -->
-                            <h3 class="text-base font-serif-title font-bold text-stone-800 ${currentHover.text} transition-colors">${year}年 ${parseInt(month, 10)}月</h3>
-                            <!-- ★ group-hover:text-amber-600 を動的変数に置き換え -->
-                            <i class="fa-solid fa-chevron-right text-xs text-stone-300 ${currentHover.icon} transition-colors"></i>
-                        </div>
-                        <p class="text-xs text-stone-400 mt-1">${entries.length} 件の思い出</p>
-                    </div>
-                `;
-                container.appendChild(card);
-            });
+            nav.innerHTML = html;
         }
-        window.renderMonthFolders = renderMonthFolders;
+        window.renderBreadcrumbs = renderBreadcrumbs;
 
         function renderGalleryView() {
             const titleEl = document.getElementById('galleryTitle');
@@ -583,28 +515,13 @@ function renderMonthFolders() {
 
             const btnCal = document.getElementById('viewModeCalBtn');
             const btnGrid = document.getElementById('viewModeGridBtn');
-            
-            // 現在のテーマから背景色クラスを決定（なければ amber-600）
-            const currentTheme = (window.siteConfig && window.siteConfig.themeColor) || 'amber';
-            const primaryBgMap = {
-                amber: 'bg-amber-600',
-                pink: 'bg-pink-600',
-                emerald: 'bg-emerald-600',
-                indigo: 'bg-indigo-600',
-                blue: 'bg-blue-600',
-                purple: 'bg-purple-600',
-                rose: 'bg-rose-600',
-                teal: 'bg-teal-600'
-            };
-            const activeBgClass = primaryBgMap[currentTheme] || 'bg-amber-600';
-
             if (btnCal && btnGrid) {
                 if (window.galleryViewMode === 'calendar') {
-                    btnCal.className = `px-3 py-1.5 rounded-lg text-xs font-medium ${activeBgClass} text-white shadow-sm transition-all flex items-center gap-1`;
+                    btnCal.className = 'px-3 py-1.5 rounded-lg text-xs font-medium bg-amber-600 text-white shadow-sm transition-all flex items-center gap-1';
                     btnGrid.className = 'px-3 py-1.5 rounded-lg text-xs font-medium text-stone-600 hover:bg-stone-100 transition-all flex items-center gap-1';
                 } else {
                     btnCal.className = 'px-3 py-1.5 rounded-lg text-xs font-medium text-stone-600 hover:bg-stone-100 transition-all flex items-center gap-1';
-                    btnGrid.className = `px-3 py-1.5 rounded-lg text-xs font-medium ${activeBgClass} text-white shadow-sm transition-all flex items-center gap-1`;
+                    btnGrid.className = 'px-3 py-1.5 rounded-lg text-xs font-medium bg-amber-600 text-white shadow-sm transition-all flex items-center gap-1';
                 }
             }
 
@@ -626,20 +543,6 @@ function renderMonthFolders() {
                 entryMap[e.date].push(e);
             });
 
-            // ★ 現在のテーマからカレンダーの枠線クラスを動的に取得
-            const currentTheme = (window.siteConfig && window.siteConfig.themeColor) || 'amber';
-            const calendarBorderMap = {
-                amber: 'border-amber-200/80',
-                pink: 'border-pink-200/80',
-                emerald: 'border-emerald-200/80',
-                indigo: 'border-indigo-200/80',
-                blue: 'border-blue-200/80',
-                purple: 'border-purple-200/80',
-                rose: 'border-rose-200/80',
-                teal: 'border-teal-200/80'
-            };
-            const currentCalendarBorder = calendarBorderMap[currentTheme] || 'border-amber-200/80';
-
             let imgFitClass = 'object-cover object-center';
             if (window.thumbnailFitMode === 'top') {
                 imgFitClass = 'object-cover object-top';
@@ -651,7 +554,7 @@ function renderMonthFolders() {
             const daysInMonth = new Date(year, month, 0).getDate();
 
             let html = `
-                <div class="bg-white rounded-2xl border ${currentCalendarBorder} p-3 sm:p-5 shadow-sm flex flex-col gap-3">
+                <div class="bg-white rounded-2xl border border-stone-200/80 p-3 sm:p-5 shadow-sm flex flex-col gap-3">
                     <div class="grid grid-cols-7 gap-1 sm:gap-2 text-center text-xs font-semibold pb-2 border-b border-stone-100">
                         <div class="text-rose-500 py-1">日</div>
                         <div class="text-stone-600 py-1">月</div>
@@ -686,7 +589,7 @@ function renderMonthFolders() {
                     const countBadge = count > 1 ? getCircledNumber(count) : '';
 
                     html += `
-                        <div onclick="navigateTo('detail', '${entry.id}')" class="group relative aspect-square bg-stone-100 rounded-xl overflow-hidden border ${currentCalendarBorder} cursor-pointer shadow-sm hover:shadow-md transition-all">
+                        <div onclick="navigateTo('detail', '${entry.id}')" class="group relative aspect-square bg-stone-100 rounded-xl overflow-hidden border border-amber-200/80 cursor-pointer shadow-sm hover:shadow-md transition-all">
                             <img src="${entry.imageUrl}" alt="${dateKey}" draggable="false" oncontextmenu="return false;" class="protect-image w-full h-full ${imgFitClass} group-hover:scale-105 transition-transform duration-300">
                             <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20 p-1.5 flex flex-col justify-between">
                                 <span class="text-[10px] sm:text-xs font-bold text-white bg-black/40 backdrop-blur-md px-1.5 py-0.5 rounded-md w-fit leading-none">${day}</span>
@@ -704,7 +607,6 @@ function renderMonthFolders() {
                     `;
                 }
             }
-            // （以降の閉じタグなどが続きます）
 
             html += `
                     </div>
@@ -752,11 +654,6 @@ function renderMonthFolders() {
 
             container.appendChild(grid);
         }
-        
-        if (typeof applyCurrentThemeToUI === 'function') {
-            applyCurrentThemeToUI();
-        }
-        
         window.renderGridPhotoLayout = renderGridPhotoLayout;
 
         function setGalleryViewMode(mode) {
@@ -1024,11 +921,6 @@ function renderMonthFolders() {
                 window.isAdmin = true;
                 updateAdminUI();
                 closeAuthModal();
-
-                if (typeof applyCurrentThemeToUI === 'function') {
-                    applyCurrentThemeToUI();
-                }
-                
                 showToast('パスコードを設定しました。管理者モードになりました。', 'success');
                 return;
             }
@@ -1044,7 +936,7 @@ function renderMonthFolders() {
         }
         window.handleAuthSubmit = handleAuthSubmit;
 
-function updateAdminUI() {
+        function updateAdminUI() {
             const statusText = document.getElementById('authLockStatus');
             const icon = document.getElementById('authLockIcon');
             const newPostBtn = document.getElementById('newPostBtn');
@@ -1149,6 +1041,7 @@ function updateAdminUI() {
 
         async function handleSaveConfig(event) {
             event.preventDefault();
+
             if (!window.isAdmin) return;
 
             const title = document.getElementById('inputSiteTitle').value.trim();
@@ -1185,9 +1078,9 @@ function updateAdminUI() {
                 }
             }
 
-            if (typeof applySiteConfig === 'function') applySiteConfig();
+            applySiteConfig();
             closeConfigModal();
-            if (typeof showToast === 'function') showToast('ホームページの設定を更新しました！', 'success');
+            showToast('ホームページの設定を更新しました！', 'success');
         }
         window.handleSaveConfig = handleSaveConfig;
 
@@ -1208,7 +1101,7 @@ function updateAdminUI() {
             document.getElementById('imagePreview')?.classList.add('hidden');
             document.getElementById('uploadPlaceholder')?.classList.remove('hidden');
 
-            if (typeof renderWeatherSelectOptions === 'function') renderWeatherSelectOptions();
+            renderWeatherSelectOptions();
 
             if (modal) {
                 modal.classList.remove('opacity-0', 'pointer-events-none');
@@ -1279,7 +1172,7 @@ function updateAdminUI() {
             event.preventDefault();
 
             if (!window.isAdmin) {
-                if (typeof showToast === 'function') showToast('編集権限がありません。ログインしてください。', 'warning');
+                showToast('編集権限がありません。ログインしてください。', 'warning');
                 return;
             }
 
@@ -1289,7 +1182,7 @@ function updateAdminUI() {
             const secretContent = document.getElementById('inputSecretContent')?.value || '';
 
             if (!window.tempBase64Image) {
-                if (typeof showToast === 'function') showToast('写真を選択してください。', 'warning');
+                showToast('写真を選択してください。', 'warning');
                 return;
             }
 
@@ -1299,6 +1192,7 @@ function updateAdminUI() {
                 saveBtn.textContent = '保存中...';
             }
 
+            // 同日複数対応のためユニークIDを生成
             const uniqueId = `${date}_${Date.now()}`;
 
             const newEntry = {
@@ -1311,7 +1205,6 @@ function updateAdminUI() {
                 updatedAt: new Date().toISOString()
             };
 
-            if (!window.entries) window.entries = [];
             window.entries.unshift(newEntry);
             window.entries.sort((a, b) => b.date.localeCompare(a.date));
 
@@ -1324,11 +1217,11 @@ function updateAdminUI() {
 
                 closePostModal();
                 const ym = date.substring(0, 7);
-                if (typeof navigateTo === 'function') navigateTo('gallery', ym);
-                if (typeof showToast === 'function') showToast('日記を保存しました！', 'success');
+                navigateTo('gallery', ym);
+                showToast('日記を保存しました！', 'success');
             } catch (err) {
                 console.error("Save error:", err);
-                if (typeof showToast === 'function') showToast('保存に失敗しました。', 'error');
+                showToast('保存に失敗しました。', 'error');
             } finally {
                 if (saveBtn) {
                     saveBtn.disabled = false;
@@ -1341,23 +1234,21 @@ function updateAdminUI() {
         async function deleteCurrentEntry() {
             if (!window.selectedEntryId || !window.isAdmin) return;
 
-            if (typeof showConfirm === 'function') {
-                showConfirm('日記の削除', 'この日記を削除してもよろしいですか？', async () => {
-                    try {
-                        if (window.db) {
-                            const { doc, deleteDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
-                            const docRef = doc(window.db, 'artifacts', window.appId, 'public', 'data', 'entries', window.selectedEntryId);
-                            await deleteDoc(docRef);
-                        }
-                        window.entries = window.entries.filter(e => e.id !== window.selectedEntryId);
-                        if (typeof navigateTo === 'function') navigateTo('gallery', window.selectedYearMonth);
-                        if (typeof showToast === 'function') showToast('日記を削除しました', 'info');
-                    } catch (err) {
-                        console.error("Delete error:", err);
-                        if (typeof showToast === 'function') showToast('削除に失敗しました。', 'error');
+            showConfirm('日記の削除', 'この日記を削除してもよろしいですか？', async () => {
+                try {
+                    if (window.db) {
+                        const { doc, deleteDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
+                        const docRef = doc(window.db, 'artifacts', window.appId, 'public', 'data', 'entries', window.selectedEntryId);
+                        await deleteDoc(docRef);
                     }
-                });
-            }
+                    window.entries = window.entries.filter(e => e.id !== window.selectedEntryId);
+                    navigateTo('gallery', window.selectedYearMonth);
+                    showToast('日記を削除しました', 'info');
+                } catch (err) {
+                    console.error("Delete error:", err);
+                    showToast('削除に失敗しました。', 'error');
+                }
+            });
         }
         window.deleteCurrentEntry = deleteCurrentEntry;
 
@@ -1377,7 +1268,7 @@ function updateAdminUI() {
                 dummy.select();
                 document.execCommand('copy');
                 document.body.removeChild(dummy);
-                if (typeof showToast === 'function') showToast('閲覧専用のURLをコピーしました！', 'success');
+                showToast('閲覧専用のURLをコピーしました！', 'success');
             }
         }
         window.sharePublicUrl = sharePublicUrl;
@@ -1393,13 +1284,12 @@ function updateAdminUI() {
         }
         window.escapeHtml = escapeHtml;
 
-function triggerAdminAccess() {
-        if (typeof openAuthModal === 'function') openAuthModal();
-    }
-    window.triggerAdminAccess = triggerAdminAccess;       
+        function triggerAdminAccess() {
+            openAuthModal();
+        }
+        window.triggerAdminAccess = triggerAdminAccess;
     </script>
 </head>
-</html>
 
 <body class="min-h-screen flex flex-col bg-[#fcfbf9] text-stone-800">
 
@@ -1688,7 +1578,7 @@ function triggerAdminAccess() {
 
                 <div class="flex items-center gap-2 pt-2 border-t border-stone-100">
                     <button type="button" onclick="closeConfigModal()" class="flex-1 py-2.5 text-xs font-medium text-stone-600 bg-stone-100 hover:bg-stone-200 rounded-xl transition-colors">キャンセル</button>
-                    <button type="submit" id="configSubmitBtn" class="flex-1 py-2.5 text-xs font-medium text-white bg-stone-600 hover:bg-stone-700 rounded-xl transition-colors shadow-sm">設定を保存</button>
+                    <button type="submit" class="flex-1 py-2.5 text-xs font-medium text-white bg-amber-600 hover:bg-amber-700 rounded-xl transition-colors shadow-sm">設定を保存</button>
                 </div>
             </form>
         </div>
@@ -1732,7 +1622,7 @@ function triggerAdminAccess() {
                 <div>
                     <div class="flex items-center justify-between mb-1">
                         <label class="block text-xs font-medium text-stone-700">今日の一言・感想</label>
-                        <button type="button" onclick="insertSpoilerTag()" class="text-[11px] text-stone-700 hover:text-stone-800 bg-stone-50 hover:bg-stone-100 border border-stone-200/70 px-2 py-0.5 rounded-md transition-colors flex items-center gap-1" title="選択したテキストをネタバレ隠しで囲みます">
+                        <button type="button" onclick="insertSpoilerTag()" class="text-[11px] text-amber-700 hover:text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-200/70 px-2 py-0.5 rounded-md transition-colors flex items-center gap-1" title="選択したテキストをネタバレ隠しで囲みます">
                             <i class="fa-solid fa-eye-slash text-[10px]"></i> ネタバレ隠し (||...||)
                         </button>
                     </div>
@@ -1748,7 +1638,7 @@ function triggerAdminAccess() {
 
                 <div class="flex items-center gap-2 pt-2 border-t border-stone-100">
                     <button type="button" onclick="closePostModal()" class="flex-1 py-2.5 text-xs font-medium text-stone-600 bg-stone-100 hover:bg-stone-200 rounded-xl transition-colors">キャンセル</button>
-                    <button type="submit" id="saveSubmitBtn" class="flex-1 py-2.5 text-xs font-medium text-white bg-stone-600 hover:bg-stone-700 rounded-xl transition-colors shadow-sm">保存する</button>
+                    <button type="submit" id="saveSubmitBtn" class="flex-1 py-2.5 text-xs font-medium text-white bg-amber-600 hover:bg-amber-700 rounded-xl transition-colors shadow-sm">保存する</button>
                 </div>
             </form>
         </div>
@@ -1763,7 +1653,7 @@ function triggerAdminAccess() {
             </div>
             <div class="flex items-center gap-2 mt-2">
                 <button type="button" onclick="closeConfirmModal(false)" class="flex-1 py-2 text-xs font-medium text-stone-600 bg-stone-100 hover:bg-stone-200 rounded-xl transition-colors">キャンセル</button>
-                <button type="button" onclick="closeConfirmModal(true)" id="confirmSubmitBtn" class="flex-1 py-2 text-xs font-medium text-white bg-stone-600 hover:bg-stone-700 rounded-xl transition-colors shadow-sm">実行する</button>
+                <button type="button" onclick="closeConfirmModal(true)" class="flex-1 py-2 text-xs font-medium text-white bg-amber-600 hover:bg-amber-700 rounded-xl transition-colors shadow-sm">実行する</button>
             </div>
         </div>
     </div>
@@ -1826,7 +1716,7 @@ function triggerAdminAccess() {
 
         window.entries = sampleEntries;
 
-try {
+        try {
             // あなた専用のFirebase設定情報を直接読み込ませます
             const firebaseConfig = {
                 apiKey: "AIzaSyA2ctX9sUpJmLSVJomU9cbMzrUX_AXNjuE",
@@ -1843,32 +1733,93 @@ try {
             const db = getFirestore(app);
             const analytics = getAnalytics(app);
             window.db = db;
-            window.appId = firebaseConfig.appId; // appIdをwindowに保持させる安全策
 
             // 匿名ログインを実行してクラウドDBへアクセス可能にする
             await signInAnonymously(auth);
 
-            const configRef = doc(db, 'artifacts', window.appId, 'public', 'data', 'config', 'settings');
+            const configRef = doc(db, 'artifacts', appId, 'public', 'data', 'config', 'settings');
             const configSnap = await getDoc(configRef);
             if (configSnap.exists()) {
                 const loadedConfig = configSnap.data();
                 if (loadedConfig.passcode) window.storedPasscode = loadedConfig.passcode;
     
                 window.siteConfig = {
-                    title: loadedConfig.title || (window.siteConfig && window.siteConfig.title) || '日々の写真日記',
-                    subtitle: loadedConfig.subtitle || (window.siteConfig && window.siteConfig.subtitle) || 'Photo & Daily Log',
-                    logoChar: loadedConfig.logoChar || (window.siteConfig && window.siteConfig.logoChar) || 'P',
+                    title: loadedConfig.title || window.siteConfig.title,
+                    subtitle: loadedConfig.subtitle || window.siteConfig.subtitle,
+                    logoChar: loadedConfig.logoChar || window.siteConfig.logoChar,
                     logoImageUrl: loadedConfig.logoImageUrl || '',
-                    themeColor: loadedConfig.themeColor || (window.siteConfig && window.siteConfig.themeColor) || 'amber',
-                    weatherOptions: loadedConfig.weatherOptions || ['晴れ ☀️', '快晴 🌤️', 'くもり ☁️', '雨 ☔', '雪 ❄️']
+                    themeColor: loadedConfig.themeColor || window.siteConfig.themeColor,
+                    weatherOptions: loadedConfig.weatherOptions || window.siteConfig.weatherOptions
                 };
-
                 if (typeof applyCurrentThemeToUI === 'function') {
-                    applyCurrentThemeToUI();
+                applyCurrentThemeToUI();
+            }
+        }
+
+            function applyCurrentThemeToUI() {
+            const theme = (window.siteConfig && window.siteConfig.themeColor) || 'amber';
+
+            // テーマごとのカラー定義
+            const themes = {
+                amber: {
+                    activeBg: 'bg-amber-600 text-white',
+                    backBtn: 'bg-amber-50 text-amber-700 hover:text-amber-800 border-amber-200/60',
+                    calendarBorder: 'border-amber-200/80'
+                },
+                pink: {
+                    activeBg: 'bg-pink-600 text-white',
+                    backBtn: 'bg-pink-50 text-pink-700 hover:text-pink-800 border-pink-200/60',
+                    calendarBorder: 'border-pink-200/80'
+                },
+                emerald: {
+                    activeBg: 'bg-emerald-600 text-white',
+                    backBtn: 'bg-emerald-50 text-emerald-700 hover:text-emerald-800 border-emerald-200/60',
+                    calendarBorder: 'border-emerald-200/80'
+                },
+                indigo: {
+                    activeBg: 'bg-indigo-600 text-white',
+                    backBtn: 'bg-indigo-50 text-indigo-700 hover:text-indigo-800 border-indigo-200/60',
+                    calendarBorder: 'border-indigo-200/80'
+                },
+                blue: {
+                    activeBg: 'bg-blue-600 text-white',
+                    backBtn: 'bg-blue-50 text-blue-700 hover:text-blue-800 border-blue-200/60',
+                    calendarBorder: 'border-blue-200/80'
+                },
+                purple: {
+                    activeBg: 'bg-purple-600 text-white',
+                    backBtn: 'bg-purple-50 text-purple-700 hover:text-purple-800 border-purple-200/60',
+                    calendarBorder: 'border-purple-200/80'
+                },
+                rose: {
+                    activeBg: 'bg-rose-600 text-white',
+                    backBtn: 'bg-rose-50 text-rose-700 hover:text-rose-800 border-rose-200/60',
+                    calendarBorder: 'border-rose-200/80'
+                },
+                teal: {
+                    activeBg: 'bg-teal-600 text-white',
+                    backBtn: 'bg-teal-50 text-teal-700 hover:text-teal-800 border-teal-200/60',
+                    calendarBorder: 'border-teal-200/80'
                 }
+            };
+
+            const current = themes[theme] || themes['amber'];
+
+            // 1. カレンダー表示ボタンがアクティブな場合の処理
+            const calBtn = document.getElementById('viewModeCalBtn');
+            if (calBtn && !calBtn.classList.contains('text-stone-600')) {
+                calBtn.className = `px-3 py-1.5 rounded-lg text-xs font-medium shadow-sm transition-all flex items-center gap-1 ${current.activeBg}`;
             }
 
-            const entriesRef = collection(db, 'artifacts', window.appId, 'public', 'data', 'entries');
+            // 2. 「月一覧に戻る」ボタンの色を更新
+            document.querySelectorAll('.theme-back-btn').forEach(btn => {
+                btn.className = `theme-back-btn text-xs font-medium flex items-center gap-1 px-3 py-1.5 rounded-xl border transition-colors ${current.backBtn}`;
+            });
+        }
+        window.applyCurrentThemeToUI = applyCurrentThemeToUI;
+            
+
+            const entriesRef = collection(db, 'artifacts', appId, 'public', 'data', 'entries');
             const querySnap = await getDocs(entriesRef);
             const loaded = [];
             querySnap.forEach(d => {
@@ -1883,63 +1834,24 @@ try {
             console.log("Firestore setup notice:", e);
         }
 
-        // 1. サイト設定の適用
-        if (typeof window.applySiteConfig === 'function') {
+    if (typeof window.applySiteConfig === 'function') {
             window.applySiteConfig();
         }
 
-        // 2. テーマカラーをUI全体に適用
-        if (typeof applyCurrentThemeToUI === 'function') {
-            applyCurrentThemeToUI();
+        // ★ここで確実にテーマカラーをUI全体に適用する！
+        if (typeof window.applyCurrentThemeToUI === 'function') {
+            window.applyCurrentThemeToUI();
         }
 
-        // 3. 月一覧画面へ移動
         if (typeof window.navigateTo === 'function') {
             window.navigateTo('months');
         }
-
-        // テーマカラーをUI全体に適用する関数
-        function applyCurrentThemeToUI() {
-            const theme = (window.siteConfig && window.siteConfig.themeColor) || 'amber';
-            
-            const themes = {
-                amber: { activeBg: 'bg-amber-600 text-white', backBtn: 'bg-amber-50 text-amber-700 hover:text-amber-800 border-amber-200/60', calendarBorder: 'border-amber-200/80' },
-                pink: { activeBg: 'bg-pink-600 text-white', backBtn: 'bg-pink-50 text-pink-700 hover:text-pink-800 border-pink-200/60', calendarBorder: 'border-pink-200/80' },
-                emerald: { activeBg: 'bg-emerald-600 text-white', backBtn: 'bg-emerald-50 text-emerald-700 hover:text-emerald-800 border-emerald-200/60', calendarBorder: 'border-emerald-200/80' },
-                indigo: { activeBg: 'bg-indigo-600 text-white', backBtn: 'bg-indigo-50 text-indigo-700 hover:text-indigo-800 border-indigo-200/60', calendarBorder: 'border-indigo-200/80' },
-                blue: { activeBg: 'bg-blue-600 text-white', backBtn: 'bg-blue-50 text-blue-700 hover:text-blue-800 border-blue-200/60', calendarBorder: 'border-blue-200/80' },
-                purple: { activeBg: 'bg-purple-600 text-white', backBtn: 'bg-purple-50 text-purple-700 hover:text-purple-800 border-purple-200/60', calendarBorder: 'border-purple-200/80' },
-                rose: { activeBg: 'bg-rose-600 text-white', backBtn: 'bg-rose-50 text-rose-700 hover:text-rose-800 border-rose-200/60', calendarBorder: 'border-rose-200/80' },
-                teal: { activeBg: 'bg-teal-600 text-white', backBtn: 'bg-teal-50 text-teal-700 hover:text-teal-800 border-teal-200/60', calendarBorder: 'border-teal-200/80' }
-            };
-
-            const current = themes[theme] || themes['amber'];
-
-            const calBtn = document.getElementById('viewModeCalBtn');
-            if (calBtn) {
-                calBtn.className = `theme-active-btn px-3 py-1.5 rounded-lg text-xs font-medium shadow-sm transition-all flex items-center gap-1 ${current.activeBg}`;
-            }
-
-            document.querySelectorAll('.theme-back-btn').forEach(btn => {
-                btn.className = `theme-back-btn text-xs font-medium flex items-center gap-1 px-3 py-1.5 rounded-xl border transition-colors ${current.backBtn}`;
-            });
-
-            document.querySelectorAll('.theme-calendar-border').forEach(el => {
-                el.classList.forEach(cls => {
-                    if (cls.startsWith('border-') && !cls.startsWith('border-t') && !cls.startsWith('border-b') && !cls.startsWith('border-l') && !cls.startsWith('border-r') && !cls.startsWith('border-x') && !cls.startsWith('border-y')) {
-                        el.classList.remove(cls);
-                    }
-                });
-                el.classList.add(...current.calendarBorder.split(' '));
-            });
-        }
-        window.applyCurrentThemeToUI = applyCurrentThemeToUI;
-
-        // 確実にFirestoreから設定を読み込む関数
+    // 確実にFirestoreから設定を読み込む関数
         async function loadConfigFromFirestore() {
+            // window.db または window.appId がまだ無い場合は少し待つ
             let attempts = 0;
             while ((!window.db || !window.appId) && attempts < 10) {
-                await new Promise(resolve => setTimeout(resolve, 300));
+                await new Promise(resolve => setTimeout(resolve, 300)); // 0.3秒待機
                 attempts++;
             }
 
@@ -1957,6 +1869,9 @@ try {
                     const data = docSnap.data();
                     if (data.passcode) {
                         window.storedPasscode = data.passcode;
+                        console.log("パスコードを復元しました！");
+                    } else {
+                        console.log("Firestoreにパスコードは保存されていません。");
                     }
 
                     window.siteConfig = {
@@ -1970,14 +1885,17 @@ try {
                     if (typeof applySiteConfig === 'function') {
                         applySiteConfig();
                     }
+                } else {
+                    console.log("settingsドキュメント自体がまだ存在しません。");
                 }
             } catch (err) {
                 console.error("Firestore config load error:", err);
             }
         }
         window.loadConfigFromFirestore = loadConfigFromFirestore;
-        
+        // 2. ページが読み込まれてスクリプトが実行されたときにそのまま呼び出す
         loadConfigFromFirestore();
+    
     </script>
 </body>
 </html>
