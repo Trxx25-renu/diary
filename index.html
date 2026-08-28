@@ -1044,7 +1044,7 @@ function renderMonthFolders() {
         }
         window.handleAuthSubmit = handleAuthSubmit;
 
-        function updateAdminUI() {
+function updateAdminUI() {
             const statusText = document.getElementById('authLockStatus');
             const icon = document.getElementById('authLockIcon');
             const newPostBtn = document.getElementById('newPostBtn');
@@ -1149,7 +1149,6 @@ function renderMonthFolders() {
 
         async function handleSaveConfig(event) {
             event.preventDefault();
-
             if (!window.isAdmin) return;
 
             const title = document.getElementById('inputSiteTitle').value.trim();
@@ -1186,9 +1185,9 @@ function renderMonthFolders() {
                 }
             }
 
-            applySiteConfig();
+            if (typeof applySiteConfig === 'function') applySiteConfig();
             closeConfigModal();
-            showToast('ホームページの設定を更新しました！', 'success');
+            if (typeof showToast === 'function') showToast('ホームページの設定を更新しました！', 'success');
         }
         window.handleSaveConfig = handleSaveConfig;
 
@@ -1209,7 +1208,7 @@ function renderMonthFolders() {
             document.getElementById('imagePreview')?.classList.add('hidden');
             document.getElementById('uploadPlaceholder')?.classList.remove('hidden');
 
-            renderWeatherSelectOptions();
+            if (typeof renderWeatherSelectOptions === 'function') renderWeatherSelectOptions();
 
             if (modal) {
                 modal.classList.remove('opacity-0', 'pointer-events-none');
@@ -1280,7 +1279,7 @@ function renderMonthFolders() {
             event.preventDefault();
 
             if (!window.isAdmin) {
-                showToast('編集権限がありません。ログインしてください。', 'warning');
+                if (typeof showToast === 'function') showToast('編集権限がありません。ログインしてください。', 'warning');
                 return;
             }
 
@@ -1290,7 +1289,7 @@ function renderMonthFolders() {
             const secretContent = document.getElementById('inputSecretContent')?.value || '';
 
             if (!window.tempBase64Image) {
-                showToast('写真を選択してください。', 'warning');
+                if (typeof showToast === 'function') showToast('写真を選択してください。', 'warning');
                 return;
             }
 
@@ -1300,7 +1299,6 @@ function renderMonthFolders() {
                 saveBtn.textContent = '保存中...';
             }
 
-            // 同日複数対応のためユニークIDを生成
             const uniqueId = `${date}_${Date.now()}`;
 
             const newEntry = {
@@ -1313,6 +1311,7 @@ function renderMonthFolders() {
                 updatedAt: new Date().toISOString()
             };
 
+            if (!window.entries) window.entries = [];
             window.entries.unshift(newEntry);
             window.entries.sort((a, b) => b.date.localeCompare(a.date));
 
@@ -1325,11 +1324,11 @@ function renderMonthFolders() {
 
                 closePostModal();
                 const ym = date.substring(0, 7);
-                navigateTo('gallery', ym);
-                showToast('日記を保存しました！', 'success');
+                if (typeof navigateTo === 'function') navigateTo('gallery', ym);
+                if (typeof showToast === 'function') showToast('日記を保存しました！', 'success');
             } catch (err) {
                 console.error("Save error:", err);
-                showToast('保存に失敗しました。', 'error');
+                if (typeof showToast === 'function') showToast('保存に失敗しました。', 'error');
             } finally {
                 if (saveBtn) {
                     saveBtn.disabled = false;
@@ -1342,21 +1341,23 @@ function renderMonthFolders() {
         async function deleteCurrentEntry() {
             if (!window.selectedEntryId || !window.isAdmin) return;
 
-            showConfirm('日記の削除', 'この日記を削除してもよろしいですか？', async () => {
-                try {
-                    if (window.db) {
-                        const { doc, deleteDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
-                        const docRef = doc(window.db, 'artifacts', window.appId, 'public', 'data', 'entries', window.selectedEntryId);
-                        await deleteDoc(docRef);
+            if (typeof showConfirm === 'function') {
+                showConfirm('日記の削除', 'この日記を削除してもよろしいですか？', async () => {
+                    try {
+                        if (window.db) {
+                            const { doc, deleteDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
+                            const docRef = doc(window.db, 'artifacts', window.appId, 'public', 'data', 'entries', window.selectedEntryId);
+                            await deleteDoc(docRef);
+                        }
+                        window.entries = window.entries.filter(e => e.id !== window.selectedEntryId);
+                        if (typeof navigateTo === 'function') navigateTo('gallery', window.selectedYearMonth);
+                        if (typeof showToast === 'function') showToast('日記を削除しました', 'info');
+                    } catch (err) {
+                        console.error("Delete error:", err);
+                        if (typeof showToast === 'function') showToast('削除に失敗しました。', 'error');
                     }
-                    window.entries = window.entries.filter(e => e.id !== window.selectedEntryId);
-                    navigateTo('gallery', window.selectedYearMonth);
-                    showToast('日記を削除しました', 'info');
-                } catch (err) {
-                    console.error("Delete error:", err);
-                    showToast('削除に失敗しました。', 'error');
-                }
-            });
+                });
+            }
         }
         window.deleteCurrentEntry = deleteCurrentEntry;
 
@@ -1376,7 +1377,7 @@ function renderMonthFolders() {
                 dummy.select();
                 document.execCommand('copy');
                 document.body.removeChild(dummy);
-                showToast('閲覧専用のURLをコピーしました！', 'success');
+                if (typeof showToast === 'function') showToast('閲覧専用のURLをコピーしました！', 'success');
             }
         }
         window.sharePublicUrl = sharePublicUrl;
@@ -1393,11 +1394,12 @@ function renderMonthFolders() {
         window.escapeHtml = escapeHtml;
 
         function triggerAdminAccess() {
-            openAuthModal();
+            if (typeof openAuthModal === 'function') openAuthModal();
         }
         window.triggerAdminAccess = triggerAdminAccess;
     </script>
-</head>
+</body>
+</html>
 
 <body class="min-h-screen flex flex-col bg-[#fcfbf9] text-stone-800">
 
