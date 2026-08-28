@@ -1,0 +1,1754 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>日々の写真日記 - Photo & Daily Log</title>
+
+    <!-- ホーム画面追加用アイコン & PWA設定タグ -->
+    <link rel="apple-touch-icon" id="appleTouchIcon" href="https://images.unsplash.com/photo-1522383225653-ed111181a951?auto=format&fit=crop&w=180&h=180&q=80">
+    <link rel="icon" type="image/png" id="faviconIcon" href="https://images.unsplash.com/photo-1522383225653-ed111181a951?auto=format&fit=crop&w=180&h=180&q=80">
+    <meta name="apple-mobile-web-app-title" id="appleAppTitle" content="写真日記">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="theme-color" content="#fcfbf9">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Playfair+Display:ital,wght@0,600;1,400&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background-color: #fcfbf9;
+            color: #292524;
+        }
+        .font-serif-title {
+            font-family: 'Playfair Display', 'Noto Sans JP', serif;
+        }
+        /* 画像の長押し保存・右クリック防止 */
+        .protect-image {
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -khtml-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            pointer-events: auto;
+        }
+
+        /* ネタバレ隠し（伏せ字）スタイル */
+        .spoiler-text {
+            background-color: #292524;
+            color: transparent;
+            border-radius: 0.25rem;
+            padding: 0 0.35rem;
+            margin: 0 0.1rem;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.2s ease;
+            display: inline-block;
+            vertical-align: baseline;
+        }
+        .spoiler-text:hover {
+            background-color: #44403c;
+        }
+        .spoiler-text.revealed {
+            background-color: #f3f4f6;
+            color: #292524;
+            user-select: text;
+            border: 1px solid #e7e5e4;
+        }
+
+        /* 目隠しメモカードのスタイル */
+        .secret-card-blur {
+            filter: blur(5px);
+            user-select: none;
+            opacity: 0.3;
+        }
+    </style>
+
+    <script>
+        window.entries = [];
+        window.currentView = 'months'; // 'months' | 'gallery' | 'detail'
+        window.selectedYearMonth = null;
+        window.selectedEntryId = null;
+        window.isAdmin = false;
+        window.storedPasscode = null;
+        window.selectedWeatherFilter = 'all';
+        window.tempBase64Image = null;
+        window.galleryViewMode = 'calendar'; // 'calendar' | 'grid'
+        window.thumbnailFitMode = 'cover'; // 'cover' (中央) | 'top' (上部優先) | 'contain' (全体表示)
+        window.isSecretRevealed = false;
+
+        window.siteConfig = {
+            title: '日々の写真日記',
+            subtitle: 'Photo & Daily Log',
+            logoChar: 'P',
+            logoImageUrl: '', // カスタムロゴ画像URL/Base64データ
+            themeColor: 'amber', // 'amber' | 'emerald' | 'indigo' | 'rose' | 'stone'
+            weatherOptions: ['晴れ ☀️', '快晴 🌤️', 'くもり ☁️', '雨 ☔', '雪 ❄️', '虹 🌈']
+        };
+
+        const THEME_CLASSES = {
+            amber: {
+                bgLight: 'bg-amber-50',
+                textPrimary: 'text-amber-700',
+                bgPrimary: 'bg-amber-600',
+                hoverPrimary: 'hover:bg-amber-700',
+                borderPrimary: 'border-amber-200',
+                badgeText: 'text-amber-800'
+            },
+            emerald: {
+                bgLight: 'bg-emerald-50',
+                textPrimary: 'text-emerald-700',
+                bgPrimary: 'bg-emerald-600',
+                hoverPrimary: 'hover:bg-emerald-700',
+                borderPrimary: 'border-emerald-200',
+                badgeText: 'text-emerald-800'
+            },
+            indigo: {
+                bgLight: 'bg-indigo-50',
+                textPrimary: 'text-indigo-700',
+                bgPrimary: 'bg-indigo-600',
+                hoverPrimary: 'hover:bg-indigo-700',
+                borderPrimary: 'border-indigo-200',
+                badgeText: 'text-indigo-800'
+            },
+            rose: {
+                bgLight: 'bg-rose-50',
+                textPrimary: 'text-rose-700',
+                bgPrimary: 'bg-rose-600',
+                hoverPrimary: 'hover:bg-rose-700',
+                borderPrimary: 'border-rose-200',
+                badgeText: 'text-rose-800'
+            },
+            stone: {
+                bgLight: 'bg-stone-100',
+                textPrimary: 'text-stone-800',
+                bgPrimary: 'bg-stone-800',
+                hoverPrimary: 'hover:bg-stone-900',
+                borderPrimary: 'border-stone-300',
+                badgeText: 'text-stone-900'
+            }
+        };
+
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('toastNotification');
+            const toastMsg = document.getElementById('toastMessage');
+            const toastIcon = document.getElementById('toastIcon');
+            if (!toast || !toastMsg) return;
+
+            toastMsg.textContent = message;
+            if (type === 'success') {
+                toastIcon.className = 'fa-solid fa-circle-check text-emerald-400 text-base';
+            } else if (type === 'error') {
+                toastIcon.className = 'fa-solid fa-circle-xmark text-rose-400 text-base';
+            } else if (type === 'warning') {
+                toastIcon.className = 'fa-solid fa-triangle-exclamation text-amber-400 text-base';
+            } else {
+                toastIcon.className = 'fa-solid fa-circle-info text-blue-400 text-base';
+            }
+
+            toast.classList.remove('translate-y-20', 'opacity-0', 'pointer-events-none');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            if (window.toastTimer) clearTimeout(window.toastTimer);
+            window.toastTimer = setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-20', 'opacity-0', 'pointer-events-none');
+            }, 3200);
+        }
+        window.showToast = showToast;
+
+        let confirmCallback = null;
+        function showConfirm(title, message, onConfirm) {
+            const modal = document.getElementById('confirmModal');
+            const titleEl = document.getElementById('confirmModalTitle');
+            const msgEl = document.getElementById('confirmModalMsg');
+            if (!modal || !titleEl || !msgEl) return;
+
+            titleEl.textContent = title;
+            msgEl.textContent = message;
+            confirmCallback = onConfirm;
+
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            modal.querySelector('div').classList.remove('scale-95');
+            modal.querySelector('div').classList.add('scale-100');
+        }
+        window.showConfirm = showConfirm;
+
+        function closeConfirmModal(confirmed = false) {
+            const modal = document.getElementById('confirmModal');
+            if (modal) {
+                modal.classList.add('opacity-0', 'pointer-events-none');
+                modal.querySelector('div').classList.remove('scale-100');
+                modal.querySelector('div').classList.add('scale-95');
+            }
+            if (confirmed && typeof confirmCallback === 'function') {
+                confirmCallback();
+            }
+            confirmCallback = null;
+        }
+        window.closeConfirmModal = closeConfirmModal;
+
+        function applySiteConfig() {
+            const config = window.siteConfig;
+
+            const headerTitle = document.getElementById('siteHeaderTitle');
+            const headerSubtitle = document.getElementById('siteHeaderSubtitle');
+            const logoChar = document.getElementById('siteHeaderLogo');
+            const logoImg = document.getElementById('siteHeaderLogoImg');
+            const footerText = document.getElementById('siteFooterText');
+
+            if (headerTitle) headerTitle.textContent = config.title;
+            if (headerSubtitle) headerSubtitle.textContent = config.subtitle;
+            if (footerText) footerText.innerHTML = `&copy; ${escapeHtml(config.title)} - ${escapeHtml(config.subtitle)}`;
+            document.title = `${config.title} - ${config.subtitle}`;
+
+            const appleIcon = document.getElementById('appleTouchIcon');
+            const favicon = document.getElementById('faviconIcon');
+            const appTitle = document.getElementById('appleAppTitle');
+            
+            if (appTitle) appTitle.content = config.title || '写真日記';
+
+            if (config.logoImageUrl && config.logoImageUrl.trim() !== '') {
+                if (logoChar) logoChar.classList.add('hidden');
+                if (logoImg) {
+                    logoImg.src = config.logoImageUrl;
+                    logoImg.classList.remove('hidden');
+                }
+                if (appleIcon) appleIcon.href = config.logoImageUrl;
+                if (favicon) favicon.href = config.logoImageUrl;
+            } else {
+                if (logoImg) logoImg.classList.add('hidden');
+                if (logoChar) {
+                    logoChar.textContent = config.logoChar || 'P';
+                    logoChar.classList.remove('hidden');
+                }
+            }
+
+            const theme = THEME_CLASSES[config.themeColor] || THEME_CLASSES.amber;
+            const logoBg = document.getElementById('siteHeaderLogoBox');
+            if (logoBg) {
+                logoBg.className = `w-9 h-9 rounded-xl ${theme.bgLight} ${theme.textPrimary} flex items-center justify-center font-serif-title font-bold text-lg group-hover:scale-105 transition-transform overflow-hidden`;
+            }
+
+            const writeBtn = document.getElementById('newPostBtn');
+            if (writeBtn) {
+                writeBtn.className = `${window.isAdmin ? 'flex' : 'hidden'} px-3.5 py-1.5 rounded-xl text-xs font-medium text-white ${theme.bgPrimary} ${theme.hoverPrimary} transition-colors shadow-sm items-center gap-1.5`;
+            }
+
+            renderWeatherFilterButtons();
+            renderWeatherSelectOptions();
+        }
+        window.applySiteConfig = applySiteConfig;
+
+        function renderWeatherFilterButtons() {
+            const container = document.getElementById('weatherFilterContainer');
+            if (!container) return;
+
+            const config = window.siteConfig;
+            const options = config.weatherOptions || [];
+            const theme = THEME_CLASSES[config.themeColor] || THEME_CLASSES.amber;
+
+            let html = `
+                <span class="text-stone-400 shrink-0 text-[11px] mr-1">タグ:</span>
+                <button onclick="setWeatherFilter('all')" data-weather="all" class="weather-filter-btn shrink-0 px-2.5 py-1 rounded-lg ${window.selectedWeatherFilter === 'all' ? theme.bgPrimary + ' text-white font-medium shadow-sm' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'} transition-all">
+                    すべて
+                </button>
+            `;
+
+            options.forEach(opt => {
+                const label = opt.trim();
+                if (!label) return;
+                const isSelected = window.selectedWeatherFilter === label;
+                const btnClass = isSelected ? `${theme.bgPrimary} text-white font-medium shadow-sm` : 'bg-stone-100 text-stone-600 hover:bg-stone-200';
+                html += `
+                    <button onclick="setWeatherFilter('${escapeHtml(label)}')" data-weather="${escapeHtml(label)}" class="weather-filter-btn shrink-0 px-2.5 py-1 rounded-lg ${btnClass} transition-all">
+                        ${escapeHtml(label)}
+                    </button>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+        window.renderWeatherFilterButtons = renderWeatherFilterButtons;
+
+        function renderWeatherSelectOptions() {
+            const select = document.getElementById('inputWeather');
+            if (!select) return;
+
+            const options = window.siteConfig.weatherOptions || [];
+            select.innerHTML = options.map(opt => `<option value="${escapeHtml(opt.trim())}">${escapeHtml(opt.trim())}</option>`).join('');
+        }
+        window.renderWeatherSelectOptions = renderWeatherSelectOptions;
+
+        function navigateTo(view, param = null) {
+            window.currentView = view;
+            
+            const viewMonths = document.getElementById('view-months');
+            const viewGallery = document.getElementById('view-gallery');
+            const viewDetail = document.getElementById('view-detail');
+            const searchToolbar = document.getElementById('searchToolbarSection');
+            const searchResultsArea = document.getElementById('searchResultsArea');
+
+            if (viewMonths) viewMonths.classList.add('hidden');
+            if (viewGallery) viewGallery.classList.add('hidden');
+            if (viewDetail) viewDetail.classList.add('hidden');
+            if (searchResultsArea) searchResultsArea.classList.add('hidden');
+
+            if (view === 'months') {
+                if (viewMonths) viewMonths.classList.remove('hidden');
+                if (searchToolbar) searchToolbar.classList.remove('hidden');
+                renderMonthFolders();
+            } else if (view === 'gallery') {
+                if (param) window.selectedYearMonth = param;
+                if (viewGallery) viewGallery.classList.remove('hidden');
+                if (searchToolbar) searchToolbar.classList.remove('hidden');
+                renderGalleryView();
+            } else if (view === 'detail') {
+                if (param) window.selectedEntryId = param;
+                if (viewDetail) viewDetail.classList.remove('hidden');
+                if (searchToolbar) searchToolbar.classList.add('hidden');
+                renderDetailView();
+            }
+
+            renderBreadcrumbs();
+            handleSearch();
+            updateBackButtonVisibility();
+        }
+        window.navigateTo = navigateTo;
+
+        function goBack() {
+            if (window.currentView === 'detail') {
+                if (window.selectedYearMonth) {
+                    navigateTo('gallery', window.selectedYearMonth);
+                } else {
+                    navigateTo('months');
+                }
+            } else if (window.currentView === 'gallery') {
+                navigateTo('months');
+            } else {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+        window.goBack = goBack;
+
+        function updateBackButtonVisibility() {
+            const btn = document.getElementById('floatingBackBtn');
+            const textEl = document.getElementById('floatingBackBtnText');
+            if (!btn) return;
+
+            if (window.currentView === 'months') {
+                btn.classList.add('hidden');
+            } else {
+                btn.classList.remove('hidden');
+                if (textEl) {
+                    textEl.textContent = window.currentView === 'detail' ? '一覧へ戻る' : '月一覧へ';
+                }
+            }
+        }
+        window.updateBackButtonVisibility = updateBackButtonVisibility;
+
+        function parseSpoilers(text) {
+            if (!text) return '';
+            const escaped = escapeHtml(text);
+            return escaped.replace(/\|\|(.*?)\|\|/g, (match, p1) => {
+                return `<span class="spoiler-text" onclick="this.classList.toggle('revealed')" title="タップでネタバレを表示">${p1}</span>`;
+            });
+        }
+        window.parseSpoilers = parseSpoilers;
+
+        function formatPreviewText(text) {
+            if (!text) return '';
+            const hidden = text.replace(/\|\|.*?\|\|/g, '【ネタバレ】');
+            return escapeHtml(hidden);
+        }
+        window.formatPreviewText = formatPreviewText;
+
+        function getCircledNumber(num) {
+            const circles = ['①','②','③','④','⑤','⑥','⑦','⑧','⑨','⑩','⑪','⑫','⑬','⑭','⑮','⑯','⑰','⑱','⑲','⑳'];
+            if (num >= 1 && num <= 20) {
+                return circles[num - 1];
+            }
+            return `(${num})`;
+        }
+        window.getCircledNumber = getCircledNumber;
+
+        function insertSpoilerTag() {
+            const textarea = document.getElementById('inputContent');
+            if (!textarea) return;
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            const val = textarea.value;
+            const selected = val.substring(start, end) || '隠したい内容';
+            const replacement = `||${selected}||`;
+            textarea.value = val.substring(0, start) + replacement + val.substring(end);
+            textarea.focus();
+            textarea.setSelectionRange(start + 2, start + 2 + selected.length);
+        }
+        window.insertSpoilerTag = insertSpoilerTag;
+
+        function renderMonthFolders() {
+            const container = document.getElementById('monthFolderGrid');
+            if (!container) return;
+            container.innerHTML = '';
+
+            const monthMap = {};
+            (window.entries || []).forEach(entry => {
+                if (!entry.date) return;
+                const ym = entry.date.substring(0, 7);
+                if (!monthMap[ym]) {
+                    monthMap[ym] = [];
+                }
+                monthMap[ym].push(entry);
+            });
+
+            const months = Object.keys(monthMap).sort().reverse();
+
+            if (months.length === 0) {
+                container.innerHTML = `<div class="col-span-full text-center py-12 text-stone-400 text-xs">まだ日記はありません。新しい日記を書いてみましょう！</div>`;
+                return;
+            }
+
+            months.forEach(ym => {
+                const entries = monthMap[ym];
+                const [year, month] = ym.split('-');
+                const latestPhoto = entries[0]?.imageUrl || '';
+
+                const card = document.createElement('div');
+                card.className = 'group bg-white rounded-2xl border border-stone-200/80 p-4 cursor-pointer shadow-sm hover:shadow-md transition-all flex items-center gap-4 hover:border-amber-300';
+                card.onclick = () => navigateTo('gallery', ym);
+
+                card.innerHTML = `
+                    <div class="w-20 h-20 rounded-xl bg-stone-100 overflow-hidden shrink-0 border border-stone-200/60 relative">
+                        ${latestPhoto ? `<img src="${latestPhoto}" alt="${ym}" draggable="false" oncontextmenu="return false;" class="protect-image w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">` : `<div class="w-full h-full flex items-center justify-center text-stone-300"><i class="fa-regular fa-image text-xl"></i></div>`}
+                    </div>
+                    <div class="flex flex-col justify-center flex-1 min-w-0">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-base font-serif-title font-bold text-stone-800 group-hover:text-amber-700 transition-colors">${year}年 ${parseInt(month, 10)}月</h3>
+                            <i class="fa-solid fa-chevron-right text-xs text-stone-300 group-hover:text-amber-600 transition-colors"></i>
+                        </div>
+                        <p class="text-xs text-stone-400 mt-1">${entries.length} 件の思い出</p>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+        window.renderMonthFolders = renderMonthFolders;
+
+        function renderBreadcrumbs() {
+            const nav = document.getElementById('breadcrumbs');
+            if (!nav) return;
+
+            let html = `
+                <a href="javascript:void(0)" onclick="navigateTo('months')" class="hover:text-stone-900 transition-colors flex items-center gap-1">
+                    <i class="fa-solid fa-house text-[10px]"></i> ホーム (月別)
+                </a>
+            `;
+
+            if (window.currentView === 'gallery' || window.currentView === 'detail') {
+                if (window.selectedYearMonth) {
+                    const [y, m] = window.selectedYearMonth.split('-');
+                    html += `
+                        <span class="text-stone-300">/</span>
+                        <a href="javascript:void(0)" onclick="navigateTo('gallery', '${window.selectedYearMonth}')" class="hover:text-stone-900 transition-colors">
+                            ${y}年${parseInt(m, 10)}月
+                        </a>
+                    `;
+                }
+            }
+
+            if (window.currentView === 'detail' && window.selectedEntryId) {
+                const entry = (window.entries || []).find(e => e.id === window.selectedEntryId);
+                if (entry) {
+                    html += `
+                        <span class="text-stone-300">/</span>
+                        <span class="text-stone-800 font-medium">${entry.date.replace(/-/g, '.')}</span>
+                    `;
+                }
+            }
+
+            nav.innerHTML = html;
+        }
+        window.renderBreadcrumbs = renderBreadcrumbs;
+
+        function renderGalleryView() {
+            const titleEl = document.getElementById('galleryTitle');
+            const subtitleEl = document.getElementById('gallerySubtitle');
+            const galleryContent = document.getElementById('galleryContent');
+            if (!galleryContent) return;
+            galleryContent.innerHTML = '';
+
+            if (!window.selectedYearMonth) return;
+
+            const [yearStr, monthStr] = window.selectedYearMonth.split('-');
+            const year = parseInt(yearStr, 10);
+            const month = parseInt(monthStr, 10);
+
+            if (titleEl) titleEl.textContent = `${year}年${month}月`;
+
+            const filtered = (window.entries || []).filter(e => e.date && e.date.startsWith(window.selectedYearMonth));
+            filtered.sort((a, b) => a.date.localeCompare(b.date));
+
+            if (subtitleEl) subtitleEl.textContent = `全 ${filtered.length} 件の思い出`;
+
+            const btnCal = document.getElementById('viewModeCalBtn');
+            const btnGrid = document.getElementById('viewModeGridBtn');
+            if (btnCal && btnGrid) {
+                if (window.galleryViewMode === 'calendar') {
+                    btnCal.className = 'px-3 py-1.5 rounded-lg text-xs font-medium bg-amber-600 text-white shadow-sm transition-all flex items-center gap-1';
+                    btnGrid.className = 'px-3 py-1.5 rounded-lg text-xs font-medium text-stone-600 hover:bg-stone-100 transition-all flex items-center gap-1';
+                } else {
+                    btnCal.className = 'px-3 py-1.5 rounded-lg text-xs font-medium text-stone-600 hover:bg-stone-100 transition-all flex items-center gap-1';
+                    btnGrid.className = 'px-3 py-1.5 rounded-lg text-xs font-medium bg-amber-600 text-white shadow-sm transition-all flex items-center gap-1';
+                }
+            }
+
+            if (window.galleryViewMode === 'calendar') {
+                renderCalendarLayout(galleryContent, year, month, filtered);
+            } else {
+                renderGridPhotoLayout(galleryContent, filtered);
+            }
+        }
+        window.renderGalleryView = renderGalleryView;
+
+        function renderCalendarLayout(container, year, month, entries) {
+            // 同日の日記を配列でグループ化
+            const entryMap = {};
+            entries.forEach(e => {
+                if (!entryMap[e.date]) {
+                    entryMap[e.date] = [];
+                }
+                entryMap[e.date].push(e);
+            });
+
+            let imgFitClass = 'object-cover object-center';
+            if (window.thumbnailFitMode === 'top') {
+                imgFitClass = 'object-cover object-top';
+            } else if (window.thumbnailFitMode === 'contain') {
+                imgFitClass = 'object-contain object-center bg-stone-900';
+            }
+
+            const firstDayOfWeek = new Date(year, month - 1, 1).getDay();
+            const daysInMonth = new Date(year, month, 0).getDate();
+
+            let html = `
+                <div class="bg-white rounded-2xl border border-stone-200/80 p-3 sm:p-5 shadow-sm flex flex-col gap-3">
+                    <div class="grid grid-cols-7 gap-1 sm:gap-2 text-center text-xs font-semibold pb-2 border-b border-stone-100">
+                        <div class="text-rose-500 py-1">日</div>
+                        <div class="text-stone-600 py-1">月</div>
+                        <div class="text-stone-600 py-1">火</div>
+                        <div class="text-stone-600 py-1">水</div>
+                        <div class="text-stone-600 py-1">木</div>
+                        <div class="text-stone-600 py-1">金</div>
+                        <div class="text-blue-500 py-1">土</div>
+                    </div>
+
+                    <div class="grid grid-cols-7 gap-1 sm:gap-2.5">
+            `;
+
+            for (let i = 0; i < firstDayOfWeek; i++) {
+                html += `<div class="aspect-square rounded-xl bg-stone-50/50 border border-transparent"></div>`;
+            }
+
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dayString = String(day).padStart(2, '0');
+                const monthString = String(month).padStart(2, '0');
+                const dateKey = `${year}-${monthString}-${dayString}`;
+                const dayEntries = entryMap[dateKey];
+
+                const dayOfWeek = new Date(year, month - 1, day).getDay();
+                let dayColor = 'text-stone-700';
+                if (dayOfWeek === 0) dayColor = 'text-rose-500';
+                if (dayOfWeek === 6) dayColor = 'text-blue-500';
+
+                if (dayEntries && dayEntries.length > 0) {
+                    const entry = dayEntries[0]; // 代表写真（1件目）を表示
+                    const count = dayEntries.length;
+                    const countBadge = count > 1 ? `<span class="text-xs sm:text-sm font-bold text-amber-300 drop-shadow-md bg-black/40 px-1 rounded-md leading-none backdrop-blur-xs">${getCircledNumber(count)}</span>` : '';
+
+                    html += `
+                        <div onclick="navigateTo('detail', '${entry.id}')" class="group relative aspect-square bg-stone-100 rounded-xl overflow-hidden border border-amber-200/80 cursor-pointer shadow-sm hover:shadow-md transition-all">
+                            <img src="${entry.imageUrl}" alt="${dateKey}" draggable="false" oncontextmenu="return false;" class="protect-image w-full h-full ${imgFitClass} group-hover:scale-105 transition-transform duration-300">
+                            <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20 p-1.5 flex flex-col justify-between">
+                                <span class="text-[10px] sm:text-xs font-bold text-white bg-black/40 backdrop-blur-md px-1.5 py-0.5 rounded-md w-fit leading-none">${day}</span>
+                                <div class="flex justify-end items-center">
+                                    ${countBadge}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    html += `
+                        <div class="aspect-square rounded-xl bg-stone-50/80 border border-stone-100 p-1.5 flex flex-col justify-between text-stone-300 select-none">
+                            <span class="text-[10px] sm:text-xs font-medium ${dayColor}">${day}</span>
+                        </div>
+                    `;
+                }
+            }
+
+            html += `
+                    </div>
+                </div>
+            `;
+
+            container.innerHTML = html;
+        }
+        window.renderCalendarLayout = renderCalendarLayout;
+
+        function renderGridPhotoLayout(container, filtered) {
+            if (filtered.length === 0) {
+                container.innerHTML = `<div class="col-span-full text-center py-12 text-stone-400">この月の日記はありません。</div>`;
+                return;
+            }
+
+            let imgFitClass = 'object-cover object-center';
+            if (window.thumbnailFitMode === 'top') {
+                imgFitClass = 'object-cover object-top';
+            } else if (window.thumbnailFitMode === 'contain') {
+                imgFitClass = 'object-contain object-center bg-stone-900';
+            }
+
+            const grid = document.createElement('div');
+            grid.className = 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3';
+
+            filtered.forEach(entry => {
+                const dayNum = entry.date.split('-')[2];
+                const card = document.createElement('div');
+                card.className = 'group relative aspect-square bg-stone-100 rounded-xl overflow-hidden cursor-pointer shadow-sm border border-stone-200/50 hover:shadow-md transition-all';
+                card.onclick = () => navigateTo('detail', entry.id);
+
+                card.innerHTML = `
+                    <img src="${entry.imageUrl}" alt="${entry.date}" draggable="false" oncontextmenu="return false;" class="protect-image w-full h-full ${imgFitClass} group-hover:scale-105 transition-transform duration-300">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity p-3 flex flex-col justify-end text-white">
+                        <span class="text-xs font-serif-title font-bold">${entry.date.replace(/-/g, '.')}</span>
+                        <p class="text-[11px] text-stone-200 line-clamp-1 mt-0.5">${formatPreviewText(entry.content)}</p>
+                    </div>
+                    <div class="absolute top-2 left-2 bg-black/50 backdrop-blur-md text-white text-[10px] font-semibold px-2 py-0.5 rounded-full">
+                        ${parseInt(dayNum, 10)}日
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+
+            container.appendChild(grid);
+        }
+        window.renderGridPhotoLayout = renderGridPhotoLayout;
+
+        function setGalleryViewMode(mode) {
+            window.galleryViewMode = mode;
+            renderGalleryView();
+        }
+        window.setGalleryViewMode = setGalleryViewMode;
+
+        function setThumbnailFitMode(mode) {
+            window.thumbnailFitMode = mode;
+            renderGalleryView();
+        }
+        window.setThumbnailFitMode = setThumbnailFitMode;
+
+        function renderDetailView() {
+            const entry = (window.entries || []).find(e => e.id === window.selectedEntryId);
+            if (!entry) return;
+
+            const detailImg = document.getElementById('detailImage');
+            if (detailImg) detailImg.src = entry.imageUrl;
+
+            const dateObj = new Date(entry.date);
+            const days = ['日', '月', '火', '水', '木', '金', '土'];
+            const dayOfWeek = days[dateObj.getDay()];
+            const formattedDate = `${entry.date.replace(/-/g, '.')} (${dayOfWeek})`;
+
+            const detailDate = document.getElementById('detailDate');
+            if (detailDate) detailDate.textContent = formattedDate;
+            const detailWeather = document.getElementById('detailWeather');
+            if (detailWeather) detailWeather.textContent = entry.weather || '晴れ ☀️';
+            const detailContent = document.getElementById('detailContent');
+            if (detailContent) detailContent.innerHTML = parseSpoilers(entry.content);
+
+            const secretContainer = document.getElementById('detailSecretContainer');
+            const secretContentEl = document.getElementById('detailSecretContent');
+            const secretOverlay = document.getElementById('secretOverlay');
+
+            window.isSecretRevealed = false;
+
+            if (secretContainer && secretContentEl) {
+                if (entry.secretContent && entry.secretContent.trim() !== '') {
+                    secretContentEl.textContent = entry.secretContent;
+                    secretContentEl.classList.add('secret-card-blur');
+                    if (secretOverlay) secretOverlay.classList.remove('hidden');
+                    secretContainer.classList.remove('hidden');
+                } else {
+                    secretContainer.classList.add('hidden');
+                }
+            }
+
+            const currentIndex = (window.entries || []).findIndex(e => e.id === window.selectedEntryId);
+            const prevBtn = document.getElementById('prevDetailBtn');
+            const nextBtn = document.getElementById('nextDetailBtn');
+            if (prevBtn) prevBtn.disabled = (currentIndex >= (window.entries || []).length - 1);
+            if (nextBtn) nextBtn.disabled = (currentIndex <= 0);
+
+            const deleteBtn = document.getElementById('deleteBtn');
+            if (deleteBtn) {
+                if (window.isAdmin) {
+                    deleteBtn.classList.remove('hidden');
+                } else {
+                    deleteBtn.classList.add('hidden');
+                }
+            }
+        }
+        window.renderDetailView = renderDetailView;
+
+        function toggleSecretMemo() {
+            const secretContentEl = document.getElementById('detailSecretContent');
+            const secretOverlay = document.getElementById('secretOverlay');
+            if (!secretContentEl) return;
+
+            window.isSecretRevealed = !window.isSecretRevealed;
+
+            if (window.isSecretRevealed) {
+                secretContentEl.classList.remove('secret-card-blur');
+                if (secretOverlay) secretOverlay.classList.add('hidden');
+            } else {
+                secretContentEl.classList.add('secret-card-blur');
+                if (secretOverlay) secretOverlay.classList.remove('hidden');
+            }
+        }
+        window.toggleSecretMemo = toggleSecretMemo;
+
+        function navigateDetail(direction) {
+            const currentIndex = (window.entries || []).findIndex(e => e.id === window.selectedEntryId);
+            if (currentIndex === -1) return;
+
+            const targetIndex = currentIndex - direction;
+            if (targetIndex >= 0 && targetIndex < window.entries.length) {
+                window.selectedEntryId = window.entries[targetIndex].id;
+                renderDetailView();
+                renderBreadcrumbs();
+            }
+        }
+        window.navigateDetail = navigateDetail;
+
+        function setWeatherFilter(weatherKey) {
+            window.selectedWeatherFilter = weatherKey;
+            renderWeatherFilterButtons();
+            handleSearch();
+        }
+        window.setWeatherFilter = setWeatherFilter;
+
+        function clearSearchInput() {
+            const el = document.getElementById('searchInput');
+            if (el) el.value = '';
+            handleSearch();
+        }
+        window.clearSearchInput = clearSearchInput;
+
+        function resetAllFilters() {
+            const el = document.getElementById('searchInput');
+            if (el) el.value = '';
+            setWeatherFilter('all');
+        }
+        window.resetAllFilters = resetAllFilters;
+
+        function handleSearch() {
+            if (window.currentView === 'detail') return;
+
+            const textQuery = (document.getElementById('searchInput')?.value || '').trim().toLowerCase();
+            const weatherFilter = window.selectedWeatherFilter;
+
+            const resultsArea = document.getElementById('searchResultsArea');
+            const resultsGrid = document.getElementById('searchResultsGrid');
+            const folderGrid = document.getElementById('monthFolderGrid');
+            const galleryView = document.getElementById('view-gallery');
+            const clearTextBtn = document.getElementById('clearTextBtn');
+            const activeFilterBadge = document.getElementById('activeFilterBadge');
+            const filterDesc = document.getElementById('filterDescription');
+
+            if (clearTextBtn) {
+                if (textQuery) clearTextBtn.classList.remove('hidden');
+                else clearTextBtn.classList.add('hidden');
+            }
+
+            const isActive = textQuery !== '' || weatherFilter !== 'all';
+
+            if (!isActive) {
+                if (resultsArea) resultsArea.classList.add('hidden');
+                if (folderGrid && window.currentView === 'months') folderGrid.classList.remove('hidden');
+                if (galleryView && window.currentView === 'gallery') galleryView.classList.remove('hidden');
+                if (activeFilterBadge) activeFilterBadge.classList.add('hidden');
+                return;
+            }
+
+            const matched = (window.entries || []).filter(e => {
+                if (textQuery) {
+                    const matchContent = (e.content || '').toLowerCase().includes(textQuery);
+                    const matchDate = (e.date || '').includes(textQuery);
+                    if (!matchContent && !matchDate) return false;
+                }
+                if (weatherFilter !== 'all') {
+                    if (!e.weather || !e.weather.includes(weatherFilter)) return false;
+                }
+                return true;
+            });
+
+            let descParts = [];
+            if (textQuery) descParts.push(`キーワード: 「${escapeHtml(textQuery)}」`);
+            if (weatherFilter !== 'all') descParts.push(`タグ: ${weatherFilter}`);
+            const descText = descParts.join(' ＋ ');
+
+            if (folderGrid) folderGrid.classList.add('hidden');
+            if (galleryView) galleryView.classList.add('hidden');
+            if (resultsArea) resultsArea.classList.remove('hidden');
+            if (activeFilterBadge) {
+                activeFilterBadge.classList.remove('hidden');
+                activeFilterBadge.classList.add('flex');
+            }
+            if (filterDesc) filterDesc.textContent = `${descText} (${matched.length}件ヒット)`;
+
+            if (!resultsGrid) return;
+            resultsGrid.innerHTML = '';
+
+            if (matched.length === 0) {
+                resultsGrid.innerHTML = `<div class="col-span-full text-stone-400 text-xs py-8 text-center bg-stone-50 rounded-xl border border-dashed border-stone-200">条件に一致する日記は見つかりませんでした。</div>`;
+                return;
+            }
+
+            matched.forEach(entry => {
+                const card = document.createElement('div');
+                card.className = 'group relative aspect-square bg-stone-100 rounded-xl overflow-hidden cursor-pointer shadow-sm border border-stone-200/50 hover:shadow-md transition-all';
+                card.onclick = () => navigateTo('detail', entry.id);
+
+                card.innerHTML = `
+                    <img src="${entry.imageUrl}" alt="${entry.date}" draggable="false" oncontextmenu="return false;" class="protect-image w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-90 p-2.5 flex flex-col justify-end text-white">
+                        <div class="flex items-center justify-between mb-0.5">
+                            <span class="text-[10px] font-serif-title font-bold">${entry.date.replace(/-/g, '.')}</span>
+                            <span class="text-[10px] opacity-90">${entry.weather || ''}</span>
+                        </div>
+                        <p class="text-[11px] text-stone-200 line-clamp-2">${formatPreviewText(entry.content)}</p>
+                    </div>
+                `;
+                resultsGrid.appendChild(card);
+            });
+        }
+        window.handleSearch = handleSearch;
+
+        function openAuthModal() {
+            const modal = document.getElementById('authModal');
+            const title = document.getElementById('authModalTitle');
+            const desc = document.getElementById('authModalDesc');
+            const err = document.getElementById('authErrorMsg');
+
+            if (err) err.classList.add('hidden');
+            const passInput = document.getElementById('inputPasscode');
+            if (passInput) passInput.value = '';
+
+            if (window.isAdmin) {
+                showConfirm('ログアウト', '管理者モードからログアウトしますか？', () => {
+                    window.isAdmin = false;
+                    updateAdminUI();
+                    showToast('ログアウトしました', 'info');
+                });
+                return;
+            }
+
+            if (!window.storedPasscode) {
+                if (title) title.textContent = '初期パスコード設定';
+                if (desc) desc.textContent = '管理者用のお好きなパスコードを設定してください。';
+            } else {
+                if (title) title.textContent = '管理者ログイン';
+                if (desc) desc.textContent = '日記を書く・削除・設定変更をするにはパスコードが必要です。';
+            }
+
+            if (modal) {
+                modal.classList.remove('opacity-0', 'pointer-events-none');
+                modal.querySelector('div').classList.remove('scale-95');
+                modal.querySelector('div').classList.add('scale-100');
+            }
+        }
+        window.openAuthModal = openAuthModal;
+
+        function closeAuthModal() {
+            const modal = document.getElementById('authModal');
+            if (modal) {
+                modal.classList.add('opacity-0', 'pointer-events-none');
+                modal.querySelector('div').classList.remove('scale-100');
+                modal.querySelector('div').classList.add('scale-95');
+            }
+        }
+        window.closeAuthModal = closeAuthModal;
+
+        async function handleAuthSubmit(e) {
+            e.preventDefault();
+            const inputVal = document.getElementById('inputPasscode').value.trim();
+            const err = document.getElementById('authErrorMsg');
+
+            if (!inputVal) return;
+
+            if (!window.storedPasscode) {
+                window.storedPasscode = inputVal;
+                if (window.db) {
+                    try {
+                        const { doc, setDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
+                        const configDocRef = doc(window.db, 'artifacts', window.appId, 'public', 'data', 'config', 'settings');
+                        await setDoc(configDocRef, { passcode: inputVal, ...window.siteConfig }, { merge: true });
+                    } catch (err) {
+                        console.error("Firestore passcode save error:", err);
+                    }
+                }
+                window.isAdmin = true;
+                updateAdminUI();
+                closeAuthModal();
+                showToast('パスコードを設定しました。管理者モードになりました。', 'success');
+                return;
+            }
+
+            if (inputVal === window.storedPasscode) {
+                window.isAdmin = true;
+                updateAdminUI();
+                closeAuthModal();
+                showToast('管理者としてログインしました。', 'success');
+            } else {
+                if (err) err.classList.remove('hidden');
+            }
+        }
+        window.handleAuthSubmit = handleAuthSubmit;
+
+        function updateAdminUI() {
+            const statusText = document.getElementById('authLockStatus');
+            const icon = document.getElementById('authLockIcon');
+            const newPostBtn = document.getElementById('newPostBtn');
+            const configBtn = document.getElementById('siteConfigBtn');
+            const deleteBtn = document.getElementById('deleteBtn');
+
+            if (window.isAdmin) {
+                if (statusText) statusText.textContent = 'ログアウト';
+                if (icon) icon.className = 'fa-solid fa-lock-open text-emerald-600';
+                if (newPostBtn) {
+                    newPostBtn.classList.remove('hidden');
+                    newPostBtn.classList.add('flex');
+                }
+                if (configBtn) configBtn.classList.remove('hidden');
+                if (window.currentView === 'detail' && deleteBtn) deleteBtn.classList.remove('hidden');
+            } else {
+                if (statusText) statusText.textContent = 'ログイン';
+                if (icon) icon.className = 'fa-solid fa-lock text-amber-600';
+                if (newPostBtn) {
+                    newPostBtn.classList.add('hidden');
+                    newPostBtn.classList.remove('flex');
+                }
+                if (configBtn) configBtn.classList.add('hidden');
+                if (deleteBtn) deleteBtn.classList.add('hidden');
+            }
+        }
+        window.updateAdminUI = updateAdminUI;
+
+        function openConfigModal() {
+            if (!window.isAdmin) {
+                openAuthModal();
+                return;
+            }
+            const modal = document.getElementById('configModal');
+            const conf = window.siteConfig;
+
+            document.getElementById('inputSiteTitle').value = conf.title || '';
+            document.getElementById('inputSiteSubtitle').value = conf.subtitle || '';
+            document.getElementById('inputLogoChar').value = conf.logoChar || 'P';
+            document.getElementById('inputLogoImageUrl').value = conf.logoImageUrl || '';
+            document.getElementById('inputThemeColor').value = conf.themeColor || 'amber';
+            document.getElementById('inputWeatherOptions').value = (conf.weatherOptions || []).join(', ');
+
+            if (modal) {
+                modal.classList.remove('opacity-0', 'pointer-events-none');
+                modal.querySelector('div').classList.remove('scale-95');
+                modal.querySelector('div').classList.add('scale-100');
+            }
+        }
+        window.openConfigModal = openConfigModal;
+
+        function closeConfigModal() {
+            const modal = document.getElementById('configModal');
+            if (modal) {
+                modal.classList.add('opacity-0', 'pointer-events-none');
+                modal.querySelector('div').classList.remove('scale-100');
+                modal.querySelector('div').classList.add('scale-95');
+            }
+        }
+        window.closeConfigModal = closeConfigModal;
+
+        function handleLogoImageSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    let width = img.width;
+                    let height = img.height;
+                    const maxDim = 200;
+
+                    if (width > height && width > maxDim) {
+                        height *= maxDim / width;
+                        width = maxDim;
+                    } else if (height > maxDim) {
+                        width *= maxDim / height;
+                        height = maxDim;
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+                    const base64 = canvas.toDataURL('image/png');
+                    const urlInput = document.getElementById('inputLogoImageUrl');
+                    if (urlInput) urlInput.value = base64;
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+        window.handleLogoImageSelect = handleLogoImageSelect;
+
+        function clearLogoImage() {
+            const input = document.getElementById('inputLogoImageUrl');
+            if (input) input.value = '';
+        }
+        window.clearLogoImage = clearLogoImage;
+
+        async function handleSaveConfig(event) {
+            event.preventDefault();
+
+            if (!window.isAdmin) return;
+
+            const title = document.getElementById('inputSiteTitle').value.trim();
+            const subtitle = document.getElementById('inputSiteSubtitle').value.trim();
+            const logoChar = document.getElementById('inputLogoChar').value.trim() || 'P';
+            const logoImageUrl = document.getElementById('inputLogoImageUrl').value.trim();
+            const themeColor = document.getElementById('inputThemeColor').value;
+            const weatherRaw = document.getElementById('inputWeatherOptions').value;
+
+            const weatherOptions = weatherRaw
+                .split(',')
+                .map(w => w.trim())
+                .filter(w => w.length > 0);
+
+            window.siteConfig = {
+                title: title || '日々の写真日記',
+                subtitle: subtitle || 'Photo & Daily Log',
+                logoChar: logoChar,
+                logoImageUrl: logoImageUrl,
+                themeColor: themeColor,
+                weatherOptions: weatherOptions.length > 0 ? weatherOptions : ['晴れ ☀️', '快晴 🌤️', 'くもり ☁️', '雨 ☔', '雪 ❄️']
+            };
+
+            if (window.db) {
+                try {
+                    const { doc, setDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
+                    const configRef = doc(window.db, 'artifacts', window.appId, 'public', 'data', 'config', 'settings');
+                    await setDoc(configRef, {
+                        passcode: window.storedPasscode,
+                        ...window.siteConfig
+                    });
+                } catch (err) {
+                    console.error("Config save error:", err);
+                }
+            }
+
+            applySiteConfig();
+            closeConfigModal();
+            showToast('ホームページの設定を更新しました！', 'success');
+        }
+        window.handleSaveConfig = handleSaveConfig;
+
+        function openPostModal() {
+            if (!window.isAdmin) {
+                openAuthModal();
+                return;
+            }
+            const modal = document.getElementById('postModal');
+            const dateInput = document.getElementById('inputDate');
+            const secretInput = document.getElementById('inputSecretContent');
+            const today = new Date().toISOString().split('T')[0];
+
+            document.getElementById('postForm')?.reset();
+            if (dateInput) dateInput.value = today;
+            if (secretInput) secretInput.value = '';
+            window.tempBase64Image = null;
+            document.getElementById('imagePreview')?.classList.add('hidden');
+            document.getElementById('uploadPlaceholder')?.classList.remove('hidden');
+
+            renderWeatherSelectOptions();
+
+            if (modal) {
+                modal.classList.remove('opacity-0', 'pointer-events-none');
+                modal.querySelector('div').classList.remove('scale-95');
+                modal.querySelector('div').classList.add('scale-100');
+            }
+        }
+        window.openPostModal = openPostModal;
+
+        function closePostModal() {
+            const modal = document.getElementById('postModal');
+            if (modal) {
+                modal.classList.add('opacity-0', 'pointer-events-none');
+                modal.querySelector('div').classList.remove('scale-100');
+                modal.querySelector('div').classList.add('scale-95');
+            }
+        }
+        window.closePostModal = closePostModal;
+
+        function handleImageSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    let width = img.width;
+                    let height = img.height;
+                    const maxDim = 1200;
+
+                    if (width > height && width > maxDim) {
+                        height *= maxDim / width;
+                        width = maxDim;
+                    } else if (height > maxDim) {
+                        width *= maxDim / height;
+                        height = maxDim;
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    
+                    ctx.clearRect(0, 0, width, height);
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    const isTransparent = file.type === 'image/png' || file.type === 'image/webp' || file.type === 'image/gif';
+                    window.tempBase64Image = isTransparent 
+                        ? canvas.toDataURL('image/png') 
+                        : canvas.toDataURL('image/jpeg', 0.82);
+
+                    const preview = document.getElementById('imagePreview');
+                    const placeholder = document.getElementById('uploadPlaceholder');
+                    if (preview) {
+                        preview.src = window.tempBase64Image;
+                        preview.classList.remove('hidden');
+                    }
+                    if (placeholder) placeholder.classList.add('hidden');
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+        window.handleImageSelect = handleImageSelect;
+
+        async function handleSaveEntry(event) {
+            event.preventDefault();
+
+            if (!window.isAdmin) {
+                showToast('編集権限がありません。ログインしてください。', 'warning');
+                return;
+            }
+
+            const date = document.getElementById('inputDate').value;
+            const weather = document.getElementById('inputWeather').value;
+            const content = document.getElementById('inputContent').value;
+            const secretContent = document.getElementById('inputSecretContent')?.value || '';
+
+            if (!window.tempBase64Image) {
+                showToast('写真を選択してください。', 'warning');
+                return;
+            }
+
+            const saveBtn = document.getElementById('saveSubmitBtn');
+            if (saveBtn) {
+                saveBtn.disabled = true;
+                saveBtn.textContent = '保存中...';
+            }
+
+            // 同日複数対応のためユニークIDを生成
+            const uniqueId = `${date}_${Date.now()}`;
+
+            const newEntry = {
+                id: uniqueId,
+                date: date,
+                weather: weather,
+                content: content,
+                secretContent: secretContent.trim(),
+                imageUrl: window.tempBase64Image,
+                updatedAt: new Date().toISOString()
+            };
+
+            window.entries.unshift(newEntry);
+            window.entries.sort((a, b) => b.date.localeCompare(a.date));
+
+            try {
+                if (window.db) {
+                    const { doc, setDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
+                    const docRef = doc(window.db, 'artifacts', window.appId, 'public', 'data', 'entries', uniqueId);
+                    await setDoc(docRef, newEntry);
+                }
+
+                closePostModal();
+                const ym = date.substring(0, 7);
+                navigateTo('gallery', ym);
+                showToast('日記を保存しました！', 'success');
+            } catch (err) {
+                console.error("Save error:", err);
+                showToast('保存に失敗しました。', 'error');
+            } finally {
+                if (saveBtn) {
+                    saveBtn.disabled = false;
+                    saveBtn.textContent = '保存する';
+                }
+            }
+        }
+        window.handleSaveEntry = handleSaveEntry;
+
+        async function deleteCurrentEntry() {
+            if (!window.selectedEntryId || !window.isAdmin) return;
+
+            showConfirm('日記の削除', 'この日記を削除してもよろしいですか？', async () => {
+                try {
+                    if (window.db) {
+                        const { doc, deleteDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
+                        const docRef = doc(window.db, 'artifacts', window.appId, 'public', 'data', 'entries', window.selectedEntryId);
+                        await deleteDoc(docRef);
+                    }
+                    window.entries = window.entries.filter(e => e.id !== window.selectedEntryId);
+                    navigateTo('gallery', window.selectedYearMonth);
+                    showToast('日記を削除しました', 'info');
+                } catch (err) {
+                    console.error("Delete error:", err);
+                    showToast('削除に失敗しました。', 'error');
+                }
+            });
+        }
+        window.deleteCurrentEntry = deleteCurrentEntry;
+
+        function sharePublicUrl() {
+            const cleanUrl = window.location.origin + window.location.pathname;
+
+            if (navigator.share) {
+                navigator.share({
+                    title: window.siteConfig.title,
+                    text: window.siteConfig.subtitle,
+                    url: cleanUrl
+                }).catch(() => {});
+            } else {
+                const dummy = document.createElement('input');
+                document.body.appendChild(dummy);
+                dummy.value = cleanUrl;
+                dummy.select();
+                document.execCommand('copy');
+                document.body.removeChild(dummy);
+                showToast('閲覧専用のURLをコピーしました！', 'success');
+            }
+        }
+        window.sharePublicUrl = sharePublicUrl;
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+        window.escapeHtml = escapeHtml;
+
+        function triggerAdminAccess() {
+            openAuthModal();
+        }
+        window.triggerAdminAccess = triggerAdminAccess;
+    </script>
+</head>
+
+<body class="min-h-screen flex flex-col bg-[#fcfbf9] text-stone-800">
+
+    <header class="bg-white/80 backdrop-blur-md border-b border-stone-200/60 sticky top-0 z-30">
+        <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <a href="javascript:void(0)" onclick="navigateTo('months')" class="flex items-center gap-2 group">
+                    <div id="siteHeaderLogoBox" class="w-9 h-9 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center font-serif-title font-bold text-lg group-hover:scale-105 transition-transform overflow-hidden">
+                        <span id="siteHeaderLogo">P</span>
+                        <img id="siteHeaderLogoImg" src="" alt="Logo" class="w-full h-full object-cover hidden">
+                    </div>
+                    <div>
+                        <h1 id="siteHeaderTitle" class="text-base font-bold tracking-tight text-stone-800 group-hover:text-stone-600 transition-colors">日々の写真日記</h1>
+                        <p id="siteHeaderSubtitle" class="text-[10px] text-stone-400 font-serif-title tracking-wider uppercase">Photo & Daily Log</p>
+                    </div>
+                </a>
+            </div>
+
+            <!-- アクションボタン領域 -->
+            <div class="flex items-center gap-2">
+                <button onclick="sharePublicUrl()" class="px-3 py-1.5 rounded-lg text-xs font-medium text-stone-600 bg-stone-100 hover:bg-stone-200 transition-colors flex items-center gap-1.5" title="URL共有">
+                    <i class="fa-solid fa-share-nodes text-stone-400"></i>
+                    <span class="hidden sm:inline">共有</span>
+                </button>
+
+                <!-- サイトカスタマイズボタン（管理者専用） -->
+                <button id="siteConfigBtn" onclick="openConfigModal()" class="hidden px-2.5 py-1.5 rounded-lg text-xs font-medium text-stone-700 bg-stone-100 hover:bg-stone-200 transition-colors flex items-center gap-1" title="ホームページの大枠設定">
+                    <i class="fa-solid fa-gear text-stone-500"></i>
+                    <span class="hidden sm:inline">サイト設定</span>
+                </button>
+
+                <!-- 管理者ログイン制御 -->
+                <button id="adminTrigger" onclick="triggerAdminAccess()" class="p-2 text-stone-400 hover:text-stone-600 transition-colors rounded-lg text-xs" title="管理者ログイン">
+                    <i id="authLockIcon" class="fa-solid fa-lock text-stone-400"></i>
+                </button>
+
+                <!-- 新規投稿ボタン -->
+                <button id="newPostBtn" onclick="openPostModal()" class="hidden px-3.5 py-1.5 rounded-xl text-xs font-medium text-white bg-amber-600 hover:bg-amber-700 transition-colors shadow-sm items-center gap-1.5">
+                    <i class="fa-solid fa-plus"></i>
+                    <span>日記を書く</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-5xl mx-auto w-full px-4 py-6 flex-1 flex flex-col gap-6">
+
+        <!-- ナビゲーション パンくずリスト -->
+        <nav id="breadcrumbs" class="text-xs text-stone-500 flex items-center gap-2 flex-wrap">
+            <a href="javascript:void(0)" onclick="navigateTo('months')" class="hover:text-stone-900 transition-colors flex items-center gap-1">
+                <i class="fa-solid fa-house text-[10px]"></i> ホーム (月別)
+            </a>
+        </nav>
+
+        <!-- 検索・フィルター ツールバー -->
+        <section id="searchToolbarSection" class="bg-white rounded-2xl border border-stone-200/80 p-4 shadow-sm flex flex-col gap-3">
+            <div id="activeFilterBadge" class="hidden items-center justify-between gap-2 text-xs bg-amber-50 text-amber-800 px-3 py-1 rounded-full border border-amber-200 w-fit">
+                <span id="filterDescription">検索中...</span>
+                <button onclick="resetAllFilters()" class="text-amber-600 hover:text-amber-900 ml-1" title="フィルター解除">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
+                <!-- キーワード検索 -->
+                <div class="relative md:col-span-5">
+                    <input type="text" id="searchInput" oninput="handleSearch()" placeholder="本文や日付でキーワード検索..." class="w-full pl-9 pr-8 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-stone-400 text-xs"></i>
+                    <button id="clearTextBtn" onclick="clearSearchInput()" class="hidden absolute right-3 top-2.5 text-stone-400 hover:text-stone-600 text-xs">
+                        <i class="fa-solid fa-circle-xmark"></i>
+                    </button>
+                </div>
+
+                <!-- タグフィルター -->
+                <div id="weatherFilterContainer" class="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0 md:col-span-7 text-xs">
+                </div>
+            </div>
+        </section>
+
+        <!-- 検索結果エリア -->
+        <section id="searchResultsArea" class="hidden flex flex-col gap-3">
+            <h2 class="text-sm font-semibold text-stone-700">検索結果</h2>
+            <div id="searchResultsGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3"></div>
+        </section>
+
+        <!-- 第1階層：月別アルバムフォルダー表示 -->
+        <section id="view-months" class="flex flex-col gap-4">
+            <div class="flex items-center justify-between">
+                <h2 class="text-lg font-serif-title font-bold text-stone-800">月別アルバム</h2>
+                <span class="text-xs text-stone-400">フォルダを選択して閲覧</span>
+            </div>
+            <div id="monthFolderGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            </div>
+        </section>
+
+        <!-- 第2階層：サムネイルギャラリー表示 -->
+        <section id="view-gallery" class="hidden flex flex-col gap-4">
+            <div class="flex items-center justify-between flex-wrap gap-2">
+                <div>
+                    <h2 id="galleryTitle" class="text-xl font-serif-title font-bold text-stone-800">2026年3月</h2>
+                    <p id="gallerySubtitle" class="text-xs text-stone-500 mt-0.5">全 0 件</p>
+                </div>
+                
+                <div class="flex items-center gap-2 flex-wrap">
+                    
+                    <!-- 表示モード切替ボタン -->
+                    <div class="bg-stone-200/60 p-1 rounded-xl flex items-center gap-1">
+                        <button id="viewModeCalBtn" onclick="setGalleryViewMode('calendar')" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-amber-600 text-white shadow-sm transition-all flex items-center gap-1">
+                            <i class="fa-regular fa-calendar-days text-[11px]"></i> カレンダー
+                        </button>
+                        <button id="viewModeGridBtn" onclick="setGalleryViewMode('grid')" class="px-3 py-1.5 rounded-lg text-xs font-medium text-stone-600 hover:bg-stone-100 transition-all flex items-center gap-1">
+                            <i class="fa-solid fa-border-all text-[11px]"></i> 一覧
+                        </button>
+                    </div>
+
+                    <button onclick="navigateTo('months')" class="text-xs text-amber-700 hover:text-amber-800 font-medium flex items-center gap-1 bg-amber-50 px-3 py-1.5 rounded-xl border border-amber-200/60 transition-colors">
+                        <i class="fa-solid fa-arrow-left text-[10px]"></i> 月一覧に戻る
+                    </button>
+                </div>
+            </div>
+            
+            <!-- 動的描画エリア -->
+            <div id="galleryContent"></div>
+        </section>
+
+        <!-- 第3階層：詳細表示 -->
+        <section id="view-detail" class="hidden flex flex-col gap-3">
+            <div class="bg-white rounded-3xl border border-stone-200/80 overflow-hidden shadow-sm flex flex-col md:flex-row">
+                <!-- 写真 -->
+                <div class="md:w-3/5 bg-stone-900 flex items-center justify-center relative min-h-[300px]">
+                    <img id="detailImage" src="" alt="日記の写真" class="protect-image max-h-[600px] w-full object-contain">
+                </div>
+
+                <!-- 本文・情報 -->
+                <div class="md:w-2/5 p-6 flex flex-col justify-between gap-6">
+                    <div class="flex flex-col gap-4">
+                        <div class="flex items-center justify-between border-b border-stone-100 pb-3">
+                            <div>
+                                <h3 id="detailDate" class="text-lg font-serif-title font-bold text-stone-800">2026.03.28 (金)</h3>
+                                <span id="detailWeather" class="inline-block text-xs font-medium text-amber-700 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200/50 mt-1.5">晴れ ☀️</span>
+                            </div>
+
+                            <!-- 前後の日記切り替え -->
+                            <div class="flex items-center gap-1 bg-stone-50 p-1 rounded-xl border border-stone-100">
+                                <button id="prevDetailBtn" onclick="navigateDetail(1)" class="p-1.5 text-stone-600 hover:bg-white hover:shadow-sm rounded-lg disabled:opacity-30 disabled:pointer-events-none transition-all" title="新しい日記へ">
+                                    <i class="fa-solid fa-chevron-left text-xs"></i>
+                                </button>
+                                <button id="nextDetailBtn" onclick="navigateDetail(-1)" class="p-1.5 text-stone-600 hover:bg-white hover:shadow-sm rounded-lg disabled:opacity-30 disabled:pointer-events-none transition-all" title="古い日記へ">
+                                    <i class="fa-solid fa-chevron-right text-xs"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <p id="detailContent" class="text-sm text-stone-700 leading-relaxed whitespace-pre-wrap font-light"></p>
+
+                        <!-- 目隠しメモ表示エリア -->
+                        <div id="detailSecretContainer" class="hidden relative mt-2 bg-stone-100 text-stone-800 rounded-2xl p-4 border border-stone-300/70 cursor-pointer overflow-hidden transition-all shadow-inner group" onclick="toggleSecretMemo()">
+                            <div class="flex items-center justify-between mb-2 pb-1.5 border-b border-stone-300/60 text-xs text-amber-700 font-medium">
+                                <span class="flex items-center gap-1.5">
+                                    <i class="fa-solid fa-user-secret"></i> 目隠しメモ
+                                </span>
+                                <span class="text-[10px] text-stone-500 font-normal">タップで切替</span>
+                            </div>
+
+                            <p id="detailSecretContent" class="text-xs text-stone-700 leading-relaxed whitespace-pre-wrap transition-all duration-300"></p>
+
+                            <!-- 未開封オーバーレイ -->
+                            <div id="secretOverlay" class="absolute inset-0 bg-stone-200/95 backdrop-blur-md flex flex-col items-center justify-center gap-1.5 text-stone-700 transition-all">
+                                <div class="w-8 h-8 rounded-full bg-stone-300/80 flex items-center justify-center text-amber-700 text-sm shadow-sm group-hover:scale-110 transition-transform">
+                                    <i class="fa-solid fa-eye-slash"></i>
+                                </div>
+                                <span class="text-xs font-medium text-stone-700">タップして目隠しメモを表示</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pt-4 border-t border-stone-100 flex items-center justify-between text-xs text-stone-400">
+                        <span>日々の思い出</span>
+                        <div class="flex items-center gap-2">
+                            <button onclick="goBack()" class="text-stone-600 hover:text-stone-800 bg-stone-100 hover:bg-stone-200 px-3 py-1.5 rounded-xl transition-colors flex items-center gap-1 font-medium">
+                                <i class="fa-solid fa-arrow-left text-[10px]"></i> 戻る
+                            </button>
+                            <button id="deleteBtn" onclick="deleteCurrentEntry()" class="hidden text-rose-600 hover:text-rose-700 hover:bg-rose-50 px-2.5 py-1.5 rounded-xl transition-colors flex items-center gap-1">
+                                <i class="fa-regular fa-trash-can text-[11px]"></i> 削除
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- 画面右下に固定配置される小さな戻るボタン -->
+    <button id="floatingBackBtn" onclick="goBack()" class="hidden fixed bottom-6 right-6 z-40 px-3 py-2 rounded-full bg-stone-800/90 text-white text-xs font-medium shadow-lg hover:bg-stone-900 backdrop-blur-md transition-all duration-200 flex items-center gap-1.5 opacity-90 hover:opacity-100 border border-stone-700/50">
+        <i class="fa-solid fa-arrow-left text-[10px]"></i>
+        <span id="floatingBackBtnText">戻る</span>
+    </button>
+
+    <!-- モーダル: 管理者ログイン -->
+    <div id="authModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-200">
+        <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-xl border border-stone-200 scale-95 transition-transform duration-200 flex flex-col gap-4">
+            <div class="text-center">
+                <div class="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mx-auto text-xl mb-2">
+                    <i class="fa-solid fa-key"></i>
+                </div>
+                <h3 id="authModalTitle" class="text-base font-bold text-stone-800">管理者ログイン</h3>
+                <p id="authModalDesc" class="text-xs text-stone-500 mt-1">日記の追加・削除・設定変更を行うにはパスコードを入力してください。</p>
+            </div>
+
+            <form onsubmit="handleAuthSubmit(event)" class="flex flex-col gap-3">
+                <div>
+                    <input type="password" id="inputPasscode" placeholder="パスコードを入力" required class="w-full px-4 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-center text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all">
+                    <p id="authErrorMsg" class="hidden text-[11px] text-rose-500 text-center mt-1">パスコードが違います。</p>
+                </div>
+                <div class="flex items-center gap-2 mt-2">
+                    <button type="button" onclick="closeAuthModal()" class="flex-1 py-2 text-xs font-medium text-stone-600 bg-stone-100 hover:bg-stone-200 rounded-xl transition-colors">キャンセル</button>
+                    <button type="submit" class="flex-1 py-2 text-xs font-medium text-white bg-amber-600 hover:bg-amber-700 rounded-xl transition-colors shadow-sm">認証する</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- モーダル: サイト設定 -->
+    <div id="configModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-200">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-xl border border-stone-200 scale-95 transition-transform duration-200 flex flex-col gap-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between border-b border-stone-100 pb-3">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-sliders text-amber-600 text-sm"></i>
+                    <h3 class="text-base font-bold text-stone-800">ホームページの大枠設定</h3>
+                </div>
+                <button onclick="closeConfigModal()" class="text-stone-400 hover:text-stone-600 text-sm">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <form onsubmit="handleSaveConfig(event)" class="flex flex-col gap-4">
+                <div>
+                    <label class="block text-xs font-medium text-stone-700 mb-1">サイトタイトル</label>
+                    <input type="text" id="inputSiteTitle" required class="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs focus:outline-none focus:border-amber-500">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-stone-700 mb-1">サブタイトル（英語表記など）</label>
+                    <input type="text" id="inputSiteSubtitle" class="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs focus:outline-none focus:border-amber-500">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-medium text-stone-700 mb-1">ロゴ文字 (画像未設定時)</label>
+                        <input type="text" id="inputLogoChar" maxlength="2" class="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs text-center font-bold focus:outline-none focus:border-amber-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-stone-700 mb-1">テーマカラー</label>
+                        <select id="inputThemeColor" class="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs focus:outline-none focus:border-amber-500">
+                            <option value="amber">アンバー (温かみのある橙)</option>
+                            <option value="emerald">エメラルド (爽やかな緑)</option>
+                            <option value="indigo">インディゴ (落ち着いた紺)</option>
+                            <option value="rose">ローズ (華やかなピンク)</option>
+                            <option value="stone">シック (シックなグレー)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-stone-700 mb-1">ロゴ/アイコン画像 (任意)</label>
+                    <div class="flex items-center gap-2">
+                        <input type="text" id="inputLogoImageUrl" placeholder="画像URLまたはファイルを選択" class="flex-1 px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs focus:outline-none focus:border-amber-500">
+                        <label class="px-3 py-2 bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-medium rounded-xl cursor-pointer transition-colors shrink-0">
+                            <span>ファイル選択</span>
+                            <input type="file" id="inputLogoFile" accept="image/*" onchange="handleLogoImageSelect(event)" class="hidden">
+                        </label>
+                        <button type="button" onclick="clearLogoImage()" class="p-2 text-stone-400 hover:text-stone-600 text-xs shrink-0" title="画像解除">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </div>
+                    <p class="text-[10px] text-stone-400 mt-1">※ 設定すると、ヘッダーのロゴだけでなく<b>タブレット等のホーム画面追加時のアイコン画像</b>にも自動適用されます。</p>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-stone-700 mb-1">タグの選択肢 (カンマ区切り)</label>
+                    <textarea id="inputWeatherOptions" rows="3" class="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs focus:outline-none focus:border-amber-500" placeholder="晴れ ☀️, 快晴 🌤️, くもり ☁️, 雨 ☔, 雪 ❄️"></textarea>
+                    <p class="text-[10px] text-stone-400 mt-1">※ カンマ（,）で区切って記載すると、投稿時やフィルターの選択肢に反映されます。</p>
+                </div>
+
+                <div class="flex items-center gap-2 pt-2 border-t border-stone-100">
+                    <button type="button" onclick="closeConfigModal()" class="flex-1 py-2.5 text-xs font-medium text-stone-600 bg-stone-100 hover:bg-stone-200 rounded-xl transition-colors">キャンセル</button>
+                    <button type="submit" class="flex-1 py-2.5 text-xs font-medium text-white bg-amber-600 hover:bg-amber-700 rounded-xl transition-colors shadow-sm">設定を保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- モーダル: 新規投稿 -->
+    <div id="postModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-200">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-xl border border-stone-200 scale-95 transition-transform duration-200 flex flex-col gap-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between border-b border-stone-100 pb-3">
+                <h3 class="text-base font-bold text-stone-800">新しい日記を書く</h3>
+                <button onclick="closePostModal()" class="text-stone-400 hover:text-stone-600 text-sm">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <form id="postForm" onsubmit="handleSaveEntry(event)" class="flex flex-col gap-4">
+                <div>
+                    <label class="block text-xs font-medium text-stone-700 mb-1">写真 (必須)</label>
+                    <div class="relative w-full aspect-[16/10] bg-stone-50 border-2 border-dashed border-stone-200 rounded-2xl overflow-hidden hover:border-amber-500/50 transition-colors cursor-pointer flex flex-col items-center justify-center text-center p-4">
+                        <input type="file" accept="image/*" onchange="handleImageSelect(event)" class="absolute inset-0 opacity-0 cursor-pointer z-10">
+                        <img id="imagePreview" src="" alt="プレビュー" class="hidden w-full h-full object-cover">
+                        <div id="uploadPlaceholder" class="flex flex-col items-center gap-2 text-stone-400">
+                            <i class="fa-regular fa-image text-2xl"></i>
+                            <span class="text-xs">クリックまたはタップして写真を選択</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-medium text-stone-700 mb-1">日付</label>
+                        <input type="date" id="inputDate" required class="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs focus:outline-none focus:border-amber-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-stone-700 mb-1">タグ</label>
+                        <select id="inputWeather" class="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs focus:outline-none focus:border-amber-500">
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="flex items-center justify-between mb-1">
+                        <label class="block text-xs font-medium text-stone-700">今日の一言・感想</label>
+                        <button type="button" onclick="insertSpoilerTag()" class="text-[11px] text-amber-700 hover:text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-200/70 px-2 py-0.5 rounded-md transition-colors flex items-center gap-1" title="選択したテキストをネタバレ隠しで囲みます">
+                            <i class="fa-solid fa-eye-slash text-[10px]"></i> ネタバレ隠し (||...||)
+                        </button>
+                    </div>
+                    <textarea id="inputContent" rows="3" placeholder="どんな一日でしたか？&#10;※ ||隠したい文章|| で囲むと本文内で部分伏せ字になります" required class="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs focus:outline-none focus:border-amber-500 transition-all"></textarea>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-stone-700 mb-1 flex items-center gap-1">
+                        <i class="fa-solid fa-user-secret text-amber-600 text-[11px]"></i> 目隠しメモ <span class="text-[10px] text-stone-400 font-normal">(任意・タップで表示)</span>
+                    </label>
+                    <textarea id="inputSecretContent" rows="2" placeholder="タップしないと見えない秘密のメモやネタバレ感想はこちらへ..." class="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs focus:outline-none focus:border-amber-500 transition-all"></textarea>
+                </div>
+
+                <div class="flex items-center gap-2 pt-2 border-t border-stone-100">
+                    <button type="button" onclick="closePostModal()" class="flex-1 py-2.5 text-xs font-medium text-stone-600 bg-stone-100 hover:bg-stone-200 rounded-xl transition-colors">キャンセル</button>
+                    <button type="submit" id="saveSubmitBtn" class="flex-1 py-2.5 text-xs font-medium text-white bg-amber-600 hover:bg-amber-700 rounded-xl transition-colors shadow-sm">保存する</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- モーダル: 確認ダイアログ -->
+    <div id="confirmModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-200">
+        <div class="bg-white rounded-3xl max-w-xs w-full p-5 shadow-xl border border-stone-200 scale-95 transition-transform duration-200 flex flex-col gap-3">
+            <div class="text-center">
+                <h3 id="confirmModalTitle" class="text-sm font-bold text-stone-800">確認</h3>
+                <p id="confirmModalMsg" class="text-xs text-stone-600 mt-1.5 leading-relaxed"></p>
+            </div>
+            <div class="flex items-center gap-2 mt-2">
+                <button type="button" onclick="closeConfirmModal(false)" class="flex-1 py-2 text-xs font-medium text-stone-600 bg-stone-100 hover:bg-stone-200 rounded-xl transition-colors">キャンセル</button>
+                <button type="button" onclick="closeConfirmModal(true)" class="flex-1 py-2 text-xs font-medium text-white bg-amber-600 hover:bg-amber-700 rounded-xl transition-colors shadow-sm">実行する</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- トースト通知 -->
+    <div id="toastNotification" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 px-4 py-2.5 bg-stone-900/90 backdrop-blur-md text-white text-xs rounded-2xl shadow-lg border border-stone-700/50 translate-y-20 opacity-0 pointer-events-none transition-all duration-300">
+        <i id="toastIcon" class="fa-solid fa-circle-info text-blue-400"></i>
+        <span id="toastMessage"></span>
+    </div>
+
+    <!-- フッター -->
+    <footer class="border-t border-stone-200/60 bg-white py-6 text-center text-xs text-stone-400 mt-auto">
+        <p id="siteFooterText">&copy; 日々の写真日記 - Photo & Daily Log</p>
+    </footer>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'photo-journal-app';
+        window.appId = appId;
+
+        // 初期サンプルデータ
+        const sampleEntries = [
+            {
+                id: '2026-03-27_1',
+                date: '2026-03-27',
+                weather: '晴れ ☀️',
+                content: '春の暖かさが感じられる一日。近所の公園を散歩しながら桜のつぼみが少しずつ膨らんでいるのを見つけました。',
+                secretContent: '来週の休みにサプライズでお花見デートの約束をした！楽しみ！',
+                imageUrl: 'https://images.unsplash.com/photo-1522383225653-ed111181a951?auto=format&fit=crop&w=800&q=80'
+            },
+            {
+                id: '2026-03-27_2',
+                date: '2026-03-27',
+                weather: '晴れ ☀️',
+                content: '夕方にはカフェで少し作業。夕日がきれいに差し込んでいました。',
+                secretContent: '',
+                imageUrl: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=800&q=80'
+            },
+            {
+                id: '2026-03-15_1',
+                date: '2026-03-15',
+                weather: '快晴 🌤️',
+                content: '新しくオープンしたカフェでコーヒーブレイク。落ち着いた雰囲気で読書がとてもはかどりました。',
+                secretContent: 'マスターに勧められた限定チーズケーキは内緒の絶品メニュー。',
+                imageUrl: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=800&q=80'
+            },
+            {
+                id: '2026-02-20_1',
+                date: '2026-02-20',
+                weather: 'くもり ☁️',
+                content: '少し肌寒い日だったけれど、あたたかいスープを作って家でのんびり過ごした最高の休日。',
+                secretContent: '',
+                imageUrl: 'https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=800&q=80'
+            }
+        ];
+
+        window.entries = sampleEntries;
+
+        try {
+            if (typeof __firebase_config !== 'undefined') {
+                const firebaseConfig = JSON.parse(__firebase_config);
+                const app = initializeApp(firebaseConfig);
+                const auth = getAuth(app);
+                const db = getFirestore(app);
+                window.db = db;
+
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+
+                const configRef = doc(db, 'artifacts', appId, 'public', 'data', 'config', 'settings');
+                const configSnap = await getDoc(configRef);
+                if (configSnap.exists()) {
+                    const loadedConfig = configSnap.data();
+                    if (loadedConfig.passcode) window.storedPasscode = loadedConfig.passcode;
+                    
+                    window.siteConfig = {
+                        title: loadedConfig.title || window.siteConfig.title,
+                        subtitle: loadedConfig.subtitle || window.siteConfig.subtitle,
+                        logoChar: loadedConfig.logoChar || window.siteConfig.logoChar,
+                        logoImageUrl: loadedConfig.logoImageUrl || '',
+                        themeColor: loadedConfig.themeColor || window.siteConfig.themeColor,
+                        weatherOptions: loadedConfig.weatherOptions || window.siteConfig.weatherOptions
+                    };
+                }
+
+                const entriesRef = collection(db, 'artifacts', appId, 'public', 'data', 'entries');
+                const querySnap = await getDocs(entriesRef);
+                const loaded = [];
+                querySnap.forEach(d => {
+                    loaded.push({ id: d.id, ...d.data() });
+                });
+
+                if (loaded.length > 0) {
+                    loaded.sort((a, b) => b.date.localeCompare(a.date));
+                    window.entries = loaded;
+                }
+            }
+        } catch (e) {
+            console.log("Firestore setup notice:", e);
+        }
+
+        if (typeof window.applySiteConfig === 'function') {
+            window.applySiteConfig();
+        }
+        if (typeof window.navigateTo === 'function') {
+            window.navigateTo('months');
+        }
+    </script>
+</body>
+</html>
