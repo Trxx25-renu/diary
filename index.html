@@ -1724,7 +1724,7 @@
             if (configSnap.exists()) {
                 const loadedConfig = configSnap.data();
                 if (loadedConfig.passcode) window.storedPasscode = loadedConfig.passcode;
-                
+    
                 window.siteConfig = {
                     title: loadedConfig.title || window.siteConfig.title,
                     subtitle: loadedConfig.subtitle || window.siteConfig.subtitle,
