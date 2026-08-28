@@ -1752,9 +1752,72 @@ function getCircledNumber(num) {
                     weatherOptions: loadedConfig.weatherOptions || window.siteConfig.weatherOptions
                 };
                 if (typeof applyCurrentThemeToUI === 'function') {
-                    applyCurrentThemeToUI();
-                }
+                applyCurrentThemeToUI();
             }
+        }
+
+            function applyCurrentThemeToUI() {
+            const theme = (window.siteConfig && window.siteConfig.themeColor) || 'amber';
+
+            // テーマごとのカラー定義
+            const themes = {
+                amber: {
+                    activeBg: 'bg-amber-600 text-white',
+                    backBtn: 'bg-amber-50 text-amber-700 hover:text-amber-800 border-amber-200/60',
+                    calendarBorder: 'border-amber-200/80'
+                },
+                pink: {
+                    activeBg: 'bg-pink-600 text-white',
+                    backBtn: 'bg-pink-50 text-pink-700 hover:text-pink-800 border-pink-200/60',
+                    calendarBorder: 'border-pink-200/80'
+                },
+                emerald: {
+                    activeBg: 'bg-emerald-600 text-white',
+                    backBtn: 'bg-emerald-50 text-emerald-700 hover:text-emerald-800 border-emerald-200/60',
+                    calendarBorder: 'border-emerald-200/80'
+                },
+                indigo: {
+                    activeBg: 'bg-indigo-600 text-white',
+                    backBtn: 'bg-indigo-50 text-indigo-700 hover:text-indigo-800 border-indigo-200/60',
+                    calendarBorder: 'border-indigo-200/80'
+                },
+                blue: {
+                    activeBg: 'bg-blue-600 text-white',
+                    backBtn: 'bg-blue-50 text-blue-700 hover:text-blue-800 border-blue-200/60',
+                    calendarBorder: 'border-blue-200/80'
+                },
+                purple: {
+                    activeBg: 'bg-purple-600 text-white',
+                    backBtn: 'bg-purple-50 text-purple-700 hover:text-purple-800 border-purple-200/60',
+                    calendarBorder: 'border-purple-200/80'
+                },
+                rose: {
+                    activeBg: 'bg-rose-600 text-white',
+                    backBtn: 'bg-rose-50 text-rose-700 hover:text-rose-800 border-rose-200/60',
+                    calendarBorder: 'border-rose-200/80'
+                },
+                teal: {
+                    activeBg: 'bg-teal-600 text-white',
+                    backBtn: 'bg-teal-50 text-teal-700 hover:text-teal-800 border-teal-200/60',
+                    calendarBorder: 'border-teal-200/80'
+                }
+            };
+
+            const current = themes[theme] || themes['amber'];
+
+            // 1. カレンダー表示ボタンがアクティブな場合の処理
+            const calBtn = document.getElementById('viewModeCalBtn');
+            if (calBtn && !calBtn.classList.contains('text-stone-600')) {
+                calBtn.className = `px-3 py-1.5 rounded-lg text-xs font-medium shadow-sm transition-all flex items-center gap-1 ${current.activeBg}`;
+            }
+
+            // 2. 「月一覧に戻る」ボタンの色を更新
+            document.querySelectorAll('.theme-back-btn').forEach(btn => {
+                btn.className = `theme-back-btn text-xs font-medium flex items-center gap-1 px-3 py-1.5 rounded-xl border transition-colors ${current.backBtn}`;
+            });
+        }
+        window.applyCurrentThemeToUI = applyCurrentThemeToUI;
+            
 
             const entriesRef = collection(db, 'artifacts', appId, 'public', 'data', 'entries');
             const querySnap = await getDocs(entriesRef);
