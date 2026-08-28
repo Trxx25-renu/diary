@@ -1845,19 +1845,17 @@ function getCircledNumber(num) {
             console.log("Firestore setup notice:", e);
         }
 
-    if (typeof window.applySiteConfig === 'function') {
-            window.applySiteConfig();
-        }
-
-        // ★ここで確実にテーマカラーをUI全体に適用する！
+        // 1. サイト設定の適用
         if (typeof window.applySiteConfig === 'function') {
             window.applySiteConfig();
         }
 
+        // 2. テーマカラーをUI全体に適用
         if (typeof applyCurrentThemeToUI === 'function') {
             applyCurrentThemeToUI();
         }
 
+        // 3. 月一覧画面へ移動
         if (typeof window.navigateTo === 'function') {
             window.navigateTo('months');
         }
