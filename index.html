@@ -1756,9 +1756,20 @@
         if (typeof window.navigateTo === 'function') {
             window.navigateTo('months');
         }
-    // 1. アプリ起動時にFirestoreから設定とパスコードを読み込む関数
+    // 確実にFirestoreから設定を読み込む関数
         async function loadConfigFromFirestore() {
-            if (!window.db) return;
+            // window.db または window.appId がまだ無い場合は少し待つ
+            let attempts = 0;
+            while ((!window.db || !window.appId) && attempts < 10) {
+                await new Promise(resolve => setTimeout(resolve, 300)); // 0.3秒待機
+                attempts++;
+            }
+
+            if (!window.db || !window.appId) {
+                console.warn("Firestoreの初期化を検知できませんでした。");
+                return;
+            }
+
             try {
                 const { doc, getDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
                 const configDocRef = doc(window.db, 'artifacts', window.appId, 'public', 'data', 'config', 'settings');
@@ -1766,11 +1777,13 @@
 
                 if (docSnap.exists()) {
                     const data = docSnap.data();
-                    // 保存されていたパスコードを復元
                     if (data.passcode) {
                         window.storedPasscode = data.passcode;
+                        console.log("パスコードを復元しました！");
+                    } else {
+                        console.log("Firestoreにパスコードは保存されていません。");
                     }
-                    // サイト設定を復元
+
                     window.siteConfig = {
                         title: data.title || '日々の写真日記',
                         subtitle: data.subtitle || 'Photo & Daily Log',
@@ -1782,13 +1795,14 @@
                     if (typeof applySiteConfig === 'function') {
                         applySiteConfig();
                     }
+                } else {
+                    console.log("settingsドキュメント自体がまだ存在しません。");
                 }
             } catch (err) {
                 console.error("Firestore config load error:", err);
             }
         }
         window.loadConfigFromFirestore = loadConfigFromFirestore;
-
         // 2. ページが読み込まれてスクリプトが実行されたときにそのまま呼び出す
         loadConfigFromFirestore();
     </script>
