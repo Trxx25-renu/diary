@@ -926,6 +926,11 @@ function getCircledNumber(num) {
                 window.isAdmin = true;
                 updateAdminUI();
                 closeAuthModal();
+
+                if (typeof applyCurrentThemeToUI === 'function') {
+                    applyCurrentThemeToUI();
+                }
+                
                 showToast('パスコードを設定しました。管理者モードになりました。', 'success');
                 return;
             }
