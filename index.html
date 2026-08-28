@@ -1843,10 +1843,14 @@ function getCircledNumber(num) {
             window.applyCurrentThemeToUI();
         }
 
-        if (typeof window.navigateTo === 'function') {
-            window.navigateTo('months');
-        }
-        }
+    if (typeof window.navigateTo === 'function') {
+        window.navigateTo('months');
+    }
+    
+    if (typeof applyCurrentThemeToUI === 'function') {
+        applyCurrentThemeToUI();
+    }
+    }
     // 確実にFirestoreから設定を読み込む関数
         async function loadConfigFromFirestore() {
             // window.db または window.appId がまだ無い場合は少し待つ
