@@ -1768,70 +1768,45 @@ function getCircledNumber(num) {
                 }
         }
 
-            function applyCurrentThemeToUI() {
+function applyCurrentThemeToUI() {
             const theme = (window.siteConfig && window.siteConfig.themeColor) || 'amber';
             
-            // デバッグ用ログ
             console.log("【テーマ適用チェック】 検出されたテーマ:", theme);
             console.log("【テーマ適用チェック】 見つかった戻るボタンの数:", document.querySelectorAll('.theme-back-btn').length);
 
-            // テーマごとのカラー定義
-
-            // テーマごとのカラー定義
             const themes = {
-                amber: {
-                    activeBg: 'bg-amber-600 text-white',
-                    backBtn: 'bg-amber-50 text-amber-700 hover:text-amber-800 border-amber-200/60',
-                    calendarBorder: 'border-amber-200/80'
-                },
-                pink: {
-                    activeBg: 'bg-pink-600 text-white',
-                    backBtn: 'bg-pink-50 text-pink-700 hover:text-pink-800 border-pink-200/60',
-                    calendarBorder: 'border-pink-200/80'
-                },
-                emerald: {
-                    activeBg: 'bg-emerald-600 text-white',
-                    backBtn: 'bg-emerald-50 text-emerald-700 hover:text-emerald-800 border-emerald-200/60',
-                    calendarBorder: 'border-emerald-200/80'
-                },
-                indigo: {
-                    activeBg: 'bg-indigo-600 text-white',
-                    backBtn: 'bg-indigo-50 text-indigo-700 hover:text-indigo-800 border-indigo-200/60',
-                    calendarBorder: 'border-indigo-200/80'
-                },
-                blue: {
-                    activeBg: 'bg-blue-600 text-white',
-                    backBtn: 'bg-blue-50 text-blue-700 hover:text-blue-800 border-blue-200/60',
-                    calendarBorder: 'border-blue-200/80'
-                },
-                purple: {
-                    activeBg: 'bg-purple-600 text-white',
-                    backBtn: 'bg-purple-50 text-purple-700 hover:text-purple-800 border-purple-200/60',
-                    calendarBorder: 'border-purple-200/80'
-                },
-                rose: {
-                    activeBg: 'bg-rose-600 text-white',
-                    backBtn: 'bg-rose-50 text-rose-700 hover:text-rose-800 border-rose-200/60',
-                    calendarBorder: 'border-rose-200/80'
-                },
-                teal: {
-                    activeBg: 'bg-teal-600 text-white',
-                    backBtn: 'bg-teal-50 text-teal-700 hover:text-teal-800 border-teal-200/60',
-                    calendarBorder: 'border-teal-200/80'
-                }
+                amber: { activeBg: 'bg-amber-600 text-white', backBtn: 'bg-amber-50 text-amber-700 hover:text-amber-800 border-amber-200/60', calendarBorder: 'border-amber-200/80' },
+                pink: { activeBg: 'bg-pink-600 text-white', backBtn: 'bg-pink-50 text-pink-700 hover:text-pink-800 border-pink-200/60', calendarBorder: 'border-pink-200/80' },
+                emerald: { activeBg: 'bg-emerald-600 text-white', backBtn: 'bg-emerald-50 text-emerald-700 hover:text-emerald-800 border-emerald-200/60', calendarBorder: 'border-emerald-200/80' },
+                indigo: { activeBg: 'bg-indigo-600 text-white', backBtn: 'bg-indigo-50 text-indigo-700 hover:text-indigo-800 border-indigo-200/60', calendarBorder: 'border-indigo-200/80' },
+                blue: { activeBg: 'bg-blue-600 text-white', backBtn: 'bg-blue-50 text-blue-700 hover:text-blue-800 border-blue-200/60', calendarBorder: 'border-blue-200/80' },
+                purple: { activeBg: 'bg-purple-600 text-white', backBtn: 'bg-purple-50 text-purple-700 hover:text-purple-800 border-purple-200/60', calendarBorder: 'border-purple-200/80' },
+                rose: { activeBg: 'bg-rose-600 text-white', backBtn: 'bg-rose-50 text-rose-700 hover:text-rose-800 border-rose-200/60', calendarBorder: 'border-rose-200/80' },
+                teal: { activeBg: 'bg-teal-600 text-white', backBtn: 'bg-teal-50 text-teal-700 hover:text-teal-800 border-teal-200/60', calendarBorder: 'border-teal-200/80' }
             };
 
             const current = themes[theme] || themes['amber'];
 
-            // 1. カレンダー表示ボタンがアクティブな場合の処理
-            const calBtn = document.getElementById('viewModeCalBtn');
-            if (calBtn && !calBtn.classList.contains('text-stone-600')) {
-                calBtn.className = `px-3 py-1.5 rounded-lg text-xs font-medium shadow-sm transition-all flex items-center gap-1 ${current.activeBg}`;
-            }
+// 1. カレンダー表示ボタン（アクティブ時）の色を更新
+            document.querySelectorAll('.theme-active-btn').forEach(btn => {
+                btn.className = `theme-active-btn px-3 py-1.5 rounded-lg text-xs font-medium shadow-sm transition-all flex items-center gap-1 ${current.activeBg}`;
+            });
 
             // 2. 「月一覧に戻る」ボタンの色を更新
             document.querySelectorAll('.theme-back-btn').forEach(btn => {
                 btn.className = `theme-back-btn text-xs font-medium flex items-center gap-1 px-3 py-1.5 rounded-xl border transition-colors ${current.backBtn}`;
+            });
+
+            // 3. ★ カレンダーの枠色を更新（クラスに .theme-calendar-border を持っている要素を対象にします）
+            document.querySelectorAll('.theme-calendar-border').forEach(el => {
+                // 既存の枠線クラス（border-〜）を一度整理して新しいテーマの枠線クラスを付与
+                // （もし特定のクラス名を変えたい場合はクラス名を合わせてください）
+                el.classList.forEach(cls => {
+                    if (cls.startsWith('border-') && !cls.startsWith('border-t') && !cls.startsWith('border-b') && !cls.startsWith('border-l') && !cls.startsWith('border-r') && !cls.startsWith('border-x') && !cls.startsWith('border-y')) {
+                        el.classList.remove(cls);
+                    }
+                });
+                el.classList.add(...current.calendarBorder.split(' '));
             });
         }
         window.applyCurrentThemeToUI = applyCurrentThemeToUI;
