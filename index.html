@@ -1824,7 +1824,7 @@ function renderMonthFolders() {
 
         window.entries = sampleEntries;
 
-        try {
+try {
             // あなた専用のFirebase設定情報を直接読み込ませます
             const firebaseConfig = {
                 apiKey: "AIzaSyA2ctX9sUpJmLSVJomU9cbMzrUX_AXNjuE",
@@ -1841,77 +1841,32 @@ function renderMonthFolders() {
             const db = getFirestore(app);
             const analytics = getAnalytics(app);
             window.db = db;
+            window.appId = firebaseConfig.appId; // appIdをwindowに保持させる安全策
 
             // 匿名ログインを実行してクラウドDBへアクセス可能にする
             await signInAnonymously(auth);
 
-            const configRef = doc(db, 'artifacts', appId, 'public', 'data', 'config', 'settings');
+            const configRef = doc(db, 'artifacts', window.appId, 'public', 'data', 'config', 'settings');
             const configSnap = await getDoc(configRef);
             if (configSnap.exists()) {
                 const loadedConfig = configSnap.data();
                 if (loadedConfig.passcode) window.storedPasscode = loadedConfig.passcode;
     
                 window.siteConfig = {
-                    title: loadedConfig.title || window.siteConfig.title,
-                    subtitle: loadedConfig.subtitle || window.siteConfig.subtitle,
-                    logoChar: loadedConfig.logoChar || window.siteConfig.logoChar,
+                    title: loadedConfig.title || (window.siteConfig && window.siteConfig.title) || '日々の写真日記',
+                    subtitle: loadedConfig.subtitle || (window.siteConfig && window.siteConfig.subtitle) || 'Photo & Daily Log',
+                    logoChar: loadedConfig.logoChar || (window.siteConfig && window.siteConfig.logoChar) || 'P',
                     logoImageUrl: loadedConfig.logoImageUrl || '',
-                    themeColor: loadedConfig.themeColor || window.siteConfig.themeColor,
-                    weatherOptions: loadedConfig.weatherOptions || window.siteConfig.weatherOptions
+                    themeColor: loadedConfig.themeColor || (window.siteConfig && window.siteConfig.themeColor) || 'amber',
+                    weatherOptions: loadedConfig.weatherOptions || ['晴れ ☀️', '快晴 🌤️', 'くもり ☁️', '雨 ☔', '雪 ❄️']
                 };
 
-                // ★ ここでしっかりテーマ適用を呼び出す！
                 if (typeof applyCurrentThemeToUI === 'function') {
                     applyCurrentThemeToUI();
                 }
-        }
-
-function applyCurrentThemeToUI() {
-            const theme = (window.siteConfig && window.siteConfig.themeColor) || 'amber';
-            
-            console.log("【テーマ適用チェック】 検出されたテーマ:", theme);
-            console.log("【テーマ適用チェック】 見つかった戻るボタンの数:", document.querySelectorAll('.theme-back-btn').length);
-
-            const themes = {
-                amber: { activeBg: 'bg-amber-600 text-white', backBtn: 'bg-amber-50 text-amber-700 hover:text-amber-800 border-amber-200/60', calendarBorder: 'border-amber-200/80' },
-                pink: { activeBg: 'bg-pink-600 text-white', backBtn: 'bg-pink-50 text-pink-700 hover:text-pink-800 border-pink-200/60', calendarBorder: 'border-pink-200/80' },
-                emerald: { activeBg: 'bg-emerald-600 text-white', backBtn: 'bg-emerald-50 text-emerald-700 hover:text-emerald-800 border-emerald-200/60', calendarBorder: 'border-emerald-200/80' },
-                indigo: { activeBg: 'bg-indigo-600 text-white', backBtn: 'bg-indigo-50 text-indigo-700 hover:text-indigo-800 border-indigo-200/60', calendarBorder: 'border-indigo-200/80' },
-                blue: { activeBg: 'bg-blue-600 text-white', backBtn: 'bg-blue-50 text-blue-700 hover:text-blue-800 border-blue-200/60', calendarBorder: 'border-blue-200/80' },
-                purple: { activeBg: 'bg-purple-600 text-white', backBtn: 'bg-purple-50 text-purple-700 hover:text-purple-800 border-purple-200/60', calendarBorder: 'border-purple-200/80' },
-                rose: { activeBg: 'bg-rose-600 text-white', backBtn: 'bg-rose-50 text-rose-700 hover:text-rose-800 border-rose-200/60', calendarBorder: 'border-rose-200/80' },
-                teal: { activeBg: 'bg-teal-600 text-white', backBtn: 'bg-teal-50 text-teal-700 hover:text-teal-800 border-teal-200/60', calendarBorder: 'border-teal-200/80' }
-            };
-
-            const current = themes[theme] || themes['amber'];
-
-    　　　　// 1. カレンダー表示ボタンの色を更新
-            const calBtn = document.getElementById('viewModeCalBtn');
-            if (calBtn) {
-                calBtn.className = `theme-active-btn px-3 py-1.5 rounded-lg text-xs font-medium shadow-sm transition-all flex items-center gap-1 ${current.activeBg}`;
             }
 
-            // 2. 「月一覧に戻る」ボタンの色を更新
-            document.querySelectorAll('.theme-back-btn').forEach(btn => {
-                btn.className = `theme-back-btn text-xs font-medium flex items-center gap-1 px-3 py-1.5 rounded-xl border transition-colors ${current.backBtn}`;
-            });
-
-            // 3. ★ カレンダーの枠色を更新（クラスに .theme-calendar-border を持っている要素を対象にします）
-            document.querySelectorAll('.theme-calendar-border').forEach(el => {
-                // 既存の枠線クラス（border-〜）を一度整理して新しいテーマの枠線クラスを付与
-                // （もし特定のクラス名を変えたい場合はクラス名を合わせてください）
-                el.classList.forEach(cls => {
-                    if (cls.startsWith('border-') && !cls.startsWith('border-t') && !cls.startsWith('border-b') && !cls.startsWith('border-l') && !cls.startsWith('border-r') && !cls.startsWith('border-x') && !cls.startsWith('border-y')) {
-                        el.classList.remove(cls);
-                    }
-                });
-                el.classList.add(...current.calendarBorder.split(' '));
-            });
-        }
-        window.applyCurrentThemeToUI = applyCurrentThemeToUI;
-            
-
-            const entriesRef = collection(db, 'artifacts', appId, 'public', 'data', 'entries');
+            const entriesRef = collection(db, 'artifacts', window.appId, 'public', 'data', 'entries');
             const querySnap = await getDocs(entriesRef);
             const loaded = [];
             querySnap.forEach(d => {
@@ -1940,13 +1895,49 @@ function applyCurrentThemeToUI() {
         if (typeof window.navigateTo === 'function') {
             window.navigateTo('months');
         }
-    
-    // 確実にFirestoreから設定を読み込む関数
+
+        // テーマカラーをUI全体に適用する関数
+        function applyCurrentThemeToUI() {
+            const theme = (window.siteConfig && window.siteConfig.themeColor) || 'amber';
+            
+            const themes = {
+                amber: { activeBg: 'bg-amber-600 text-white', backBtn: 'bg-amber-50 text-amber-700 hover:text-amber-800 border-amber-200/60', calendarBorder: 'border-amber-200/80' },
+                pink: { activeBg: 'bg-pink-600 text-white', backBtn: 'bg-pink-50 text-pink-700 hover:text-pink-800 border-pink-200/60', calendarBorder: 'border-pink-200/80' },
+                emerald: { activeBg: 'bg-emerald-600 text-white', backBtn: 'bg-emerald-50 text-emerald-700 hover:text-emerald-800 border-emerald-200/60', calendarBorder: 'border-emerald-200/80' },
+                indigo: { activeBg: 'bg-indigo-600 text-white', backBtn: 'bg-indigo-50 text-indigo-700 hover:text-indigo-800 border-indigo-200/60', calendarBorder: 'border-indigo-200/80' },
+                blue: { activeBg: 'bg-blue-600 text-white', backBtn: 'bg-blue-50 text-blue-700 hover:text-blue-800 border-blue-200/60', calendarBorder: 'border-blue-200/80' },
+                purple: { activeBg: 'bg-purple-600 text-white', backBtn: 'bg-purple-50 text-purple-700 hover:text-purple-800 border-purple-200/60', calendarBorder: 'border-purple-200/80' },
+                rose: { activeBg: 'bg-rose-600 text-white', backBtn: 'bg-rose-50 text-rose-700 hover:text-rose-800 border-rose-200/60', calendarBorder: 'border-rose-200/80' },
+                teal: { activeBg: 'bg-teal-600 text-white', backBtn: 'bg-teal-50 text-teal-700 hover:text-teal-800 border-teal-200/60', calendarBorder: 'border-teal-200/80' }
+            };
+
+            const current = themes[theme] || themes['amber'];
+
+            const calBtn = document.getElementById('viewModeCalBtn');
+            if (calBtn) {
+                calBtn.className = `theme-active-btn px-3 py-1.5 rounded-lg text-xs font-medium shadow-sm transition-all flex items-center gap-1 ${current.activeBg}`;
+            }
+
+            document.querySelectorAll('.theme-back-btn').forEach(btn => {
+                btn.className = `theme-back-btn text-xs font-medium flex items-center gap-1 px-3 py-1.5 rounded-xl border transition-colors ${current.backBtn}`;
+            });
+
+            document.querySelectorAll('.theme-calendar-border').forEach(el => {
+                el.classList.forEach(cls => {
+                    if (cls.startsWith('border-') && !cls.startsWith('border-t') && !cls.startsWith('border-b') && !cls.startsWith('border-l') && !cls.startsWith('border-r') && !cls.startsWith('border-x') && !cls.startsWith('border-y')) {
+                        el.classList.remove(cls);
+                    }
+                });
+                el.classList.add(...current.calendarBorder.split(' '));
+            });
+        }
+        window.applyCurrentThemeToUI = applyCurrentThemeToUI;
+
+        // 確実にFirestoreから設定を読み込む関数
         async function loadConfigFromFirestore() {
-            // window.db または window.appId がまだ無い場合は少し待つ
             let attempts = 0;
             while ((!window.db || !window.appId) && attempts < 10) {
-                await new Promise(resolve => setTimeout(resolve, 300)); // 0.3秒待機
+                await new Promise(resolve => setTimeout(resolve, 300));
                 attempts++;
             }
 
@@ -1964,9 +1955,6 @@ function applyCurrentThemeToUI() {
                     const data = docSnap.data();
                     if (data.passcode) {
                         window.storedPasscode = data.passcode;
-                        console.log("パスコードを復元しました！");
-                    } else {
-                        console.log("Firestoreにパスコードは保存されていません。");
                     }
 
                     window.siteConfig = {
@@ -1980,17 +1968,14 @@ function applyCurrentThemeToUI() {
                     if (typeof applySiteConfig === 'function') {
                         applySiteConfig();
                     }
-                } else {
-                    console.log("settingsドキュメント自体がまだ存在しません。");
                 }
             } catch (err) {
                 console.error("Firestore config load error:", err);
             }
         }
         window.loadConfigFromFirestore = loadConfigFromFirestore;
-        // 2. ページが読み込まれてスクリプトが実行されたときにそのまま呼び出す
+        
         loadConfigFromFirestore();
-    
     </script>
 </body>
 </html>
