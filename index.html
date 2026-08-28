@@ -1686,7 +1686,7 @@ function renderMonthFolders() {
 
                 <div class="flex items-center gap-2 pt-2 border-t border-stone-100">
                     <button type="button" onclick="closeConfigModal()" class="flex-1 py-2.5 text-xs font-medium text-stone-600 bg-stone-100 hover:bg-stone-200 rounded-xl transition-colors">キャンセル</button>
-                    <button type="submit" class="flex-1 py-2.5 text-xs font-medium text-white bg-amber-600 hover:bg-amber-700 rounded-xl transition-colors shadow-sm">設定を保存</button>
+<button type="submit" id="configSubmitBtn" class="flex-1 py-2.5 text-xs font-medium text-white bg-amber-600 hover:bg-amber-700 rounded-xl transition-colors shadow-sm">設定を保存</button>
                 </div>
             </form>
         </div>
@@ -1746,7 +1746,7 @@ function renderMonthFolders() {
 
                 <div class="flex items-center gap-2 pt-2 border-t border-stone-100">
                     <button type="button" onclick="closePostModal()" class="flex-1 py-2.5 text-xs font-medium text-stone-600 bg-stone-100 hover:bg-stone-200 rounded-xl transition-colors">キャンセル</button>
-                    <button type="submit" id="saveSubmitBtn" class="flex-1 py-2.5 text-xs font-medium text-white bg-amber-600 hover:bg-amber-700 rounded-xl transition-colors shadow-sm">保存する</button>
+<button type="submit" id="saveSubmitBtn" class="flex-1 py-2.5 text-xs font-medium text-white bg-amber-600 hover:bg-amber-700 rounded-xl transition-colors shadow-sm">保存する</button>
                 </div>
             </form>
         </div>
@@ -1761,7 +1761,7 @@ function renderMonthFolders() {
             </div>
             <div class="flex items-center gap-2 mt-2">
                 <button type="button" onclick="closeConfirmModal(false)" class="flex-1 py-2 text-xs font-medium text-stone-600 bg-stone-100 hover:bg-stone-200 rounded-xl transition-colors">キャンセル</button>
-                <button type="button" onclick="closeConfirmModal(true)" class="flex-1 py-2 text-xs font-medium text-white bg-amber-600 hover:bg-amber-700 rounded-xl transition-colors shadow-sm">実行する</button>
+<button type="button" onclick="closeConfirmModal(true)" id="confirmSubmitBtn" class="flex-1 py-2 text-xs font-medium text-white bg-amber-600 hover:bg-amber-700 rounded-xl transition-colors shadow-sm">実行する</button>
             </div>
         </div>
     </div>
