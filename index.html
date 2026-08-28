@@ -1821,6 +1821,38 @@
         window.loadConfigFromFirestore = loadConfigFromFirestore;
         // 2. ページが読み込まれてスクリプトが実行されたときにそのまま呼び出す
         loadConfigFromFirestore();
+
+function getCircledNumber(num) {
+            if (num <= 1) return '';
+            return num;
+        }
+        window.getCircledNumber = getCircledNumber;
+
+    function getCircledNumber(num) {
+            if (num <= 1) return '';
+
+            // 現在設定されているテーマカラーを取得（デフォルトは amber）
+            const theme = (window.siteConfig && window.siteConfig.themeColor) || 'amber';
+
+            // テーマごとのパステル調カラーマップ（枠線付きでスッキリ綺麗に）
+            const badgeColors = {
+                amber: 'bg-amber-100/90 text-amber-800 border border-amber-300',
+                pink: 'bg-pink-100/90 text-pink-800 border border-pink-300',
+                emerald: 'bg-emerald-100/90 text-emerald-800 border border-emerald-300',
+                indigo: 'bg-indigo-100/90 text-indigo-800 border border-indigo-300',
+                blue: 'bg-blue-100/90 text-blue-800 border border-blue-300',
+                purple: 'bg-purple-100/90 text-purple-800 border border-purple-300',
+                rose: 'bg-rose-100/90 text-rose-800 border border-rose-300',
+                teal: 'bg-teal-100/90 text-teal-800 border border-teal-300'
+            };
+
+            const activeBadge = badgeColors[theme] || badgeColors['amber'];
+
+            // うす黒い影（shadowやdrop-shadow）を一切排除した綺麗な丸バッジ
+            return `<span class="inline-flex items-center justify-center min-w-[20px] h-[20px] px-1 text-[10px] sm:text-xs font-bold ${activeBadge} rounded-full ml-1">${num}</span>`;
+        }
+        window.getCircledNumber = getCircledNumber;
+    
     </script>
 </body>
 </html>
