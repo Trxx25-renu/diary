@@ -370,13 +370,11 @@
         }
         window.formatPreviewText = formatPreviewText;
 
-function getCircledNumber(num) {
+        function getCircledNumber(num) {
             if (num <= 1) return '';
 
-            // 現在設定されているテーマカラーを取得（デフォルトは amber）
             const theme = (window.siteConfig && window.siteConfig.themeColor) || 'amber';
 
-            // テーマごとの「丸いバッジ」の背景色と文字色の組み合わせ
             const themeClasses = {
                 amber: 'bg-amber-100 text-amber-700',
                 pink: 'bg-pink-100 text-pink-600',
@@ -388,11 +386,10 @@ function getCircledNumber(num) {
                 teal: 'bg-teal-100 text-teal-700'
             };
 
-            // 設定されているテーマの色を採用（なければデフォルトのamber）
             const colorClass = themeClasses[theme] || themeClasses['amber'];
 
-            // レイアウトに合わせて丸っぽく、かつテーマカラーに合わせたHTMLを返す
-            return `<span class="inline-flex items-center justify-center w-5 h-5 text-xs font-bold ${colorClass} rounded-full shadow-sm ml-1">${num}</span>`;
+            // shadow-none にして影を消しています
+            return `<span class="inline-flex items-center justify-center w-5 h-5 text-xs font-bold ${colorClass} rounded-full shadow-none ml-1">${num}</span>`;
         }
         window.getCircledNumber = getCircledNumber;
 
