@@ -558,6 +558,20 @@ function getCircledNumber(num) {
                 entryMap[e.date].push(e);
             });
 
+            // ★ 現在のテーマからカレンダーの枠線クラスを動的に取得
+            const currentTheme = (window.siteConfig && window.siteConfig.themeColor) || 'amber';
+            const calendarBorderMap = {
+                amber: 'border-amber-200/80',
+                pink: 'border-pink-200/80',
+                emerald: 'border-emerald-200/80',
+                indigo: 'border-indigo-200/80',
+                blue: 'border-blue-200/80',
+                purple: 'border-purple-200/80',
+                rose: 'border-rose-200/80',
+                teal: 'border-teal-200/80'
+            };
+            const currentCalendarBorder = calendarBorderMap[currentTheme] || 'border-amber-200/80';
+
             let imgFitClass = 'object-cover object-center';
             if (window.thumbnailFitMode === 'top') {
                 imgFitClass = 'object-cover object-top';
@@ -604,7 +618,7 @@ function getCircledNumber(num) {
                     const countBadge = count > 1 ? getCircledNumber(count) : '';
 
                     html += `
-                        <div onclick="navigateTo('detail', '${entry.id}')" class="group relative aspect-square bg-stone-100 rounded-xl overflow-hidden border border-amber-200/80 cursor-pointer shadow-sm hover:shadow-md transition-all">
+                        <div onclick="navigateTo('detail', '${entry.id}')" class="group relative aspect-square bg-stone-100 rounded-xl overflow-hidden border ${currentCalendarBorder} cursor-pointer shadow-sm hover:shadow-md transition-all">
                             <img src="${entry.imageUrl}" alt="${dateKey}" draggable="false" oncontextmenu="return false;" class="protect-image w-full h-full ${imgFitClass} group-hover:scale-105 transition-transform duration-300">
                             <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20 p-1.5 flex flex-col justify-between">
                                 <span class="text-[10px] sm:text-xs font-bold text-white bg-black/40 backdrop-blur-md px-1.5 py-0.5 rounded-md w-fit leading-none">${day}</span>
@@ -622,6 +636,7 @@ function getCircledNumber(num) {
                     `;
                 }
             }
+            // （以降の閉じタグなどが続きます）
 
             html += `
                     </div>
