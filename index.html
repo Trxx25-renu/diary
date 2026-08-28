@@ -1761,9 +1761,11 @@ function getCircledNumber(num) {
                     themeColor: loadedConfig.themeColor || window.siteConfig.themeColor,
                     weatherOptions: loadedConfig.weatherOptions || window.siteConfig.weatherOptions
                 };
+
+                // ★ ここでしっかりテーマ適用を呼び出す！
                 if (typeof applyCurrentThemeToUI === 'function') {
-                applyCurrentThemeToUI();
-            }
+                    applyCurrentThemeToUI();
+                }
         }
 
             function applyCurrentThemeToUI() {
