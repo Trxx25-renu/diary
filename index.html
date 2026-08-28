@@ -1839,17 +1839,17 @@ function getCircledNumber(num) {
         }
 
         // ★ここで確実にテーマカラーをUI全体に適用する！
-        if (typeof window.applyCurrentThemeToUI === 'function') {
-            window.applyCurrentThemeToUI();
+        if (typeof window.applySiteConfig === 'function') {
+            window.applySiteConfig();
         }
 
-    if (typeof window.navigateTo === 'function') {
-        window.navigateTo('months');
-    }
-    
-    if (typeof applyCurrentThemeToUI === 'function') {
-        applyCurrentThemeToUI();
-    }
+        if (typeof applyCurrentThemeToUI === 'function') {
+            applyCurrentThemeToUI();
+        }
+
+        if (typeof window.navigateTo === 'function') {
+            window.navigateTo('months');
+        }
     
     // 確実にFirestoreから設定を読み込む関数
         async function loadConfigFromFirestore() {
