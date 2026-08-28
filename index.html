@@ -1756,6 +1756,41 @@
         if (typeof window.navigateTo === 'function') {
             window.navigateTo('months');
         }
+    // 1. アプリ起動時にFirestoreから設定とパスコードを読み込む関数
+        async function loadConfigFromFirestore() {
+            if (!window.db) return;
+            try {
+                const { doc, getDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
+                const configDocRef = doc(window.db, 'artifacts', window.appId, 'public', 'data', 'config', 'settings');
+                const docSnap = await getDoc(configDocRef);
+
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    // 保存されていたパスコードを復元
+                    if (data.passcode) {
+                        window.storedPasscode = data.passcode;
+                    }
+                    // サイト設定を復元
+                    window.siteConfig = {
+                        title: data.title || '日々の写真日記',
+                        subtitle: data.subtitle || 'Photo & Daily Log',
+                        logoChar: data.logoChar || 'P',
+                        logoImageUrl: data.logoImageUrl || '',
+                        themeColor: data.themeColor || 'amber',
+                        weatherOptions: data.weatherOptions || ['晴れ ☀️', '快晴 🌤️', 'くもり ☁️', '雨 ☔', '雪 ❄️']
+                    };
+                    if (typeof applySiteConfig === 'function') {
+                        applySiteConfig();
+                    }
+                }
+            } catch (err) {
+                console.error("Firestore config load error:", err);
+            }
+        }
+        window.loadConfigFromFirestore = loadConfigFromFirestore;
+
+        // 2. ページが読み込まれてスクリプトが実行されたときにそのまま呼び出す
+        loadConfigFromFirestore();
     </script>
 </body>
 </html>
