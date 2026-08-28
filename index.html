@@ -457,41 +457,70 @@ function getCircledNumber(num) {
         }
         window.renderMonthFolders = renderMonthFolders;
 
-        function renderBreadcrumbs() {
-            const nav = document.getElementById('breadcrumbs');
-            if (!nav) return;
+function renderMonthFolders() {
+            const container = document.getElementById('monthFolderGrid');
+            if (!container) return;
+            container.innerHTML = '';
 
-            let html = `
-                <a href="javascript:void(0)" onclick="navigateTo('months')" class="hover:text-stone-900 transition-colors flex items-center gap-1">
-                    <i class="fa-solid fa-house text-[10px]"></i> ホーム (月別)
-                </a>
-            `;
+            // ★ 現在のテーマから対応するホバー用クラスを動的に取得
+            const currentTheme = (window.siteConfig && window.siteConfig.themeColor) || 'amber';
+            const themeHoverMap = {
+                amber: { border: 'hover:border-amber-300', text: 'group-hover:text-amber-700', icon: 'group-hover:text-amber-600' },
+                pink: { border: 'hover:border-pink-300', text: 'group-hover:text-pink-700', icon: 'group-hover:text-pink-600' },
+                emerald: { border: 'hover:border-emerald-300', text: 'group-hover:text-emerald-700', icon: 'group-hover:text-emerald-600' },
+                indigo: { border: 'hover:border-indigo-300', text: 'group-hover:text-indigo-700', icon: 'group-hover:text-indigo-600' },
+                blue: { border: 'hover:border-blue-300', text: 'group-hover:text-blue-700', icon: 'group-hover:text-blue-600' },
+                purple: { border: 'hover:border-purple-300', text: 'group-hover:text-purple-700', icon: 'group-hover:text-purple-600' },
+                rose: { border: 'hover:border-rose-300', text: 'group-hover:text-rose-700', icon: 'group-hover:text-rose-600' },
+                teal: { border: 'hover:border-teal-300', text: 'group-hover:text-teal-700', icon: 'group-hover:text-teal-600' }
+            };
+            const currentHover = themeHoverMap[currentTheme] || themeHoverMap['amber'];
 
-            if (window.currentView === 'gallery' || window.currentView === 'detail') {
-                if (window.selectedYearMonth) {
-                    const [y, m] = window.selectedYearMonth.split('-');
-                    html += `
-                        <span class="text-stone-300">/</span>
-                        <a href="javascript:void(0)" onclick="navigateTo('gallery', '${window.selectedYearMonth}')" class="hover:text-stone-900 transition-colors">
-                            ${y}年${parseInt(m, 10)}月
-                        </a>
-                    `;
+            const monthMap = {};
+            (window.entries || []).forEach(entry => {
+                if (!entry.date) return;
+                const ym = entry.date.substring(0, 7);
+                if (!monthMap[ym]) {
+                    monthMap[ym] = [];
                 }
+                monthMap[ym].push(entry);
+            });
+
+            const months = Object.keys(monthMap).sort().reverse();
+
+            if (months.length === 0) {
+                container.innerHTML = `<div class="col-span-full text-center py-12 text-stone-400 text-xs">まだ日記はありません。新しい日記を書いてみましょう！</div>`;
+                return;
             }
 
-            if (window.currentView === 'detail' && window.selectedEntryId) {
-                const entry = (window.entries || []).find(e => e.id === window.selectedEntryId);
-                if (entry) {
-                    html += `
-                        <span class="text-stone-300">/</span>
-                        <span class="text-stone-800 font-medium">${entry.date.replace(/-/g, '.')}</span>
-                    `;
-                }
-            }
+            months.forEach(ym => {
+                const entries = monthMap[ym];
+                const [year, month] = ym.split('-');
+                const latestPhoto = entries[0]?.imageUrl || '';
 
-            nav.innerHTML = html;
+                const card = document.createElement('div');
+                // ★ hover:border-amber-300 を動的変数に置き換え
+                card.className = `group bg-white rounded-2xl border border-stone-200/80 p-4 cursor-pointer shadow-sm hover:shadow-md transition-all flex items-center gap-4 ${currentHover.border}`;
+                card.onclick = () => navigateTo('gallery', ym);
+
+                card.innerHTML = `
+                    <div class="w-20 h-20 rounded-xl bg-stone-100 overflow-hidden shrink-0 border border-stone-200/60 relative">
+                        ${latestPhoto ? `<img src="${latestPhoto}" alt="${ym}" draggable="false" oncontextmenu="return false;" class="protect-image w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">` : `<div class="w-full h-full flex items-center justify-center text-stone-300"><i class="fa-regular fa-image text-xl"></i></div>`}
+                    </div>
+                    <div class="flex flex-col justify-center flex-1 min-w-0">
+                        <div class="flex items-center justify-between">
+                            <!-- ★ group-hover:text-amber-700 を動的変数に置き換え -->
+                            <h3 class="text-base font-serif-title font-bold text-stone-800 ${currentHover.text} transition-colors">${year}年 ${parseInt(month, 10)}月</h3>
+                            <!-- ★ group-hover:text-amber-600 を動的変数に置き換え -->
+                            <i class="fa-solid fa-chevron-right text-xs text-stone-300 ${currentHover.icon} transition-colors"></i>
+                        </div>
+                        <p class="text-xs text-stone-400 mt-1">${entries.length} 件の思い出</p>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
         }
-        window.renderBreadcrumbs = renderBreadcrumbs;
+        window.renderMonthFolders = renderMonthFolders;
 
         function renderGalleryView() {
             const titleEl = document.getElementById('galleryTitle');
