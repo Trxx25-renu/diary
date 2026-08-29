@@ -124,7 +124,7 @@
         const configRef = doc(db, 'artifacts', appId, 'public', 'data', 'config', 'settings');
         const configSnap = await getDoc(configRef);
         
-if (configSnap.exists()) {
+        if (configSnap.exists()) {
             const loadedConfig = configSnap.data();
             console.log("⚙️ Firestoreから設定を取得しました:", loadedConfig);
             
@@ -1952,7 +1952,7 @@ function handleImageSelect(event) {
     import { getFirestore, collection, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
     import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js";
 
-    const appId = typeof __app_id !== 'undefined' ? __app_id : 'photo-journal-app';
+    const appId = 'photo-journal-app';
     window.appId = appId;
 
     // 初期サンプルデータ
