@@ -90,13 +90,12 @@
             opacity: 0.3;
         }
     </style>
-
-    <script>
-
-document.addEventListener("DOMContentLoaded", async () => {
-    console.log("🚀 初期化処理を開始します...");
-
-    try {
+    
+    <script type="module">
+    document.addEventListener("DOMContentLoaded", async () => {
+        console.log("🚀 初期化処理を開始します...");
+        
+        try {
         if (typeof window.appId === 'undefined' || !window.appId) {
             window.appId = "default-app-id"; 
         }
