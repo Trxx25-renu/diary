@@ -128,6 +128,17 @@
                 }
             };
         }
+        // 3. 確認ダイアログを表示する関数（削除エラー防止用）
+        if (typeof showConfirm !== 'function') {
+            window.showConfirm = function(message, onConfirm) {
+                // ブラウザ標準の確認ダイアログを安全にフォールバックとして使用
+                if (window.confirm(message)) {
+                    if (typeof onConfirm === 'function') {
+                        onConfirm();
+                    }
+                }
+            };
+        }
         
         try {
         if (typeof window.appId === 'undefined' || !window.appId) {
