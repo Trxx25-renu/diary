@@ -495,8 +495,13 @@ window.applySiteConfig = function() {
     }
     window.renderWeatherSelectOptions = renderWeatherSelectOptions;
 
-   function navigateTo(view, param = null) {
+  function navigateTo(view, param = null) {
         window.currentView = view;
+        
+        // ★ 選択された年月（param）があれば、グローバル変数に保存する
+        if (param) {
+            window.selectedYearMonth = param;
+        }
         
         const viewMonths = document.getElementById('view-months');
         const viewGallery = document.getElementById('view-gallery');
