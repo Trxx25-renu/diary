@@ -101,35 +101,10 @@
                 hoverPrimary: 'hover:bg-amber-700',
                 borderPrimary: 'border-amber-200',
                 badgeText: 'text-amber-800',
-                // ▼ 切替ボタン用の設定を追加
-                activeBg: 'bg-amber-600 text-white shadow-sm',
+                activeBg: 'bg-amber-600 text-white shadow-sm', // ←ここがテーマの色になっているか
                 inactiveBg: 'text-amber-700 hover:bg-amber-100/60',
                 toggleContainer: 'bg-amber-100/60',
                 backBtn: 'bg-amber-50 text-amber-700 hover:text-amber-800 border-amber-200/60'
-            },
-            emerald: {
-                bgLight: 'bg-emerald-50',
-                textPrimary: 'text-emerald-700',
-                bgPrimary: 'emerald-600',
-                hoverPrimary: 'hover:bg-emerald-700',
-                borderPrimary: 'border-emerald-200',
-                badgeText: 'text-emerald-800',
-                activeBg: 'bg-emerald-600 text-white shadow-sm',
-                inactiveBg: 'text-emerald-700 hover:bg-emerald-100/60',
-                toggleContainer: 'bg-emerald-100/60',
-                backBtn: 'bg-emerald-50 text-emerald-700 hover:text-emerald-800 border-emerald-200/60'
-            },
-            indigo: {
-                bgLight: 'bg-indigo-50',
-                textPrimary: 'text-indigo-700',
-                bgPrimary: 'bg-indigo-600',
-                hoverPrimary: 'hover:bg-indigo-700',
-                borderPrimary: 'border-indigo-200',
-                badgeText: 'text-indigo-800',
-                activeBg: 'bg-indigo-600 text-white shadow-sm',
-                inactiveBg: 'text-indigo-700 hover:bg-indigo-100/60',
-                toggleContainer: 'bg-indigo-100/60',
-                backBtn: 'bg-indigo-50 text-indigo-700 hover:text-indigo-800 border-indigo-200/60'
             },
             rose: {
                 bgLight: 'bg-rose-50',
@@ -138,10 +113,34 @@
                 hoverPrimary: 'hover:bg-rose-700',
                 borderPrimary: 'border-rose-200',
                 badgeText: 'text-rose-800',
-                activeBg: 'bg-rose-600 text-white shadow-sm',
+                activeBg: 'bg-rose-600 text-white shadow-sm', // ローズなら rose-600
                 inactiveBg: 'text-rose-700 hover:bg-rose-100/60',
                 toggleContainer: 'bg-rose-100/60',
                 backBtn: 'bg-rose-50 text-rose-700 hover:text-rose-800 border-rose-200/60'
+            },
+            indigo: {
+                bgLight: 'bg-indigo-50',
+                textPrimary: 'text-indigo-700',
+                bgPrimary: 'bg-indigo-600',
+                hoverPrimary: 'hover:bg-indigo-700',
+                borderPrimary: 'border-indigo-200',
+                badgeText: 'text-indigo-800',
+                activeBg: 'bg-indigo-600 text-white shadow-sm', // インディゴなら indigo-600
+                inactiveBg: 'text-indigo-700 hover:bg-indigo-100/60',
+                toggleContainer: 'bg-indigo-100/60',
+                backBtn: 'bg-indigo-50 text-indigo-700 hover:text-indigo-800 border-indigo-200/60'
+            },
+            emerald: {
+                bgLight: 'bg-emerald-50',
+                textPrimary: 'text-emerald-700',
+                bgPrimary: 'bg-emerald-600',
+                hoverPrimary: 'hover:bg-emerald-700',
+                borderPrimary: 'border-emerald-200',
+                badgeText: 'text-emerald-800',
+                activeBg: 'bg-emerald-600 text-white shadow-sm',
+                inactiveBg: 'text-emerald-700 hover:bg-emerald-100/60',
+                toggleContainer: 'bg-emerald-100/60',
+                backBtn: 'bg-emerald-50 text-emerald-700 hover:text-emerald-800 border-emerald-200/60'
             },
             stone: {
                 bgLight: 'bg-stone-100',
@@ -150,13 +149,13 @@
                 hoverPrimary: 'hover:bg-stone-900',
                 borderPrimary: 'border-stone-300',
                 badgeText: 'text-stone-900',
-                activeBg: 'bg-stone-800 text-white shadow-sm',
+                activeBg: 'bg-stone-800 text-white shadow-sm', // stoneのときだけグレー
                 inactiveBg: 'text-stone-700 hover:bg-stone-200/60',
                 toggleContainer: 'bg-stone-200/60',
                 backBtn: 'bg-stone-100 text-stone-700 hover:text-stone-800 border-stone-200/60'
             }
         };
-
+        
         function showToast(message, type = 'info') {
             const toast = document.getElementById('toastNotification');
             const toastMsg = document.getElementById('toastMessage');
@@ -411,7 +410,6 @@ function getCircledNumber(num) {
 
             const colorClass = themeClasses[theme] || themeClasses['amber'];
 
-            // 影（shadow）や余計なエフェクトを一切入れず、すっきりした丸バッジにする
             return `<span class="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] sm:text-xs font-bold ${colorClass} rounded-full ml-1">${num}</span>`;
         }
         window.getCircledNumber = getCircledNumber;
@@ -1417,12 +1415,11 @@ function getCircledNumber(num) {
                 <div class="flex items-center gap-2 flex-wrap">
                     
                     <!-- 表示モード切替ボタン -->
-                    <div class="theme-toggle-container bg-stone-200/60 p-1 rounded-xl flex items-center gap-1">
-                        <!-- カレンダーボタン（アクティブ時はテーマカラーになる） -->
-                        <button id="viewModeCalBtn" onclick="setGalleryViewMode('calendar')" class="theme-active-btn px-3 py-1.5 rounded-lg text-xs font-medium shadow-sm transition-all flex items-center gap-1">
+                    <div class="theme-toggle-container p-1 rounded-xl flex items-center gap-1">
+                        <button id="viewModeCalBtn" onclick="setGalleryViewMode('calendar')" class="px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1">
                             <i class="fa-regular fa-calendar-days text-[11px]"></i> カレンダー
                         </button>
-                        <button id="viewModeGridBtn" onclick="setGalleryViewMode('grid')" class="px-3 py-1.5 rounded-lg text-xs font-medium text-stone-600 hover:bg-stone-100 transition-all flex items-center gap-1">
+                        <button id="viewModeGridBtn" onclick="setGalleryViewMode('grid')" class="px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1">
                             <i class="fa-solid fa-border-all text-[11px]"></i> 一覧
                         </button>
                     </div>
