@@ -1396,7 +1396,7 @@ function getCircledNumber(num) {
                 <div class="flex items-center gap-2 flex-wrap">
                     
                     <!-- 表示モード切替ボタン -->
-                    <div class="bg-stone-200/60 p-1 rounded-xl flex items-center gap-1">
+                    <div class="theme-toggle-container bg-stone-200/60 p-1 rounded-xl flex items-center gap-1">
                         <!-- カレンダーボタン（アクティブ時はテーマカラーになる） -->
                         <button id="viewModeCalBtn" onclick="setGalleryViewMode('calendar')" class="theme-active-btn px-3 py-1.5 rounded-lg text-xs font-medium shadow-sm transition-all flex items-center gap-1">
                             <i class="fa-regular fa-calendar-days text-[11px]"></i> カレンダー
@@ -1760,6 +1760,12 @@ function applyCurrentThemeToUI() {
             const theme = (window.siteConfig && window.siteConfig.themeColor) || 'amber';
             const current = themes[theme] || themes['amber'];
 
+            // ★0. 切替ボタンの外側コンテナの色をテーマに連動
+            document.querySelectorAll('.theme-toggle-container').forEach(el => {
+                el.className = el.className.replace(/bg-\w+-\d+\/\d+/g, '').trim();
+                el.classList.add(...current.toggleContainer.split(' '));
+            });
+
             // 1. カレンダー / グリッドの表示切替ボタンをテーマ色に連動
             const btnCal = document.getElementById('viewModeCalBtn');
             const btnGrid = document.getElementById('viewModeGridBtn');
@@ -1779,8 +1785,7 @@ function applyCurrentThemeToUI() {
                 btn.className = `theme-back-btn text-xs font-medium flex items-center gap-1 px-3 py-1.5 rounded-xl border transition-colors ${current.backBtn}`;
             });
         }
-        window.applyCurrentThemeToUI = applyCurrentThemeToUI;
-            
+        window.applyCurrentThemeToUI = applyCurrentThemeToUI;            
 
             const entriesRef = collection(db, 'artifacts', appId, 'public', 'data', 'entries');
             const querySnap = await getDocs(entriesRef);
