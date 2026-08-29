@@ -371,10 +371,12 @@ window.applySiteConfig = function() {
         }
         window.closeConfirmModal = closeConfirmModal;
 
-        // 設定を画面（タイトル・アイコン・テーマカラー等）に一括反映させる関数
+       // 設定を画面（タイトル・アイコン・テーマカラー等）に一括反映させる関数
         function applySiteConfig() {
             const config = window.siteConfig;
             if (!config) return;
+
+            console.log("🎨 applySiteConfig を実行中...", config);
 
             // 1. タイトル・サブタイトルの反映
             const headerTitle = document.getElementById('siteHeaderTitle');
@@ -397,7 +399,6 @@ window.applySiteConfig = function() {
             const logoImgEl = document.getElementById('siteHeaderLogoImg');
 
             if (config.logoImageUrl && config.logoImageUrl.trim() !== '') {
-                // 画像が設定されている場合
                 if (logoTextEl) logoTextEl.classList.add('hidden');
                 if (logoImgEl) {
                     logoImgEl.src = config.logoImageUrl;
@@ -406,7 +407,6 @@ window.applySiteConfig = function() {
                 if (appleIcon) appleIcon.href = config.logoImageUrl;
                 if (favicon) favicon.href = config.logoImageUrl;
             } else {
-                // 文字ロゴの場合
                 if (logoImgEl) logoImgEl.classList.add('hidden');
                 if (logoTextEl) {
                     logoTextEl.textContent = config.logoChar || 'P';
@@ -426,16 +426,16 @@ window.applySiteConfig = function() {
                 writeBtn.className = `${window.isAdmin ? 'flex' : 'hidden'} px-3.5 py-1.5 rounded-xl text-xs font-medium text-white ${theme.bgPrimary} ${theme.hoverPrimary} transition-colors shadow-sm items-center gap-1.5`;
             }
 
-            // 天気フィルター等の再描画
             if (typeof renderWeatherFilterButtons === 'function') renderWeatherFilterButtons();
             if (typeof renderWeatherSelectOptions === 'function') renderWeatherSelectOptions();
         }
         window.applySiteConfig = applySiteConfig;
-        
-        function renderWeatherFilterButtons() {
-            const container = document.getElementById('weatherFilterContainer');
-            if (!container) return;
 
+        // ★もしすでに siteConfig がロード済みなら、この定義の瞬間に強制実行する
+        if (window.siteConfig) {
+            applySiteConfig();
+        }
+        
             const config = window.siteConfig;
             const options = config.weatherOptions || [];
             const theme = THEME_CLASSES[config.themeColor] || THEME_CLASSES.amber;
