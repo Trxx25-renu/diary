@@ -1139,6 +1139,7 @@ function getCircledNumber(num) {
         function updateAdminUI() {
             const statusText = document.getElementById('authLockStatus');
             const icon = document.getElementById('authLockIcon');
+            const shareBtn = document.getElementById('shareBtn');     // 🌟 追加
             const newPostBtn = document.getElementById('newPostBtn');
             const configBtn = document.getElementById('siteConfigBtn');
             const deleteBtn = document.getElementById('deleteBtn');
@@ -1146,6 +1147,8 @@ function getCircledNumber(num) {
             if (window.isAdmin) {
                 if (statusText) statusText.textContent = 'ログアウト';
                 if (icon) icon.className = 'fa-solid fa-lock-open text-stone-600';
+                
+                if (shareBtn) shareBtn.classList.remove('hidden');     // 🌟 ログイン時は表示
                 if (newPostBtn) {
                     newPostBtn.classList.remove('hidden');
                     newPostBtn.classList.add('flex');
@@ -1155,6 +1158,8 @@ function getCircledNumber(num) {
             } else {
                 if (statusText) statusText.textContent = 'ログイン';
                 if (icon) icon.className = 'fa-solid fa-lock text-stone-600';
+                
+                if (shareBtn) shareBtn.classList.add('hidden');       // 🌟 非ログイン時は非表示
                 if (newPostBtn) {
                     newPostBtn.classList.add('hidden');
                     newPostBtn.classList.remove('flex');
@@ -1571,26 +1576,27 @@ function handleImageSelect(event) {
 
             <!-- アクションボタン領域 -->
             <div class="flex items-center gap-2">
-                <button onclick="sharePublicUrl()" class="px-3 py-1.5 rounded-lg text-xs font-medium text-stone-600 bg-stone-100 hover:bg-stone-200 transition-colors flex items-center gap-1.5" title="URL共有">
+                <!-- 1. 共有ボタン -->
+                <button id="shareBtn" onclick="sharePublicUrl()" class="hidden px-3 py-1.5 rounded-lg text-xs font-medium text-stone-600 bg-stone-100 hover:bg-stone-200 transition-colors flex items-center gap-1.5" title="URL共有">
                     <i class="fa-solid fa-share-nodes text-stone-400"></i>
                     <span class="hidden sm:inline">共有</span>
                 </button>
 
-                <!-- 🌟 【ここに新規投稿ボタンを追加！】 -->
-                <button id="newPostBtn" onclick="openPostModal()" class="hidden px-3.5 py-1.5 rounded-xl text-xs font-medium text-white bg-stone-600 hover:bg-stone-700 transition-colors shadow-sm items-center gap-1.5">
-                    <i class="fa-solid fa-plus"></i>
-                    <span>日記を書く</span>
-                </button>
-
-                <!-- サイトカスタマイズボタン（管理者専用） -->
+                <!-- 2. サイト設定ボタン -->
                 <button id="siteConfigBtn" onclick="openConfigModal()" class="hidden px-2.5 py-1.5 rounded-lg text-xs font-medium text-stone-700 bg-stone-100 hover:bg-stone-200 transition-colors flex items-center gap-1" title="ホームページの大枠設定">
                     <i class="fa-solid fa-gear text-stone-500"></i>
                     <span class="hidden sm:inline">サイト設定</span>
                 </button>
 
-                <!-- 管理者ログイン制御 -->
+                <!-- 3. 管理者ログイン制御（鍵アイコン） -->
                 <button id="adminTrigger" onclick="triggerAdminAccess()" class="p-2 text-stone-400 hover:text-stone-600 transition-colors rounded-lg text-xs" title="管理者ログイン">
                     <i id="authLockIcon" class="fa-solid fa-lock text-stone-400"></i>
+                </button>
+
+                <!-- 🌟 4. 【一番右に移動】新規投稿ボタン -->
+                <button id="newPostBtn" onclick="openPostModal()" class="hidden px-3.5 py-1.5 rounded-xl text-xs font-medium text-white bg-stone-600 hover:bg-stone-700 transition-colors shadow-sm items-center gap-1.5">
+                    <i class="fa-solid fa-plus"></i>
+                    <span>日記を書く</span>
                 </button>
            </div>
         </div>
