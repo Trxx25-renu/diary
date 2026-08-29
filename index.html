@@ -704,18 +704,33 @@ function getCircledNumber(num) {
         } else if (view === 'detail') {
             if (viewDetail) viewDetail.classList.remove('hidden');
             
-            // 👇 追加：詳細画面を開くときに、該当する記事データを探して画面にセットする
             const entryId = param;
             const entry = (window.entries || []).find(e => e.id === entryId);
             if (entry) {
-                // もし元々詳細を描画する専用関数があればそれを呼ぶ、なければDOMに直接セット
+                // グローバル変数にも保存しておく（他の関数で使う用）
+                window.selectedEntryId = entryId;
+
+                // 1. 画像を表示する（複数の代表的なIDに対応）
+                const imgEl = document.getElementById('detailImage') || document.getElementById('entryDetailImage');
+                if (imgEl) {
+                    imgEl.src = entry.imageUrl || '';
+                }
+
+                // 2. 日付を表示する
+                const dateEl = document.getElementById('detailDate') || document.getElementById('entryDetailDate');
+                if (dateEl) {
+                    dateEl.textContent = entry.date || '';
+                }
+
+                // 3. 本文・内容を表示する
+                const contentEl = document.getElementById('detailContent') || document.getElementById('entryDetailContent');
+                if (contentEl) {
+                    contentEl.textContent = entry.content || '';
+                }
+
+                // 4. もし元々詳細を描画する専用の関数があればそれを呼ぶ
                 if (typeof renderDetailView === 'function') {
                     renderDetailView(entry);
-                } else {
-                    const imgEl = document.getElementById('detailImage');
-                    const contentEl = document.getElementById('detailContent');
-                    if (imgEl) imgEl.src = entry.imageUrl || '';
-                    if (contentEl) contentEl.textContent = entry.content || '';
                 }
             }
         }
