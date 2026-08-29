@@ -325,10 +325,10 @@
             }
 
             if (calBtn && gridBtn) {
-                // 選択中：選んだテーマの濃い背景 ＋ 白文字
-                const activeClass = `${theme.bgPrimary} text-white font-semibold shadow-sm`;
+                // 選択中：選んだテーマの濃い背景 ＋ 強制的に白文字（!text-white）
+                const activeClass = `${theme.bgPrimary} !text-white font-semibold shadow-sm`;
                 
-                // 未選択：背景なし ＋ はっきりした濃い文字（text-stone-900 でくっきりさせます）
+                // 未選択：背景なし ＋ はっきりした濃い文字
                 const inactiveClass = 'text-stone-900 hover:text-black bg-transparent shadow-none font-medium';
 
                 if (mode === 'calendar') {
