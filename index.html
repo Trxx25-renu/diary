@@ -73,6 +73,101 @@
     </style>
 
     <script>
+
+document.addEventListener("DOMContentLoaded", async () => {
+    console.log("🚀 初期化処理を開始します...");
+
+    try {
+        // window.appId がない場合のフォールバック
+        if (typeof window.appId === 'undefined' || !window.appId) {
+            window.appId = "default-app-id"; 
+        }
+        const appId = window.appId;
+        console.log("📂 使用する appId:", appId);
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyA2ctX9sUpJmLSVJomU9cbMzrUX_AXNjuE",
+            authDomain: "diary-36d77.firebaseapp.com",
+            projectId: "diary-36d77",
+            storageBucket: "diary-36d77.firebasestorage.app",
+            messagingSenderId: "1060563209082",
+            appId: "1:1060563209082:web:1c6cfc21a496548309e4c3",
+            measurementId: "G-RBK7ZN6NF1"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        window.db = db;
+
+        await signInAnonymously(auth);
+        console.log("🔑 匿名認証に成功しました");
+
+        // 1. 設定の読み込み試行
+        const configRef = doc(db, 'artifacts', appId, 'public', 'data', 'config', 'settings');
+        const configSnap = await getDoc(configRef);
+        
+        if (configSnap.exists()) {
+            console.settingsLoaded = true;
+            const loadedConfig = configSnap.data();
+            console.log("⚙️ Firestoreから設定を取得しました:", loadedConfig);
+            
+            if (loadedConfig.passcode) window.storedPasscode = loadedConfig.passcode;
+
+            window.siteConfig = {
+                title: loadedConfig.title || '日々の写真日記',
+                subtitle: loadedConfig.subtitle || 'Photo & Daily Log',
+                logoChar: loadedConfig.logoChar || 'P',
+                logoImageUrl: loadedConfig.logoImageUrl || '',
+                themeColor: loadedConfig.themeColor || 'rose',
+                weatherOptions: loadedConfig.weatherOptions || ['晴れ ☀️', '快晴 🌤️', 'くもり ☁️', '雨 ☔', '雪 ❄️']
+            };
+        } else {
+            console.warn("⚠️ Firestoreに設定ドキュメントが見つかりませんでした（初期状態です）。");
+            window.siteConfig = {
+                title: '日々の写真日記',
+                subtitle: 'Photo & Daily Log',
+                logoChar: 'P',
+                logoImageUrl: '',
+                themeColor: 'rose',
+                weatherOptions: ['晴れ ☀️', '快晴 🌤️', 'くもり ☁️', '雨 ☔', '雪 ❄️']
+            };
+        }
+
+        // 2. 記事の読み込み試行
+        const entriesRef = collection(db, 'artifacts', appId, 'public', 'data', 'entries');
+        const querySnap = await getDocs(entriesRef);
+        const loaded = [];
+        querySnap.forEach(d => {
+            loaded.push({ id: d.id, ...d.data() });
+        });
+
+        console.log("📖 読み込んだ記事の数:", loaded.length);
+        if (loaded.length > 0) {
+            loaded.sort((a, b) => b.date.localeCompare(a.date));
+            window.entries = loaded;
+        } else {
+            window.entries = [];
+        }
+
+    } catch (e) {
+        console.error("❌ 初期化処理でエラーが発生しました:", e);
+    }
+
+    // UIの適用と画面描画
+    if (typeof window.applySiteConfig === 'function') {
+        window.applySiteConfig();
+    }
+
+    if (typeof window.navigateTo === 'function') {
+        window.navigateTo('months');
+    }
+
+    if (typeof window.applyCurrentThemeToUI === 'function') {
+        window.applyCurrentThemeToUI();
+    }
+});
+        
         window.entries = [];
         window.currentView = 'months'; // 'months' | 'gallery' | 'detail'
         window.selectedYearMonth = null;
@@ -1832,101 +1927,6 @@ function handleImageSelect(event) {
 
     window.entries = sampleEntries;
 
-document.addEventListener("DOMContentLoaded", async () => {
-    console.log("🚀 初期化処理を開始します...");
-
-    try {
-        // window.appId がない場合のフォールバック
-        if (typeof window.appId === 'undefined' || !window.appId) {
-            window.appId = "default-app-id"; 
-        }
-        const appId = window.appId;
-        console.log("📂 使用する appId:", appId);
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyA2ctX9sUpJmLSVJomU9cbMzrUX_AXNjuE",
-            authDomain: "diary-36d77.firebaseapp.com",
-            projectId: "diary-36d77",
-            storageBucket: "diary-36d77.firebasestorage.app",
-            messagingSenderId: "1060563209082",
-            appId: "1:1060563209082:web:1c6cfc21a496548309e4c3",
-            measurementId: "G-RBK7ZN6NF1"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-        window.db = db;
-
-        await signInAnonymously(auth);
-        console.log("🔑 匿名認証に成功しました");
-
-        // 1. 設定の読み込み試行
-        const configRef = doc(db, 'artifacts', appId, 'public', 'data', 'config', 'settings');
-        const configSnap = await getDoc(configRef);
-        
-        if (configSnap.exists()) {
-            console.settingsLoaded = true;
-            const loadedConfig = configSnap.data();
-            console.log("⚙️ Firestoreから設定を取得しました:", loadedConfig);
-            
-            if (loadedConfig.passcode) window.storedPasscode = loadedConfig.passcode;
-
-            window.siteConfig = {
-                title: loadedConfig.title || '日々の写真日記',
-                subtitle: loadedConfig.subtitle || 'Photo & Daily Log',
-                logoChar: loadedConfig.logoChar || 'P',
-                logoImageUrl: loadedConfig.logoImageUrl || '',
-                themeColor: loadedConfig.themeColor || 'rose',
-                weatherOptions: loadedConfig.weatherOptions || ['晴れ ☀️', '快晴 🌤️', 'くもり ☁️', '雨 ☔', '雪 ❄️']
-            };
-        } else {
-            console.warn("⚠️ Firestoreに設定ドキュメントが見つかりませんでした（初期状態です）。");
-            window.siteConfig = {
-                title: '日々の写真日記',
-                subtitle: 'Photo & Daily Log',
-                logoChar: 'P',
-                logoImageUrl: '',
-                themeColor: 'rose',
-                weatherOptions: ['晴れ ☀️', '快晴 🌤️', 'くもり ☁️', '雨 ☔', '雪 ❄️']
-            };
-        }
-
-        // 2. 記事の読み込み試行
-        const entriesRef = collection(db, 'artifacts', appId, 'public', 'data', 'entries');
-        const querySnap = await getDocs(entriesRef);
-        const loaded = [];
-        querySnap.forEach(d => {
-            loaded.push({ id: d.id, ...d.data() });
-        });
-
-        console.log("📖 読み込んだ記事の数:", loaded.length);
-        if (loaded.length > 0) {
-            loaded.sort((a, b) => b.date.localeCompare(a.date));
-            window.entries = loaded;
-        } else {
-            window.entries = [];
-        }
-
-    } catch (e) {
-        console.error("❌ 初期化処理でエラーが発生しました:", e);
-    }
-
-    // UIの適用と画面描画
-    if (typeof window.applySiteConfig === 'function') {
-        window.applySiteConfig();
-    }
-
-    if (typeof window.navigateTo === 'function') {
-        window.navigateTo('months');
-    }
-
-    if (typeof window.applyCurrentThemeToUI === 'function') {
-        window.applyCurrentThemeToUI();
-    }
-});
-
-    // 確実にFirestoreから設定を読み込む関数
     // 確実にFirestoreから設定を読み込む関数
     async function loadConfigFromFirestore() {
         // ★ 最初からデフォルト（ローズ）の土台を設定しておく
