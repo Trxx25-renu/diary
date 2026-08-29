@@ -108,26 +108,7 @@
                     setTimeout(() => { toastEl.style.display = 'none'; }, 3000);
                 }
             };
-        }
-
-        // 2. 投稿モーダルを開く関数（新規作成・編集共通）
-        if (typeof openPostModal !== 'function') {
-            window.openPostModal = function(postId = null) {
-                console.log("📝 openPostModal が呼ばれました。ID:", postId);
-                const modal = document.getElementById('postModal'); // モーダルのIDに合わせて調整
-                if (modal) {
-                    modal.classList.remove('hidden');
-                    modal.style.display = 'block';
-                } else {
-                    console.error("投稿モーダルの要素が見つかりません。");
-                }
-                
-                // もし編集IDが渡されている場合の処理
-                if (postId && typeof loadPostForEdit === 'function') {
-                    loadPostForEdit(postId);
-                }
-            };
-        }
+        }             
         // 3. 確認ダイアログを表示する関数（削除エラー防止用）
         if (typeof showConfirm !== 'function') {
             window.showConfirm = function(message, onConfirm) {
@@ -1600,13 +1581,7 @@ function handleImageSelect(event) {
                 <button id="adminTrigger" onclick="triggerAdminAccess()" class="p-2 text-stone-400 hover:text-stone-600 transition-colors rounded-lg text-xs" title="管理者ログイン">
                     <i id="authLockIcon" class="fa-solid fa-lock text-stone-400"></i>
                 </button>
-
-                <!-- 新規投稿ボタン -->
-                <button id="newPostBtn" onclick="openPostModal()" class="hidden px-3.5 py-1.5 rounded-xl text-xs font-medium text-white bg-stone-600 hover:bg-stone-700 transition-colors shadow-sm items-center gap-1.5">
-                    <i class="fa-solid fa-plus"></i>
-                    <span>日記を書く</span>
-                </button>
-            </div>
+           </div>
         </div>
     </header>
 
