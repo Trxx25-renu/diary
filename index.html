@@ -449,7 +449,7 @@ window.applySiteConfig = function() {
             }
         }
             
-         // フィルター等の再描画
+        // フィルター等の再描画
         if (typeof renderWeatherFilterButtons === 'function') renderWeatherFilterButtons();
         if (typeof renderWeatherSelectOptions === 'function') renderWeatherSelectOptions();
 
@@ -480,6 +480,9 @@ window.applySiteConfig = function() {
         }
     }
     window.applySiteConfig = applySiteConfig;
+
+    // 🌟 これが描画のタイミングでも動くように、renderGalleryView の最後にも同じロジックを呼び出すか配置します
+    // ※もし renderGalleryView 内でスイッチの色を更新したい場合は、renderGalleryView の中にも同様の処理が必要です
     
     function renderWeatherFilterButtons() {
         const container = document.getElementById('weatherFilterContainer');
