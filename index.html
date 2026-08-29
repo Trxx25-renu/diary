@@ -1181,7 +1181,8 @@ function getCircledNumber(num) {
     }
 }
 window.openEditModalFromDetail = openEditModalFromDetail;
-        function handleImageSelect(event) {
+        
+function handleImageSelect(event) {
             const file = event.target.files[0];
             if (!file) return;
 
@@ -1228,7 +1229,6 @@ window.openEditModalFromDetail = openEditModalFromDetail;
         }
         window.handleImageSelect = handleImageSelect;
 
-       // 【追加】投稿・編集モーダルを閉じる関数（エラー防止用）
         function closePostModal() {
             const modal = document.getElementById('postModal');
             if (modal) {
@@ -1240,7 +1240,6 @@ window.openEditModalFromDetail = openEditModalFromDetail;
                 }
             }
             
-            // 編集から新規投稿へ戻す際のためにタイトルを初期値に戻す
             const modalTitleEl = document.getElementById('postModalTitle');
             if (modalTitleEl) modalTitleEl.textContent = '新しく日記を書く';
         } 
@@ -1255,7 +1254,7 @@ window.openEditModalFromDetail = openEditModalFromDetail;
             }
 
             const date = document.getElementById('inputDate').value;
-            const scenarioTitle = document.getElementById('inputScenarioTitle')?.value || ''; // ★ここでシナリオタイトルを取得
+            const scenarioTitle = document.getElementById('inputScenarioTitle')?.value || '';
             const weather = document.getElementById('inputWeather').value;
             const content = document.getElementById('inputContent').value;
             const secretContent = document.getElementById('inputSecretContent')?.value || '';
@@ -1271,15 +1270,12 @@ window.openEditModalFromDetail = openEditModalFromDetail;
                 saveBtn.textContent = '保存中...';
             }
 
-            // 編集モードか新規作成モードかでIDとデータを切り替え
             let targetId = window.editingEntryId;
             let entryData;
 
             if (targetId) {
-                // 【編集モード】既存のインデックスとIDを探す
                 const index = (window.entries || []).findIndex(e => e.id === targetId);
                 if (index !== -1) {
-                    // 既存のデータをベースに更新
                     window.entries[index] = {
                         ...window.entries[index],
                         date: date,
@@ -1294,7 +1290,6 @@ window.openEditModalFromDetail = openEditModalFromDetail;
                 }
             }
 
-            // もし編集対象が見つからなかった、または新規作成モードの場合
             if (!entryData) {
                 targetId = `${date}_${Date.now()}`;
                 entryData = {
@@ -1315,7 +1310,6 @@ window.openEditModalFromDetail = openEditModalFromDetail;
             try {
                 if (window.db) {
                     const { doc, setDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
-                    // 編集であっても新規であっても、targetIdのドキュメントを保存（上書き）
                     const docRef = doc(window.db, 'artifacts', window.appId, 'public', 'data', 'entries', targetId);
                     await setDoc(docRef, entryData);
                 }
@@ -1324,83 +1318,81 @@ window.openEditModalFromDetail = openEditModalFromDetail;
                 const ym = date.substring(0, 7);
                 navigateTo('gallery', ym);
                 
-                // 編集か新規かでメッセージを切り替えると親切です
-            const successMsg = window.editingEntryId ? '日記を更新しました！' : '日記を保存しました！';
-            showToast(successMsg, 'success');
-            
-            // 編集IDを使い終わったらリセット
-            window.editingEntryId = null;
+                const successMsg = window.editingEntryId ? '日記を更新しました！' : '日記を保存しました！';
+                showToast(successMsg, 'success');
+                
+                window.editingEntryId = null;
 
-        } catch (err) {
-            console.error("Save error:", err);
-            showToast('保存に失敗しました。', 'error');
-        } finally {
-            if (saveBtn) {
-                saveBtn.disabled = false;
-                saveBtn.textContent = '保存する';
-            }
-        }
-    } // ← ここで handleSaveEntry 関数を閉じるカッコが不足していました！
-    window.handleSaveEntry = handleSaveEntry;
-
-    async function deleteCurrentEntry() {
-        if (!window.selectedEntryId || !window.isAdmin) return;
-
-        showConfirm('日記の削除', 'この日記を削除してもよろしいですか？', async () => {
-            try {
-                if (window.db) {
-                    const { doc, deleteDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
-                    const docRef = doc(window.db, 'artifacts', window.appId, 'public', 'data', 'entries', window.selectedEntryId);
-                    await deleteDoc(docRef);
-                }
-                window.entries = window.entries.filter(e => e.id !== window.selectedEntryId);
-                navigateTo('gallery', window.selectedYearMonth);
-                showToast('日記を削除しました', 'info');
             } catch (err) {
-                console.error("Delete error:", err);
-                showToast('削除に失敗しました。', 'error');
+                console.error("Save error:", err);
+                showToast('保存に失敗しました。', 'error');
+            } finally {
+                if (saveBtn) {
+                    saveBtn.disabled = false;
+                    saveBtn.textContent = '保存する';
+                }
             }
-        });
-    }
-    window.deleteCurrentEntry = deleteCurrentEntry;
-
-    function sharePublicUrl() {
-        const cleanUrl = window.location.origin + window.location.pathname;
-
-        if (navigator.share) {
-            navigator.share({
-                title: window.siteConfig.title,
-                text: window.siteConfig.subtitle,
-                url: cleanUrl
-            }).catch(() => {});
-        } else {
-            const dummy = document.createElement('input');
-            document.body.appendChild(dummy);
-            dummy.value = cleanUrl;
-            dummy.select();
-            document.execCommand('copy');
-            document.body.removeChild(dummy);
-            showToast('閲覧専用のURLをコピーしました！', 'success');
         }
-    }
-    window.sharePublicUrl = sharePublicUrl;
+        window.handleSaveEntry = handleSaveEntry;
 
-    function escapeHtml(str) {
-        if (!str) return '';
-        return str
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#039;");
-    }
-    window.escapeHtml = escapeHtml;
+        async function deleteCurrentEntry() {
+            if (!window.selectedEntryId || !window.isAdmin) return;
 
-    function triggerAdminAccess() {
-        openAuthModal();
-    }
-    window.triggerAdminAccess = triggerAdminAccess;
-</script>
+            showConfirm('日記の削除', 'この日記を削除してもよろしいですか？', async () => {
+                try {
+                    if (window.db) {
+                        const { doc, deleteDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
+                        const docRef = doc(window.db, 'artifacts', window.appId, 'public', 'data', 'entries', window.selectedEntryId);
+                        await deleteDoc(docRef);
+                    }
+                    window.entries = window.entries.filter(e => e.id !== window.selectedEntryId);
+                    navigateTo('gallery', window.selectedYearMonth);
+                    showToast('日記を削除しました', 'info');
+                } catch (err) {
+                    console.error("Delete error:", err);
+                    showToast('削除に失敗しました。', 'error');
+                }
+            });
+        }
+        window.deleteCurrentEntry = deleteCurrentEntry;
+
+        function sharePublicUrl() {
+            const cleanUrl = window.location.origin + window.location.pathname;
+
+            if (navigator.share) {
+                navigator.share({
+                    title: window.siteConfig.title,
+                    text: window.siteConfig.subtitle,
+                    url: cleanUrl
+                }).catch(() => {});
+            } else {
+                const dummy = document.createElement('input');
+                document.body.appendChild(dummy);
+                dummy.value = cleanUrl;
+                dummy.select();
+                document.execCommand('copy');
+                document.body.removeChild(dummy);
+                showToast('閲覧専用のURLをコピーしました！', 'success');
+            }
+        }
+        window.sharePublicUrl = sharePublicUrl;
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+        window.escapeHtml = escapeHtml;
+
+        function triggerAdminAccess() {
+            openAuthModal();
+        }
+        window.triggerAdminAccess = triggerAdminAccess;
+    </script>
 </head>
     
 <body class="min-h-screen flex flex-col bg-[#fcfbf9] text-stone-800">
