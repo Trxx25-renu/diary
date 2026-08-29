@@ -693,35 +693,48 @@ function getCircledNumber(num) {
         window.setThumbnailFitMode = setThumbnailFitMode;
 
         // 詳細画面を描画する関数
-        function renderDetailView() {
-            const entry = (window.entries || []).find(e => e.id === window.selectedEntryId);
-            if (!entry) return;
+function renderDetailView() {
+    const entry = (window.entries || []).find(e => e.id === window.selectedEntryId);
+    if (!entry) return;
 
-            const detailImg = document.getElementById('detailImage');
-            if (detailImg) detailImg.src = entry.imageUrl;
+    const detailImg = document.getElementById('detailImage');
+    if (detailImg) detailImg.src = entry.imageUrl;
 
-            const dateObj = new Date(entry.date);
-            const days = ['日', '月', '火', '水', '木', '金', '土'];
-            const dayOfWeek = days[dateObj.getDay()];
-            const formattedDate = `${entry.date.replace(/-/g, '.')} (${dayOfWeek})`;
+    const dateObj = new Date(entry.date);
+    const days = ['日', '月', '火', '水', '木', '金', '土'];
+    const dayOfWeek = days[dateObj.getDay()];
+    const formattedDate = `${entry.date.replace(/-/g, '.')} (${dayOfWeek})`;
 
-            const detailDate = document.getElementById('detailDate');
-            if (detailDate) detailDate.textContent = formattedDate;
-            
-            const detailWeather = document.getElementById('detailWeather');
-            if (detailWeather) detailWeather.textContent = entry.weather || '晴れ ☀️';
+    const detailDate = document.getElementById('detailDate');
+    if (detailDate) detailDate.textContent = formattedDate;
+    
+    const detailWeather = document.getElementById('detailWeather');
+    if (detailWeather) detailWeather.textContent = entry.weather || '晴れ ☀️';
 
-            // ★【修正】シナリオタイトルを画面に反映する処理
-            const detailScenarioTitle = document.getElementById('detailScenarioTitle');
-            if (detailScenarioTitle) {
-                if (entry.scenarioTitle && entry.scenarioTitle.trim() !== '') {
-                    detailScenarioTitle.textContent = entry.scenarioTitle;
-                    detailScenarioTitle.classList.remove('hidden');
-                } else {
-                    detailScenarioTitle.textContent = '';
-                    detailScenarioTitle.classList.add('hidden');
-                }
-            }
+    // シナリオタイトルを画面に反映する処理
+    const detailScenarioTitle = document.getElementById('detailScenarioTitle');
+    if (detailScenarioTitle) {
+        if (entry.scenarioTitle && entry.scenarioTitle.trim() !== '') {
+            detailScenarioTitle.textContent = entry.scenarioTitle;
+            detailScenarioTitle.classList.remove('hidden');
+        } else {
+            detailScenarioTitle.textContent = '';
+            detailScenarioTitle.classList.add('hidden');
+        }
+    }
+
+    // ↓↓↓ ★この真下にそのまま追加する！ ↓↓↓
+    const editBtn = document.getElementById('editEntryBtn');
+    const deleteBtn = document.getElementById('deleteEntryBtn');
+    
+    if (window.isAdmin) {
+        if (editBtn) editBtn.classList.remove('hidden');
+        if (deleteBtn) deleteBtn.classList.remove('hidden');
+    } else {
+        if (editBtn) editBtn.classList.add('hidden');
+        if (deleteBtn) deleteBtn.classList.add('hidden');
+    }
+} // ← ここで関数が閉じる
 
             const detailContent = document.getElementById('detailContent');
             if (detailContent) detailContent.innerHTML = typeof parseSpoilers === 'function' ? parseSpoilers(entry.content) : entry.content;
