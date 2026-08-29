@@ -1214,6 +1214,7 @@ function getCircledNumber(num) {
             }
 
             const date = document.getElementById('inputDate').value;
+            const scenarioTitle = document.getElementById('inputScenarioTitle')?.value || ''; // ★ここでシナリオタイトルを取得
             const weather = document.getElementById('inputWeather').value;
             const content = document.getElementById('inputContent').value;
             const secretContent = document.getElementById('inputSecretContent')?.value || '';
@@ -1235,6 +1236,7 @@ function getCircledNumber(num) {
             const newEntry = {
                 id: uniqueId,
                 date: date,
+                scenarioTitle: scenarioTitle.trim(), // ★ここでデータとして保存
                 weather: weather,
                 content: content,
                 secretContent: secretContent.trim(),
