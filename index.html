@@ -1222,7 +1222,7 @@ function getCircledNumber(num) {
         }
         window.handleImageSelect = handleImageSelect;
 
-        // 【追加】投稿・編集モーダルを閉じる関数（エラー防止用）
+       // 【追加】投稿・編集モーダルを閉じる関数（エラー防止用）
         function closePostModal() {
             const modal = document.getElementById('postModal');
             if (modal) {
@@ -1237,7 +1237,7 @@ function getCircledNumber(num) {
             // 編集から新規投稿へ戻す際のためにタイトルを初期値に戻す
             const modalTitleEl = document.getElementById('postModalTitle');
             if (modalTitleEl) modalTitleEl.textContent = '新しく日記を書く';
-        }
+        } // ← ここに閉じカッコが不足していました！
         window.closePostModal = closePostModal;
 
         async function handleSaveEntry(event) {
