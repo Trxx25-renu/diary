@@ -1126,42 +1126,54 @@ function getCircledNumber(num) {
         }
         window.handleSaveConfig = handleSaveConfig;
 
-        function openPostModal() {
-            if (!window.isAdmin) {
-                openAuthModal();
-                return;
+        // 編集ボタンを押したときに日記データを読み込んでモーダルを開く関数
+        function openEditModalFromDetail() {
+            const entry = (window.entries || []).find(e => e.id === window.selectedEntryId);
+            if (!entry) return;
+
+            // 1. 各入力欄に既存のデータをセット
+            const dateEl = document.getElementById('inputDate');
+            const titleEl = document.getElementById('inputScenarioTitle');
+            const weatherEl = document.getElementById('inputWeather');
+            const contentEl = document.getElementById('inputContent');
+            const secretEl = document.getElementById('inputSecretContent');
+
+            if (dateEl) dateEl.value = entry.date || '';
+            if (titleEl) titleEl.value = entry.scenarioTitle || '';
+            
+            // タグのセレクトボックスを既存データの天気/タグに合わせて生成
+            if (typeof populateWeatherOptions === 'function') {
+                populateWeatherOptions(entry.weather || '');
+            } else if (weatherEl) {
+                weatherEl.value = entry.weather || '';
             }
+
+            if (contentEl) contentEl.value = entry.content || '';
+            if (secretEl) secretEl.value = entry.secretContent || '';
+
+            // 2. 画像プレビューの設定
+            window.tempBase64Image = entry.imageUrl || '';
+            const previewImg = document.getElementById('imagePreview');
+            const placeholder = document.getElementById('uploadPlaceholder');
+            
+            if (previewImg && window.tempBase64Image) {
+                previewImg.src = window.tempBase64Image;
+                previewImg.classList.remove('hidden');
+                if (placeholder) placeholder.classList.add('hidden');
+            }
+
+            // 3. サイト設定モーダルと同様の滑らかなアニメーションで「新規投稿/編集モーダル」を開く
             const modal = document.getElementById('postModal');
-            const dateInput = document.getElementById('inputDate');
-            const secretInput = document.getElementById('inputSecretContent');
-            const today = new Date().toISOString().split('T')[0];
-
-            document.getElementById('postForm')?.reset();
-            if (dateInput) dateInput.value = today;
-            if (secretInput) secretInput.value = '';
-            window.tempBase64Image = null;
-            document.getElementById('imagePreview')?.classList.add('hidden');
-            document.getElementById('uploadPlaceholder')?.classList.remove('hidden');
-
-            renderWeatherSelectOptions();
-
             if (modal) {
                 modal.classList.remove('opacity-0', 'pointer-events-none');
-                modal.querySelector('div').classList.remove('scale-95');
-                modal.querySelector('div').classList.add('scale-100');
+                const modalBox = modal.querySelector('div');
+                if (modalBox) {
+                    modalBox.classList.remove('scale-95');
+                    modalBox.classList.add('scale-100');
+                }
             }
         }
-        window.openPostModal = openPostModal;
-
-        function closePostModal() {
-            const modal = document.getElementById('postModal');
-            if (modal) {
-                modal.classList.add('opacity-0', 'pointer-events-none');
-                modal.querySelector('div').classList.remove('scale-100');
-                modal.querySelector('div').classList.add('scale-95');
-            }
-        }
-        window.closePostModal = closePostModal;
+        window.openEditModalFromDetail = openEditModalFromDetail;
 
         function handleImageSelect(event) {
             const file = event.target.files[0];
