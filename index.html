@@ -175,11 +175,6 @@
         console.error("❌ 初期化処理でエラーが発生しました:", e);
     }
 
-    // UIの適用と画面描画
-    if (typeof window.applySiteConfig === 'function') {
-        window.applySiteConfig();
-    }
-
     if (typeof window.navigateTo === 'function') {
         window.navigateTo('months');
     }
