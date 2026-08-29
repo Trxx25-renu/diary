@@ -448,19 +448,28 @@ window.applySiteConfig = function() {
                 logoTextEl.classList.remove('hidden');
             }
         }
+            
          // フィルター等の再描画
         if (typeof renderWeatherFilterButtons === 'function') renderWeatherFilterButtons();
         if (typeof renderWeatherSelectOptions === 'function') renderWeatherSelectOptions();
 
-        // 4. 【追加】カレンダー / 一覧ビュー切替スイッチのテーマカラー反映（上品な薄めデザイン）
+        // 4. 【追加】カレンダー / 一覧ビュー切替スイッチのテーマカラー反映（外側コンテナ＆濃い選択ボタン）
         const mode = window.galleryViewMode || 'calendar';
         const calBtn = document.getElementById('viewModeCalBtn');
         const gridBtn = document.getElementById('viewModeGridBtn');
+        
+        // 外側のコンテナ（もしあれば、薄いテーマ背景や枠線を持たせる）
+        const container = calBtn ? calBtn.closest('.theme-toggle-container') : null;
+        if (container) {
+            // 例: 薄いテーマの背景色（theme.bgLight など）と少しの丸み・余白
+            container.className = `theme-toggle-container p-1 rounded-xl flex items-center gap-1 ${theme.bgLight || 'bg-rose-50'}`;
+        }
 
         if (calBtn && gridBtn) {
-            // 背景を薄く（theme.bgLight）、文字をテーマカラー（theme.textPrimary や濃い色）にする
-            const activeClass = `${theme.bgLight} ${theme.textPrimary} font-semibold shadow-sm border border-stone-200/50`;
-            const inactiveClass = 'text-stone-500 hover:text-stone-800';
+            // 選択中：濃いテーマカラーの背景 ＋ 白文字
+            const activeClass = `${theme.bgPrimary} text-white font-semibold shadow-sm`;
+            // 未選択：黒い文字（または濃いグレー）
+            const inactiveClass = 'text-stone-800 hover:text-stone-950 bg-transparent';
 
             if (mode === 'calendar') {
                 calBtn.className = `px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1 ${activeClass}`;
