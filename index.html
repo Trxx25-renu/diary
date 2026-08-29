@@ -944,6 +944,34 @@ function getCircledNumber(num) {
 
         function setGalleryViewMode(mode) {
             window.galleryViewMode = mode;
+            
+            // 🌟 選択されたモードに応じて、ボタンの見た目を即座に切り替える
+            const calBtn = document.getElementById('viewModeCalBtn');
+            const gridBtn = document.getElementById('viewModeGridBtn');
+            const container = calBtn ? calBtn.closest('.theme-toggle-container') : null;
+            
+            const config = window.siteConfig || {};
+            const theme = (typeof THEME_CLASSES !== 'undefined') 
+                ? (THEME_CLASSES[config.themeColor] || THEME_CLASSES.rose) 
+                : { bgPrimary: 'bg-rose-600', bgLight: 'bg-rose-50' };
+
+            if (container) {
+                container.className = `theme-toggle-container p-1 rounded-xl flex items-center gap-1 ${theme.bgLight}`;
+            }
+
+            if (calBtn && gridBtn) {
+                const activeClass = `${theme.bgPrimary} text-white font-semibold shadow-sm`;
+                const inactiveClass = 'text-stone-700 hover:text-stone-900 bg-transparent shadow-none';
+
+                if (mode === 'calendar') {
+                    calBtn.className = `px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1 ${activeClass}`;
+                    gridBtn.className = `px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1 ${inactiveClass}`;
+                } else {
+                    gridBtn.className = `px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1 ${activeClass}`;
+                    calBtn.className = `px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1 ${inactiveClass}`;
+                }
+            }
+
             renderGalleryView();
         }
         window.setGalleryViewMode = setGalleryViewMode;
