@@ -150,15 +150,16 @@
             if (logoTextEl) logoTextEl.textContent = window.siteConfig.logoChar;
         } else {
             console.warn("⚠️ Firestoreに設定が見つかりませんでした。デフォルトを適用します。");
-            window.siteConfig = {
-                title: '日々の写真日記',
-                subtitle: 'Photo & Daily Log',
-                logoChar: 'P',
-                logoImageUrl: '',
-                themeColor: 'rose',
-                weatherOptions: ['晴れ ☀️', '快晴 🌤️', 'くもり ☁️', '雨 ☔', '雪 ❄️']
-            };
-        }
+if (typeof window.siteConfig === 'undefined' || window.siteConfig === null) {
+  window.siteConfig = {
+    title: '日々の卓日記',
+    subtitle: 'Session Log',
+    logoChar: 'S',
+    logoImageUrl: '',
+    themeColor: 'rose',
+    weatherOptions: ['晴れ ☀️', '快晴 🌤️', 'くもり ☁️', '雨 ☔', '雪 ❄️', '虹 🌈']
+  };
+}
 
         // 2. 記事の読み込み
         const entriesRef = collection(db, 'artifacts', appId, 'public', 'data', 'entries');
