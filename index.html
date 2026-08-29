@@ -336,6 +336,10 @@
                 if (searchToolbar) searchToolbar.classList.add('hidden');
                 renderDetailView();
             }
+            // ★ どの画面に切り替えた場合でも、最後に必ずテーマカラーを適用する！
+            if (typeof window.applyCurrentThemeToUI === 'function') {
+                window.applyCurrentThemeToUI();
+            }
 
             renderBreadcrumbs();
             handleSearch();
