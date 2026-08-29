@@ -708,6 +708,19 @@ function getCircledNumber(num) {
             if (detailDate) detailDate.textContent = formattedDate;
             const detailWeather = document.getElementById('detailWeather');
             if (detailWeather) detailWeather.textContent = entry.weather || '晴れ ☀️';
+            
+            // ★【追加・修正】シナリオタイトルの表示制御
+            const detailScenarioTitle = document.getElementById('detailScenarioTitle');
+            if (detailScenarioTitle) {
+                if (entry.scenarioTitle && entry.scenarioTitle.trim() !== '') {
+                    detailScenarioTitle.textContent = entry.scenarioTitle;
+                    detailScenarioTitle.classList.remove('hidden'); // タイトルがあれば表示
+                } else {
+                    detailScenarioTitle.textContent = '';
+                    detailScenarioTitle.classList.add('hidden');    // タイトルがなければ完全に隠して非表示に
+                }
+            }
+
             const detailContent = document.getElementById('detailContent');
             if (detailContent) detailContent.innerHTML = parseSpoilers(entry.content);
 
