@@ -1847,18 +1847,18 @@ window.openEditModalFromDetail = openEditModalFromDetail;
                 projectId: "diary-36d77",
                 storageBucket: "diary-36d77.firebasestorage.app",
                 messagingSenderId: "1060563209082",
-                appId: "1:1060563209082:web:1c6cfc21a496548309e4c3",
-                measurementId: "G-RBK7ZN6NF1"
-            };
+               appId: "1:1060563209082:web:1c6cfc21a496548309e4c3",
+            measurementId: "G-RBK7ZN6NF1"
+        };
 
-            const app = initializeApp(firebaseConfig);
-            const auth = getAuth(app);
-            const db = getFirestore(app);
-            const analytics = getAnalytics(app);
-            window.db = db;
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const analytics = getAnalytics(app);
+        window.db = db;
 
-            // 匿名ログインを実行してクラウドDBへアクセス可能にする
-            await signInAnonymously(auth);
+        // 匿名ログインを実行してクラウドDBへアクセス可能にする
+        await signInAnonymously(auth);
 
         const configRef = doc(db, 'artifacts', appId, 'public', 'data', 'config', 'settings');
         const configSnap = await getDoc(configRef);
@@ -1955,6 +1955,3 @@ async function loadConfigFromFirestore() {
 window.loadConfigFromFirestore = loadConfigFromFirestore;
 
 loadConfigFromFirestore();
-    </script>
-</body>
-</html>
