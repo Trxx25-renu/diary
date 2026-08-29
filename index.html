@@ -1833,74 +1833,73 @@ function handleImageSelect(event) {
     window.entries = sampleEntries;
 
     document.addEventListener("DOMContentLoaded", async () => {
-        try {
-            const firebaseConfig = {
-                apiKey: "AIzaSyA2ctX9sUpJmLSVJomU9cbMzrUX_AXNjuE",
-                authDomain: "diary-36d77.firebaseapp.com",
-                projectId: "diary-36d77",
-                storageBucket: "diary-36d77.firebasestorage.app",
-                messagingSenderId: "1060563209082",
-                appId: "1:1060563209082:web:1c6cfc21a496548309e4c3",
-                measurementId: "G-RBK7ZN6NF1"
+    try {
+        // ★ ここで appId を安全に定義（もしHTML側等に定義がなければデフォルト値を設定）
+        if (typeof window.appId === 'undefined') {
+            window.appId = "default-app-id"; // 必要に応じて環境のIDに調整してください
+        }
+        const appId = window.appId;
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyA2ctX9sUpJmLSVJomU9cbMzrUX_AXNjuE",
+            authDomain: "diary-36d77.firebaseapp.com",
+            projectId: "diary-36d77",
+            storageBucket: "diary-36d77.firebasestorage.app",
+            messagingSenderId: "1060563209082",
+            appId: "1:1060563209082:web:1c6cfc21a496548309e4c3",
+            measurementId: "G-RBK7ZN6NF1"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        window.db = db;
+
+        await signInAnonymously(auth);
+
+        const configRef = doc(db, 'artifacts', appId, 'public', 'data', 'config', 'settings');
+        const configSnap = await getDoc(configRef);
+        if (configSnap.exists()) {
+            const loadedConfig = configSnap.data();
+            if (loadedConfig.passcode) window.storedPasscode = loadedConfig.passcode;
+
+            window.siteConfig = {
+                title: loadedConfig.title || (window.siteConfig ? window.siteConfig.title : '日々の写真日記'),
+                subtitle: loadedConfig.subtitle || (window.siteConfig ? window.siteConfig.subtitle : 'Photo & Daily Log'),
+                logoChar: loadedConfig.logoChar || (window.siteConfig ? window.siteConfig.logoChar : 'P'),
+                logoImageUrl: loadedConfig.logoImageUrl || '',
+                themeColor: loadedConfig.themeColor || (window.siteConfig ? window.siteConfig.themeColor : 'rose'),
+                weatherOptions: loadedConfig.weatherOptions || (window.siteConfig ? window.siteConfig.weatherOptions : ['晴れ ☀️', '快晴 🌤️', 'くもり ☁️', '雨 ☔', '雪 ❄️'])
             };
-
-            const app = initializeApp(firebaseConfig);
-            const auth = getAuth(app);
-            const db = getFirestore(app);
-            const analytics = getAnalytics(app);
-            window.db = db;
-
-            await signInAnonymously(auth);
-
-            const configRef = doc(db, 'artifacts', appId, 'public', 'data', 'config', 'settings');
-            const configSnap = await getDoc(configRef);
-            if (configSnap.exists()) {
-                const loadedConfig = configSnap.data();
-                if (loadedConfig.passcode) window.storedPasscode = loadedConfig.passcode;
-
-                window.siteConfig = {
-                    title: loadedConfig.title || window.siteConfig.title,
-                    subtitle: loadedConfig.subtitle || window.siteConfig.subtitle,
-                    logoChar: loadedConfig.logoChar || window.siteConfig.logoChar,
-                    logoImageUrl: loadedConfig.logoImageUrl || '',
-                    themeColor: loadedConfig.themeColor || window.siteConfig.themeColor,
-                    weatherOptions: loadedConfig.weatherOptions || window.siteConfig.weatherOptions
-                };
-                if (typeof applyCurrentThemeToUI === 'function') {
-                    applyCurrentThemeToUI();
-                }
-            }
-
-            const entriesRef = collection(db, 'artifacts', appId, 'public', 'data', 'entries');
-            const querySnap = await getDocs(entriesRef);
-            const loaded = [];
-            querySnap.forEach(d => {
-                loaded.push({ id: d.id, ...d.data() });
-            });
-
-            if (loaded.length > 0) {
-                loaded.sort((a, b) => b.date.localeCompare(a.date));
-                window.entries = loaded;
-            }
-        } catch (e) {
-            console.log("Firestore setup notice:", e);
         }
 
-        if (typeof window.applySiteConfig === 'function') {
-            window.applySiteConfig();
-        }
+        const entriesRef = collection(db, 'artifacts', appId, 'public', 'data', 'entries');
+        const querySnap = await getDocs(entriesRef);
+        const loaded = [];
+        querySnap.forEach(d => {
+            loaded.push({ id: d.id, ...d.data() });
+        });
 
-        if (typeof window.navigateTo === 'function') {
-            window.navigateTo('months');
-            setTimeout(() => {
-                window.navigateTo('months');
-            }, 50);
+        if (loaded.length > 0) {
+            loaded.sort((a, b) => b.date.localeCompare(a.date));
+            window.entries = loaded;
         }
+    } catch (e) {
+        console.error("Firestore setup error:", e); // エラーの中身が分かるように変更
+    }
 
-        if (typeof window.applyCurrentThemeToUI === 'function') {
-            window.applyCurrentThemeToUI();
-        }
-    });
+    if (typeof window.applySiteConfig === 'function') {
+        window.applySiteConfig();
+    }
+
+    if (typeof window.navigateTo === 'function') {
+        window.navigateTo('months');
+    }
+
+    if (typeof window.applyCurrentThemeToUI === 'function') {
+        window.applyCurrentThemeToUI();
+    }
+});
 
     // 確実にFirestoreから設定を読み込む関数
     // 確実にFirestoreから設定を読み込む関数
