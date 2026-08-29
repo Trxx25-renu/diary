@@ -201,22 +201,36 @@ window.applySiteConfig = function() {
     }
 
     // 2. ロゴ（文字 または 画像）の反映
-    const logoTextEl = document.getElementById('siteHeaderLogo');
-    const logoImgEl = document.getElementById('siteHeaderLogoImg');
+        const logoTextEl = document.getElementById('siteHeaderLogo');
+        const logoImgEl = document.getElementById('siteHeaderLogoImg');
+        const appleIcon = document.getElementById('appleTouchIcon'); // 存在する場合のエラー防止
+        const favicon = document.getElementById('favicon');           // 存在する場合のエラー防止
 
-    if (config.logoImageUrl && logoImgEl) {
-        // 画像URLが設定されている場合
-        logoImgEl.src = config.logoImageUrl;
-        logoImgEl.classList.remove('hidden');
-        if (logoTextEl) logoTextEl.classList.add('hidden');
-    } else {
-        // 文字（ロゴ文字）の場合
-        if (logoTextEl) {
-            logoTextEl.textContent = config.logoChar || 'P';
-            logoTextEl.classList.remove('hidden');
+        if (config.logoImageUrl && config.logoImageUrl.trim() !== '') {
+            // 画像が設定されている場合
+            if (logoTextEl) {
+                logoTextEl.style.display = 'none'; // class='hidden'の代わりに確実に出し分け
+                logoTextEl.classList.add('hidden');
+            }
+            if (logoImgEl) {
+                logoImgEl.src = config.logoImageUrl;
+                logoImgEl.style.display = 'block';
+                logoImgEl.classList.remove('hidden');
+            }
+            if (appleIcon) appleIcon.href = config.logoImageUrl;
+            if (favicon) favicon.href = config.logoImageUrl;
+        } else {
+            // 画像がない場合は文字を表示
+            if (logoImgEl) {
+                logoImgEl.style.display = 'none';
+                logoImgEl.classList.add('hidden');
+            }
+            if (logoTextEl) {
+                logoTextEl.textContent = config.logoChar || 'P';
+                logoTextEl.style.display = 'block';
+                logoTextEl.classList.remove('hidden');
+            }
         }
-        if (logoImgEl) logoImgEl.classList.add('hidden');
-    }
 
     // 3. テーマカラーの適用関数があれば呼び出す
     if (typeof window.applyCurrentThemeToUI === 'function') {
