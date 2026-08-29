@@ -280,35 +280,35 @@
                 writeBtn.className = `${window.isAdmin ? 'flex' : 'hidden'} px-3.5 py-1.5 rounded-xl text-xs font-medium text-white ${theme.bgPrimary} ${theme.hoverPrimary} transition-colors shadow-sm items-center gap-1.5`;
             }
 
-            // 2. ロゴ（文字 または 画像）の反映
-            const logoTextEl = document.getElementById('siteHeaderLogo');
-            const logoImgEl = document.getElementById('siteHeaderLogoImg');
-            const appleIconEl = document.getElementById('appleTouchIcon');
-            const faviconEl = document.getElementById('favicon');
+           // 2. ロゴ（文字 または 画像）の反映
+        const logoTextEl = document.getElementById('siteHeaderLogo');
+        const logoImgEl = document.getElementById('siteHeaderLogoImg');
+        const appleIconEl = document.getElementById('appleTouchIcon');
+        const faviconEl = document.getElementById('faviconIcon');
 
-            if (config.logoImageUrl && config.logoImageUrl.trim() !== '') {
-                if (logoTextEl) {
-                    logoTextEl.style.display = 'none';
-                    logoTextEl.classList.add('hidden');
-                }
-                if (logoImgEl) {
-                    logoImgEl.src = config.logoImageUrl;
-                    logoImgEl.style.display = 'block';
-                    logoImgEl.classList.remove('hidden');
-                }
-                if (appleIconEl) appleIconEl.href = config.logoImageUrl;
-                if (faviconEl) faviconEl.href = config.logoImageUrl;
-            } else {
-                if (logoImgEl) {
-                    logoImgEl.style.display = 'none';
-                    logoImgEl.classList.add('hidden');
-                }
-                if (logoTextEl) {
-                    logoTextEl.textContent = config.logoChar || 'P';
-                    logoTextEl.style.display = 'block';
-                    logoTextEl.classList.remove('hidden');
-                }
+        if (config.logoImageUrl && config.logoImageUrl.trim() !== '') {
+            if (logoTextEl) {
+                logoTextEl.style.display = 'none';
+                logoTextEl.classList.add('hidden');
             }
+            if (logoImgEl) {
+                logoImgEl.src = config.logoImageUrl;
+                logoImgEl.style.display = 'block';
+                logoImgEl.classList.remove('hidden');
+            }
+            if (appleIconEl) appleIconEl.href = config.logoImageUrl;
+            if (faviconEl) faviconEl.href = config.logoImageUrl;
+        } else {
+            if (logoImgEl) {
+                logoImgEl.style.display = 'none';
+                logoImgEl.classList.add('hidden');
+            }
+            if (logoTextEl) {
+                logoTextEl.textContent = config.logoChar || 'P';
+                logoTextEl.style.display = 'block';
+                logoTextEl.classList.remove('hidden');
+            }
+        }
                 
             // フィルター等の再描画
             if (typeof renderWeatherFilterButtons === 'function') renderWeatherFilterButtons();
