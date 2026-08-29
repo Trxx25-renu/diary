@@ -671,11 +671,11 @@ function getCircledNumber(num) {
         window.renderBreadcrumbs = renderBreadcrumbs;
 
        function navigateTo(view, param = null) {
-           console.log("navigateTo called with:", view, param); // 👈 ここを追加
+        console.log("navigateTo called with:", view, param);
         window.currentView = view;
         
-        // 選択された年月（param）があれば、グローバル変数に確実に保存する
-        if (param) {
+        // 💡 修正：ギャラリー表示のとき、または明確に年月が指定されたときだけ `selectedYearMonth` を更新する
+        if (view === 'gallery' && param) {
             window.selectedYearMonth = param;
         }
         
@@ -698,16 +698,29 @@ function getCircledNumber(num) {
             if (viewGallery) viewGallery.classList.remove('hidden');
             if (searchToolbar) searchToolbar.classList.remove('hidden');
             
-            // ギャラリービューに切り替わったタイミングで、選択された月のデータを描画する
             if (typeof renderGalleryView === 'function') {
                 renderGalleryView();
             }
         } else if (view === 'detail') {
             if (viewDetail) viewDetail.classList.remove('hidden');
+            
+            // 👇 追加：詳細画面を開くときに、該当する記事データを探して画面にセットする
+            const entryId = param;
+            const entry = (window.entries || []).find(e => e.id === entryId);
+            if (entry) {
+                // もし元々詳細を描画する専用関数があればそれを呼ぶ、なければDOMに直接セット
+                if (typeof renderDetailView === 'function') {
+                    renderDetailView(entry);
+                } else {
+                    const imgEl = document.getElementById('detailImage');
+                    const contentEl = document.getElementById('detailContent');
+                    if (imgEl) imgEl.src = entry.imageUrl || '';
+                    if (contentEl) contentEl.textContent = entry.content || '';
+                }
+            }
         }
     }
     window.navigateTo = navigateTo;
-
         // ギャラリー描画用メイン関数
     function renderGalleryView() {
         const titleEl = document.getElementById('galleryTitle');
