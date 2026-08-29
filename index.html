@@ -1774,13 +1774,14 @@ function getCircledNumber(num) {
             }
         }
 
-function applyCurrentThemeToUI() {
+            function applyCurrentThemeToUI() {
             const themeKey = (window.siteConfig && window.siteConfig.themeColor) || 'amber';
             const current = THEME_CLASSES[themeKey] || THEME_CLASSES.amber;
 
-            // 1. 切替ボタンの外側コンテナの色をテーマに連動
+            // 1. 切替ボタンの外側コンテナの色を更新
             document.querySelectorAll('.theme-toggle-container').forEach(el => {
-                el.className = el.className.replace(/bg-\w+-\d+\/\d+/g, '').trim();
+                // すべての bg-xxx-xxx/xx クラスを一度綺麗に掃除する
+                el.className = el.className.replace(/bg-[a-z]+-\d+(\/\d+)?/g, '').trim();
                 el.classList.add(...current.toggleContainer.split(' '));
             });
 
@@ -1789,21 +1790,26 @@ function applyCurrentThemeToUI() {
             const btnGrid = document.getElementById('viewModeGridBtn');
 
             if (btnCal && btnGrid) {
+                // 一度、色に関する古いクラスを全てきれいに剥がす
+                btnCal.className = btnCal.className.replace(/bg-[a-z]+-\d+(\/\d+)?/g, '').replace(/text-[a-z]+-\d+/g, '').replace(/shadow-\w+/g, '').trim();
+                btnGrid.className = btnGrid.className.replace(/bg-[a-z]+-\d+(\/\d+)?/g, '').replace(/text-[a-z]+-\d+/g, '').replace(/shadow-\w+/g, '').trim();
+
                 if (window.galleryViewMode === 'calendar') {
-                    btnCal.className = `px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1 ${current.activeBg}`;
-                    btnGrid.className = `px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1 ${current.inactiveBg}`;
+                    btnCal.className += ` ${current.activeBg}`;
+                    btnGrid.className += ` ${current.inactiveBg}`;
                 } else {
-                    btnCal.className = `px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1 ${current.inactiveBg}`;
-                    btnGrid.className = `px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1 ${current.activeBg}`;
+                    btnCal.className += ` ${current.inactiveBg}`;
+                    btnGrid.className += ` ${current.activeBg}`;
                 }
             }
 
-            // 3. 「月一覧に戻る」ボタンの色をテーマに連動
+            // 3. 「月一覧に戻る」ボタンの色を更新
             document.querySelectorAll('.theme-back-btn').forEach(btn => {
-                btn.className = `theme-back-btn text-xs font-medium flex items-center gap-1 px-3 py-1.5 rounded-xl border transition-colors ${current.backBtn}`;
+                btn.className = btn.className.replace(/bg-[a-z]+-\d+(\/\d+)?/g, '').replace(/text-[a-z]+-\d+/g, '').replace(/border-[a-z]+-\d+(\/\d+)?/g, '').trim();
+                btn.className += ` ${current.backBtn}`;
             });
         }
-        window.applyCurrentThemeToUI = applyCurrentThemeToUI;        
+        window.applyCurrentThemeToUI = applyCurrentThemeToUI;
 
             const entriesRef = collection(db, 'artifacts', appId, 'public', 'data', 'entries');
             const querySnap = await getDocs(entriesRef);
