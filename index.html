@@ -1981,20 +1981,22 @@ window.openEditModalFromDetail = openEditModalFromDetail;
                         themeColor: data.themeColor || 'amber',
                         weatherOptions: data.weatherOptions || ['晴れ ☀️', '快晴 🌤️', 'くもり ☁️', '雨 ☔', '雪 ❄️']
                     };
-                    if (typeof applySiteConfig === 'function') {
-                        applySiteConfig();
-                    }
-                } else {
-                    console.log("settingsドキュメント自体がまだ存在しません。");
+                   if (typeof applySiteConfig === 'function') {
+                    applySiteConfig();
                 }
-            } catch (err) {
-                console.error("Firestore config load error:", err);
+            } else {
+                console.log("settingsドキュメント自体がまだ存在しません。");
             }
+        } catch (err) {
+            console.error("Firestore config load error:", err);
         }
-        window.loadConfigFromFirestore = loadConfigFromFirestore;
-        // 2. ページが読み込まれてスクリプトが実行されたときにそのまま呼び出す
-        loadConfigFromFirestore();
-    
+    } // ← ① loadConfigFromFirestore関数自体の閉じカッコ
+    window.loadConfigFromFirestore = loadConfigFromFirestore;
+
+    // 2. ページが読み込まれてスクリプトが実行されたときにそのまま呼び出す
+    loadConfigFromFirestore();
+
+} // ← ② （もしこの処理全体を囲む関数があれば、ここで閉じます。なければ削ってください）
     </script>
 </body>
 </html>
