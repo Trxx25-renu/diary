@@ -139,7 +139,7 @@
                 weatherOptions: loadedConfig.weatherOptions || ['晴れ ☀️', '快晴 🌤️', 'くもり ☁️', '雨 ☔', '雪 ❄️']
             };
 
-            // ★【ここを追加】データを読み込んだその場で、直接画面のHTMLを書き換える！
+            // データを読み込んだその場で、直接画面のHTMLを書き換える
             const titleEl = document.getElementById('siteHeaderTitle');
             if (titleEl) titleEl.textContent = window.siteConfig.title;
 
@@ -150,16 +150,17 @@
             if (logoTextEl) logoTextEl.textContent = window.siteConfig.logoChar;
         } else {
             console.warn("⚠️ Firestoreに設定が見つかりませんでした。デフォルトを適用します。");
-if (typeof window.siteConfig === 'undefined' || window.siteConfig === null) {
-  window.siteConfig = {
-    title: '日々の卓日記',
-    subtitle: 'Session Log',
-    logoChar: 'S',
-    logoImageUrl: '',
-    themeColor: 'rose',
-    weatherOptions: ['晴れ ☀️', '快晴 🌤️', 'くもり ☁️', '雨 ☔', '雪 ❄️', '虹 🌈']
-  };
-}
+            if (typeof window.siteConfig === 'undefined' || window.siteConfig === null) {
+                window.siteConfig = {
+                    title: '日々の卓日記',
+                    subtitle: 'Session Log',
+                    logoChar: 'S',
+                    logoImageUrl: '',
+                    themeColor: 'rose',
+                    weatherOptions: ['晴れ ☀️', '快晴 🌤️', 'くもり ☁️', '雨 ☔', '雪 ❄️', '虹 🌈']
+                };
+            }
+        } // ← ここできっちり閉じます！
 
         // 2. 記事の読み込み
         const entriesRef = collection(db, 'artifacts', appId, 'public', 'data', 'entries');
