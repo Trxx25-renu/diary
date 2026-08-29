@@ -184,7 +184,71 @@
     }
 });
 
-// 設定を画面（タイトル・アイコン・テーマカラー等）に一括反映させる関数
+// 1. ここに THEME_CLASSES を定義します（この定義が最上部にある必要があります）
+        const THEME_CLASSES = {
+            amber: {
+                bgLight: 'bg-amber-50',
+                textPrimary: 'text-amber-700',
+                bgPrimary: 'bg-amber-600',
+                hoverPrimary: 'hover:bg-amber-700',
+                borderPrimary: 'border-amber-200',
+                badgeText: 'text-amber-800',
+                activeBg: 'bg-amber-600 text-white shadow-sm',
+                inactiveBg: 'text-amber-700 hover:bg-amber-100/60',
+                toggleContainer: 'bg-amber-100/60',
+                backBtn: 'bg-amber-50 text-amber-700 hover:text-amber-800 border-amber-200/60'
+            },
+            rose: {
+                bgLight: 'bg-rose-50',
+                textPrimary: 'text-rose-700',
+                bgPrimary: 'bg-rose-600',
+                hoverPrimary: 'hover:bg-rose-700',
+                borderPrimary: 'border-rose-200',
+                badgeText: 'text-rose-800',
+                activeBg: 'bg-rose-600 text-white shadow-sm',
+                inactiveBg: 'text-rose-700 hover:bg-rose-100/60',
+                toggleContainer: 'bg-rose-100/60',
+                backBtn: 'bg-rose-50 text-rose-700 hover:text-rose-800 border-rose-200/60'
+            },
+            indigo: {
+                bgLight: 'bg-indigo-50',
+                textPrimary: 'text-indigo-700',
+                bgPrimary: 'bg-indigo-600',
+                hoverPrimary: 'hover:bg-indigo-700',
+                borderPrimary: 'border-indigo-200',
+                badgeText: 'text-indigo-800',
+                activeBg: 'bg-indigo-600 text-white shadow-sm',
+                inactiveBg: 'text-indigo-700 hover:bg-indigo-100/60',
+                toggleContainer: 'bg-indigo-100/60',
+                backBtn: 'bg-indigo-50 text-indigo-700 hover:text-indigo-800 border-indigo-200/60'
+            },
+            emerald: {
+                bgLight: 'bg-emerald-50',
+                textPrimary: 'text-emerald-700',
+                bgPrimary: 'bg-emerald-600',
+                hoverPrimary: 'hover:bg-emerald-700',
+                borderPrimary: 'border-emerald-200',
+                badgeText: 'text-emerald-800',
+                activeBg: 'bg-emerald-600 text-white shadow-sm',
+                inactiveBg: 'text-emerald-700 hover:bg-emerald-100/60',
+                toggleContainer: 'bg-emerald-100/60',
+                backBtn: 'bg-emerald-50 text-emerald-700 hover:text-emerald-800 border-emerald-200/60'
+            },
+            stone: {
+                bgLight: 'bg-stone-100',
+                textPrimary: 'text-stone-800',
+                bgPrimary: 'bg-stone-800',
+                hoverPrimary: 'hover:bg-stone-900',
+                borderPrimary: 'border-stone-300',
+                badgeText: 'text-stone-900',
+                activeBg: 'bg-stone-800 text-white shadow-sm',
+                inactiveBg: 'text-stone-700 hover:bg-stone-200/60',
+                toggleContainer: 'bg-stone-200/60',
+                backBtn: 'bg-stone-100 text-stone-700 hover:text-stone-800 border-stone-200/60'
+            }
+        };
+
+        // 2. 設定を画面（タイトル・アイコン・テーマカラー等）に一括反映させる関数
         function applySiteConfig() {
             const config = window.siteConfig;
             if (!config) return;
@@ -201,10 +265,7 @@
             if (footerText) footerText.innerHTML = `&copy; ${escapeHtml(config.title)} - ${escapeHtml(config.subtitle)}`;
             document.title = `${config.title} - ${config.subtitle}`;
 
-            const appleIcon = document.getElementById('appleTouchIcon');
-            const favicon = document.getElementById('faviconIcon');
             const appTitle = document.getElementById('appleAppTitle');
-            
             if (appTitle) appTitle.content = config.title || '写真日記';
 
             // 3. 先にテーマカラーを適用する
@@ -219,14 +280,13 @@
                 writeBtn.className = `${window.isAdmin ? 'flex' : 'hidden'} px-3.5 py-1.5 rounded-xl text-xs font-medium text-white ${theme.bgPrimary} ${theme.hoverPrimary} transition-colors shadow-sm items-center gap-1.5`;
             }
 
-           // 2. ロゴ（文字 または 画像）の反映
+            // 2. ロゴ（文字 または 画像）の反映
             const logoTextEl = document.getElementById('siteHeaderLogo');
             const logoImgEl = document.getElementById('siteHeaderLogoImg');
             const appleIconEl = document.getElementById('appleTouchIcon');
             const faviconEl = document.getElementById('favicon');
 
             if (config.logoImageUrl && config.logoImageUrl.trim() !== '') {
-                // 画像が設定されている場合
                 if (logoTextEl) {
                     logoTextEl.style.display = 'none';
                     logoTextEl.classList.add('hidden');
@@ -239,7 +299,6 @@
                 if (appleIconEl) appleIconEl.href = config.logoImageUrl;
                 if (faviconEl) faviconEl.href = config.logoImageUrl;
             } else {
-                // 画像がない場合は文字を表示
                 if (logoImgEl) {
                     logoImgEl.style.display = 'none';
                     logoImgEl.classList.add('hidden');
@@ -279,21 +338,22 @@
             }
         }
         window.applySiteConfig = applySiteConfig;
-    
-    function renderWeatherFilterButtons() {
-        const container = document.getElementById('weatherFilterContainer');
-        if (!container) return;
 
-        const config = window.siteConfig || {};
-        const options = config.weatherOptions || [];
-        const theme = THEME_CLASSES[config.themeColor] || THEME_CLASSES.amber;
+        // 3. フィルターボタン描画関数
+        function renderWeatherFilterButtons() {
+            const container = document.getElementById('weatherFilterContainer');
+            if (!container) return;
 
-        let html = `
-            <span class="text-stone-400 shrink-0 text-[11px] mr-1">タグ:</span>
-            <button onclick="setWeatherFilter('all')" data-weather="all" class="weather-filter-btn shrink-0 px-2.5 py-1 rounded-lg ${window.selectedWeatherFilter === 'all' ? theme.bgPrimary + ' text-white font-medium shadow-sm' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'} transition-all">
-                すべて
-            </button>
-        `;
+            const config = window.siteConfig || {};
+            const options = config.weatherOptions || [];
+            const theme = THEME_CLASSES[config.themeColor] || THEME_CLASSES.amber;
+
+            let html = `
+                <span class="text-stone-400 shrink-0 text-[11px] mr-1">タグ:</span>
+                <button onclick="setWeatherFilter('all')" data-weather="all" class="weather-filter-btn shrink-0 px-2.5 py-1 rounded-lg ${window.selectedWeatherFilter === 'all' ? theme.bgPrimary + ' text-white font-medium shadow-sm' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'} transition-all">
+                    すべて
+                </button>
+            `;
 
         options.forEach(opt => {
             const label = opt.trim();
