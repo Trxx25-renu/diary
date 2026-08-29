@@ -184,204 +184,7 @@
     }
 });
 
-// 設定を画面（タイトル・アイコン・テーマ等）に反映させる関数
-window.applySiteConfig = function() {
-    const config = window.siteConfig;
-    if (!config) return;
-
-    // 1. タイトルとサブタイトルの反映
-    const titleEl = document.getElementById('siteHeaderTitle');
-    if (titleEl && config.title) {
-        titleEl.textContent = config.title;
-    }
-
-    const subtitleEl = document.getElementById('siteHeaderSubtitle');
-    if (subtitleEl && config.subtitle) {
-        subtitleEl.textContent = config.subtitle;
-    }
-
-    // 2. ロゴ（文字 または 画像）の反映
-        const logoTextEl = document.getElementById('siteHeaderLogo');
-        const logoImgEl = document.getElementById('siteHeaderLogoImg');
-        const appleIcon = document.getElementById('appleTouchIcon'); // 存在する場合のエラー防止
-        const favicon = document.getElementById('favicon');           // 存在する場合のエラー防止
-
-        if (config.logoImageUrl && config.logoImageUrl.trim() !== '') {
-            // 画像が設定されている場合
-            if (logoTextEl) {
-                logoTextEl.style.display = 'none'; // class='hidden'の代わりに確実に出し分け
-                logoTextEl.classList.add('hidden');
-            }
-            if (logoImgEl) {
-                logoImgEl.src = config.logoImageUrl;
-                logoImgEl.style.display = 'block';
-                logoImgEl.classList.remove('hidden');
-            }
-            if (appleIcon) appleIcon.href = config.logoImageUrl;
-            if (favicon) favicon.href = config.logoImageUrl;
-        } else {
-            // 画像がない場合は文字を表示
-            if (logoImgEl) {
-                logoImgEl.style.display = 'none';
-                logoImgEl.classList.add('hidden');
-            }
-            if (logoTextEl) {
-                logoTextEl.textContent = config.logoChar || 'P';
-                logoTextEl.style.display = 'block';
-                logoTextEl.classList.remove('hidden');
-            }
-        }
-
-    // 3. テーマカラーの適用関数があれば呼び出す
-    if (typeof window.applyCurrentThemeToUI === 'function') {
-        window.applyCurrentThemeToUI();
-    }
-};
-        
-        window.entries = [];
-        window.currentView = 'months'; // 'months' | 'gallery' | 'detail'
-        window.selectedYearMonth = null;
-        window.selectedEntryId = null;
-        window.isAdmin = false;
-        window.storedPasscode = null;
-        window.selectedWeatherFilter = 'all';
-        window.tempBase64Image = null;
-        window.galleryViewMode = 'calendar'; // 'calendar' | 'grid'
-        window.thumbnailFitMode = 'cover'; // 'cover' (中央) | 'top' (上部優先) | 'contain' (全体表示)
-        window.isSecretRevealed = false;
-
-        window.siteConfig = {
-            title: '日々の卓日記',
-            subtitle: 'Session Log',
-            logoChar: 'S',
-            logoImageUrl: '', // カスタムロゴ画像URL/Base64データ
-            themeColor: 'rose', // 'amber' | 'emerald' | 'indigo' | 'rose' | 'stone'
-            weatherOptions: ['晴れ ☀️', '快晴 🌤️', 'くもり ☁️', '雨 ☔']
-        };
-
-        const THEME_CLASSES = {
-            amber: {
-                bgLight: 'bg-amber-50',
-                textPrimary: 'text-amber-700',
-                bgPrimary: 'bg-amber-600',
-                hoverPrimary: 'hover:bg-amber-700',
-                borderPrimary: 'border-amber-200',
-                badgeText: 'text-amber-800',
-                activeBg: 'bg-amber-600 text-white shadow-sm', // ←ここがテーマの色になっているか
-                inactiveBg: 'text-amber-700 hover:bg-amber-100/60',
-                toggleContainer: 'bg-amber-100/60',
-                backBtn: 'bg-amber-50 text-amber-700 hover:text-amber-800 border-amber-200/60'
-            },
-            rose: {
-                bgLight: 'bg-rose-50',
-                textPrimary: 'text-rose-700',
-                bgPrimary: 'bg-rose-600',
-                hoverPrimary: 'hover:bg-rose-700',
-                borderPrimary: 'border-rose-200',
-                badgeText: 'text-rose-800',
-                activeBg: 'bg-rose-600 text-white shadow-sm', // ローズなら rose-600
-                inactiveBg: 'text-rose-700 hover:bg-rose-100/60',
-                toggleContainer: 'bg-rose-100/60',
-                backBtn: 'bg-rose-50 text-rose-700 hover:text-rose-800 border-rose-200/60'
-            },
-            indigo: {
-                bgLight: 'bg-indigo-50',
-                textPrimary: 'text-indigo-700',
-                bgPrimary: 'bg-indigo-600',
-                hoverPrimary: 'hover:bg-indigo-700',
-                borderPrimary: 'border-indigo-200',
-                badgeText: 'text-indigo-800',
-                activeBg: 'bg-indigo-600 text-white shadow-sm', // インディゴなら indigo-600
-                inactiveBg: 'text-indigo-700 hover:bg-indigo-100/60',
-                toggleContainer: 'bg-indigo-100/60',
-                backBtn: 'bg-indigo-50 text-indigo-700 hover:text-indigo-800 border-indigo-200/60'
-            },
-            emerald: {
-                bgLight: 'bg-emerald-50',
-                textPrimary: 'text-emerald-700',
-                bgPrimary: 'bg-emerald-600',
-                hoverPrimary: 'hover:bg-emerald-700',
-                borderPrimary: 'border-emerald-200',
-                badgeText: 'text-emerald-800',
-                activeBg: 'bg-emerald-600 text-white shadow-sm',
-                inactiveBg: 'text-emerald-700 hover:bg-emerald-100/60',
-                toggleContainer: 'bg-emerald-100/60',
-                backBtn: 'bg-emerald-50 text-emerald-700 hover:text-emerald-800 border-emerald-200/60'
-            },
-            stone: {
-                bgLight: 'bg-stone-100',
-                textPrimary: 'text-stone-800',
-                bgPrimary: 'bg-stone-800',
-                hoverPrimary: 'hover:bg-stone-900',
-                borderPrimary: 'border-stone-300',
-                badgeText: 'text-stone-900',
-                activeBg: 'bg-stone-800 text-white shadow-sm', // stoneのときだけグレー
-                inactiveBg: 'text-stone-700 hover:bg-stone-200/60',
-                toggleContainer: 'bg-stone-200/60',
-                backBtn: 'bg-stone-100 text-stone-700 hover:text-stone-800 border-stone-200/60'
-            }
-        };
-        
-        function showToast(message, type = 'info') {
-            const toast = document.getElementById('toastNotification');
-            const toastMsg = document.getElementById('toastMessage');
-            const toastIcon = document.getElementById('toastIcon');
-            if (!toast || !toastMsg) return;
-
-            toastMsg.textContent = message;
-            if (type === 'success') {
-                toastIcon.className = 'fa-solid fa-circle-check text-emerald-400 text-base';
-            } else if (type === 'error') {
-                toastIcon.className = 'fa-solid fa-circle-xmark text-rose-400 text-base';
-            } else if (type === 'warning') {
-                toastIcon.className = 'fa-solid fa-triangle-exclamation text-amber-400 text-base';
-            } else {
-                toastIcon.className = 'fa-solid fa-circle-info text-blue-400 text-base';
-            }
-
-            toast.classList.remove('translate-y-20', 'opacity-0', 'pointer-events-none');
-            toast.classList.add('translate-y-0', 'opacity-100');
-
-            if (window.toastTimer) clearTimeout(window.toastTimer);
-            window.toastTimer = setTimeout(() => {
-                toast.classList.remove('translate-y-0', 'opacity-100');
-                toast.classList.add('translate-y-20', 'opacity-0', 'pointer-events-none');
-            }, 3200);
-        }
-        window.showToast = showToast;
-
-        let confirmCallback = null;
-        function showConfirm(title, message, onConfirm) {
-            const modal = document.getElementById('confirmModal');
-            const titleEl = document.getElementById('confirmModalTitle');
-            const msgEl = document.getElementById('confirmModalMsg');
-            if (!modal || !titleEl || !msgEl) return;
-
-            titleEl.textContent = title;
-            msgEl.textContent = message;
-            confirmCallback = onConfirm;
-
-            modal.classList.remove('opacity-0', 'pointer-events-none');
-            modal.querySelector('div').classList.remove('scale-95');
-            modal.querySelector('div').classList.add('scale-100');
-        }
-        window.showConfirm = showConfirm;
-
-        function closeConfirmModal(confirmed = false) {
-            const modal = document.getElementById('confirmModal');
-            if (modal) {
-                modal.classList.add('opacity-0', 'pointer-events-none');
-                modal.querySelector('div').classList.remove('scale-100');
-                modal.querySelector('div').classList.add('scale-95');
-            }
-            if (confirmed && typeof confirmCallback === 'function') {
-                confirmCallback();
-            }
-            confirmCallback = null;
-        }
-        window.closeConfirmModal = closeConfirmModal;
-
-       // 設定を画面（タイトル・アイコン・テーマカラー等）に一括反映させる関数
+// 設定を画面（タイトル・アイコン・テーマカラー等）に一括反映させる関数
         function applySiteConfig() {
             const config = window.siteConfig;
             if (!config) return;
@@ -404,85 +207,78 @@ window.applySiteConfig = function() {
             
             if (appTitle) appTitle.content = config.title || '写真日記';
 
-          // 3. 先にテーマカラーを適用する
-        const theme = THEME_CLASSES[config.themeColor] || THEME_CLASSES.stone;
-        const logoBg = document.getElementById('siteHeaderLogoBox');
-        if (logoBg) {
-            logoBg.className = `w-9 h-9 rounded-xl ${theme.bgLight} ${theme.textPrimary} flex items-center justify-center font-serif-title font-bold text-lg group-hover:scale-105 transition-transform overflow-hidden`;
-        }
-
-        const writeBtn = document.getElementById('newPostBtn');
-        if (writeBtn) {
-            writeBtn.className = `${window.isAdmin ? 'flex' : 'hidden'} px-3.5 py-1.5 rounded-xl text-xs font-medium text-white ${theme.bgPrimary} ${theme.hoverPrimary} transition-colors shadow-sm items-center gap-1.5`;
-        }
-
-       // 2. ロゴ（文字 または 画像）の反映
-        const logoTextEl = document.getElementById('siteHeaderLogo');
-        const logoImgEl = document.getElementById('siteHeaderLogoImg');
-        // ※ const appleIcon / const favicon の重複宣言を削除し、既存のものを使うか直接取得する
-        const appleIconEl = document.getElementById('appleTouchIcon');
-        const faviconEl = document.getElementById('favicon');
-
-        if (config.logoImageUrl && config.logoImageUrl.trim() !== '') {
-            // 画像が設定されている場合
-            if (logoTextEl) {
-                logoTextEl.style.display = 'none';
-                logoTextEl.classList.add('hidden');
+            // 3. 先にテーマカラーを適用する
+            const theme = THEME_CLASSES[config.themeColor] || THEME_CLASSES.stone;
+            const logoBg = document.getElementById('siteHeaderLogoBox');
+            if (logoBg) {
+                logoBg.className = `w-9 h-9 rounded-xl ${theme.bgLight} ${theme.textPrimary} flex items-center justify-center font-serif-title font-bold text-lg group-hover:scale-105 transition-transform overflow-hidden`;
             }
-            if (logoImgEl) {
-                logoImgEl.src = config.logoImageUrl;
-                logoImgEl.style.display = 'block';
-                logoImgEl.classList.remove('hidden');
-            }
-            if (appleIconEl) appleIconEl.href = config.logoImageUrl;
-            if (faviconEl) faviconEl.href = config.logoImageUrl;
-        } else {
-            // 画像がない場合は文字を表示
-            if (logoImgEl) {
-                logoImgEl.style.display = 'none';
-                logoImgEl.classList.add('hidden');
-            }
-            if (logoTextEl) {
-                logoTextEl.textContent = config.logoChar || 'P';
-                logoTextEl.style.display = 'block';
-                logoTextEl.classList.remove('hidden');
-            }
-        }
-            
-        // フィルター等の再描画
-        if (typeof renderWeatherFilterButtons === 'function') renderWeatherFilterButtons();
-        if (typeof renderWeatherSelectOptions === 'function') renderWeatherSelectOptions();
 
-        // 4. 【追加】カレンダー / 一覧ビュー切替スイッチのテーマカラー反映（完全修正版）
-        const mode = window.galleryViewMode || 'calendar';
-        const calBtn = document.getElementById('viewModeCalBtn');
-        const gridBtn = document.getElementById('viewModeGridBtn');
-        
-        // 外側のコンテナにテーマの薄い背景色を適用
-        const container = calBtn ? calBtn.closest('.theme-toggle-container') : null;
-        if (container) {
-            container.className = `theme-toggle-container p-1 rounded-xl flex items-center gap-1 ${theme.bgLight || 'bg-rose-50'}`;
-        }
+            const writeBtn = document.getElementById('newPostBtn');
+            if (writeBtn) {
+                writeBtn.className = `${window.isAdmin ? 'flex' : 'hidden'} px-3.5 py-1.5 rounded-xl text-xs font-medium text-white ${theme.bgPrimary} ${theme.hoverPrimary} transition-colors shadow-sm items-center gap-1.5`;
+            }
 
-        if (calBtn && gridBtn) {
-            // 選択中：濃いテーマカラーの背景 ＋ 白文字
-            const activeClass = `${theme.bgPrimary} text-white font-semibold shadow-sm`;
-            // 未選択：すっきりした黒・グレー文字（背景なし）
-            const inactiveClass = 'text-stone-700 hover:text-stone-900 bg-transparent shadow-none';
+           // 2. ロゴ（文字 または 画像）の反映
+            const logoTextEl = document.getElementById('siteHeaderLogo');
+            const logoImgEl = document.getElementById('siteHeaderLogoImg');
+            const appleIconEl = document.getElementById('appleTouchIcon');
+            const faviconEl = document.getElementById('favicon');
 
-            if (mode === 'calendar') {
-                calBtn.className = `px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1 ${activeClass}`;
-                gridBtn.className = `px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1 ${inactiveClass}`;
+            if (config.logoImageUrl && config.logoImageUrl.trim() !== '') {
+                // 画像が設定されている場合
+                if (logoTextEl) {
+                    logoTextEl.style.display = 'none';
+                    logoTextEl.classList.add('hidden');
+                }
+                if (logoImgEl) {
+                    logoImgEl.src = config.logoImageUrl;
+                    logoImgEl.style.display = 'block';
+                    logoImgEl.classList.remove('hidden');
+                }
+                if (appleIconEl) appleIconEl.href = config.logoImageUrl;
+                if (faviconEl) faviconEl.href = config.logoImageUrl;
             } else {
-                gridBtn.className = `px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1 ${activeClass}`;
-                calBtn.className = `px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1 ${inactiveClass}`;
+                // 画像がない場合は文字を表示
+                if (logoImgEl) {
+                    logoImgEl.style.display = 'none';
+                    logoImgEl.classList.add('hidden');
+                }
+                if (logoTextEl) {
+                    logoTextEl.textContent = config.logoChar || 'P';
+                    logoTextEl.style.display = 'block';
+                    logoTextEl.classList.remove('hidden');
+                }
+            }
+                
+            // フィルター等の再描画
+            if (typeof renderWeatherFilterButtons === 'function') renderWeatherFilterButtons();
+            if (typeof renderWeatherSelectOptions === 'function') renderWeatherSelectOptions();
+
+            // 4. カレンダー / 一覧ビュー切替スイッチのテーマカラー反映
+            const mode = window.galleryViewMode || 'calendar';
+            const calBtn = document.getElementById('viewModeCalBtn');
+            const gridBtn = document.getElementById('viewModeGridBtn');
+            
+            const container = calBtn ? calBtn.closest('.theme-toggle-container') : null;
+            if (container) {
+                container.className = `theme-toggle-container p-1 rounded-xl flex items-center gap-1 ${theme.bgLight || 'bg-rose-50'}`;
+            }
+
+            if (calBtn && gridBtn) {
+                const activeClass = `${theme.bgPrimary} text-white font-semibold shadow-sm`;
+                const inactiveClass = 'text-stone-700 hover:text-stone-900 bg-transparent shadow-none';
+
+                if (mode === 'calendar') {
+                    calBtn.className = `px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1 ${activeClass}`;
+                    gridBtn.className = `px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1 ${inactiveClass}`;
+                } else {
+                    gridBtn.className = `px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1 ${activeClass}`;
+                    calBtn.className = `px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1 ${inactiveClass}`;
+                }
             }
         }
-    }
-    window.applySiteConfig = applySiteConfig;
-
-    // 🌟 これが描画のタイミングでも動くように、renderGalleryView の最後にも同じロジックを呼び出すか配置します
-    // ※もし renderGalleryView 内でスイッチの色を更新したい場合は、renderGalleryView の中にも同様の処理が必要です
+        window.applySiteConfig = applySiteConfig;
     
     function renderWeatherFilterButtons() {
         const container = document.getElementById('weatherFilterContainer');
@@ -942,41 +738,17 @@ function getCircledNumber(num) {
         }
         window.renderGridPhotoLayout = renderGridPhotoLayout;
 
+        // ビュー切替時の関数（900行目付近にある古い方と置き換えてください）
         function setGalleryViewMode(mode) {
             window.galleryViewMode = mode;
-            
-            const calBtn = document.getElementById('viewModeCalBtn');
-            const gridBtn = document.getElementById('viewModeGridBtn');
-            const container = calBtn ? calBtn.closest('.theme-toggle-container') : null;
-            
-            const config = window.siteConfig || {};
-            const theme = (typeof THEME_CLASSES !== 'undefined') 
-                ? (THEME_CLASSES[config.themeColor] || THEME_CLASSES.rose) 
-                : { bgPrimary: 'bg-rose-600', bgLight: 'bg-rose-50' };
-
-            if (container) {
-                container.className = `theme-toggle-container p-1 rounded-xl flex items-center gap-1 ${theme.bgLight}`;
+            if (typeof window.applySiteConfig === 'function') {
+                window.applySiteConfig();
             }
-
-            if (calBtn && gridBtn) {
-                // 選択中：濃いテーマカラー背景 ＋ 確実に【白文字】
-                const activeClass = `${theme.bgPrimary} text-white font-semibold shadow-sm`;
-                // 未選択：背景なし ＋ はっきりした【黒・濃いグレー文字】
-                const inactiveClass = 'text-stone-800 hover:text-stone-950 bg-transparent shadow-none';
-
-                if (mode === 'calendar') {
-                    calBtn.className = `px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1 ${activeClass}`;
-                    gridBtn.className = `px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1 ${inactiveClass}`;
-                } else {
-                    gridBtn.className = `px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1 ${activeClass}`;
-                    calBtn.className = `px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1 ${inactiveClass}`;
-                }
+            if (typeof renderGalleryView === 'function') {
+                renderGalleryView();
             }
-
-            renderGalleryView();
         }
         window.setGalleryViewMode = setGalleryViewMode;
-
         function setThumbnailFitMode(mode) {
             window.thumbnailFitMode = mode;
             renderGalleryView();
