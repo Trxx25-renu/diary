@@ -394,97 +394,82 @@ window.applySiteConfig = function() {
             
             if (appTitle) appTitle.content = config.title || '写真日記';
 
-            // 2. ロゴ（文字 または 画像）の反映
-            const logoTextEl = document.getElementById('siteHeaderLogo');
-            const logoImgEl = document.getElementById('siteHeaderLogoImg');
-
-            if (config.logoImageUrl && config.logoImageUrl.trim() !== '') {
-                if (logoTextEl) logoTextEl.classList.add('hidden');
-                if (logoImgEl) {
-                    logoImgEl.src = config.logoImageUrl;
-                    logoImgEl.classList.remove('hidden');
-                }
-                if (appleIcon) appleIcon.href = config.logoImageUrl;
-                if (favicon) favicon.href = config.logoImageUrl;
-            } else {
-                if (logoImgEl) logoImgEl.classList.add('hidden');
-                if (logoTextEl) {
-                    logoTextEl.textContent = config.logoChar || 'P';
-                    logoTextEl.classList.remove('hidden');
-                }
-            }
-
-            // 3. テーマカラーの適用
-            const theme = THEME_CLASSES[config.themeColor] || THEME_CLASSES.stone;
-            const logoBg = document.getElementById('siteHeaderLogoBox');
-            if (logoBg) {
-                logoBg.className = `w-9 h-9 rounded-xl ${theme.bgLight} ${theme.textPrimary} flex items-center justify-center font-serif-title font-bold text-lg group-hover:scale-105 transition-transform overflow-hidden`;
-            }
-
-            const writeBtn = document.getElementById('newPostBtn');
-            if (writeBtn) {
-                writeBtn.className = `${window.isAdmin ? 'flex' : 'hidden'} px-3.5 py-1.5 rounded-xl text-xs font-medium text-white ${theme.bgPrimary} ${theme.hoverPrimary} transition-colors shadow-sm items-center gap-1.5`;
-            }
-
-            if (typeof renderWeatherFilterButtons === 'function') renderWeatherFilterButtons();
-            if (typeof renderWeatherSelectOptions === 'function') renderWeatherSelectOptions();
+           // 3. テーマカラーの適用
+        const theme = THEME_CLASSES[config.themeColor] || THEME_CLASSES.stone;
+        const logoBg = document.getElementById('siteHeaderLogoBox');
+        if (logoBg) {
+            logoBg.className = `w-9 h-9 rounded-xl ${theme.bgLight} ${theme.textPrimary} flex items-center justify-center font-serif-title font-bold text-lg group-hover:scale-105 transition-transform overflow-hidden`;
         }
-        window.applySiteConfig = applySiteConfig;
 
-        // ★もしすでに siteConfig がロード済みなら、この定義の瞬間に強制実行する
-        if (window.siteConfig) {
-            applySiteConfig();
+        const writeBtn = document.getElementById('newPostBtn');
+        if (writeBtn) {
+            writeBtn.className = `${window.isAdmin ? 'flex' : 'hidden'} px-3.5 py-1.5 rounded-xl text-xs font-medium text-white ${theme.bgPrimary} ${theme.hoverPrimary} transition-colors shadow-sm items-center gap-1.5`;
         }
-        
-            const config = window.siteConfig;
-            const options = config.weatherOptions || [];
-            const theme = THEME_CLASSES[config.themeColor] || THEME_CLASSES.amber;
 
-            let html = `
-                <span class="text-stone-400 shrink-0 text-[11px] mr-1">タグ:</span>
-                <button onclick="setWeatherFilter('all')" data-weather="all" class="weather-filter-btn shrink-0 px-2.5 py-1 rounded-lg ${window.selectedWeatherFilter === 'all' ? theme.bgPrimary + ' text-white font-medium shadow-sm' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'} transition-all">
-                    すべて
+        // 天気フィルター等の再描画
+        if (typeof renderWeatherFilterButtons === 'function') renderWeatherFilterButtons();
+        if (typeof renderWeatherSelectOptions === 'function') renderWeatherSelectOptions();
+    }
+    window.applySiteConfig = applySiteConfig;
+
+    // もしすでに siteConfig がロード済みなら、この定義の瞬間に強制実行する
+    if (window.siteConfig) {
+        applySiteConfig();
+    }
+    
+    function renderWeatherFilterButtons() {
+        const container = document.getElementById('weatherFilterContainer');
+        if (!container) return;
+
+        const config = window.siteConfig || {};
+        const options = config.weatherOptions || [];
+        const theme = THEME_CLASSES[config.themeColor] || THEME_CLASSES.amber;
+
+        let html = `
+            <span class="text-stone-400 shrink-0 text-[11px] mr-1">タグ:</span>
+            <button onclick="setWeatherFilter('all')" data-weather="all" class="weather-filter-btn shrink-0 px-2.5 py-1 rounded-lg ${window.selectedWeatherFilter === 'all' ? theme.bgPrimary + ' text-white font-medium shadow-sm' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'} transition-all">
+                すべて
+            </button>
+        `;
+
+        options.forEach(opt => {
+            const label = opt.trim();
+            if (!label) return;
+            const isSelected = window.selectedWeatherFilter === label;
+            const btnClass = isSelected ? `${theme.bgPrimary} text-white font-medium shadow-sm` : 'bg-stone-100 text-stone-600 hover:bg-stone-200';
+            html += `
+                <button onclick="setWeatherFilter('${escapeHtml(label)}')" data-weather="${escapeHtml(label)}" class="weather-filter-btn shrink-0 px-2.5 py-1 rounded-lg ${btnClass} transition-all">
+                    ${escapeHtml(label)}
                 </button>
             `;
+        });
 
-            options.forEach(opt => {
-                const label = opt.trim();
-                if (!label) return;
-                const isSelected = window.selectedWeatherFilter === label;
-                const btnClass = isSelected ? `${theme.bgPrimary} text-white font-medium shadow-sm` : 'bg-stone-100 text-stone-600 hover:bg-stone-200';
-                html += `
-                    <button onclick="setWeatherFilter('${escapeHtml(label)}')" data-weather="${escapeHtml(label)}" class="weather-filter-btn shrink-0 px-2.5 py-1 rounded-lg ${btnClass} transition-all">
-                        ${escapeHtml(label)}
-                    </button>
-                `;
-            });
+        container.innerHTML = html;
+    }
+    window.renderWeatherFilterButtons = renderWeatherFilterButtons;
 
-            container.innerHTML = html;
-        }
-        window.renderWeatherFilterButtons = renderWeatherFilterButtons;
+    function renderWeatherSelectOptions() {
+        const select = document.getElementById('inputWeather');
+        if (!select) return;
 
-        function renderWeatherSelectOptions() {
-            const select = document.getElementById('inputWeather');
-            if (!select) return;
+        const options = window.siteConfig ? (window.siteConfig.weatherOptions || []) : [];
+        select.innerHTML = options.map(opt => `<option value="${escapeHtml(opt.trim())}">${escapeHtml(opt.trim())}</option>`).join('');
+    }
+    window.renderWeatherSelectOptions = renderWeatherSelectOptions;
 
-            const options = window.siteConfig.weatherOptions || [];
-            select.innerHTML = options.map(opt => `<option value="${escapeHtml(opt.trim())}">${escapeHtml(opt.trim())}</option>`).join('');
-        }
-        window.renderWeatherSelectOptions = renderWeatherSelectOptions;
+    function navigateTo(view, param = null) {
+        window.currentView = view;
+        
+        const viewMonths = document.getElementById('view-months');
+        const viewGallery = document.getElementById('view-gallery');
+        const viewDetail = document.getElementById('view-detail');
+        const searchToolbar = document.getElementById('searchToolbarSection');
+        const searchResultsArea = document.getElementById('searchResultsArea');
 
-        function navigateTo(view, param = null) {
-            window.currentView = view;
-            
-            const viewMonths = document.getElementById('view-months');
-            const viewGallery = document.getElementById('view-gallery');
-            const viewDetail = document.getElementById('view-detail');
-            const searchToolbar = document.getElementById('searchToolbarSection');
-            const searchResultsArea = document.getElementById('searchResultsArea');
-
-            if (viewMonths) viewMonths.classList.add('hidden');
-            if (viewGallery) viewGallery.classList.add('hidden');
-            if (viewDetail) viewDetail.classList.add('hidden');
-            if (searchResultsArea) searchResultsArea.classList.add('hidden');
+        if (viewMonths) viewMonths.classList.add('hidden');
+        if (viewGallery) viewGallery.classList.add('hidden');
+        if (viewDetail) viewDetail.classList.add('hidden');
+        if (searchResultsArea) searchResultsArea.classList.add('hidden');
 
             if (view === 'months') {
                 if (viewMonths) viewMonths.classList.remove('hidden');
