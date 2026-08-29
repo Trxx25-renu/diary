@@ -371,14 +371,14 @@ window.applySiteConfig = function() {
         }
         window.closeConfirmModal = closeConfirmModal;
 
+        // 設定を画面（タイトル・アイコン・テーマカラー等）に一括反映させる関数
         function applySiteConfig() {
             const config = window.siteConfig;
             if (!config) return;
 
+            // 1. タイトルとサブタイトルの反映
             const headerTitle = document.getElementById('siteHeaderTitle');
             const headerSubtitle = document.getElementById('siteHeaderSubtitle');
-            const logoChar = document.getElementById('siteHeaderLogo');
-            const logoImg = document.getElementById('siteHeaderLogoImg');
             const footerText = document.getElementById('siteFooterText');
 
             if (headerTitle) headerTitle.textContent = config.title;
@@ -386,20 +386,22 @@ window.applySiteConfig = function() {
             if (footerText) footerText.innerHTML = `&copy; ${escapeHtml(config.title)} - ${escapeHtml(config.subtitle)}`;
             document.title = `${config.title} - ${config.subtitle}`;
 
-            const appleIcon = document.getElementById('appleTouchIcon');
-            const favicon = document.getElementById('faviconIcon');
             const appTitle = document.getElementById('appleAppTitle');
-            
             if (appTitle) appTitle.content = config.title || '写真日記';
 
-            // ★ 古い画像データに邪魔されず、設定した文字ロゴとテーマカラーを確実に反映する形に修正
+            // 2. アイコン（文字ロゴ）の反映
+            const logoChar = document.getElementById('siteHeaderLogo');
+            const logoImg = document.getElementById('siteHeaderLogoImg');
+            
             if (logoImg) logoImg.classList.add('hidden');
             if (logoChar) {
-                logoChar.textContent = config.logoChar || 'P';
+                logoChar.textContent = config.logoChar || 'S';
                 logoChar.classList.remove('hidden');
             }
 
-            const theme = THEME_CLASSES[config.themeColor] || THEME_CLASSES.stone;
+            // 3. テーマカラーの確実な適用
+            const theme = THEME_CLASSES[config.themeColor] || THEME_CLASSES.rose;
+            
             const logoBg = document.getElementById('siteHeaderLogoBox');
             if (logoBg) {
                 logoBg.className = `w-9 h-9 rounded-xl ${theme.bgLight} ${theme.textPrimary} flex items-center justify-center font-serif-title font-bold text-lg group-hover:scale-105 transition-transform overflow-hidden`;
@@ -410,11 +412,11 @@ window.applySiteConfig = function() {
                 writeBtn.className = `${window.isAdmin ? 'flex' : 'hidden'} px-3.5 py-1.5 rounded-xl text-xs font-medium text-white ${theme.bgPrimary} ${theme.hoverPrimary} transition-colors shadow-sm items-center gap-1.5`;
             }
 
-            renderWeatherFilterButtons();
-            renderWeatherSelectOptions();
+            // フィルターやセレクトの再描画
+            if (typeof renderWeatherFilterButtons === 'function') renderWeatherFilterButtons();
+            if (typeof renderWeatherSelectOptions === 'function') renderWeatherSelectOptions();
         }
         window.applySiteConfig = applySiteConfig;
-
         function renderWeatherFilterButtons() {
             const container = document.getElementById('weatherFilterContainer');
             if (!container) return;
