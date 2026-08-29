@@ -376,10 +376,9 @@ window.applySiteConfig = function() {
             const config = window.siteConfig;
             if (!config) return;
 
+            // 1. タイトル・サブタイトルの反映
             const headerTitle = document.getElementById('siteHeaderTitle');
             const headerSubtitle = document.getElementById('siteHeaderSubtitle');
-            const logoChar = document.getElementById('siteHeaderLogo');
-            const logoImg = document.getElementById('siteHeaderLogoImg');
             const footerText = document.getElementById('siteFooterText');
 
             if (headerTitle) headerTitle.textContent = config.title;
@@ -393,24 +392,29 @@ window.applySiteConfig = function() {
             
             if (appTitle) appTitle.content = config.title || '写真日記';
 
-            // ★ ここを修正：画像データがある場合は画像を表示し、ない場合は文字を表示する
+            // 2. ロゴ（文字 または 画像）の反映
+            const logoTextEl = document.getElementById('siteHeaderLogo');
+            const logoImgEl = document.getElementById('siteHeaderLogoImg');
+
             if (config.logoImageUrl && config.logoImageUrl.trim() !== '') {
-                if (logoChar) logoChar.classList.add('hidden');
-                if (logoImg) {
-                    logoImg.src = config.logoImageUrl;
-                    logoImg.classList.remove('hidden');
+                // 画像が設定されている場合
+                if (logoTextEl) logoTextEl.classList.add('hidden');
+                if (logoImgEl) {
+                    logoImgEl.src = config.logoImageUrl;
+                    logoImgEl.classList.remove('hidden');
                 }
                 if (appleIcon) appleIcon.href = config.logoImageUrl;
                 if (favicon) favicon.href = config.logoImageUrl;
             } else {
-                if (logoImg) logoImg.classList.add('hidden');
-                if (logoChar) {
-                    logoChar.textContent = config.logoChar || 'P';
-                    logoChar.classList.remove('hidden');
+                // 文字ロゴの場合
+                if (logoImgEl) logoImgEl.classList.add('hidden');
+                if (logoTextEl) {
+                    logoTextEl.textContent = config.logoChar || 'P';
+                    logoTextEl.classList.remove('hidden');
                 }
             }
 
-            // テーマカラーの反映
+            // 3. テーマカラーの適用
             const theme = THEME_CLASSES[config.themeColor] || THEME_CLASSES.stone;
             const logoBg = document.getElementById('siteHeaderLogoBox');
             if (logoBg) {
@@ -422,6 +426,7 @@ window.applySiteConfig = function() {
                 writeBtn.className = `${window.isAdmin ? 'flex' : 'hidden'} px-3.5 py-1.5 rounded-xl text-xs font-medium text-white ${theme.bgPrimary} ${theme.hoverPrimary} transition-colors shadow-sm items-center gap-1.5`;
             }
 
+            // 天気フィルター等の再描画
             if (typeof renderWeatherFilterButtons === 'function') renderWeatherFilterButtons();
             if (typeof renderWeatherSelectOptions === 'function') renderWeatherSelectOptions();
         }
