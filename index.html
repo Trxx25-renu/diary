@@ -945,7 +945,6 @@ function getCircledNumber(num) {
         function setGalleryViewMode(mode) {
             window.galleryViewMode = mode;
             
-            // 🌟 選択されたモードに応じて、ボタンの見た目を即座に切り替える
             const calBtn = document.getElementById('viewModeCalBtn');
             const gridBtn = document.getElementById('viewModeGridBtn');
             const container = calBtn ? calBtn.closest('.theme-toggle-container') : null;
@@ -960,8 +959,10 @@ function getCircledNumber(num) {
             }
 
             if (calBtn && gridBtn) {
+                // 選択中：濃いテーマカラー背景 ＋ 確実に【白文字】
                 const activeClass = `${theme.bgPrimary} text-white font-semibold shadow-sm`;
-                const inactiveClass = 'text-stone-700 hover:text-stone-900 bg-transparent shadow-none';
+                // 未選択：背景なし ＋ はっきりした【黒・濃いグレー文字】
+                const inactiveClass = 'text-stone-800 hover:text-stone-950 bg-transparent shadow-none';
 
                 if (mode === 'calendar') {
                     calBtn.className = `px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1 ${activeClass}`;
