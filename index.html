@@ -1470,24 +1470,29 @@ function handleImageSelect(event) {
 
             try {
                 if (window.db) {
-            try {
-                const { doc, setDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
-                const configRef = doc(window.db, 'artifacts', window.appId, 'public', 'data', 'config', 'settings');
-                
-                await setDoc(configRef, {
-                    passcode: window.storedPasscode,
-                    ...window.siteConfig
-                });
+                    const { doc, setDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
+                    const docRef = doc(window.db, 'artifacts', window.appId, 'public', 'data', 'entries', targetId);
+                    await setDoc(docRef, entryData);
+                }
 
-                // ★ ここを追加：保存が成功したら画面に「成功！」と出す
-                alert("✨ Firestoreへの保存に成功しました！");
+                closePostModal();
+                const ym = date.substring(0, 7);
+                navigateTo('gallery', ym);
+
+                const successMsg = window.editingEntryId ? '日記を更新しました！' : '日記を保存しました！';
+                showToast(successMsg, 'success');
+
+                window.editingEntryId = null;
 
             } catch (err) {
-                console.error("Config save error:", err);
-                // ★ ここを追加：失敗したらエラー内容を画面に出す
-                alert("❌ 保存に失敗しました: " + err.message);
-            }
+                console.error("Save error:", err);
+                showToast('保存に失敗しました。', 'error');
+            } finally {
+                if (saveBtn) {
+                    saveBtn.disabled = false;
+                    saveBtn.textContent = '保存する';
                 }
+            }
         }
         window.handleSaveEntry = handleSaveEntry;
 
