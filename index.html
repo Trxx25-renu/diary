@@ -1835,14 +1835,16 @@ function getCircledNumber(num) {
             window.applySiteConfig();
         }
 
-        // ★ここで確実にテーマカラーをUI全体に適用する！
+    // 1. 先に画面の移動や表示を行う
+        if (typeof window.navigateTo === 'function') {
+            window.navigateTo('gallery'); // または該当する画面名
+        }
+
+    // 2. すべての画面・描画処理が終わったあとに、最後にテーマを適用する
         if (typeof window.applyCurrentThemeToUI === 'function') {
             window.applyCurrentThemeToUI();
         }
-
-        if (typeof window.navigateTo === 'function') {
-            window.navigateTo('months');
-        }
+    
     // 確実にFirestoreから設定を読み込む関数
         async function loadConfigFromFirestore() {
             // window.db または window.appId がまだ無い場合は少し待つ
