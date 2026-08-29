@@ -1222,6 +1222,24 @@ function getCircledNumber(num) {
         }
         window.handleImageSelect = handleImageSelect;
 
+        // 【追加】投稿・編集モーダルを閉じる関数（エラー防止用）
+        function closePostModal() {
+            const modal = document.getElementById('postModal');
+            if (modal) {
+                modal.classList.add('opacity-0', 'pointer-events-none');
+                const modalBox = modal.querySelector('div');
+                if (modalBox) {
+                    modalBox.classList.remove('scale-100');
+                    modalBox.classList.add('scale-95');
+                }
+            }
+            
+            // 編集から新規投稿へ戻す際のためにタイトルを初期値に戻す
+            const modalTitleEl = document.getElementById('postModalTitle');
+            if (modalTitleEl) modalTitleEl.textContent = '新しく日記を書く';
+        }
+        window.closePostModal = closePostModal;
+
         async function handleSaveEntry(event) {
             event.preventDefault();
 
