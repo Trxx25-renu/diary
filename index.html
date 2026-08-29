@@ -457,7 +457,7 @@ window.applySiteConfig = function() {
     }
     window.renderWeatherSelectOptions = renderWeatherSelectOptions;
 
-    function navigateTo(view, param = null) {
+   function navigateTo(view, param = null) {
         window.currentView = view;
         
         const viewMonths = document.getElementById('view-months');
@@ -471,25 +471,18 @@ window.applySiteConfig = function() {
         if (viewDetail) viewDetail.classList.add('hidden');
         if (searchResultsArea) searchResultsArea.classList.add('hidden');
 
-            if (view === 'months') {
-                if (viewMonths) viewMonths.classList.remove('hidden');
-                if (searchToolbar) searchToolbar.classList.remove('hidden');
-                renderMonthFolders();
-            } else if (view === 'gallery') {
-                if (param) window.selectedYearMonth = param;
-                if (viewGallery) viewGallery.classList.remove('hidden');
-                if (searchToolbar) searchToolbar.classList.remove('hidden');
-                renderGalleryView();
-            } else if (view === 'detail') {
-                if (param) window.selectedEntryId = param;
-                if (viewDetail) viewDetail.classList.remove('hidden');
-                if (searchToolbar) searchToolbar.classList.add('hidden');
-                renderDetailView();
-            }
-            // ★ どの画面に切り替えた場合でも、最後に必ずテーマカラーを適用する！
-            if (typeof window.applyCurrentThemeToUI === 'function') {
-                window.applyCurrentThemeToUI();
-            }
+        if (view === 'months') {
+            if (viewMonths) viewMonths.classList.remove('hidden');
+            if (searchToolbar) searchToolbar.classList.remove('hidden');
+            if (typeof renderMonthFolders === 'function') renderMonthFolders();
+        } else if (view === 'gallery') {
+            if (viewGallery) viewGallery.classList.remove('hidden');
+            if (searchToolbar) searchToolbar.classList.remove('hidden');
+        } else if (view === 'detail') {
+            if (viewDetail) viewDetail.classList.remove('hidden');
+        }
+    }
+    window.navigateTo = navigateTo;
 
             renderBreadcrumbs();
             handleSearch();
