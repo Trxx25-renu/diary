@@ -697,6 +697,7 @@ function getCircledNumber(num) {
         } else if (view === 'gallery') {
             if (viewGallery) viewGallery.classList.remove('hidden');
             if (searchToolbar) searchToolbar.classList.remove('hidden');
+            
             // ギャラリービューに切り替わったタイミングで、選択された月のデータを描画する
             if (typeof renderGalleryView === 'function') {
                 renderGalleryView();
@@ -706,6 +707,39 @@ function getCircledNumber(num) {
         }
     }
     window.navigateTo = navigateTo;
+
+        // ギャラリー描画用メイン関数
+    function renderGalleryView() {
+        const titleEl = document.getElementById('galleryTitle');
+        const subtitleEl = document.getElementById('gallerySubtitle');
+        const galleryContent = document.getElementById('galleryContent');
+        if (!galleryContent) return;
+        galleryContent.innerHTML = '';
+
+        // 選択されている年月がない場合は処理しない
+        if (!window.selectedYearMonth) return;
+
+        const [yearStr, monthStr] = window.selectedYearMonth.split('-');
+        const year = parseInt(yearStr, 10);
+        const month = parseInt(monthStr, 10);
+
+        if (titleEl) titleEl.textContent = `${year}年${month}月`;
+
+        // 選択された月の日記データだけに絞り込み
+        const filtered = (window.entries || []).filter(e => e.date && e.date.startsWith(window.selectedYearMonth));
+        filtered.sort((a, b) => a.date.localeCompare(b.date));
+
+        if (subtitleEl) subtitleEl.textContent = `全 ${filtered.length} 件の思い出`;
+
+        // 表示モード（カレンダー表示 / グリッド表示）に応じて描画関数を呼び出す
+        const mode = window.galleryViewMode || 'calendar';
+        if (mode === 'calendar') {
+            renderCalendarLayout(galleryContent, year, month, filtered);
+        } else {
+            renderGridPhotoLayout(galleryContent, filtered);
+        }
+    }
+    window.renderGalleryView = renderGalleryView;
         
         function renderCalendarLayout(container, year, month, entries) {
             // 同日の日記を配列でグループ化
