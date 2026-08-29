@@ -404,7 +404,7 @@ window.applySiteConfig = function() {
             
             if (appTitle) appTitle.content = config.title || '写真日記';
 
-           // 3. テーマカラーの適用
+          // 3. 先にテーマカラーを適用する
         const theme = THEME_CLASSES[config.themeColor] || THEME_CLASSES.stone;
         const logoBg = document.getElementById('siteHeaderLogoBox');
         if (logoBg) {
@@ -416,6 +416,35 @@ window.applySiteConfig = function() {
             writeBtn.className = `${window.isAdmin ? 'flex' : 'hidden'} px-3.5 py-1.5 rounded-xl text-xs font-medium text-white ${theme.bgPrimary} ${theme.hoverPrimary} transition-colors shadow-sm items-center gap-1.5`;
         }
 
+        // 2. ロゴ（文字 または 画像）の反映は、最後に実行して上書きされないようにする
+        const logoTextEl = document.getElementById('siteHeaderLogo');
+        const logoImgEl = document.getElementById('siteHeaderLogoImg');
+        const appleIcon = document.getElementById('appleTouchIcon');
+        const favicon = document.getElementById('favicon');
+
+        if (config.logoImageUrl && config.logoImageUrl.trim() !== '') {
+            if (logoTextEl) {
+                logoTextEl.style.display = 'none';
+                logoTextEl.classList.add('hidden');
+            }
+            if (logoImgEl) {
+                logoImgEl.src = config.logoImageUrl;
+                logoImgEl.style.display = 'block';
+                logoImgEl.classList.remove('hidden');
+            }
+            if (appleIcon) appleIcon.href = config.logoImageUrl;
+            if (favicon) favicon.href = config.logoImageUrl;
+        } else {
+            if (logoImgEl) {
+                logoImgEl.style.display = 'none';
+                logoImgEl.classList.add('hidden');
+            }
+            if (logoTextEl) {
+                logoTextEl.textContent = config.logoChar || 'P';
+                logoTextEl.style.display = 'block';
+                logoTextEl.classList.remove('hidden');
+            }
+        }
         // 天気フィルター等の再描画
         if (typeof renderWeatherFilterButtons === 'function') renderWeatherFilterButtons();
         if (typeof renderWeatherSelectOptions === 'function') renderWeatherSelectOptions();
