@@ -388,6 +388,7 @@ window.applySiteConfig = function() {
 
         function applySiteConfig() {
             const config = window.siteConfig;
+            if (!config) return;
 
             const headerTitle = document.getElementById('siteHeaderTitle');
             const headerSubtitle = document.getElementById('siteHeaderSubtitle');
@@ -406,23 +407,14 @@ window.applySiteConfig = function() {
             
             if (appTitle) appTitle.content = config.title || '写真日記';
 
-            if (config.logoImageUrl && config.logoImageUrl.trim() !== '') {
-                if (logoChar) logoChar.classList.add('hidden');
-                if (logoImg) {
-                    logoImg.src = config.logoImageUrl;
-                    logoImg.classList.remove('hidden');
-                }
-                if (appleIcon) appleIcon.href = config.logoImageUrl;
-                if (favicon) favicon.href = config.logoImageUrl;
-            } else {
-                if (logoImg) logoImg.classList.add('hidden');
-                if (logoChar) {
-                    logoChar.textContent = config.logoChar || 'P';
-                    logoChar.classList.remove('hidden');
-                }
+            // ★ 古い画像データに邪魔されず、設定した文字ロゴとテーマカラーを確実に反映する形に修正
+            if (logoImg) logoImg.classList.add('hidden');
+            if (logoChar) {
+                logoChar.textContent = config.logoChar || 'P';
+                logoChar.classList.remove('hidden');
             }
 
-           const theme = THEME_CLASSES[config.themeColor] || THEME_CLASSES.stone;
+            const theme = THEME_CLASSES[config.themeColor] || THEME_CLASSES.stone;
             const logoBg = document.getElementById('siteHeaderLogoBox');
             if (logoBg) {
                 logoBg.className = `w-9 h-9 rounded-xl ${theme.bgLight} ${theme.textPrimary} flex items-center justify-center font-serif-title font-bold text-lg group-hover:scale-105 transition-transform overflow-hidden`;
