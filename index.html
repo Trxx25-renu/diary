@@ -2005,22 +2005,6 @@ function applyCurrentThemeToUI() {
 }
 window.applyCurrentThemeToUI = applyCurrentThemeToUI;
 
-// タイトルや設定を画面に反映させる実体
-function applySiteConfig() {
-    if (window.siteConfig) {
-        const titleEl = document.getElementById('siteTitle');
-        if (titleEl && window.siteConfig.title) {
-            titleEl.textContent = window.siteConfig.title;
-        }
-        
-        // アイコンやサブタイトルなどもここで反映可能であれば追加
-        const subtitleEl = document.getElementById('siteSubtitle');
-        if (subtitleEl && window.siteConfig.subtitle) {
-            subtitleEl.textContent = window.siteConfig.subtitle;
-        }
-    }
-}
-window.applySiteConfig = applySiteConfig;
    // 記事詳細画面での `<` `>` ボタンによる切り替え関数
 window.navigateDetail = function(direction) {
     if (!window.entries || window.entries.length === 0) return;
