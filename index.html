@@ -94,6 +94,40 @@
     <script type="module">
     document.addEventListener("DOMContentLoaded", async () => {
         console.log("🚀 初期化処理を開始します...");
+
+        // 1. トースト通知を表示する関数（エラー防止用）
+        if (typeof showToast !== 'function') {
+            window.showToast = function(message, type = 'success') {
+                console.log(`[Toast ${type}]: ${message}`);
+                // 画面上に簡易的な通知を出す要素があればここで処理
+                const toastEl = document.getElementById('toastMessage');
+                if (toastEl) {
+                    toastEl.textContent = message;
+                    toastEl.className = `fixed bottom-5 right-5 z-50 px-4 py-2 rounded-xl text-white text-sm shadow-lg transition-all ${type === 'error' ? 'bg-rose-600' : 'bg-stone-800'}`;
+                    toastEl.style.display = 'block';
+                    setTimeout(() => { toastEl.style.display = 'none'; }, 3000);
+                }
+            };
+        }
+
+        // 2. 投稿モーダルを開く関数（新規作成・編集共通）
+        if (typeof openPostModal !== 'function') {
+            window.openPostModal = function(postId = null) {
+                console.log("📝 openPostModal が呼ばれました。ID:", postId);
+                const modal = document.getElementById('postModal'); // モーダルのIDに合わせて調整
+                if (modal) {
+                    modal.classList.remove('hidden');
+                    modal.style.display = 'block';
+                } else {
+                    console.error("投稿モーダルの要素が見つかりません。");
+                }
+                
+                // もし編集IDが渡されている場合の処理
+                if (postId && typeof loadPostForEdit === 'function') {
+                    loadPostForEdit(postId);
+                }
+            };
+        }
         
         try {
         if (typeof window.appId === 'undefined' || !window.appId) {
