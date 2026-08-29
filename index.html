@@ -1860,143 +1860,101 @@ window.openEditModalFromDetail = openEditModalFromDetail;
             // 匿名ログインを実行してクラウドDBへアクセス可能にする
             await signInAnonymously(auth);
 
-            const configRef = doc(db, 'artifacts', appId, 'public', 'data', 'config', 'settings');
-            const configSnap = await getDoc(configRef);
-            if (configSnap.exists()) {
-                const loadedConfig = configSnap.data();
-                if (loadedConfig.passcode) window.storedPasscode = loadedConfig.passcode;
-    
-                window.siteConfig = {
-                    title: loadedConfig.title || window.siteConfig.title,
-                    subtitle: loadedConfig.subtitle || window.siteConfig.subtitle,
-                    logoChar: loadedConfig.logoChar || window.siteConfig.logoChar,
-                    logoImageUrl: loadedConfig.logoImageUrl || '',
-                    themeColor: loadedConfig.themeColor || window.siteConfig.themeColor,
-                    weatherOptions: loadedConfig.weatherOptions || window.siteConfig.weatherOptions
-                };
-                if (typeof applyCurrentThemeToUI === 'function') {
+        const configRef = doc(db, 'artifacts', appId, 'public', 'data', 'config', 'settings');
+        const configSnap = await getDoc(configRef);
+        if (configSnap.exists()) {
+            const loadedConfig = configSnap.data();
+            if (loadedConfig.passcode) window.storedPasscode = loadedConfig.passcode;
+
+            window.siteConfig = {
+                title: loadedConfig.title || window.siteConfig.title,
+                subtitle: loadedConfig.subtitle || window.siteConfig.subtitle,
+                logoChar: loadedConfig.logoChar || window.siteConfig.logoChar,
+                logoImageUrl: loadedConfig.logoImageUrl || '',
+                themeColor: loadedConfig.themeColor || window.siteConfig.themeColor,
+                weatherOptions: loadedConfig.weatherOptions || window.siteConfig.weatherOptions
+            };
+            if (typeof applyCurrentThemeToUI === 'function') {
                 applyCurrentThemeToUI();
             }
         }
 
-            function applyCurrentThemeToUI() {
-            const themeKey = (window.siteConfig && window.siteConfig.themeColor) || 'amber';
-            const current = THEME_CLASSES[themeKey] || THEME_CLASSES.amber;
+        const entriesRef = collection(db, 'artifacts', appId, 'public', 'data', 'entries');
+        const querySnap = await getDocs(entriesRef);
+        const loaded = [];
+        querySnap.forEach(d => {
+            loaded.push({ id: d.id, ...d.data() });
+        });
 
-            // 1. 切替ボタンの外側コンテナの色を更新
-            document.querySelectorAll('.theme-toggle-container').forEach(el => {
-                // すべての bg-xxx-xxx/xx クラスを一度綺麗に掃除する
-                el.className = el.className.replace(/bg-[a-z]+-\d+(\/\d+)?/g, '').trim();
-                el.classList.add(...current.toggleContainer.split(' '));
-            });
-
-            // 2. カレンダー / グリッドの表示切替ボタンをテーマ色に連動
-            const btnCal = document.getElementById('viewModeCalBtn');
-            const btnGrid = document.getElementById('viewModeGridBtn');
-
-            if (btnCal && btnGrid) {
-                // 一度、色に関する古いクラスを全てきれいに剥がす
-                btnCal.className = btnCal.className.replace(/bg-[a-z]+-\d+(\/\d+)?/g, '').replace(/text-[a-z]+-\d+/g, '').replace(/shadow-\w+/g, '').trim();
-                btnGrid.className = btnGrid.className.replace(/bg-[a-z]+-\d+(\/\d+)?/g, '').replace(/text-[a-z]+-\d+/g, '').replace(/shadow-\w+/g, '').trim();
-
-                if (window.galleryViewMode === 'calendar') {
-                    btnCal.className += ` ${current.activeBg}`;
-                    btnGrid.className += ` ${current.inactiveBg}`;
-                } else {
-                    btnCal.className += ` ${current.inactiveBg}`;
-                    btnGrid.className += ` ${current.activeBg}`;
-                }
-            }
-
-            // 3. 「月一覧に戻る」ボタンの色を更新
-            document.querySelectorAll('.theme-back-btn').forEach(btn => {
-                btn.className = btn.className.replace(/bg-[a-z]+-\d+(\/\d+)?/g, '').replace(/text-[a-z]+-\d+/g, '').replace(/border-[a-z]+-\d+(\/\d+)?/g, '').trim();
-                btn.className += ` ${current.backBtn}`;
-            });
+        if (loaded.length > 0) {
+            loaded.sort((a, b) => b.date.localeCompare(a.date));
+            window.entries = loaded;
         }
-        window.applyCurrentThemeToUI = applyCurrentThemeToUI;
-
-            const entriesRef = collection(db, 'artifacts', appId, 'public', 'data', 'entries');
-            const querySnap = await getDocs(entriesRef);
-            const loaded = [];
-            querySnap.forEach(d => {
-                loaded.push({ id: d.id, ...d.data() });
-            });
-
-            if (loaded.length > 0) {
-                loaded.sort((a, b) => b.date.localeCompare(a.date));
-                window.entries = loaded;
-            }
-        } catch (e) {
-            console.log("Firestore setup notice:", e);
-        }
+    } catch (e) {
+        console.log("Firestore setup notice:", e);
+    }
 
     if (typeof window.applySiteConfig === 'function') {
-            window.applySiteConfig();
-        }
+        window.applySiteConfig();
+    }
 
-    // 1. 先に画面の移動や表示を行う
-        if (typeof window.navigateTo === 'function') {
-            window.navigateTo('gallery'); // または該当する画面名
-        }
+    if (typeof window.navigateTo === 'function') {
+        window.navigateTo('gallery');
+    }
 
-    // 2. すべての画面・描画処理が終わったあとに、最後にテーマを適用する
-        if (typeof window.applyCurrentThemeToUI === 'function') {
-            window.applyCurrentThemeToUI();
-        }
-    
-    // 確実にFirestoreから設定を読み込む関数
-        async function loadConfigFromFirestore() {
-            // window.db または window.appId がまだ無い場合は少し待つ
-            let attempts = 0;
-            while ((!window.db || !window.appId) && attempts < 10) {
-                await new Promise(resolve => setTimeout(resolve, 300)); // 0.3秒待機
-                attempts++;
-            }
+    if (typeof window.applyCurrentThemeToUI === 'function') {
+        window.applyCurrentThemeToUI();
+    }
+}); // DOMContentLoadedの閉じカッコ
 
-            if (!window.db || !window.appId) {
-                console.warn("Firestoreの初期化を検知できませんでした。");
-                return;
-            }
+// 確実にFirestoreから設定を読み込む関数
+async function loadConfigFromFirestore() {
+    let attempts = 0;
+    while ((!window.db || !window.appId) && attempts < 10) {
+        await new Promise(resolve => setTimeout(resolve, 300));
+        attempts++;
+    }
 
-            try {
-                const { doc, getDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
-                const configDocRef = doc(window.db, 'artifacts', window.appId, 'public', 'data', 'config', 'settings');
-                const docSnap = await getDoc(configDocRef);
+    if (!window.db || !window.appId) {
+        console.warn("Firestoreの初期化を検知できませんでした。");
+        return;
+    }
 
-                if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    if (data.passcode) {
-                        window.storedPasscode = data.passcode;
-                        console.log("パスコードを復元しました！");
-                    } else {
-                        console.log("Firestoreにパスコードは保存されていません。");
-                    }
+    try {
+        const { doc, getDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
+        const configDocRef = doc(window.db, 'artifacts', window.appId, 'public', 'data', 'config', 'settings');
+        const docSnap = await getDoc(configDocRef);
 
-                    window.siteConfig = {
-                        title: data.title || '日々の写真日記',
-                        subtitle: data.subtitle || 'Photo & Daily Log',
-                        logoChar: data.logoChar || 'P',
-                        logoImageUrl: data.logoImageUrl || '',
-                        themeColor: data.themeColor || 'amber',
-                        weatherOptions: data.weatherOptions || ['晴れ ☀️', '快晴 🌤️', 'くもり ☁️', '雨 ☔', '雪 ❄️']
-                    };
-                   if (typeof applySiteConfig === 'function') {
-                    applySiteConfig();
-                }
+        if (docSnap.exists()) {
+            const data = docSnap.data();
+            if (data.passcode) {
+                window.storedPasscode = data.passcode;
+                console.log("パスコードを復元しました！");
             } else {
-                console.log("settingsドキュメント自体がまだ存在しません。");
+                console.log("Firestoreにパスコードは保存されていません。");
             }
-        } catch (err) {
-            console.error("Firestore config load error:", err);
+
+            window.siteConfig = {
+                title: data.title || '日々の写真日記',
+                subtitle: data.subtitle || 'Photo & Daily Log',
+                logoChar: data.logoChar || 'P',
+                logoImageUrl: data.logoImageUrl || '',
+                themeColor: data.themeColor || 'amber',
+                weatherOptions: data.weatherOptions || ['晴れ ☀️', '快晴 🌤️', 'くもり ☁️', '雨 ☔', '雪 ❄️']
+            };
+            if (typeof applySiteConfig === 'function') {
+                applySiteConfig();
+            }
+        } else {
+            console.log("settingsドキュメント自体がまだ存在しません。");
         }
-    } // ← ① loadConfigFromFirestore関数自体の閉じカッコ
-    window.loadConfigFromFirestore = loadConfigFromFirestore;
+    } catch (err) {
+        console.error("Firestore config load error:", err);
+    }
+}
+window.loadConfigFromFirestore = loadConfigFromFirestore;
 
-    // 2. ページが読み込まれてスクリプトが実行されたときにそのまま呼び出す
-    loadConfigFromFirestore();
-
-} // ← ② （もしこの処理全体を囲む関数があれば、ここで閉じます。なければ削ってください）
+loadConfigFromFirestore();
     </script>
 </body>
 </html>
