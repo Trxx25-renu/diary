@@ -448,17 +448,18 @@ window.applySiteConfig = function() {
                 logoTextEl.classList.remove('hidden');
             }
         }
-            // フィルター等の再描画
+         // フィルター等の再描画
         if (typeof renderWeatherFilterButtons === 'function') renderWeatherFilterButtons();
         if (typeof renderWeatherSelectOptions === 'function') renderWeatherSelectOptions();
 
-        // 4. 【追加】カレンダー / 一覧ビュー切替スイッチのテーマカラー反映
+        // 4. 【追加】カレンダー / 一覧ビュー切替スイッチのテーマカラー反映（上品な薄めデザイン）
         const mode = window.galleryViewMode || 'calendar';
         const calBtn = document.getElementById('viewModeCalBtn');
         const gridBtn = document.getElementById('viewModeGridBtn');
 
         if (calBtn && gridBtn) {
-            const activeClass = `${theme.bgPrimary} text-white shadow-sm`;
+            // 背景を薄く（theme.bgLight）、文字をテーマカラー（theme.textPrimary や濃い色）にする
+            const activeClass = `${theme.bgLight} ${theme.textPrimary} font-semibold shadow-sm border border-stone-200/50`;
             const inactiveClass = 'text-stone-500 hover:text-stone-800';
 
             if (mode === 'calendar') {
