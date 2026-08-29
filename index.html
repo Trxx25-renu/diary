@@ -1903,7 +1903,18 @@ function handleImageSelect(event) {
     });
 
     // 確実にFirestoreから設定を読み込む関数
+    // 確実にFirestoreから設定を読み込む関数
     async function loadConfigFromFirestore() {
+        // ★ 最初からデフォルト（ローズ）の土台を設定しておく
+        window.siteConfig = window.siteConfig || {
+            title: '日々の写真日記',
+            subtitle: 'Photo & Daily Log',
+            logoChar: 'P',
+            logoImageUrl: '',
+            themeColor: 'rose', // ここで確実にローズを指定
+            weatherOptions: ['晴れ ☀️', '快晴 🌤️', 'くもり ☁️', '雨 ☔', '雪 ❄️']
+        };
+
         let attempts = 0;
         while ((!window.db || !window.appId) && attempts < 10) {
             await new Promise(resolve => setTimeout(resolve, 300));
@@ -1911,7 +1922,8 @@ function handleImageSelect(event) {
         }
 
         if (!window.db || !window.appId) {
-            console.warn("Firestoreの初期化を検知できませんでした。");
+            console.warn("Firestoreの初期化を検知できませんでした。デフォルト設定を適用します。");
+            if (typeof applyCurrentThemeToUI === 'function') applyCurrentThemeToUI();
             return;
         }
 
@@ -1924,27 +1936,27 @@ function handleImageSelect(event) {
                 const data = docSnap.data();
                 if (data.passcode) {
                     window.storedPasscode = data.passcode;
-                    console.log("パスコードを復元しました！");
-                } else {
-                    console.log("Firestoreにパスコードは保存されていません。");
                 }
 
                 window.siteConfig = {
-                    title: data.title || '日々の写真日記',
-                    subtitle: data.subtitle || 'Photo & Daily Log',
-                    logoChar: data.logoChar || 'P',
+                    title: data.title || window.siteConfig.title,
+                    subtitle: data.subtitle || window.siteConfig.subtitle,
+                    logoChar: data.logoChar || window.siteConfig.logoChar,
                     logoImageUrl: data.logoImageUrl || '',
-                    themeColor: data.themeColor || 'rose',
-                    weatherOptions: data.weatherOptions || ['晴れ ☀️', '快晴 🌤️', 'くもり ☁️', '雨 ☔', '雪 ❄️']
+                    themeColor: data.themeColor || 'rose', // Firestoreにデータがなければローズ
+                    weatherOptions: data.weatherOptions || window.siteConfig.weatherOptions
                 };
-                if (typeof applySiteConfig === 'function') {
-                    applySiteConfig();
-                }
-            } else {
-                console.log("settingsドキュメント自体がまだ存在しません。");
             }
         } catch (err) {
             console.error("Firestore config load error:", err);
+        }
+
+        // 最後に必ずUIへテーマを反映させる
+        if (typeof applyCurrentThemeToUI === 'function') {
+            applyCurrentThemeToUI();
+        }
+        if (typeof applySiteConfig === 'function') {
+            applySiteConfig();
         }
     }
     window.loadConfigFromFirestore = loadConfigFromFirestore;
