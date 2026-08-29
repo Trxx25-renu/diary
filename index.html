@@ -1576,6 +1576,12 @@ function handleImageSelect(event) {
                     <span class="hidden sm:inline">共有</span>
                 </button>
 
+                <!-- 🌟 【ここに新規投稿ボタンを追加！】 -->
+                <button id="newPostBtn" onclick="openPostModal()" class="hidden px-3.5 py-1.5 rounded-xl text-xs font-medium text-white bg-stone-600 hover:bg-stone-700 transition-colors shadow-sm items-center gap-1.5">
+                    <i class="fa-solid fa-plus"></i>
+                    <span>日記を書く</span>
+                </button>
+
                 <!-- サイトカスタマイズボタン（管理者専用） -->
                 <button id="siteConfigBtn" onclick="openConfigModal()" class="hidden px-2.5 py-1.5 rounded-lg text-xs font-medium text-stone-700 bg-stone-100 hover:bg-stone-200 transition-colors flex items-center gap-1" title="ホームページの大枠設定">
                     <i class="fa-solid fa-gear text-stone-500"></i>
