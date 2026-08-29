@@ -78,7 +78,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     console.log("🚀 初期化処理を開始します...");
 
     try {
-        // window.appId がない場合のフォールバック
         if (typeof window.appId === 'undefined' || !window.appId) {
             window.appId = "default-app-id"; 
         }
@@ -103,12 +102,11 @@ document.addEventListener("DOMContentLoaded", async () => {
         await signInAnonymously(auth);
         console.log("🔑 匿名認証に成功しました");
 
-        // 1. 設定の読み込み試行
+        // 1. 設定の読み込み
         const configRef = doc(db, 'artifacts', appId, 'public', 'data', 'config', 'settings');
         const configSnap = await getDoc(configRef);
         
         if (configSnap.exists()) {
-            console.settingsLoaded = true;
             const loadedConfig = configSnap.data();
             console.log("⚙️ Firestoreから設定を取得しました:", loadedConfig);
             
@@ -123,7 +121,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 weatherOptions: loadedConfig.weatherOptions || ['晴れ ☀️', '快晴 🌤️', 'くもり ☁️', '雨 ☔', '雪 ❄️']
             };
         } else {
-            console.warn("⚠️ Firestoreに設定ドキュメントが見つかりませんでした（初期状態です）。");
+            console.warn("⚠️ Firestoreに設定が見つかりませんでした。デフォルトを適用します。");
             window.siteConfig = {
                 title: '日々の写真日記',
                 subtitle: 'Photo & Daily Log',
@@ -134,7 +132,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             };
         }
 
-        // 2. 記事の読み込み試行
+        // 2. 記事の読み込み
         const entriesRef = collection(db, 'artifacts', appId, 'public', 'data', 'entries');
         const querySnap = await getDocs(entriesRef);
         const loaded = [];
@@ -167,6 +165,34 @@ document.addEventListener("DOMContentLoaded", async () => {
         window.applyCurrentThemeToUI();
     }
 });
+
+// 設定を画面（タイトル・アイコン・テーマ等）に反映させる関数
+window.applySiteConfig = function() {
+    const config = window.siteConfig;
+    if (!config) return;
+
+    // タイトルとサブタイトルの反映
+    const titleEls = document.querySelectorAll('.site-title, #siteTitle');
+    titleEls.forEach(el => el.textContent = config.title);
+
+    const subtitleEls = document.querySelectorAll('.site-subtitle, #siteSubtitle');
+    subtitleEls.forEach(el => el.textContent = config.subtitle);
+
+    // アイコン（ロゴ）の反映
+    const logoContainer = document.getElementById('logoContainer');
+    if (logoContainer) {
+        if (config.logoImageUrl) {
+            logoContainer.innerHTML = `<img src="${config.logoImageUrl}" class="w-8 h-8 object-cover rounded-full" alt="Logo">`;
+        } else {
+            logoContainer.innerHTML = `<span class="text-xl font-bold">${config.logoChar || 'P'}</span>`;
+        }
+    }
+
+    // テーマカラーの適用
+    if (typeof window.applyCurrentThemeToUI === 'function') {
+        window.applyCurrentThemeToUI();
+    }
+};
         
         window.entries = [];
         window.currentView = 'months'; // 'months' | 'gallery' | 'detail'
@@ -1927,87 +1953,32 @@ function handleImageSelect(event) {
 
     window.entries = sampleEntries;
 
-    // 確実にFirestoreから設定を読み込む関数
-    async function loadConfigFromFirestore() {
-        // ★ 最初からデフォルト（ローズ）の土台を設定しておく
-        window.siteConfig = window.siteConfig || {
-            title: '日々の写真日記',
-            subtitle: 'Photo & Daily Log',
-            logoChar: 'P',
-            logoImageUrl: '',
-            themeColor: 'rose', // ここで確実にローズを指定
-            weatherOptions: ['晴れ ☀️', '快晴 🌤️', 'くもり ☁️', '雨 ☔', '雪 ❄️']
-        };
+   // --- ヘルパー関数（消さない） ---
 
-        let attempts = 0;
-        while ((!window.db || !window.appId) && attempts < 10) {
-            await new Promise(resolve => setTimeout(resolve, 300));
-            attempts++;
-        }
-
-        if (!window.db || !window.appId) {
-            console.warn("Firestoreの初期化を検知できませんでした。デフォルト設定を適用します。");
-            if (typeof applyCurrentThemeToUI === 'function') applyCurrentThemeToUI();
-            return;
-        }
-
-        try {
-            const { doc, getDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
-            const configDocRef = doc(window.db, 'artifacts', window.appId, 'public', 'data', 'config', 'settings');
-            const docSnap = await getDoc(configDocRef);
-
-            if (docSnap.exists()) {
-                const data = docSnap.data();
-                if (data.passcode) {
-                    window.storedPasscode = data.passcode;
-                }
-
-                window.siteConfig = {
-                    title: data.title || window.siteConfig.title,
-                    subtitle: data.subtitle || window.siteConfig.subtitle,
-                    logoChar: data.logoChar || window.siteConfig.logoChar,
-                    logoImageUrl: data.logoImageUrl || '',
-                    themeColor: data.themeColor || 'rose', // Firestoreにデータがなければローズ
-                    weatherOptions: data.weatherOptions || window.siteConfig.weatherOptions
-                };
-            }
-        } catch (err) {
-            console.error("Firestore config load error:", err);
-        }
-
-        // 最後に必ずUIへテーマを反映させる
-        if (typeof applyCurrentThemeToUI === 'function') {
-            applyCurrentThemeToUI();
-        }
-        if (typeof applySiteConfig === 'function') {
-            applySiteConfig();
-        }
-    }
-    window.loadConfigFromFirestore = loadConfigFromFirestore;
-
-    loadConfigFromFirestore();
-
-    // テーマカラーを画面のボタンやアクセントに反映させる実体
+// テーマカラーを画面に反映させる実体
 function applyCurrentThemeToUI() {
     const color = window.siteConfig?.themeColor || 'rose';
     console.log("現在のテーマカラー:", color);
-
-    // 例：UI内の特定のクラス（テーマ連動部分）の色を切り替える処理など
-    // ここに実際の見た目を変更する処理が入ります
+    // 見た目を変更する処理...
 }
 window.applyCurrentThemeToUI = applyCurrentThemeToUI;
 
+// タイトルや設定を画面に反映させる実体
 function applySiteConfig() {
     if (window.siteConfig) {
-        // タイトルやサブタイトルの反映
         const titleEl = document.getElementById('siteTitle');
         if (titleEl && window.siteConfig.title) {
             titleEl.textContent = window.siteConfig.title;
         }
+        
+        // アイコンやサブタイトルなどもここで反映可能であれば追加
+        const subtitleEl = document.getElementById('siteSubtitle');
+        if (subtitleEl && window.siteConfig.subtitle) {
+            subtitleEl.textContent = window.siteConfig.subtitle;
+        }
     }
 }
 window.applySiteConfig = applySiteConfig;
-
    // 記事詳細画面での `<` `>` ボタンによる切り替え関数
 window.navigateDetail = function(direction) {
     if (!window.entries || window.entries.length === 0) return;
