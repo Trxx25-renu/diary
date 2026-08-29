@@ -124,7 +124,7 @@
         const configRef = doc(db, 'artifacts', appId, 'public', 'data', 'config', 'settings');
         const configSnap = await getDoc(configRef);
         
-        if (configSnap.exists()) {
+if (configSnap.exists()) {
             const loadedConfig = configSnap.data();
             console.log("⚙️ Firestoreから設定を取得しました:", loadedConfig);
             
@@ -138,6 +138,16 @@
                 themeColor: loadedConfig.themeColor || 'rose',
                 weatherOptions: loadedConfig.weatherOptions || ['晴れ ☀️', '快晴 🌤️', 'くもり ☁️', '雨 ☔', '雪 ❄️']
             };
+
+            // ★【ここを追加】データを読み込んだその場で、直接画面のHTMLを書き換える！
+            const titleEl = document.getElementById('siteHeaderTitle');
+            if (titleEl) titleEl.textContent = window.siteConfig.title;
+
+            const subtitleEl = document.getElementById('siteHeaderSubtitle');
+            if (subtitleEl) subtitleEl.textContent = window.siteConfig.subtitle;
+
+            const logoTextEl = document.getElementById('siteHeaderLogo');
+            if (logoTextEl) logoTextEl.textContent = window.siteConfig.logoChar;
         } else {
             console.warn("⚠️ Firestoreに設定が見つかりませんでした。デフォルトを適用します。");
             window.siteConfig = {
