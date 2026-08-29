@@ -120,7 +120,7 @@
         await signInAnonymously(auth);
         console.log("🔑 匿名認証に成功しました");
 
-        // 1. 設定の読み込み
+       // 1. 設定の読み込み
         const configRef = doc(db, 'artifacts', appId, 'public', 'data', 'config', 'settings');
         const configSnap = await getDoc(configRef);
         
@@ -133,7 +133,7 @@
             window.siteConfig = {
                 title: loadedConfig.title || '日々の卓日記',
                 subtitle: loadedConfig.subtitle || 'Session Log',
-                logoChar: loadedConfig.logoChar || 'S',
+                logoChar: loadedConfig.logoChar || 'P',
                 logoImageUrl: loadedConfig.logoImageUrl || '',
                 themeColor: loadedConfig.themeColor || 'rose',
                 weatherOptions: loadedConfig.weatherOptions || ['晴れ ☀️', '快晴 🌤️', 'くもり ☁️', '雨 ☔', '雪 ❄️']
@@ -143,14 +143,14 @@
             window.siteConfig = {
                 title: '日々の卓日記',
                 subtitle: 'Session Log',
-                logoChar: 'S',
+                logoChar: 'P',
                 logoImageUrl: '',
                 themeColor: 'rose',
-                weatherOptions: ['晴れ ☀️', '快晴 🌤️', 'くもり ☁️', '雨 ☔', '雪 ❄️', '虹 🌈']
+                weatherOptions: ['晴れ ☀️', '快晴 🌤️', 'くもり ☁️', '雨 ☔', '雪 ❄️']
             };
         }
 
-        // 読み込みが完了した直後に、必ず applySiteConfig() を呼んで画面全体を構築する
+        // ★★★ データが完全にセットされた「この瞬間」に、人生で一度だけ（その的確なタイミングで）画面に反映する！ ★★★
         if (typeof window.applySiteConfig === 'function') {
             window.applySiteConfig();
         }
@@ -471,30 +471,25 @@ window.applySiteConfig = function() {
         if (viewDetail) viewDetail.classList.add('hidden');
         if (searchResultsArea) searchResultsArea.classList.add('hidden');
 
-        if (view === 'months') {
+       if (view === 'months') {
             if (viewMonths) viewMonths.classList.remove('hidden');
             if (searchToolbar) searchToolbar.classList.remove('hidden');
             if (typeof renderMonthFolders === 'function') renderMonthFolders();
         } else if (view === 'gallery') {
             if (viewGallery) viewGallery.classList.remove('hidden');
             if (searchToolbar) searchToolbar.classList.remove('hidden');
+            // 必要に応じてギャラリー用の描画関数があればここに追加
         } else if (view === 'detail') {
             if (viewDetail) viewDetail.classList.remove('hidden');
         }
     }
     window.navigateTo = navigateTo;
 
-            renderBreadcrumbs();
-            handleSearch();
-            updateBackButtonVisibility();
-        }
-        window.navigateTo = navigateTo;
-
-        function goBack() {
-            if (window.currentView === 'detail') {
-                if (window.selectedYearMonth) {
-                    navigateTo('gallery', window.selectedYearMonth);
-                } else {
+    function goBack() {
+        if (window.currentView === 'detail') {
+            if (window.selectedYearMonth) {
+                navigateTo('gallery', window.selectedYearMonth);
+            } else {
                     navigateTo('months');
                 }
             } else if (window.currentView === 'gallery') {
