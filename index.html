@@ -100,15 +100,24 @@
                 bgPrimary: 'bg-amber-600',
                 hoverPrimary: 'hover:bg-amber-700',
                 borderPrimary: 'border-amber-200',
-                badgeText: 'text-amber-800'
+                badgeText: 'text-amber-800',
+                // ▼ 切替ボタン用の設定を追加
+                activeBg: 'bg-amber-600 text-white shadow-sm',
+                inactiveBg: 'text-amber-700 hover:bg-amber-100/60',
+                toggleContainer: 'bg-amber-100/60',
+                backBtn: 'bg-amber-50 text-amber-700 hover:text-amber-800 border-amber-200/60'
             },
             emerald: {
                 bgLight: 'bg-emerald-50',
                 textPrimary: 'text-emerald-700',
-                bgPrimary: 'bg-emerald-600',
+                bgPrimary: 'emerald-600',
                 hoverPrimary: 'hover:bg-emerald-700',
                 borderPrimary: 'border-emerald-200',
-                badgeText: 'text-emerald-800'
+                badgeText: 'text-emerald-800',
+                activeBg: 'bg-emerald-600 text-white shadow-sm',
+                inactiveBg: 'text-emerald-700 hover:bg-emerald-100/60',
+                toggleContainer: 'bg-emerald-100/60',
+                backBtn: 'bg-emerald-50 text-emerald-700 hover:text-emerald-800 border-emerald-200/60'
             },
             indigo: {
                 bgLight: 'bg-indigo-50',
@@ -116,7 +125,11 @@
                 bgPrimary: 'bg-indigo-600',
                 hoverPrimary: 'hover:bg-indigo-700',
                 borderPrimary: 'border-indigo-200',
-                badgeText: 'text-indigo-800'
+                badgeText: 'text-indigo-800',
+                activeBg: 'bg-indigo-600 text-white shadow-sm',
+                inactiveBg: 'text-indigo-700 hover:bg-indigo-100/60',
+                toggleContainer: 'bg-indigo-100/60',
+                backBtn: 'bg-indigo-50 text-indigo-700 hover:text-indigo-800 border-indigo-200/60'
             },
             rose: {
                 bgLight: 'bg-rose-50',
@@ -124,7 +137,11 @@
                 bgPrimary: 'bg-rose-600',
                 hoverPrimary: 'hover:bg-rose-700',
                 borderPrimary: 'border-rose-200',
-                badgeText: 'text-rose-800'
+                badgeText: 'text-rose-800',
+                activeBg: 'bg-rose-600 text-white shadow-sm',
+                inactiveBg: 'text-rose-700 hover:bg-rose-100/60',
+                toggleContainer: 'bg-rose-100/60',
+                backBtn: 'bg-rose-50 text-rose-700 hover:text-rose-800 border-rose-200/60'
             },
             stone: {
                 bgLight: 'bg-stone-100',
@@ -132,7 +149,11 @@
                 bgPrimary: 'bg-stone-800',
                 hoverPrimary: 'hover:bg-stone-900',
                 borderPrimary: 'border-stone-300',
-                badgeText: 'text-stone-900'
+                badgeText: 'text-stone-900',
+                activeBg: 'bg-stone-800 text-white shadow-sm',
+                inactiveBg: 'text-stone-700 hover:bg-stone-200/60',
+                toggleContainer: 'bg-stone-200/60',
+                backBtn: 'bg-stone-100 text-stone-700 hover:text-stone-800 border-stone-200/60'
             }
         };
 
@@ -1757,16 +1778,16 @@ function getCircledNumber(num) {
         }
 
 function applyCurrentThemeToUI() {
-            const theme = (window.siteConfig && window.siteConfig.themeColor) || 'amber';
-            const current = themes[theme] || themes['amber'];
+            const themeKey = (window.siteConfig && window.siteConfig.themeColor) || 'amber';
+            const current = THEME_CLASSES[themeKey] || THEME_CLASSES.amber;
 
-            // ★0. 切替ボタンの外側コンテナの色をテーマに連動
+            // 1. 切替ボタンの外側コンテナの色をテーマに連動
             document.querySelectorAll('.theme-toggle-container').forEach(el => {
                 el.className = el.className.replace(/bg-\w+-\d+\/\d+/g, '').trim();
                 el.classList.add(...current.toggleContainer.split(' '));
             });
 
-            // 1. カレンダー / グリッドの表示切替ボタンをテーマ色に連動
+            // 2. カレンダー / グリッドの表示切替ボタンをテーマ色に連動
             const btnCal = document.getElementById('viewModeCalBtn');
             const btnGrid = document.getElementById('viewModeGridBtn');
 
@@ -1780,12 +1801,12 @@ function applyCurrentThemeToUI() {
                 }
             }
 
-            // 2. 「月一覧に戻る」ボタンなどのテーマカラーを適用
+            // 3. 「月一覧に戻る」ボタンの色をテーマに連動
             document.querySelectorAll('.theme-back-btn').forEach(btn => {
                 btn.className = `theme-back-btn text-xs font-medium flex items-center gap-1 px-3 py-1.5 rounded-xl border transition-colors ${current.backBtn}`;
             });
         }
-        window.applyCurrentThemeToUI = applyCurrentThemeToUI;            
+        window.applyCurrentThemeToUI = applyCurrentThemeToUI;        
 
             const entriesRef = collection(db, 'artifacts', appId, 'public', 'data', 'entries');
             const querySnap = await getDocs(entriesRef);
