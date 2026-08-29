@@ -1480,13 +1480,17 @@ function getCircledNumber(num) {
                                 </button>
                             </div>
                         </div>
+
+                        <!-- ★【追加】シナリオタイトル表示エリア（未入力時は hidden で消える） -->
+                        <h2 id="detailScenarioTitle" class="text-base font-bold font-serif-title text-stone-800 hidden"></h2>
+
                         <p id="detailContent" class="text-sm text-stone-700 leading-relaxed whitespace-pre-wrap font-light"></p>
 
-                        <!-- 目隠しメモ表示エリア -->
+                        <!-- 目隠しメモ表示エリア（ネタバレ用） -->
                         <div id="detailSecretContainer" class="hidden relative mt-2 bg-stone-100 text-stone-800 rounded-2xl p-4 border border-stone-300/70 cursor-pointer overflow-hidden transition-all shadow-inner group" onclick="toggleSecretMemo()">
                             <div class="flex items-center justify-between mb-2 pb-1.5 border-b border-stone-300/60 text-xs text-stone-700 font-medium">
                                 <span class="flex items-center gap-1.5">
-                                    <i class="fa-solid fa-user-secret"></i> 目隠しメモ
+                                    <i class="fa-solid fa-triangle-exclamation text-amber-500"></i> ネタバレ防止用本文
                                 </span>
                                 <span class="text-[10px] text-stone-500 font-normal">タップで切替</span>
                             </div>
@@ -1498,7 +1502,7 @@ function getCircledNumber(num) {
                                 <div class="w-8 h-8 rounded-full bg-stone-300/80 flex items-center justify-center text-stone-700 text-sm shadow-sm group-hover:scale-110 transition-transform">
                                     <i class="fa-solid fa-eye-slash"></i>
                                 </div>
-                                <span class="text-xs font-medium text-stone-700">タップして目隠しメモを表示</span>
+                                <span class="text-xs font-medium text-stone-700">タップしてネタバレを表示</span>
                             </div>
                         </div>
                     </div>
@@ -1517,7 +1521,6 @@ function getCircledNumber(num) {
                 </div>
             </div>
         </section>
-
     </main>
 
     <!-- 画面右下に固定配置される小さな戻るボタン -->
