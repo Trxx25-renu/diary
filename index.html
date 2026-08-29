@@ -416,13 +416,15 @@ window.applySiteConfig = function() {
             writeBtn.className = `${window.isAdmin ? 'flex' : 'hidden'} px-3.5 py-1.5 rounded-xl text-xs font-medium text-white ${theme.bgPrimary} ${theme.hoverPrimary} transition-colors shadow-sm items-center gap-1.5`;
         }
 
-        // 2. ロゴ（文字 または 画像）の反映は、最後に実行して上書きされないようにする
+       // 2. ロゴ（文字 または 画像）の反映
         const logoTextEl = document.getElementById('siteHeaderLogo');
         const logoImgEl = document.getElementById('siteHeaderLogoImg');
-        const appleIcon = document.getElementById('appleTouchIcon');
-        const favicon = document.getElementById('favicon');
+        // ※ const appleIcon / const favicon の重複宣言を削除し、既存のものを使うか直接取得する
+        const appleIconEl = document.getElementById('appleTouchIcon');
+        const faviconEl = document.getElementById('favicon');
 
         if (config.logoImageUrl && config.logoImageUrl.trim() !== '') {
+            // 画像が設定されている場合
             if (logoTextEl) {
                 logoTextEl.style.display = 'none';
                 logoTextEl.classList.add('hidden');
@@ -432,9 +434,10 @@ window.applySiteConfig = function() {
                 logoImgEl.style.display = 'block';
                 logoImgEl.classList.remove('hidden');
             }
-            if (appleIcon) appleIcon.href = config.logoImageUrl;
-            if (favicon) favicon.href = config.logoImageUrl;
+            if (appleIconEl) appleIconEl.href = config.logoImageUrl;
+            if (faviconEl) faviconEl.href = config.logoImageUrl;
         } else {
+            // 画像がない場合は文字を表示
             if (logoImgEl) {
                 logoImgEl.style.display = 'none';
                 logoImgEl.classList.add('hidden');
@@ -445,6 +448,7 @@ window.applySiteConfig = function() {
                 logoTextEl.classList.remove('hidden');
             }
         }
+            
         // 天気フィルター等の再描画
         if (typeof renderWeatherFilterButtons === 'function') renderWeatherFilterButtons();
         if (typeof renderWeatherSelectOptions === 'function') renderWeatherSelectOptions();
