@@ -1892,6 +1892,9 @@ function handleImageSelect(event) {
 
         if (typeof window.navigateTo === 'function') {
             window.navigateTo('months');
+            setTimeout(() => {
+                window.navigateTo('months');
+            }, 50);
         }
 
         if (typeof window.applyCurrentThemeToUI === 'function') {
