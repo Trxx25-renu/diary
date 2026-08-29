@@ -671,6 +671,7 @@ function getCircledNumber(num) {
         window.renderBreadcrumbs = renderBreadcrumbs;
 
        function navigateTo(view, param = null) {
+           console.log("navigateTo called with:", view, param); // 👈 ここを追加
         window.currentView = view;
         
         // 選択された年月（param）があれば、グローバル変数に確実に保存する
