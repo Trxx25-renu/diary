@@ -703,46 +703,42 @@ function getCircledNumber(num) {
         }
         window.renderBreadcrumbs = renderBreadcrumbs;
 
-        function renderGalleryView() {
-            const titleEl = document.getElementById('galleryTitle');
-            const subtitleEl = document.getElementById('gallerySubtitle');
-            const galleryContent = document.getElementById('galleryContent');
-            if (!galleryContent) return;
-            galleryContent.innerHTML = '';
-
-            if (!window.selectedYearMonth) return;
-
-            const [yearStr, monthStr] = window.selectedYearMonth.split('-');
-            const year = parseInt(yearStr, 10);
-            const month = parseInt(monthStr, 10);
-
-            if (titleEl) titleEl.textContent = `${year}年${month}月`;
-
-            const filtered = (window.entries || []).filter(e => e.date && e.date.startsWith(window.selectedYearMonth));
-            filtered.sort((a, b) => a.date.localeCompare(b.date));
-
-            if (subtitleEl) subtitleEl.textContent = `全 ${filtered.length} 件の思い出`;
-
-            const btnCal = document.getElementById('viewModeCalBtn');
-            const btnGrid = document.getElementById('viewModeGridBtn');
-            if (btnCal && btnGrid) {
-                if (window.galleryViewMode === 'calendar') {
-                    btnCal.className = 'px-3 py-1.5 rounded-lg text-xs font-medium bg-stone-600 text-white shadow-sm transition-all flex items-center gap-1';
-                    btnGrid.className = 'px-3 py-1.5 rounded-lg text-xs font-medium text-stone-600 hover:bg-stone-100 transition-all flex items-center gap-1';
-                } else {
-                    btnCal.className = 'px-3 py-1.5 rounded-lg text-xs font-medium text-stone-600 hover:bg-stone-100 transition-all flex items-center gap-1';
-                    btnGrid.className = 'px-3 py-1.5 rounded-lg text-xs font-medium bg-stone-600 text-white shadow-sm transition-all flex items-center gap-1';
-                }
-            }
-
-            if (window.galleryViewMode === 'calendar') {
-                renderCalendarLayout(galleryContent, year, month, filtered);
-            } else {
-                renderGridPhotoLayout(galleryContent, filtered);
-            }
+       function navigateTo(view, param = null) {
+        window.currentView = view;
+        
+        // 選択された年月（param）があれば、グローバル変数に確実に保存する
+        if (param) {
+            window.selectedYearMonth = param;
         }
-        window.renderGalleryView = renderGalleryView;
+        
+        const viewMonths = document.getElementById('view-months');
+        const viewGallery = document.getElementById('view-gallery');
+        const viewDetail = document.getElementById('view-detail');
+        const searchToolbar = document.getElementById('searchToolbarSection');
+        const searchResultsArea = document.getElementById('searchResultsArea');
 
+        if (viewMonths) viewMonths.classList.add('hidden');
+        if (viewGallery) viewGallery.classList.add('hidden');
+        if (viewDetail) viewDetail.classList.add('hidden');
+        if (searchResultsArea) searchResultsArea.classList.add('hidden');
+
+        if (view === 'months') {
+            if (viewMonths) viewMonths.classList.remove('hidden');
+            if (searchToolbar) searchToolbar.classList.remove('hidden');
+            if (typeof renderMonthFolders === 'function') renderMonthFolders();
+        } else if (view === 'gallery') {
+            if (viewGallery) viewGallery.classList.remove('hidden');
+            if (searchToolbar) searchToolbar.classList.remove('hidden');
+            // ギャラリービューに切り替わったタイミングで、選択された月のデータを描画する
+            if (typeof renderGalleryView === 'function') {
+                renderGalleryView();
+            }
+        } else if (view === 'detail') {
+            if (viewDetail) viewDetail.classList.remove('hidden');
+        }
+    }
+    window.navigateTo = navigateTo;
+        
         function renderCalendarLayout(container, year, month, entries) {
             // 同日の日記を配列でグループ化
             const entryMap = {};
