@@ -1520,6 +1520,10 @@ function getCircledNumber(num) {
                             <button onclick="goBack()" class="text-stone-600 hover:text-stone-800 bg-stone-100 hover:bg-stone-200 px-3 py-1.5 rounded-xl transition-colors flex items-center gap-1 font-medium">
                                 <i class="fa-solid fa-arrow-left text-[10px]"></i> 戻る
                             </button>
+                            <!-- ★【追加】編集ボタン -->
+                            <button id="editBtn" onclick="openEditModalFromDetail()" class="hidden text-stone-700 hover:text-stone-900 hover:bg-stone-100 px-2.5 py-1.5 rounded-xl transition-colors flex items-center gap-1 font-medium">
+                                <i class="fa-regular fa-pen-to-square text-[11px]"></i> 編集
+                            </button>
                             <button id="deleteBtn" onclick="deleteCurrentEntry()" class="hidden text-rose-600 hover:text-rose-700 hover:bg-rose-50 px-2.5 py-1.5 rounded-xl transition-colors flex items-center gap-1">
                                 <i class="fa-regular fa-trash-can text-[11px]"></i> 削除
                             </button>
