@@ -189,24 +189,36 @@ window.applySiteConfig = function() {
     const config = window.siteConfig;
     if (!config) return;
 
-    // タイトルとサブタイトルの反映
-    const titleEls = document.querySelectorAll('.site-title, #siteTitle');
-    titleEls.forEach(el => el.textContent = config.title);
-
-    const subtitleEls = document.querySelectorAll('.site-subtitle, #siteSubtitle');
-    subtitleEls.forEach(el => el.textContent = config.subtitle);
-
-    // アイコン（ロゴ）の反映
-    const logoContainer = document.getElementById('logoContainer');
-    if (logoContainer) {
-        if (config.logoImageUrl) {
-            logoContainer.innerHTML = `<img src="${config.logoImageUrl}" class="w-8 h-8 object-cover rounded-full" alt="Logo">`;
-        } else {
-            logoContainer.innerHTML = `<span class="text-xl font-bold">${config.logoChar || 'P'}</span>`;
-        }
+    // 1. タイトルとサブタイトルの反映
+    const titleEl = document.getElementById('siteHeaderTitle');
+    if (titleEl && config.title) {
+        titleEl.textContent = config.title;
     }
 
-    // テーマカラーの適用
+    const subtitleEl = document.getElementById('siteHeaderSubtitle');
+    if (subtitleEl && config.subtitle) {
+        subtitleEl.textContent = config.subtitle;
+    }
+
+    // 2. ロゴ（文字 または 画像）の反映
+    const logoTextEl = document.getElementById('siteHeaderLogo');
+    const logoImgEl = document.getElementById('siteHeaderLogoImg');
+
+    if (config.logoImageUrl && logoImgEl) {
+        // 画像URLが設定されている場合
+        logoImgEl.src = config.logoImageUrl;
+        logoImgEl.classList.remove('hidden');
+        if (logoTextEl) logoTextEl.classList.add('hidden');
+    } else {
+        // 文字（ロゴ文字）の場合
+        if (logoTextEl) {
+            logoTextEl.textContent = config.logoChar || 'P';
+            logoTextEl.classList.remove('hidden');
+        }
+        if (logoImgEl) logoImgEl.classList.add('hidden');
+    }
+
+    // 3. テーマカラーの適用関数があれば呼び出す
     if (typeof window.applyCurrentThemeToUI === 'function') {
         window.applyCurrentThemeToUI();
     }
