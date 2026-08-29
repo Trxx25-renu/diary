@@ -1962,4 +1962,26 @@ function handleImageSelect(event) {
     window.loadConfigFromFirestore = loadConfigFromFirestore;
 
     loadConfigFromFirestore();
+
+    // テーマカラーを画面のボタンやアクセントに反映させる実体
+function applyCurrentThemeToUI() {
+    const color = window.siteConfig?.themeColor || 'rose';
+    console.log("現在のテーマカラー:", color);
+
+    // 例：UI内の特定のクラス（テーマ連動部分）の色を切り替える処理など
+    // ここに実際の見た目を変更する処理が入ります
+}
+window.applyCurrentThemeToUI = applyCurrentThemeToUI;
+
+function applySiteConfig() {
+    if (window.siteConfig) {
+        // タイトルやサブタイトルの反映
+        const titleEl = document.getElementById('siteTitle');
+        if (titleEl && window.siteConfig.title) {
+            titleEl.textContent = window.siteConfig.title;
+        }
+    }
+}
+window.applySiteConfig = applySiteConfig;
+    
 </script>
