@@ -120,7 +120,7 @@
         await signInAnonymously(auth);
         console.log("🔑 匿名認証に成功しました");
 
-       // 1. 設定の読み込み
+      // 1. 設定の読み込み
         const configRef = doc(db, 'artifacts', appId, 'public', 'data', 'config', 'settings');
         const configSnap = await getDoc(configRef);
         
@@ -150,10 +150,11 @@
             };
         }
 
-        // ★★★ データが完全にセットされた「この瞬間」に、人生で一度だけ（その的確なタイミングで）画面に反映する！ ★★★
+        // 🎨 ここで世界に一回だけ実行！
         if (typeof window.applySiteConfig === 'function') {
             window.applySiteConfig();
         }
+
         // 2. 記事の読み込み
         const entriesRef = collection(db, 'artifacts', appId, 'public', 'data', 'entries');
         const querySnap = await getDocs(entriesRef);
@@ -411,11 +412,6 @@ window.applySiteConfig = function() {
         if (typeof renderWeatherSelectOptions === 'function') renderWeatherSelectOptions();
     }
     window.applySiteConfig = applySiteConfig;
-
-    // もしすでに siteConfig がロード済みなら、この定義の瞬間に強制実行する
-    if (window.siteConfig) {
-        applySiteConfig();
-    }
     
     function renderWeatherFilterButtons() {
         const container = document.getElementById('weatherFilterContainer');
