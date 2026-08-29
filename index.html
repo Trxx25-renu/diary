@@ -1832,13 +1832,16 @@ function handleImageSelect(event) {
 
     window.entries = sampleEntries;
 
-    document.addEventListener("DOMContentLoaded", async () => {
+document.addEventListener("DOMContentLoaded", async () => {
+    console.log("🚀 初期化処理を開始します...");
+
     try {
-        // ★ ここで appId を安全に定義（もしHTML側等に定義がなければデフォルト値を設定）
-        if (typeof window.appId === 'undefined') {
-            window.appId = "default-app-id"; // 必要に応じて環境のIDに調整してください
+        // window.appId がない場合のフォールバック
+        if (typeof window.appId === 'undefined' || !window.appId) {
+            window.appId = "default-app-id"; 
         }
         const appId = window.appId;
+        console.log("📂 使用する appId:", appId);
 
         const firebaseConfig = {
             apiKey: "AIzaSyA2ctX9sUpJmLSVJomU9cbMzrUX_AXNjuE",
@@ -1856,23 +1859,40 @@ function handleImageSelect(event) {
         window.db = db;
 
         await signInAnonymously(auth);
+        console.log("🔑 匿名認証に成功しました");
 
+        // 1. 設定の読み込み試行
         const configRef = doc(db, 'artifacts', appId, 'public', 'data', 'config', 'settings');
         const configSnap = await getDoc(configRef);
+        
         if (configSnap.exists()) {
+            console.settingsLoaded = true;
             const loadedConfig = configSnap.data();
+            console.log("⚙️ Firestoreから設定を取得しました:", loadedConfig);
+            
             if (loadedConfig.passcode) window.storedPasscode = loadedConfig.passcode;
 
             window.siteConfig = {
-                title: loadedConfig.title || (window.siteConfig ? window.siteConfig.title : '日々の写真日記'),
-                subtitle: loadedConfig.subtitle || (window.siteConfig ? window.siteConfig.subtitle : 'Photo & Daily Log'),
-                logoChar: loadedConfig.logoChar || (window.siteConfig ? window.siteConfig.logoChar : 'P'),
+                title: loadedConfig.title || '日々の写真日記',
+                subtitle: loadedConfig.subtitle || 'Photo & Daily Log',
+                logoChar: loadedConfig.logoChar || 'P',
                 logoImageUrl: loadedConfig.logoImageUrl || '',
-                themeColor: loadedConfig.themeColor || (window.siteConfig ? window.siteConfig.themeColor : 'rose'),
-                weatherOptions: loadedConfig.weatherOptions || (window.siteConfig ? window.siteConfig.weatherOptions : ['晴れ ☀️', '快晴 🌤️', 'くもり ☁️', '雨 ☔', '雪 ❄️'])
+                themeColor: loadedConfig.themeColor || 'rose',
+                weatherOptions: loadedConfig.weatherOptions || ['晴れ ☀️', '快晴 🌤️', 'くもり ☁️', '雨 ☔', '雪 ❄️']
+            };
+        } else {
+            console.warn("⚠️ Firestoreに設定ドキュメントが見つかりませんでした（初期状態です）。");
+            window.siteConfig = {
+                title: '日々の写真日記',
+                subtitle: 'Photo & Daily Log',
+                logoChar: 'P',
+                logoImageUrl: '',
+                themeColor: 'rose',
+                weatherOptions: ['晴れ ☀️', '快晴 🌤️', 'くもり ☁️', '雨 ☔', '雪 ❄️']
             };
         }
 
+        // 2. 記事の読み込み試行
         const entriesRef = collection(db, 'artifacts', appId, 'public', 'data', 'entries');
         const querySnap = await getDocs(entriesRef);
         const loaded = [];
@@ -1880,14 +1900,19 @@ function handleImageSelect(event) {
             loaded.push({ id: d.id, ...d.data() });
         });
 
+        console.log("📖 読み込んだ記事の数:", loaded.length);
         if (loaded.length > 0) {
             loaded.sort((a, b) => b.date.localeCompare(a.date));
             window.entries = loaded;
+        } else {
+            window.entries = [];
         }
+
     } catch (e) {
-        console.error("Firestore setup error:", e); // エラーの中身が分かるように変更
+        console.error("❌ 初期化処理でエラーが発生しました:", e);
     }
 
+    // UIの適用と画面描画
     if (typeof window.applySiteConfig === 'function') {
         window.applySiteConfig();
     }
