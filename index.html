@@ -138,27 +138,8 @@
                 themeColor: loadedConfig.themeColor || 'rose',
                 weatherOptions: loadedConfig.weatherOptions || ['晴れ ☀️', '快晴 🌤️', 'くもり ☁️', '雨 ☔', '雪 ❄️']
             };
-
-           // データを読み込んだその場で、直接画面のHTMLを書き換える
-        const titleEl = document.getElementById('siteHeaderTitle');
-        if (titleEl) titleEl.textContent = window.siteConfig.title;
-
-        const subtitleEl = document.getElementById('siteHeaderSubtitle');
-        if (subtitleEl) subtitleEl.textContent = window.siteConfig.subtitle;
-
-        // 文字ロゴの反映
-        const logoTextEl = document.getElementById('siteHeaderLogo');
-        if (logoTextEl) {
-            logoTextEl.textContent = window.siteConfig.logoChar || 'S';
-        }
-
-        // テーマカラー等の反映
-        if (typeof window.applyCurrentThemeToUI === 'function') {
-            window.applyCurrentThemeToUI();
-        }
-    } else {
-        console.warn("⚠️ Firestoreに設定が見つかりませんでした。デフォルトを適用します。");
-        if (typeof window.siteConfig === 'undefined' || window.siteConfig === null) {
+        } else {
+            console.warn("⚠️ Firestoreに設定が見つかりませんでした。デフォルトを適用します。");
             window.siteConfig = {
                 title: '日々の卓日記',
                 subtitle: 'Session Log',
@@ -168,7 +149,11 @@
                 weatherOptions: ['晴れ ☀️', '快晴 🌤️', 'くもり ☁️', '雨 ☔', '雪 ❄️', '虹 🌈']
             };
         }
-    }
+
+        // 読み込みが完了した直後に、必ず applySiteConfig() を呼んで画面全体を構築する
+        if (typeof window.applySiteConfig === 'function') {
+            window.applySiteConfig();
+        }
         // 2. 記事の読み込み
         const entriesRef = collection(db, 'artifacts', appId, 'public', 'data', 'entries');
         const querySnap = await getDocs(entriesRef);
