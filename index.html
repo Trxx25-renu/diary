@@ -692,6 +692,7 @@ function getCircledNumber(num) {
         }
         window.setThumbnailFitMode = setThumbnailFitMode;
 
+        // 詳細画面を描画する関数
         function renderDetailView() {
             const entry = (window.entries || []).find(e => e.id === window.selectedEntryId);
             if (!entry) return;
@@ -706,23 +707,24 @@ function getCircledNumber(num) {
 
             const detailDate = document.getElementById('detailDate');
             if (detailDate) detailDate.textContent = formattedDate;
+            
             const detailWeather = document.getElementById('detailWeather');
             if (detailWeather) detailWeather.textContent = entry.weather || '晴れ ☀️';
-            
-            // ★【追加・修正】シナリオタイトルの表示制御
+
+            // ★【修正】シナリオタイトルを画面に反映する処理
             const detailScenarioTitle = document.getElementById('detailScenarioTitle');
             if (detailScenarioTitle) {
                 if (entry.scenarioTitle && entry.scenarioTitle.trim() !== '') {
                     detailScenarioTitle.textContent = entry.scenarioTitle;
-                    detailScenarioTitle.classList.remove('hidden'); // タイトルがあれば表示
+                    detailScenarioTitle.classList.remove('hidden');
                 } else {
                     detailScenarioTitle.textContent = '';
-                    detailScenarioTitle.classList.add('hidden');    // タイトルがなければ完全に隠して非表示に
+                    detailScenarioTitle.classList.add('hidden');
                 }
             }
 
             const detailContent = document.getElementById('detailContent');
-            if (detailContent) detailContent.innerHTML = parseSpoilers(entry.content);
+            if (detailContent) detailContent.innerHTML = typeof parseSpoilers === 'function' ? parseSpoilers(entry.content) : entry.content;
 
             const secretContainer = document.getElementById('detailSecretContainer');
             const secretContentEl = document.getElementById('detailSecretContent');
@@ -747,13 +749,16 @@ function getCircledNumber(num) {
             if (prevBtn) prevBtn.disabled = (currentIndex >= (window.entries || []).length - 1);
             if (nextBtn) nextBtn.disabled = (currentIndex <= 0);
 
+            // ★【追加】管理者（Admin）のときだけ「編集ボタン」と「削除ボタン」を表示する
+            const editBtn = document.getElementById('editBtn');
             const deleteBtn = document.getElementById('deleteBtn');
-            if (deleteBtn) {
-                if (window.isAdmin) {
-                    deleteBtn.classList.remove('hidden');
-                } else {
-                    deleteBtn.classList.add('hidden');
-                }
+            
+            if (window.isAdmin) {
+                if (editBtn) editBtn.classList.remove('hidden');
+                if (deleteBtn) deleteBtn.classList.remove('hidden');
+            } else {
+                if (editBtn) editBtn.classList.add('hidden');
+                if (deleteBtn) deleteBtn.classList.add('hidden');
             }
         }
         window.renderDetailView = renderDetailView;
