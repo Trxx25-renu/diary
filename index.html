@@ -693,7 +693,7 @@ function getCircledNumber(num) {
         window.setThumbnailFitMode = setThumbnailFitMode;
 
         // 詳細画面を描画する関数
-function renderDetailView() {
+        function renderDetailView() {
     const entry = (window.entries || []).find(e => e.id === window.selectedEntryId);
     if (!entry) return;
 
@@ -734,7 +734,7 @@ function renderDetailView() {
         if (editBtn) editBtn.classList.add('hidden');
         if (deleteBtn) deleteBtn.classList.add('hidden');
     }
-} // ← ここで関数が閉じる
+}
 
             const detailContent = document.getElementById('detailContent');
             if (detailContent) detailContent.innerHTML = typeof parseSpoilers === 'function' ? parseSpoilers(entry.content) : entry.content;
