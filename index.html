@@ -1983,5 +1983,42 @@ function applySiteConfig() {
     }
 }
 window.applySiteConfig = applySiteConfig;
+
+    // 記事詳細画面での `<` `>` ボタンによる切り替え関数
+window.navigateDetail = function(direction) {
+    if (!window.entries || window.entries.length === 0) return;
+    if (!window.selectedEntryId) return;
+
+    // 現在表示している記事のインデックスを探す
+    const currentIndex = window.entries.findIndex(e => e.id === window.selectedEntryId);
+    if (currentIndex === -1) return;
+
+    // direction: HTML側で 1 (新しい方へ), -1 (古い方へ) になっています
+    // entries が日付の降順（新しい順）で並んでいる前提の場合:
+    // 配列のインデックスが小さくなるほど新しい記事、大きくなるほど古い記事になります
+    const targetIndex = currentIndex - direction;
+
+    // 配列の範囲内であれば切り替えを実行
+    if (targetIndex >= 0 && targetIndex < window.entries.length) {
+        const targetEntry = window.entries[targetIndex];
+        
+        // 選択中のIDを更新
+        window.selectedEntryId = targetEntry.id;
+
+        // 詳細画面を描画・更新する既存の関数を呼び出す
+        // （もしお持ちの詳細描画関数の名前が違う場合はここを合わせます。例: updateDetailView(targetEntry) など）
+        if (typeof window.showDetailView === 'function') {
+            window.showDetailView(targetEntry.id);
+        } else if (typeof window.renderDetail === 'function') {
+            window.renderDetail(targetEntry);
+        } else {
+            // もし専用関数が分からなければ、要素を直接書き換えて安全に表示を更新する例
+            window.selectedEntryId = targetEntry.id;
+            if (typeof window.navigateTo === 'function') {
+                window.navigateTo('detail');
+            }
+        }
+    }
+};
     
 </script>
