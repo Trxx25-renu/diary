@@ -231,7 +231,7 @@
                 }
             }
 
-            const theme = THEME_CLASSES[config.themeColor] || THEME_CLASSES.amber;
+           const theme = THEME_CLASSES[config.themeColor] || THEME_CLASSES.stone;
             const logoBg = document.getElementById('siteHeaderLogoBox');
             if (logoBg) {
                 logoBg.className = `w-9 h-9 rounded-xl ${theme.bgLight} ${theme.textPrimary} flex items-center justify-center font-serif-title font-bold text-lg group-hover:scale-105 transition-transform overflow-hidden`;
