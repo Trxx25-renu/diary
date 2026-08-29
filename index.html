@@ -181,6 +181,11 @@
             window.applySiteConfig();
         }
 
+        // 🌟 起動時にも管理者UIの状態を反映する
+        if (typeof updateAdminUI === 'function') {
+            updateAdminUI();
+        }
+
         // 2. 記事の読み込み
         const entriesRef = collection(db, 'artifacts', appId, 'public', 'data', 'entries');
         const querySnap = await getDocs(entriesRef);
