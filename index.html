@@ -437,7 +437,7 @@ function getCircledNumber(num) {
                 const latestPhoto = entries[0]?.imageUrl || '';
 
                 const card = document.createElement('div');
-                card.className = 'group bg-white rounded-2xl border border-stone-200/80 p-4 cursor-pointer shadow-sm hover:shadow-md transition-all flex items-center gap-4 hover:border-amber-300';
+                card.className = 'group bg-white rounded-2xl border border-stone-200/80 p-4 cursor-pointer shadow-sm hover:shadow-md transition-all flex items-center gap-4 hover:border-stone-300';
                 card.onclick = () => navigateTo('gallery', ym);
 
                 card.innerHTML = `
@@ -446,8 +446,8 @@ function getCircledNumber(num) {
                     </div>
                     <div class="flex flex-col justify-center flex-1 min-w-0">
                         <div class="flex items-center justify-between">
-                            <h3 class="text-base font-serif-title font-bold text-stone-800 group-hover:text-amber-700 transition-colors">${year}年 ${parseInt(month, 10)}月</h3>
-                            <i class="fa-solid fa-chevron-right text-xs text-stone-300 group-hover:text-amber-600 transition-colors"></i>
+                            <h3 class="text-base font-serif-title font-bold text-stone-800 group-hover:text-stone-700 transition-colors">${year}年 ${parseInt(month, 10)}月</h3>
+                            <i class="fa-solid fa-chevron-right text-xs text-stone-300 group-hover:text-stone-600 transition-colors"></i>
                         </div>
                         <p class="text-xs text-stone-400 mt-1">${entries.length} 件の思い出</p>
                     </div>
@@ -517,11 +517,11 @@ function getCircledNumber(num) {
             const btnGrid = document.getElementById('viewModeGridBtn');
             if (btnCal && btnGrid) {
                 if (window.galleryViewMode === 'calendar') {
-                    btnCal.className = 'px-3 py-1.5 rounded-lg text-xs font-medium bg-amber-600 text-white shadow-sm transition-all flex items-center gap-1';
+                    btnCal.className = 'px-3 py-1.5 rounded-lg text-xs font-medium bg-stone-600 text-white shadow-sm transition-all flex items-center gap-1';
                     btnGrid.className = 'px-3 py-1.5 rounded-lg text-xs font-medium text-stone-600 hover:bg-stone-100 transition-all flex items-center gap-1';
                 } else {
                     btnCal.className = 'px-3 py-1.5 rounded-lg text-xs font-medium text-stone-600 hover:bg-stone-100 transition-all flex items-center gap-1';
-                    btnGrid.className = 'px-3 py-1.5 rounded-lg text-xs font-medium bg-amber-600 text-white shadow-sm transition-all flex items-center gap-1';
+                    btnGrid.className = 'px-3 py-1.5 rounded-lg text-xs font-medium bg-stone-600 text-white shadow-sm transition-all flex items-center gap-1';
                 }
             }
 
@@ -589,7 +589,7 @@ function getCircledNumber(num) {
                     const countBadge = count > 1 ? getCircledNumber(count) : '';
 
                     html += `
-                        <div onclick="navigateTo('detail', '${entry.id}')" class="group relative aspect-square bg-stone-100 rounded-xl overflow-hidden border border-amber-200/80 cursor-pointer shadow-sm hover:shadow-md transition-all">
+                        <div onclick="navigateTo('detail', '${entry.id}')" class="group relative aspect-square bg-stone-100 rounded-xl overflow-hidden border border-stone-200/80 cursor-pointer shadow-sm hover:shadow-md transition-all">
                             <img src="${entry.imageUrl}" alt="${dateKey}" draggable="false" oncontextmenu="return false;" class="protect-image w-full h-full ${imgFitClass} group-hover:scale-105 transition-transform duration-300">
                             <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20 p-1.5 flex flex-col justify-between">
                                 <span class="text-[10px] sm:text-xs font-bold text-white bg-black/40 backdrop-blur-md px-1.5 py-0.5 rounded-md w-fit leading-none">${day}</span>
@@ -945,7 +945,7 @@ function getCircledNumber(num) {
 
             if (window.isAdmin) {
                 if (statusText) statusText.textContent = 'ログアウト';
-                if (icon) icon.className = 'fa-solid fa-lock-open text-emerald-600';
+                if (icon) icon.className = 'fa-solid fa-lock-open text-stone-600';
                 if (newPostBtn) {
                     newPostBtn.classList.remove('hidden');
                     newPostBtn.classList.add('flex');
@@ -954,7 +954,7 @@ function getCircledNumber(num) {
                 if (window.currentView === 'detail' && deleteBtn) deleteBtn.classList.remove('hidden');
             } else {
                 if (statusText) statusText.textContent = 'ログイン';
-                if (icon) icon.className = 'fa-solid fa-lock text-amber-600';
+                if (icon) icon.className = 'fa-solid fa-lock text-stone-600';
                 if (newPostBtn) {
                     newPostBtn.classList.add('hidden');
                     newPostBtn.classList.remove('flex');
@@ -1297,7 +1297,7 @@ function getCircledNumber(num) {
         <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
             <div class="flex items-center gap-3">
                 <a href="javascript:void(0)" onclick="navigateTo('months')" class="flex items-center gap-2 group">
-                    <div id="siteHeaderLogoBox" class="w-9 h-9 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center font-serif-title font-bold text-lg group-hover:scale-105 transition-transform overflow-hidden">
+                    <div id="siteHeaderLogoBox" class="w-9 h-9 rounded-xl bg-stone-50 text-stone-700 flex items-center justify-center font-serif-title font-bold text-lg group-hover:scale-105 transition-transform overflow-hidden">
                         <span id="siteHeaderLogo">P</span>
                         <img id="siteHeaderLogoImg" src="" alt="Logo" class="w-full h-full object-cover hidden">
                     </div>
@@ -1327,7 +1327,7 @@ function getCircledNumber(num) {
                 </button>
 
                 <!-- 新規投稿ボタン -->
-                <button id="newPostBtn" onclick="openPostModal()" class="hidden px-3.5 py-1.5 rounded-xl text-xs font-medium text-white bg-amber-600 hover:bg-amber-700 transition-colors shadow-sm items-center gap-1.5">
+                <button id="newPostBtn" onclick="openPostModal()" class="hidden px-3.5 py-1.5 rounded-xl text-xs font-medium text-white bg-stone-600 hover:bg-stone-700 transition-colors shadow-sm items-center gap-1.5">
                     <i class="fa-solid fa-plus"></i>
                     <span>日記を書く</span>
                 </button>
@@ -1346,9 +1346,9 @@ function getCircledNumber(num) {
 
         <!-- 検索・フィルター ツールバー -->
         <section id="searchToolbarSection" class="bg-white rounded-2xl border border-stone-200/80 p-4 shadow-sm flex flex-col gap-3">
-            <div id="activeFilterBadge" class="hidden items-center justify-between gap-2 text-xs bg-amber-50 text-amber-800 px-3 py-1 rounded-full border border-amber-200 w-fit">
+            <div id="activeFilterBadge" class="hidden items-center justify-between gap-2 text-xs bg-stone-50 text-stone-800 px-3 py-1 rounded-full border border-stone-200 w-fit">
                 <span id="filterDescription">検索中...</span>
-                <button onclick="resetAllFilters()" class="text-amber-600 hover:text-amber-900 ml-1" title="フィルター解除">
+                <button onclick="resetAllFilters()" class="text-stone-600 hover:text-stone-900 ml-1" title="フィルター解除">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
@@ -1356,7 +1356,7 @@ function getCircledNumber(num) {
             <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
                 <!-- キーワード検索 -->
                 <div class="relative md:col-span-5">
-                    <input type="text" id="searchInput" oninput="handleSearch()" placeholder="本文や日付でキーワード検索..." class="w-full pl-9 pr-8 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all">
+                    <input type="text" id="searchInput" oninput="handleSearch()" placeholder="本文や日付でキーワード検索..." class="w-full pl-9 pr-8 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-stone-500/20 focus:border-stone-500 transition-all">
                     <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-stone-400 text-xs"></i>
                     <button id="clearTextBtn" onclick="clearSearchInput()" class="hidden absolute right-3 top-2.5 text-stone-400 hover:text-stone-600 text-xs">
                         <i class="fa-solid fa-circle-xmark"></i>
@@ -1431,7 +1431,7 @@ function getCircledNumber(num) {
                         <div class="flex items-center justify-between border-b border-stone-100 pb-3">
                             <div>
                                 <h3 id="detailDate" class="text-lg font-serif-title font-bold text-stone-800">2026.03.28 (金)</h3>
-                                <span id="detailWeather" class="inline-block text-xs font-medium text-amber-700 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200/50 mt-1.5">晴れ ☀️</span>
+                                <span id="detailWeather" class="inline-block text-xs font-medium text-stone-700 bg-stone-50 px-2.5 py-1 rounded-full border border-stone-200/50 mt-1.5">晴れ ☀️</span>
                             </div>
 
                             <!-- 前後の日記切り替え -->
@@ -1448,7 +1448,7 @@ function getCircledNumber(num) {
 
                         <!-- 目隠しメモ表示エリア -->
                         <div id="detailSecretContainer" class="hidden relative mt-2 bg-stone-100 text-stone-800 rounded-2xl p-4 border border-stone-300/70 cursor-pointer overflow-hidden transition-all shadow-inner group" onclick="toggleSecretMemo()">
-                            <div class="flex items-center justify-between mb-2 pb-1.5 border-b border-stone-300/60 text-xs text-amber-700 font-medium">
+                            <div class="flex items-center justify-between mb-2 pb-1.5 border-b border-stone-300/60 text-xs text-stone-700 font-medium">
                                 <span class="flex items-center gap-1.5">
                                     <i class="fa-solid fa-user-secret"></i> 目隠しメモ
                                 </span>
@@ -1459,7 +1459,7 @@ function getCircledNumber(num) {
 
                             <!-- 未開封オーバーレイ -->
                             <div id="secretOverlay" class="absolute inset-0 bg-stone-200/95 backdrop-blur-md flex flex-col items-center justify-center gap-1.5 text-stone-700 transition-all">
-                                <div class="w-8 h-8 rounded-full bg-stone-300/80 flex items-center justify-center text-amber-700 text-sm shadow-sm group-hover:scale-110 transition-transform">
+                                <div class="w-8 h-8 rounded-full bg-stone-300/80 flex items-center justify-center text-stone-700 text-sm shadow-sm group-hover:scale-110 transition-transform">
                                     <i class="fa-solid fa-eye-slash"></i>
                                 </div>
                                 <span class="text-xs font-medium text-stone-700">タップして目隠しメモを表示</span>
@@ -1494,7 +1494,7 @@ function getCircledNumber(num) {
     <div id="authModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-200">
         <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-xl border border-stone-200 scale-95 transition-transform duration-200 flex flex-col gap-4">
             <div class="text-center">
-                <div class="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mx-auto text-xl mb-2">
+                <div class="w-12 h-12 rounded-2xl bg-stone-50 text-stone-600 flex items-center justify-center mx-auto text-xl mb-2">
                     <i class="fa-solid fa-key"></i>
                 </div>
                 <h3 id="authModalTitle" class="text-base font-bold text-stone-800">管理者ログイン</h3>
@@ -1503,12 +1503,12 @@ function getCircledNumber(num) {
 
             <form onsubmit="handleAuthSubmit(event)" class="flex flex-col gap-3">
                 <div>
-                    <input type="password" id="inputPasscode" placeholder="パスコードを入力" required class="w-full px-4 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-center text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all">
+                    <input type="password" id="inputPasscode" placeholder="パスコードを入力" required class="w-full px-4 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-center text-sm focus:outline-none focus:ring-2 focus:ring-stone-500/20 focus:border-stone-500 transition-all">
                     <p id="authErrorMsg" class="hidden text-[11px] text-rose-500 text-center mt-1">パスコードが違います。</p>
                 </div>
                 <div class="flex items-center gap-2 mt-2">
                     <button type="button" onclick="closeAuthModal()" class="flex-1 py-2 text-xs font-medium text-stone-600 bg-stone-100 hover:bg-stone-200 rounded-xl transition-colors">キャンセル</button>
-                    <button type="submit" class="flex-1 py-2 text-xs font-medium text-white bg-amber-600 hover:bg-amber-700 rounded-xl transition-colors shadow-sm">認証する</button>
+                    <button type="submit" class="flex-1 py-2 text-xs font-medium text-white bg-stone-600 hover:bg-stone-700 rounded-xl transition-colors shadow-sm">認証する</button>
                 </div>
             </form>
         </div>
@@ -1519,7 +1519,7 @@ function getCircledNumber(num) {
         <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-xl border border-stone-200 scale-95 transition-transform duration-200 flex flex-col gap-4 max-h-[90vh] overflow-y-auto">
             <div class="flex items-center justify-between border-b border-stone-100 pb-3">
                 <div class="flex items-center gap-2">
-                    <i class="fa-solid fa-sliders text-amber-600 text-sm"></i>
+                    <i class="fa-solid fa-sliders text-stone-600 text-sm"></i>
                     <h3 class="text-base font-bold text-stone-800">ホームページの大枠設定</h3>
                 </div>
                 <button onclick="closeConfigModal()" class="text-stone-400 hover:text-stone-600 text-sm">
@@ -1530,22 +1530,22 @@ function getCircledNumber(num) {
             <form onsubmit="handleSaveConfig(event)" class="flex flex-col gap-4">
                 <div>
                     <label class="block text-xs font-medium text-stone-700 mb-1">サイトタイトル</label>
-                    <input type="text" id="inputSiteTitle" required class="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs focus:outline-none focus:border-amber-500">
+                    <input type="text" id="inputSiteTitle" required class="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs focus:outline-none focus:border-stone-500">
                 </div>
 
                 <div>
                     <label class="block text-xs font-medium text-stone-700 mb-1">サブタイトル（英語表記など）</label>
-                    <input type="text" id="inputSiteSubtitle" class="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs focus:outline-none focus:border-amber-500">
+                    <input type="text" id="inputSiteSubtitle" class="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs focus:outline-none focus:border-stone-500">
                 </div>
 
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs font-medium text-stone-700 mb-1">ロゴ文字 (画像未設定時)</label>
-                        <input type="text" id="inputLogoChar" maxlength="2" class="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs text-center font-bold focus:outline-none focus:border-amber-500">
+                        <input type="text" id="inputLogoChar" maxlength="2" class="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs text-center font-bold focus:outline-none focus:border-stone-500">
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-stone-700 mb-1">テーマカラー</label>
-                        <select id="inputThemeColor" class="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs focus:outline-none focus:border-amber-500">
+                        <select id="inputThemeColor" class="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs focus:outline-none focus:border-stone-500">
                             <option value="amber">アンバー (温かみのある橙)</option>
                             <option value="emerald">エメラルド (爽やかな緑)</option>
                             <option value="indigo">インディゴ (落ち着いた紺)</option>
@@ -1558,7 +1558,7 @@ function getCircledNumber(num) {
                 <div>
                     <label class="block text-xs font-medium text-stone-700 mb-1">ロゴ/アイコン画像 (任意)</label>
                     <div class="flex items-center gap-2">
-                        <input type="text" id="inputLogoImageUrl" placeholder="画像URLまたはファイルを選択" class="flex-1 px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs focus:outline-none focus:border-amber-500">
+                        <input type="text" id="inputLogoImageUrl" placeholder="画像URLまたはファイルを選択" class="flex-1 px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs focus:outline-none focus:border-stone-500">
                         <label class="px-3 py-2 bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-medium rounded-xl cursor-pointer transition-colors shrink-0">
                             <span>ファイル選択</span>
                             <input type="file" id="inputLogoFile" accept="image/*" onchange="handleLogoImageSelect(event)" class="hidden">
@@ -1572,13 +1572,13 @@ function getCircledNumber(num) {
 
                 <div>
                     <label class="block text-xs font-medium text-stone-700 mb-1">タグの選択肢 (カンマ区切り)</label>
-                    <textarea id="inputWeatherOptions" rows="3" class="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs focus:outline-none focus:border-amber-500" placeholder="晴れ ☀️, 快晴 🌤️, くもり ☁️, 雨 ☔, 雪 ❄️"></textarea>
+                    <textarea id="inputWeatherOptions" rows="3" class="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs focus:outline-none focus:border-stone-500" placeholder="晴れ ☀️, 快晴 🌤️, くもり ☁️, 雨 ☔, 雪 ❄️"></textarea>
                     <p class="text-[10px] text-stone-400 mt-1">※ カンマ（,）で区切って記載すると、投稿時やフィルターの選択肢に反映されます。</p>
                 </div>
 
                 <div class="flex items-center gap-2 pt-2 border-t border-stone-100">
                     <button type="button" onclick="closeConfigModal()" class="flex-1 py-2.5 text-xs font-medium text-stone-600 bg-stone-100 hover:bg-stone-200 rounded-xl transition-colors">キャンセル</button>
-                    <button type="submit" class="flex-1 py-2.5 text-xs font-medium text-white bg-amber-600 hover:bg-amber-700 rounded-xl transition-colors shadow-sm">設定を保存</button>
+                    <button type="submit" class="flex-1 py-2.5 text-xs font-medium text-white bg-stone-600 hover:bg-stone-700 rounded-xl transition-colors shadow-sm">設定を保存</button>
                 </div>
             </form>
         </div>
@@ -1597,7 +1597,7 @@ function getCircledNumber(num) {
             <form id="postForm" onsubmit="handleSaveEntry(event)" class="flex flex-col gap-4">
                 <div>
                     <label class="block text-xs font-medium text-stone-700 mb-1">写真 (必須)</label>
-                    <div class="relative w-full aspect-[16/10] bg-stone-50 border-2 border-dashed border-stone-200 rounded-2xl overflow-hidden hover:border-amber-500/50 transition-colors cursor-pointer flex flex-col items-center justify-center text-center p-4">
+                    <div class="relative w-full aspect-[16/10] bg-stone-50 border-2 border-dashed border-stone-200 rounded-2xl overflow-hidden hover:border-stone-500/50 transition-colors cursor-pointer flex flex-col items-center justify-center text-center p-4">
                         <input type="file" accept="image/*" onchange="handleImageSelect(event)" class="absolute inset-0 opacity-0 cursor-pointer z-10">
                         <img id="imagePreview" src="" alt="プレビュー" class="hidden w-full h-full object-cover">
                         <div id="uploadPlaceholder" class="flex flex-col items-center gap-2 text-stone-400">
@@ -1610,11 +1610,11 @@ function getCircledNumber(num) {
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs font-medium text-stone-700 mb-1">日付</label>
-                        <input type="date" id="inputDate" required class="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs focus:outline-none focus:border-amber-500">
+                        <input type="date" id="inputDate" required class="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs focus:outline-none focus:border-stone-500">
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-stone-700 mb-1">タグ</label>
-                        <select id="inputWeather" class="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs focus:outline-none focus:border-amber-500">
+                        <select id="inputWeather" class="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs focus:outline-none focus:border-stone-500">
                         </select>
                     </div>
                 </div>
@@ -1622,23 +1622,23 @@ function getCircledNumber(num) {
                 <div>
                     <div class="flex items-center justify-between mb-1">
                         <label class="block text-xs font-medium text-stone-700">今日の一言・感想</label>
-                        <button type="button" onclick="insertSpoilerTag()" class="text-[11px] text-amber-700 hover:text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-200/70 px-2 py-0.5 rounded-md transition-colors flex items-center gap-1" title="選択したテキストをネタバレ隠しで囲みます">
+                        <button type="button" onclick="insertSpoilerTag()" class="text-[11px] text-stone-700 hover:text-stone-800 bg-stone-50 hover:bg-stone-100 border border-stone-200/70 px-2 py-0.5 rounded-md transition-colors flex items-center gap-1" title="選択したテキストをネタバレ隠しで囲みます">
                             <i class="fa-solid fa-eye-slash text-[10px]"></i> ネタバレ隠し (||...||)
                         </button>
                     </div>
-                    <textarea id="inputContent" rows="3" placeholder="どんな一日でしたか？&#10;※ ||隠したい文章|| で囲むと本文内で部分伏せ字になります" required class="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs focus:outline-none focus:border-amber-500 transition-all"></textarea>
+                    <textarea id="inputContent" rows="3" placeholder="どんな一日でしたか？&#10;※ ||隠したい文章|| で囲むと本文内で部分伏せ字になります" required class="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs focus:outline-none focus:border-stone-500 transition-all"></textarea>
                 </div>
 
                 <div>
                     <label class="block text-xs font-medium text-stone-700 mb-1 flex items-center gap-1">
-                        <i class="fa-solid fa-user-secret text-amber-600 text-[11px]"></i> 目隠しメモ <span class="text-[10px] text-stone-400 font-normal">(任意・タップで表示)</span>
+                        <i class="fa-solid fa-user-secret text-stone-600 text-[11px]"></i> 目隠しメモ <span class="text-[10px] text-stone-400 font-normal">(任意・タップで表示)</span>
                     </label>
-                    <textarea id="inputSecretContent" rows="2" placeholder="タップしないと見えない秘密のメモやネタバレ感想はこちらへ..." class="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs focus:outline-none focus:border-amber-500 transition-all"></textarea>
+                    <textarea id="inputSecretContent" rows="2" placeholder="タップしないと見えない秘密のメモやネタバレ感想はこちらへ..." class="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs focus:outline-none focus:border-stone-500 transition-all"></textarea>
                 </div>
 
                 <div class="flex items-center gap-2 pt-2 border-t border-stone-100">
                     <button type="button" onclick="closePostModal()" class="flex-1 py-2.5 text-xs font-medium text-stone-600 bg-stone-100 hover:bg-stone-200 rounded-xl transition-colors">キャンセル</button>
-                    <button type="submit" id="saveSubmitBtn" class="flex-1 py-2.5 text-xs font-medium text-white bg-amber-600 hover:bg-amber-700 rounded-xl transition-colors shadow-sm">保存する</button>
+                    <button type="submit" id="saveSubmitBtn" class="flex-1 py-2.5 text-xs font-medium text-white bg-stone-600 hover:bg-stone-700 rounded-xl transition-colors shadow-sm">保存する</button>
                 </div>
             </form>
         </div>
@@ -1653,7 +1653,7 @@ function getCircledNumber(num) {
             </div>
             <div class="flex items-center gap-2 mt-2">
                 <button type="button" onclick="closeConfirmModal(false)" class="flex-1 py-2 text-xs font-medium text-stone-600 bg-stone-100 hover:bg-stone-200 rounded-xl transition-colors">キャンセル</button>
-                <button type="button" onclick="closeConfirmModal(true)" class="flex-1 py-2 text-xs font-medium text-white bg-amber-600 hover:bg-amber-700 rounded-xl transition-colors shadow-sm">実行する</button>
+                <button type="button" onclick="closeConfirmModal(true)" class="flex-1 py-2 text-xs font-medium text-white bg-stone-600 hover:bg-stone-700 rounded-xl transition-colors shadow-sm">実行する</button>
             </div>
         </div>
     </div>
