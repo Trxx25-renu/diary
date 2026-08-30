@@ -238,9 +238,9 @@
 
         // 🌟 アプリ全体の画面切り替えを行うルーター関数
         function navigateTo(view, param = null) {
-            // 各ビュー（画面）のHTML要素を取得
-            const viewMonths = document.getElementById('monthFoldersView') || document.getElementById('monthsView');
-            const viewGallery = document.getElementById('galleryView');
+            // HTMLの実際のIDに合わせて 'view-months' を指定する
+            const viewMonths = document.getElementById('view-months');
+            const viewGallery = document.getElementById('galleryView'); // もしここも違えば 'view-gallery' などに合わせる
             const viewDetail = document.getElementById('detailView') || document.getElementById('entryDetailView');
             const searchToolbar = document.getElementById('searchToolbar');
 
@@ -274,7 +274,6 @@
             window.currentView = view;
         }
 
-        // 🌟 HTMLのonclickなどからも呼べるようにグローバルに登録する
         window.navigateTo = navigateTo;
         
 // 1. ここに THEME_CLASSES を定義します（この定義が最上部にある必要があります）
