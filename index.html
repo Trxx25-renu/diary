@@ -1440,34 +1440,22 @@ function handleImageSelect(event) {
                 saveBtn.textContent = '保存中...';
             }
 
-            // 🌟 ここを整理：editingEntryId が空文字や null なら「新規作成」、あれば「編集」とする
-            let targetId = window.editingEntryId ? window.editingEntryId : null;
-            let entryData;
+           // 🌟 フォームから時間帯を取得する処理を追加
+        const timeSlotInput = document.getElementById('inputTimeSlot');
+        const timeSlot = timeSlotInput ? timeSlotInput.value : 'afternoon';
 
-            if (targetId) {
-                // 既存編集の処理
-                const index = (window.entries || []).findIndex(e => e.id === targetId);
-                if (index !== -1) {
-                    window.entries[index] = {
-                        ...window.entries[index],
-                        date: date,
-                        scenarioTitle: scenarioTitle.trim(),
-                        weather: weather,
-                        content: content,
-                        secretContent: secretContent.trim(),
-                        imageUrl: window.tempBase64Image,
-                        updatedAt: new Date().toISOString()
-                    };
-                    entryData = window.entries[index];
-                }
-            }
+        // 🌟 ここを整理：editingEntryId が空文字や null なら「新規作成」、あれば「編集」とする
+        let targetId = window.editingEntryId ? window.editingEntryId : null;
+        let entryData;
 
-           // もし編集対象が見つからない、または新規作成の場合
-            if (!entryData) {
-                targetId = `${date}_${Date.now()}`;
-                entryData = {
-                    id: targetId,
+        if (targetId) {
+            // 既存編集の処理
+            const index = (window.entries || []).findIndex(e => e.id === targetId);
+            if (index !== -1) {
+                window.entries[index] = {
+                    ...window.entries[index],
                     date: date,
+                    timeSlot: timeSlot, // 🌟 時間帯を保存
                     scenarioTitle: scenarioTitle.trim(),
                     weather: weather,
                     content: content,
@@ -1475,71 +1463,98 @@ function handleImageSelect(event) {
                     imageUrl: window.tempBase64Image,
                     updatedAt: new Date().toISOString()
                 };
-                if (!window.entries) window.entries = [];
-                window.entries.unshift(entryData);
-            }
-
-            // 🌟 修正版のソート：日付順（新しい順）にしつつ、同じ日付ならIDの古い順（先に追加された順）にする
-            window.entries.sort((a, b) => {
-                const dateCompare = b.date.localeCompare(a.date);
-                if (dateCompare !== 0) {
-                    return dateCompare;
-                }
-                // 日付が同じ場合はIDの昇順（先に作られたタイムスタンプが小さいものが先頭側）にする
-                return (a.id || '').localeCompare(b.id || '');
-            });
-
-            try {
-                // 🔍 デバッグ用ログ
-                console.log("🔍 保存直前チェック -> db:", window.db, "appId:", window.appId, "targetId:", targetId);
-
-                if (window.db && window.appId) {
-                    const { doc, setDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
-                    const docRef = doc(window.db, 'artifacts', window.appId, 'public', 'data', 'entries', targetId);
-                    await setDoc(docRef, entryData);
-                    console.log("🔥 Firestoreへの保存に成功しました:", targetId);
-                } else {
-                    console.error("❌ window.db または window.appId が不足しています！", { db: window.db, appId: window.appId });
-                }
-
-                closePostModal();
-                const ym = date.substring(0, 7);
-                navigateTo('gallery', ym);
-
-                const successMsg = window.editingEntryId ? '日記を更新しました！' : '日記を保存しました！';
-                showToast(successMsg, 'success');
-
-                window.editingEntryId = null;
-
-            } catch (err) {
-                // 💥 ここでエラーの内容がコンソールに出ます
-                console.error("💥 Save error 詳細:", err);
-                showToast('保存に失敗しました。', 'error');
-            } finally {
-                if (saveBtn) {
-                    saveBtn.disabled = false;
-                    saveBtn.textContent = '保存する';
-                }
+                entryData = window.entries[index];
             }
         }
-        window.handleSaveEntry = handleSaveEntry;
 
-        async function deleteCurrentEntry() {
-            console.log("🔍 削除処理開始 -> selectedEntryId:", window.selectedEntryId);
+        // もし編集対象が見つからない、または新規作成の場合
+        if (!entryData) {
+            targetId = `${date}_${Date.now()}`;
+            entryData = {
+                id: targetId,
+                date: date,
+                timeSlot: timeSlot, // 🌟 時間帯を保存
+                scenarioTitle: scenarioTitle.trim(),
+                weather: weather,
+                content: content,
+                secretContent: secretContent.trim(),
+                imageUrl: window.tempBase64Image,
+                updatedAt: new Date().toISOString()
+            };
+            if (!window.entries) window.entries = [];
+            window.entries.unshift(entryData);
+        }
 
-            if (!window.selectedEntryId) {
-                showToast('削除する記事が選択されていません。', 'warning');
-                return;
+        // 🌟 修正版のソート：日付（新しい順）にしつつ、同じ日付なら「朝 → 昼 → 夜」の順にする
+        const timeSlotOrder = { 'morning': 1, 'afternoon': 2, 'night': 3 };
+        window.entries.sort((a, b) => {
+            const dateCompare = b.date.localeCompare(a.date);
+            if (dateCompare !== 0) {
+                return dateCompare;
             }
-            if (!window.isAdmin) {
-                showToast('権限がありません。ログインしてください。', 'warning');
-                return;
+            
+            // 日付が同じ場合は「時間帯」で比較（朝 -> 昼 -> 夜）
+            const slotA = timeSlotOrder[a.timeSlot || 'afternoon'] || 2;
+            const slotB = timeSlotOrder[b.timeSlot || 'afternoon'] || 2;
+            if (slotA !== slotB) {
+                return slotA - slotB;
             }
 
-            // ブラウザ標準の確認ダイアログを使用（確実な動作のため）
-            if (!confirm("本当にこの日記を削除しますか？")) {
-                return;
+            // それも同じ場合はIDの昇順
+            return (a.id || '').localeCompare(b.id || '');
+        });
+
+        try {
+            // 🔍 デバッグ用ログ
+            console.log("🔍 保存直前チェック -> db:", window.db, "appId:", window.appId, "targetId:", targetId);
+
+            if (window.db && window.appId) {
+                const { doc, setDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
+                const docRef = doc(window.db, 'artifacts', window.appId, 'public', 'data', 'entries', targetId);
+                await setDoc(docRef, entryData);
+                console.log("🔥 Firestoreへの保存に成功しました:", targetId);
+            } else {
+                console.error("❌ window.db または window.appId が不足しています！", { db: window.db, appId: window.appId });
             }
+
+            closePostModal();
+            const ym = date.substring(0, 7);
+            navigateTo('gallery', ym);
+
+            const successMsg = window.editingEntryId ? '日記を更新しました！' : '日記を保存しました！';
+            showToast(successMsg, 'success');
+
+            window.editingEntryId = null;
+
+        } catch (err) {
+            // 💥 ここでエラーの内容がコンソールに出ます
+            console.error("💥 Save error 詳細:", err);
+            showToast('保存に失敗しました。', 'error');
+        } finally {
+            if (saveBtn) {
+                saveBtn.disabled = false;
+                saveBtn.textContent = '保存する';
+            }
+        }
+    }
+    window.handleSaveEntry = handleSaveEntry;
+
+    async function deleteCurrentEntry() {
+        console.log("🔍 削除処理開始 -> selectedEntryId:", window.selectedEntryId);
+
+        if (!window.selectedEntryId) {
+            showToast('削除する記事が選択されていません。', 'warning');
+            return;
+        }
+        if (!window.isAdmin) {
+            showToast('権限がありません。ログインしてください。', 'warning');
+            return;
+        }
+
+        // ブラウザ標準の確認ダイアログを使用（確実な動作のため）
+        if (!confirm("本当にこの日記を削除しますか？")) {
+            return;
+        }
 
             try {
                 console.log("🗑️ Firestore削除処理を実行中...");
@@ -1572,6 +1587,7 @@ function handleImageSelect(event) {
             }
         }
         window.deleteCurrentEntry = deleteCurrentEntry;
+        
         // 📝 詳細画面から編集モードでモーダルを開く関数
         function openEditModalFromDetail() {
             if (!window.isAdmin) {
@@ -1599,6 +1615,7 @@ function handleImageSelect(event) {
 
             // フォームの各入力欄に既存のデータを流し込む
             const dateInput = document.getElementById('inputDate');
+            const timeSlotInput = document.getElementById('inputTimeSlot'); // 🌟 時間帯のinput要素を取得
             const scenarioTitleInput = document.getElementById('inputScenarioTitle');
             const weatherInput = document.getElementById('inputWeather');
             const contentInput = document.getElementById('inputContent');
@@ -1607,6 +1624,7 @@ function handleImageSelect(event) {
             const placeholder = document.getElementById('uploadPlaceholder');
 
             if (dateInput) dateInput.value = entry.date || '';
+            if (timeSlotInput) timeSlotInput.value = entry.timeSlot || 'afternoon'; // 🌟 時間帯を復元（未設定なら昼）
             if (scenarioTitleInput) scenarioTitleInput.value = entry.scenarioTitle || '';
             if (weatherInput) weatherInput.value = entry.weather || '';
             if (contentInput) contentInput.value = entry.content || '';
@@ -1645,7 +1663,7 @@ function handleImageSelect(event) {
             showToast('編集モードで開きました', 'info');
         }
         window.openEditModalFromDetail = openEditModalFromDetail;
-
+        
         function sharePublicUrl() {
             const cleanUrl = window.location.origin + window.location.pathname;
 
