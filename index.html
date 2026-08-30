@@ -236,13 +236,10 @@
     }
 });
 
-        // 🌟 アプリ全体の画面切り替えを行うルーター関数
+      // 🌟 アプリ全体の画面切り替えを行うルーター関数
         function navigateTo(view, param = null) {
             const viewMonths = document.getElementById('view-months');
-            
-            // 🌟 ここをHTMLのIDに合わせて 'view-gallery' に変更する！
             const viewGallery = document.getElementById('view-gallery');
-            
             const viewDetail = document.getElementById('detailView') || document.getElementById('entryDetailView');
             const searchToolbar = document.getElementById('searchToolbar');
 
@@ -263,8 +260,10 @@
                 if (viewGallery) viewGallery.classList.remove('hidden');
                 if (searchToolbar) searchToolbar.classList.remove('hidden');
                 if (param) window.selectedYearMonth = param;
-                if (typeof renderGallery === 'function') {
-                    renderGallery(window.selectedYearMonth);
+                
+                // 🌟 正しいギャラリー描画関数 (renderGalleryView) を呼び出す
+                if (typeof renderGalleryView === 'function') {
+                    renderGalleryView();
                 }
             } else if (view === 'detail') {
                 if (viewDetail) viewDetail.classList.remove('hidden');
