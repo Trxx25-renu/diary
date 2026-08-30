@@ -1487,7 +1487,6 @@ function handleImageSelect(event) {
                 // 💥 ここでエラーの内容がコンソールに出ます
                 console.error("💥 Save error 詳細:", err);
                 showToast('保存に失敗しました。', 'error');
-            }
             } finally {
                 if (saveBtn) {
                     saveBtn.disabled = false;
