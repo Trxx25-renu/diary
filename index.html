@@ -236,15 +236,13 @@
     }
 });
 
-     // 🌟 アプリ全体の画面切り替えを行うルーター関数
+     // 🌟 アプリ全体の画面切り替え ＆ パンくず更新を行うルーター関数
         function navigateTo(view, param = null) {
             const viewMonths = document.getElementById('view-months');
             const viewGallery = document.getElementById('view-gallery');
-            
-            // 🌟 ここをHTMLの実際のID 'view-detail' に修正！
             const viewDetail = document.getElementById('view-detail');
-            
             const searchToolbar = document.getElementById('searchToolbar');
+            const breadcrumbs = document.getElementById('breadcrumbs');
 
             // 1. すべてのビューをいったん隠す
             if (viewMonths) viewMonths.classList.add('hidden');
@@ -252,24 +250,87 @@
             if (viewDetail) viewDetail.classList.add('hidden');
             if (searchToolbar) searchToolbar.classList.add('hidden');
 
-            // 2. 指定された view に応じて表示を切り替える
+            // 2. パンくずリストとビューの切り替え
             if (view === 'months') {
                 if (viewMonths) viewMonths.classList.remove('hidden');
                 if (searchToolbar) searchToolbar.classList.remove('hidden');
+                
+                // ホーム（月別）のときのパンくず
+                if (breadcrumbs) {
+                    breadcrumbs.innerHTML = `
+                        <span class="text-stone-700 font-medium flex items-center gap-1">
+                            <i class="fa-solid fa-house text-[10px]"></i> ホーム (月別)
+                        </span>
+                    `;
+                }
+
                 if (typeof renderMonthFolders === 'function') {
                     renderMonthFolders();
                 }
+
             } else if (view === 'gallery') {
                 if (viewGallery) viewGallery.classList.remove('hidden');
                 if (searchToolbar) searchToolbar.classList.remove('hidden');
                 if (param) window.selectedYearMonth = param;
+
+                // ギャラリー表示中のときのパンくず
+                if (breadcrumbs) {
+                    const ym = window.selectedYearMonth || '';
+                    const [y, m] = ym.split('-');
+                    const displayYm = y && m ? `${y}年${parseInt(m, 10)}月` : ym;
+
+                    breadcrumbs.innerHTML = `
+                        <a href="javascript:void(0)" onclick="navigateTo('months')" class="hover:text-stone-900 transition-colors flex items-center gap-1">
+                            <i class="fa-solid fa-house text-[10px]"></i> ホーム (月別)
+                        </a>
+                        <span class="text-stone-300">/</span>
+                        <span class="text-stone-700 font-medium">${displayYm}</span>
+                    `;
+                }
+
                 if (typeof renderGalleryView === 'function') {
                     renderGalleryView();
                 }
+
             } else if (view === 'detail') {
-                // 詳細画面を表示するときは検索ツールバーは隠したままにするのが自然です
                 if (viewDetail) viewDetail.classList.remove('hidden');
                 if (param) window.selectedEntryId = param;
+
+                // 🌟 カレンダーなどから直接詳細が開かれた場合、年月が未設定なら記事データから逆算する
+                if (!window.selectedYearMonth && window.selectedEntryId && window.entries) {
+                    const targetEntry = window.entries.find(e => e.id === window.selectedEntryId);
+                    if (targetEntry && targetEntry.date) {
+                        // date が "2026-08-30" のような形式であれば、先頭7文字 "2026-08" を取得
+                        window.selectedYearMonth = targetEntry.date.substring(0, 7);
+                    }
+                }
+
+                // 詳細表示中のときのパンくず
+                if (breadcrumbs) {
+                    const ym = window.selectedYearMonth || '';
+                    const [y, m] = ym.split('-');
+                    const displayYm = y && m ? `${y}年${parseInt(m, 10)}月` : 'アルバム';
+
+                    // 記事の日付（例: 2026.08.30）ももし取れれば表示に使う
+                    let displayDate = '記事詳細';
+                    if (window.selectedEntryId && window.entries) {
+                        const targetEntry = window.entries.find(e => e.id === window.selectedEntryId);
+                        if (targetEntry && targetEntry.date) {
+                            displayDate = targetEntry.date.replace(/-/g, '.');
+                        }
+                    }
+
+                    breadcrumbs.innerHTML = `
+                        <a href="javascript:void(0)" onclick="navigateTo('months')" class="hover:text-stone-900 transition-colors flex items-center gap-1">
+                            <i class="fa-solid fa-house text-[10px]"></i> ホーム (月別)
+                        </a>
+                        <span class="text-stone-300">/</span>
+                        <a href="javascript:void(0)" onclick="navigateTo('gallery')" class="hover:text-stone-900 transition-colors">${displayYm}</a>
+                        <span class="text-stone-300">/</span>
+                        <span class="text-stone-700 font-medium">${displayDate}</span>
+                    `;
+                }
+
                 if (typeof renderDetailView === 'function') {
                     renderDetailView();
                 }
