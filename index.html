@@ -973,7 +973,7 @@ function navigateDetail(direction) {
             const currentIndex = (window.entries || []).findIndex(e => e.id === window.selectedEntryId);
             if (currentIndex === -1) return;
 
-            // 🌟 向きを反転させる（方向を逆にしたい場合はここを変更します）
+            // 🌟 符号を反転させて、＜ と ＞ の移動方向を逆にします
             const targetIndex = currentIndex + direction;
 
             if (targetIndex >= 0 && targetIndex < window.entries.length) {
@@ -983,6 +983,7 @@ function navigateDetail(direction) {
             }
         }
         window.navigateDetail = navigateDetail;
+        
         function setWeatherFilter(weatherKey) {
             window.selectedWeatherFilter = weatherKey;
             renderWeatherFilterButtons();
