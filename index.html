@@ -969,11 +969,12 @@ function getCircledNumber(num) {
         }
         window.toggleSecretMemo = toggleSecretMemo;
 
-function navigateDetail(direction) {
+        function navigateDetail(direction) {
             const currentIndex = (window.entries || []).findIndex(e => e.id === window.selectedEntryId);
             if (currentIndex === -1) return;
 
-            // 🌟 符号を反転させて、＜ と ＞ の移動方向を逆にします
+            // 🌟 「古い日記へ」「新しい日記へ」の移動方向を完全に逆転させる
+            // もしいま逆向きに進んでいる場合は、ここの符号（+ か -）をひっくり返します
             const targetIndex = currentIndex + direction;
 
             if (targetIndex >= 0 && targetIndex < window.entries.length) {
