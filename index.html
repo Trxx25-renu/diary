@@ -1517,7 +1517,7 @@ function handleImageSelect(event) {
         window.handleSaveEntry = handleSaveEntry;
 
         async function deleteCurrentEntry() {
-            console.log("🔍 削除ボタン押下 -> selectedEntryId:", window.selectedEntryId, "isAdmin:", window.isAdmin);
+            console.log("🔍 削除処理開始 -> selectedEntryId:", window.selectedEntryId);
 
             if (!window.selectedEntryId) {
                 showToast('削除する記事が選択されていません。', 'warning');
@@ -1528,35 +1528,42 @@ function handleImageSelect(event) {
                 return;
             }
 
-            showConfirm('日記の削除', 'この日記を削除してもよろしいですか？', async () => {
-                try {
-                    console.log("🗑️ Firestore削除処理を実行中...");
+            // ブラウザ標準の確認ダイアログを使用（確実な動作のため）
+            if (!confirm("本当にこの日記を削除しますか？")) {
+                return;
+            }
 
-                    if (window.db && window.appId) {
-                        // 保存時と同じモジュール・書き方で確実に削除
-                        const { doc, deleteDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
-                        const docRef = doc(window.db, 'artifacts', window.appId, 'public', 'data', 'entries', window.selectedEntryId);
-                        await deleteDoc(docRef);
-                        console.log("🔥 Firestoreからの削除成功");
-                    }
+            try {
+                console.log("🗑️ Firestore削除処理を実行中...");
 
-                    // ローカル配列から除外
-                    window.entries = (window.entries || []).filter(e => e.id !== window.selectedEntryId);
-
-                    // 画面遷移
-                    const ym = window.selectedYearMonth || window.selectedEntryId.substring(0, 7);
-                    navigateTo('gallery', ym);
-
-                    showToast('日記を削除しました', 'success');
-
-                } catch (err) {
-                    console.error("💥 Delete error 詳細:", err);
-                    showToast('削除に失敗しました（コンソールを確認してください）。', 'error');
+                if (window.db && window.appId) {
+                    const { doc, deleteDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
+                    const docRef = doc(window.db, 'artifacts', window.appId, 'public', 'data', 'entries', window.selectedEntryId);
+                    await deleteDoc(docRef);
+                    console.log("🔥 Firestoreからの削除成功");
+                } else {
+                    console.warn("⚠️ window.db または window.appId がないためローカルのみ削除します");
                 }
-            });
+
+                // ローカル配列から除外
+                window.entries = (window.entries || []).filter(e => e.id !== window.selectedEntryId);
+
+                // 詳細モーダルを確実に閉じる
+                if (typeof closeDetailModal === 'function') {
+                    closeDetailModal();
+                }
+
+                // ギャラリー画面へ遷移
+                navigateTo('gallery');
+
+                showToast('日記を削除しました', 'success');
+
+            } catch (err) {
+                console.error("💥 Delete error 詳細:", err);
+                showToast('削除に失敗しました（コンソールを確認）。', 'error');
+            }
         }
         window.deleteCurrentEntry = deleteCurrentEntry;
-
         // 📝 詳細画面から編集モードでモーダルを開く関数
         function openEditModalFromDetail() {
             if (!window.isAdmin) {
@@ -1569,15 +1576,18 @@ function handleImageSelect(event) {
                 return;
             }
 
-            // 現在選択されているエントリを配列から探す
             const entry = window.entries.find(e => e.id === window.selectedEntryId);
             if (!entry) {
                 showToast('対象の記事が見つかりませんでした。', 'error');
                 return;
             }
 
-            // 編集モードとしてIDを保持
+            // 🌟 編集IDを確実に保持（新規に書き換えない！）
             window.editingEntryId = entry.id;
+
+            // フォームのタイトルを変更（あれば）
+            const modalTitleEl = document.getElementById('postModalTitle');
+            if (modalTitleEl) modalTitleEl.textContent = '日記を編集';
 
             // フォームの各入力欄に既存のデータを流し込む
             const dateInput = document.getElementById('inputDate');
@@ -1608,19 +1618,19 @@ function handleImageSelect(event) {
                 if (placeholder) placeholder.classList.remove('hidden');
             }
 
-            // 詳細モーダルを閉じて、投稿（編集）モーダルを開く
+            // 詳細モーダルを閉じる
             if (typeof closeDetailModal === 'function') {
                 closeDetailModal();
             }
 
-            // 投稿モーダルを開く関数（openPostModalなど）を呼び出す
-            if (typeof openPostModal === 'function') {
-                openPostModal();
-            } else {
-                // もし関数名が違う場合のフォールバック
-                const postModal = document.getElementById('postModal') || document.getElementById('entryModal');
-                if (postModal) {
-                    postModal.classList.remove('opacity-0', 'pointer-events-none');
+            // 🌟 openPostModalを使わず、直接投稿モーダルを表示する（editingEntryIdを保持したままにするため）
+            const modal = document.getElementById('postModal');
+            if (modal) {
+                modal.classList.remove('opacity-0', 'pointer-events-none');
+                const modalBox = modal.querySelector('div');
+                if (modalBox) {
+                    modalBox.classList.remove('scale-95');
+                    modalBox.classList.add('scale-100');
                 }
             }
 
