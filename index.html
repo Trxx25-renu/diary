@@ -1462,7 +1462,7 @@ function handleImageSelect(event) {
                 }
             }
 
-            // もし編集対象が見つからない、または新規作成の場合
+           // もし編集対象が見つからない、または新規作成の場合
             if (!entryData) {
                 targetId = `${date}_${Date.now()}`;
                 entryData = {
@@ -1479,7 +1479,15 @@ function handleImageSelect(event) {
                 window.entries.unshift(entryData);
             }
 
-            window.entries.sort((a, b) => b.date.localeCompare(a.date));
+            // 🌟 修正版のソート：日付順（新しい順）にしつつ、同じ日付ならIDの古い順（先に追加された順）にする
+            window.entries.sort((a, b) => {
+                const dateCompare = b.date.localeCompare(a.date);
+                if (dateCompare !== 0) {
+                    return dateCompare;
+                }
+                // 日付が同じ場合はIDの昇順（先に作られたタイムスタンプが小さいものが先頭側）にする
+                return (a.id || '').localeCompare(b.id || '');
+            });
 
             try {
                 // 🔍 デバッグ用ログ
