@@ -186,7 +186,7 @@
             updateAdminUI();
         }
 
-        // 2. 記事の読み込み
+       // 2. 記事の読み込み
         const entriesRef = collection(db, 'artifacts', appId, 'public', 'data', 'entries');
         const querySnap = await getDocs(entriesRef);
         const loaded = [];
@@ -196,7 +196,22 @@
 
         console.log("📖 読み込んだ記事の数:", loaded.length);
         if (loaded.length > 0) {
-            loaded.sort((a, b) => b.date.localeCompare(a.date));
+            // 🌟 ここを「新しい日付順 ＋ 朝→昼→夜」のソートに統一
+            const timeSlotOrder = { 'morning': 1, 'afternoon': 2, 'night': 3 };
+            loaded.sort((a, b) => {
+                const dateCompare = b.date.localeCompare(a.date);
+                if (dateCompare !== 0) {
+                    return dateCompare;
+                }
+                
+                const slotA = timeSlotOrder[a.timeSlot || 'afternoon'] || 2;
+                const slotB = timeSlotOrder[b.timeSlot || 'afternoon'] || 2;
+                if (slotA !== slotB) {
+                    return slotA - slotB;
+                }
+
+                return (a.id || '').localeCompare(b.id || '');
+            });
             window.entries = loaded;
         } else {
             window.entries = [];
