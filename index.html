@@ -938,11 +938,15 @@ function getCircledNumber(num) {
         }
         window.toggleSecretMemo = toggleSecretMemo;
 
-        function navigateDetail(direction) {
+function navigateDetail(direction) {
             const currentIndex = (window.entries || []).findIndex(e => e.id === window.selectedEntryId);
             if (currentIndex === -1) return;
 
+            // 🌟 データの並び順（新しいものが上＝インデックス0）に合わせた方向調整
+            // direction が +1（次へ/新しい方へ）ならインデックスを小さく（0に近づける）
+            // direction が -1（前へ/古い方へ）ならインデックスを大きくする
             const targetIndex = currentIndex - direction;
+
             if (targetIndex >= 0 && targetIndex < window.entries.length) {
                 window.selectedEntryId = window.entries[targetIndex].id;
                 renderDetailView();
