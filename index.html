@@ -1139,33 +1139,39 @@ function getCircledNumber(num) {
         function updateAdminUI() {
             const statusText = document.getElementById('authLockStatus');
             const icon = document.getElementById('authLockIcon');
-            const shareBtn = document.getElementById('shareBtn');     // 🌟 追加
+            const shareBtn = document.getElementById('shareBtn');
             const newPostBtn = document.getElementById('newPostBtn');
             const configBtn = document.getElementById('siteConfigBtn');
             const deleteBtn = document.getElementById('deleteBtn');
+            const editBtn = document.getElementById('editEntryBtn'); // 🌟 編集ボタンも取得
 
             if (window.isAdmin) {
                 if (statusText) statusText.textContent = 'ログアウト';
                 if (icon) icon.className = 'fa-solid fa-lock-open text-stone-600';
                 
-                if (shareBtn) shareBtn.classList.remove('hidden');     // 🌟 ログイン時は表示
+                if (shareBtn) shareBtn.classList.remove('hidden');
                 if (newPostBtn) {
                     newPostBtn.classList.remove('hidden');
                     newPostBtn.classList.add('flex');
                 }
                 if (configBtn) configBtn.classList.remove('hidden');
-                if (window.currentView === 'detail' && deleteBtn) deleteBtn.classList.remove('hidden');
+                
+                // 🌟 ビューの条件をなくし、管理者ならいつでもボタンを表示できるようにする
+                if (deleteBtn) deleteBtn.classList.remove('hidden');
+                if (editBtn) editBtn.classList.remove('hidden');
+
             } else {
                 if (statusText) statusText.textContent = 'ログイン';
                 if (icon) icon.className = 'fa-solid fa-lock text-stone-600';
                 
-                if (shareBtn) shareBtn.classList.add('hidden');       // 🌟 非ログイン時は非表示
+                if (shareBtn) shareBtn.classList.add('hidden');
                 if (newPostBtn) {
                     newPostBtn.classList.add('hidden');
                     newPostBtn.classList.remove('flex');
                 }
                 if (configBtn) configBtn.classList.add('hidden');
                 if (deleteBtn) deleteBtn.classList.add('hidden');
+                if (editBtn) editBtn.classList.add('hidden');
             }
         }
         window.updateAdminUI = updateAdminUI;
