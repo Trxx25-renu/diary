@@ -880,7 +880,7 @@ function getCircledNumber(num) {
         }
         window.setThumbnailFitMode = setThumbnailFitMode;
 
-// 詳細画面を描画する関数
+        // 詳細画面を描画する関数
         function renderDetailView() {
             const entry = (window.entries || []).find(e => e.id === window.selectedEntryId);
             if (!entry) return;
@@ -965,8 +965,8 @@ function getCircledNumber(num) {
                 if (deleteBtn) deleteBtn.classList.add('hidden');
             }
         }
-
         window.renderDetailView = renderDetailView;
+        
         function toggleSecretMemo() {
             const secretContentEl = document.getElementById('detailSecretContent');
             const secretOverlay = document.getElementById('secretOverlay');
@@ -987,8 +987,9 @@ function getCircledNumber(num) {
        function navigateDetail(direction) {
             let currentList = [...(window.entries || [])];
             
-            // 一覧と同じルール（新着順 ＋ 朝→昼→夜）で全データを完全にソート
-            const timeSlotOrder = { 'morning': 1, 'afternoon': 2, 'night': 3 };
+            // 🌟 データの並び順に合わせた正しい時間帯の優先度（夜が先、朝が後）
+            const timeSlotOrder = { 'night': 1, 'afternoon': 2, 'morning': 3 };
+            
             currentList.sort((a, b) => {
                 const dateCompare = b.date.localeCompare(a.date);
                 if (dateCompare !== 0) return dateCompare;
@@ -1004,7 +1005,7 @@ function getCircledNumber(num) {
             const currentIndex = currentList.findIndex(e => e.id === window.selectedEntryId);
             if (currentIndex === -1) return;
 
-            // ボタンの向きに合わせてインデックスを移動（HTML側の定義：左=-1, 右=1 に合わせる）
+            // ボタンの向きに合わせてインデックスを移動
             const targetIndex = currentIndex + direction;
 
             // 配列の範囲内であれば、日付や月をまたいで確実に移動
