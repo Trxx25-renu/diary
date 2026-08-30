@@ -698,6 +698,64 @@ function getCircledNumber(num) {
 }
 window.renderMonthFolders = renderMonthFolders;
 
+function renderMonthFolders() {
+    const container = document.getElementById('monthFolderGrid');
+    if (!container) return;
+    container.innerHTML = '';
+
+    const monthMap = {};
+    (window.entries || []).forEach(entry => {
+        if (!entry.date) return;
+        const ym = entry.date.substring(0, 7);
+        if (!monthMap[ym]) {
+            monthMap[ym] = [];
+        }
+        monthMap[ym].push(entry);
+    });
+
+    const months = Object.keys(monthMap).sort().reverse();
+
+    if (months.length === 0) {
+        container.innerHTML = `<div class="col-span-full text-center py-12 text-stone-400 text-xs">まだ日記はありません。新しい日記を書いてみましょう！</div>`;
+        return;
+    }
+
+    months.forEach(ym => {
+        const entries = monthMap[ym];
+        const [year, month] = ym.split('-');
+        
+        // 写真のある記事からランダムに1枚選ぶ
+        const entriesWithPhoto = entries.filter(e => e.imageUrl);
+        const randomPhoto = entriesWithPhoto.length > 0 
+            ? entriesWithPhoto[Math.floor(Math.random() * entriesWithPhoto.length)].imageUrl 
+            : '';
+
+        const card = document.createElement('div');
+        card.className = 'group bg-white rounded-2xl border border-stone-200/80 p-4 cursor-pointer shadow-sm hover:shadow-md transition-all flex items-center gap-4 hover:border-stone-300';
+        
+        card.dataset.ym = ym;
+        card.onclick = (e) => {
+            const targetYm = e.currentTarget.dataset.ym;
+            navigateTo('gallery', targetYm);
+        };
+
+        card.innerHTML = `
+            <div class="w-20 h-20 rounded-xl bg-stone-100 overflow-hidden shrink-0 border border-stone-200/60 relative">
+                ${randomPhoto ? `<img src="${randomPhoto}" alt="${ym}" draggable="false" oncontextmenu="return false;" class="protect-image w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">` : `<div class="w-full h-full flex items-center justify-center text-stone-300"><i class="fa-regular fa-image text-xl"></i></div>`}
+            </div>
+            <div class="flex flex-col justify-center flex-1 min-w-0">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-base font-serif-title font-bold text-stone-800 group-hover:text-stone-700 transition-colors">${year}年 ${parseInt(month, 10)}月</h3>
+                    <i class="fa-solid fa-chevron-right text-xs text-stone-300 group-hover:text-stone-600 transition-colors"></i>
+                </div>
+                <p class="text-xs text-stone-400 mt-1">${entries.length} 件の思い出</p>
+            </div>
+        `;
+        container.appendChild(card);
+    });
+}
+window.renderMonthFolders = renderMonthFolders;
+
 function renderBreadcrumbs() {
     const nav = document.getElementById('breadcrumbs');
     if (!nav) return;
@@ -719,21 +777,10 @@ function renderBreadcrumbs() {
             `;
         }
     }
+    nav.innerHTML = html;
 }
-            if (window.currentView === 'detail' && window.selectedEntryId) {
-                const entry = (window.entries || []).find(e => e.id === window.selectedEntryId);
-                if (entry) {
-                    html += `
-                        <span class="text-stone-300">/</span>
-                        <span class="text-stone-800 font-medium">${entry.date.replace(/-/g, '.')}</span>
-                    `;
-                }
-            }
-
-            nav.innerHTML = html;
+window.renderBreadcrumbs = renderBreadcrumbs;
         
-        window.renderBreadcrumbs = renderBreadcrumbs;
-
        // 詳細画面を描画する関数（引数 `entryParam` があればそれを使い、なければ `window.selectedEntryId` から探す）
         function renderDetailView(entryParam = null) {
             const entry = entryParam || (window.entries || []).find(e => e.id === window.selectedEntryId);
