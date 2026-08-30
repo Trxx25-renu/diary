@@ -236,11 +236,14 @@
     }
 });
 
-      // 🌟 アプリ全体の画面切り替えを行うルーター関数
+     // 🌟 アプリ全体の画面切り替えを行うルーター関数
         function navigateTo(view, param = null) {
             const viewMonths = document.getElementById('view-months');
             const viewGallery = document.getElementById('view-gallery');
-            const viewDetail = document.getElementById('detailView') || document.getElementById('entryDetailView');
+            
+            // 🌟 ここをHTMLの実際のID 'view-detail' に修正！
+            const viewDetail = document.getElementById('view-detail');
+            
             const searchToolbar = document.getElementById('searchToolbar');
 
             // 1. すべてのビューをいったん隠す
@@ -260,12 +263,11 @@
                 if (viewGallery) viewGallery.classList.remove('hidden');
                 if (searchToolbar) searchToolbar.classList.remove('hidden');
                 if (param) window.selectedYearMonth = param;
-                
-                // 🌟 正しいギャラリー描画関数 (renderGalleryView) を呼び出す
                 if (typeof renderGalleryView === 'function') {
                     renderGalleryView();
                 }
             } else if (view === 'detail') {
+                // 詳細画面を表示するときは検索ツールバーは隠したままにするのが自然です
                 if (viewDetail) viewDetail.classList.remove('hidden');
                 if (param) window.selectedEntryId = param;
                 if (typeof renderDetailView === 'function') {
