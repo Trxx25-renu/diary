@@ -1289,60 +1289,48 @@ function getCircledNumber(num) {
         }
         window.handleSaveConfig = handleSaveConfig;
 
-        // 編集ボタンを押したときに日記データを読み込んでモーダルを開く関数
-        function openEditModalFromDetail() {
-    const entry = (window.entries || []).find(e => e.id === window.selectedEntryId);
-    if (!entry) return;
+        // 📝 新規投稿ボタンを押したときに呼ばれる関数
+        function openPostModal() {
+            // 新規作成なので編集IDはクリア
+            window.editingEntryId = null;
 
-    // ★ 編集中のIDを記録
-    window.editingEntryId = entry.id;
+            // モーダルのタイトルを「新規投稿」等に変更（あれば）
+            const modalTitleEl = document.getElementById('postModalTitle');
+            if (modalTitleEl) modalTitleEl.textContent = '日記を書く';
 
-    // ★ モーダルのタイトルを「日記を編集」に変更
-    const modalTitleEl = document.getElementById('postModalTitle');
-    if (modalTitleEl) modalTitleEl.textContent = '日記を編集';
+            // 入力欄をクリア
+            const dateEl = document.getElementById('inputDate');
+            const titleEl = document.getElementById('inputScenarioTitle');
+            const contentEl = document.getElementById('inputContent');
+            const secretEl = document.getElementById('inputSecretContent');
 
-    // 各入力欄に既存データをセット
-    const dateEl = document.getElementById('inputDate');
-    const titleEl = document.getElementById('inputScenarioTitle');
-    const weatherEl = document.getElementById('inputWeather');
-    const contentEl = document.getElementById('inputContent');
-    const secretEl = document.getElementById('inputSecretContent');
+            if (dateEl) dateEl.value = new Date().toISOString().split('T')[0]; // 今日付を入れると便利
+            if (titleEl) titleEl.value = '';
+            if (contentEl) contentEl.value = '';
+            if (secretEl) secretEl.value = '';
 
-    if (dateEl) dateEl.value = entry.date || '';
-    if (titleEl) titleEl.value = entry.scenarioTitle || '';
-    
-    if (typeof populateWeatherOptions === 'function') {
-        populateWeatherOptions(entry.weather || '');
-    } else if (weatherEl) {
-        weatherEl.value = entry.weather || '';
-    }
+            // 画像プレビューもクリア
+            window.tempBase64Image = '';
+            const previewImg = document.getElementById('imagePreview');
+            const placeholder = document.getElementById('uploadPlaceholder');
+            if (previewImg) {
+                previewImg.src = '';
+                previewImg.classList.add('hidden');
+            }
+            if (placeholder) placeholder.classList.remove('hidden');
 
-    if (contentEl) contentEl.value = entry.content || '';
-    if (secretEl) secretEl.value = entry.secretContent || '';
-
-    // 画像プレビューの設定
-    window.tempBase64Image = entry.imageUrl || '';
-    const previewImg = document.getElementById('imagePreview');
-    const placeholder = document.getElementById('uploadPlaceholder');
-    
-    if (previewImg && window.tempBase64Image) {
-        previewImg.src = window.tempBase64Image;
-        previewImg.classList.remove('hidden');
-        if (placeholder) placeholder.classList.add('hidden');
-    }
-
-    // モーダルを表示
-    const modal = document.getElementById('postModal');
-    if (modal) {
-        modal.classList.remove('opacity-0', 'pointer-events-none');
-        const modalBox = modal.querySelector('div');
-        if (modalBox) {
-            modalBox.classList.remove('scale-95');
-            modalBox.classList.add('scale-100');
+            // 編集時と同じ演出でモーダルを表示する
+            const modal = document.getElementById('postModal');
+            if (modal) {
+                modal.classList.remove('opacity-0', 'pointer-events-none');
+                const modalBox = modal.querySelector('div');
+                if (modalBox) {
+                    modalBox.classList.remove('scale-95');
+                    modalBox.classList.add('scale-100');
+                }
+            }
         }
-    }
-}
-window.openEditModalFromDetail = openEditModalFromDetail;
+        window.openPostModal = openPostModal;
         
 function handleImageSelect(event) {
             const file = event.target.files[0];
