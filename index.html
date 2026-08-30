@@ -975,10 +975,10 @@ function getCircledNumber(num) {
             if (window.selectedYearMonth) {
                 currentList = currentList.filter(e => e.date && e.date.startsWith(window.selectedYearMonth));
                 
-                const timeSlotOrder = { 'morning': 1, 'afternoon': 2, 'night': 3 };
+                // 🌟 朝を一番上（新着順の最初）にするための並び順定義
+                const timeSlotOrder = { 'night': 1, 'afternoon': 2, 'morning': 3 };
                 currentList.sort((a, b) => {
-                    // 🌟 データの並び順をあえて反転させてテスト
-                    const dateCompare = a.date.localeCompare(b.date);
+                    const dateCompare = b.date.localeCompare(a.date);
                     if (dateCompare !== 0) return dateCompare;
                     
                     const slotA = timeSlotOrder[a.timeSlot || 'afternoon'] || 2;
