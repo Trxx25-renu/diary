@@ -1485,25 +1485,26 @@ function handleImageSelect(event) {
             window.entries.unshift(entryData);
         }
 
-        // 🌟 修正版のソート：日付（新しい順）にしつつ、同じ日付なら「朝 → 昼 → 夜」の順にする
+       // 🌟 【完全版】新しい日付順 ＋ 同じ日付なら 朝→昼→夜 の順にするソート
         const timeSlotOrder = { 'morning': 1, 'afternoon': 2, 'night': 3 };
         window.entries.sort((a, b) => {
+            // 1. 日付で比較（降順：新しい日付が上）
             const dateCompare = b.date.localeCompare(a.date);
             if (dateCompare !== 0) {
                 return dateCompare;
             }
             
-            // 日付が同じ場合は「時間帯」で比較（朝 -> 昼 -> 夜）
+            // 2. 日付が同じ場合は「時間帯」で比較（朝(1) -> 昼(2) -> 夜(3)）
             const slotA = timeSlotOrder[a.timeSlot || 'afternoon'] || 2;
             const slotB = timeSlotOrder[b.timeSlot || 'afternoon'] || 2;
             if (slotA !== slotB) {
                 return slotA - slotB;
             }
 
-            // それも同じ場合はIDの昇順
+            // 3. 日付も時間帯も同じ場合は、IDの昇順（先に投稿したものが上）にする
             return (a.id || '').localeCompare(b.id || '');
         });
-
+            
         try {
             // 🔍 デバッグ用ログ
             console.log("🔍 保存直前チェック -> db:", window.db, "appId:", window.appId, "targetId:", targetId);
