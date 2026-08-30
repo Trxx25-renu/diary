@@ -1462,11 +1462,16 @@ function handleImageSelect(event) {
             window.entries.sort((a, b) => b.date.localeCompare(a.date));
 
             try {
-                if (window.db) {
+                // 🔍 デバッグ用ログ
+                console.log("🔍 保存直前チェック -> db:", window.db, "appId:", window.appId, "targetId:", targetId);
+
+                if (window.db && window.appId) {
                     const { doc, setDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
                     const docRef = doc(window.db, 'artifacts', window.appId, 'public', 'data', 'entries', targetId);
                     await setDoc(docRef, entryData);
                     console.log("🔥 Firestoreへの保存に成功しました:", targetId);
+                } else {
+                    console.error("❌ window.db または window.appId が不足しています！", { db: window.db, appId: window.appId });
                 }
 
                 closePostModal();
@@ -1479,8 +1484,10 @@ function handleImageSelect(event) {
                 window.editingEntryId = null;
 
             } catch (err) {
-                console.error("Save error:", err);
+                // 💥 ここでエラーの内容がコンソールに出ます
+                console.error("💥 Save error 詳細:", err);
                 showToast('保存に失敗しました。', 'error');
+            }
             } finally {
                 if (saveBtn) {
                     saveBtn.disabled = false;
