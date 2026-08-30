@@ -102,6 +102,9 @@
             user-select: none;
             opacity: 0.3;
         }
+       #pullToRefreshIndicator {
+            will-change: transform;
+        }
     </style>
     
     <script type="module">
@@ -1840,6 +1843,74 @@ function handleImageSelect(event) {
             openAuthModal();
         }
         window.triggerAdminAccess = triggerAdminAccess;
+
+        // 引っ張り更新（プル・トゥ・リフレッシュ）の処理
+        document.addEventListener('DOMContentLoaded', () => {
+            let startY = 0;
+            let currentY = 0;
+            let isPulling = false;
+            let isRefreshing = false;
+            
+            const indicator = document.getElementById('pullToRefreshIndicator');
+            const pullIcon = document.getElementById('pullIcon');
+            const pullText = document.getElementById('pullText');
+            const threshold = 70;
+
+            if (!indicator) return;
+
+            window.addEventListener('touchstart', (e) => {
+                if (window.scrollY <= 0 && !isRefreshing) {
+                    startY = e.touches[0].clientY;
+                    isPulling = true;
+                }
+            }, { passive: true });
+
+            window.addEventListener('touchmove', (e) => {
+                if (!isPulling || isRefreshing) return;
+
+                currentY = e.touches[0].clientY;
+                const diff = currentY - startY;
+
+                if (diff > 0) {
+                    const pullDistance = Math.min(diff * 0.5, 100);
+                    indicator.style.transform = `translateY(${pullDistance - 64}px)`;
+
+                    if (pullDistance > threshold) {
+                        pullIcon.className = "fa-solid fa-arrow-rotate-right text-stone-800 animate-spin";
+                        pullText.textContent = "指を離して更新";
+                    } else {
+                        pullIcon.className = "fa-solid fa-arrow-down text-stone-500 transition-transform";
+                        pullText.textContent = "下に引っ張って更新";
+                    }
+                } else {
+                    indicator.style.transform = `translateY(-100%)`;
+                }
+            }, { passive: true });
+
+            window.addEventListener('touchend', () => {
+                if (!isPulling || isRefreshing) return;
+                isPulling = false;
+
+                const diff = currentY - startY;
+                const pullDistance = diff * 0.5;
+
+                if (pullDistance > threshold) {
+                    isRefreshing = true;
+                    indicator.style.transform = `translateY(0px)`;
+                    pullText.textContent = "更新中...";
+                    
+                    setTimeout(() => {
+                        location.reload();
+                    }, 500);
+                } else {
+                    indicator.style.transform = `translateY(-100%)`;
+                }
+                
+                startY = 0;
+                currentY = 0;
+            });
+        });
+        
     </script>
 </head>
     
@@ -1888,13 +1959,13 @@ function handleImageSelect(event) {
         </div>
     </header>
 
-    <!-- 下に引っ張ったときに現れるローディング表示 -->
-<div id="pullToRefreshIndicator" class="fixed top-0 left-0 right-0 h-16 flex items-center justify-center bg-stone-100/90 backdrop-blur-sm border-b border-stone-200 text-stone-600 text-xs font-medium z-50 transition-transform duration-200 -translate-y-full">
-    <div class="flex items-center gap-2">
-        <i id="pullIcon" class="fa-solid fa-arrow-down text-stone-500 transition-transform"></i>
-        <span id="pullText">下に引っ張って更新</span>
+   <!-- 下に引っ張ったときに現れるローディング表示 -->
+    <div id="pullToRefreshIndicator" class="fixed top-0 left-0 right-0 h-16 flex items-center justify-center bg-stone-100/90 backdrop-blur-sm border-b border-stone-200 text-stone-600 text-xs font-medium z-50 transition-transform duration-200 -translate-y-full">
+        <div class="flex items-center gap-2">
+            <i id="pullIcon" class="fa-solid fa-arrow-down text-stone-500 transition-transform"></i>
+            <span id="pullText">下に引っ張って更新</span>
+        </div>
     </div>
-</div>
 
     <main class="max-w-5xl mx-auto w-full px-4 py-6 flex-1 flex flex-col gap-6">
 
