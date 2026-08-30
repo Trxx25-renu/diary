@@ -970,15 +970,37 @@ function getCircledNumber(num) {
         window.toggleSecretMemo = toggleSecretMemo;
 
         function navigateDetail(direction) {
-            const currentIndex = (window.entries || []).findIndex(e => e.id === window.selectedEntryId);
+            // 🌟 1. 現在表示している月や条件に合った「絞り込み＆ソート済み」のリストを同じロジックで取得する
+            let currentList = window.entries || [];
+            
+            // もし年月の絞り込み（window.selectedYearMonth）がある場合は、一覧と同じ条件で絞る
+            if (window.selectedYearMonth) {
+                currentList = currentList.filter(e => e.date && e.date.startsWith(window.selectedYearMonth));
+                
+                // 一覧と同じ「新しい日付順 ＋ 朝→昼→夜」でソートを確実に適用
+                const timeSlotOrder = { 'morning': 1, 'afternoon': 2, 'night': 3 };
+                currentList.sort((a, b) => {
+                    const dateCompare = b.date.localeCompare(a.date);
+                    if (dateCompare !== 0) return dateCompare;
+                    
+                    const slotA = timeSlotOrder[a.timeSlot || 'afternoon'] || 2;
+                    const slotB = timeSlotOrder[b.timeSlot || 'afternoon'] || 2;
+                    if (slotA !== slotB) return slotA - slotB;
+
+                    return (a.id || '').localeCompare(b.id || '');
+                });
+            }
+
+            // 2. そのリストの中から現在の日記のインデックスを探す
+            const currentIndex = currentList.findIndex(e => e.id === window.selectedEntryId);
             if (currentIndex === -1) return;
 
-            // 🌟 「古い日記へ」「新しい日記へ」の移動方向を完全に逆転させる
-            // もしいま逆向きに進んでいる場合は、ここの符号（+ か -）をひっくり返します
+            // 3. リストの並び順（新しいものがインデックス0）に合わせて次のインデックスを計算
+            // （※もし「古い方へ進む」ボタンなら +1、「新しい方へ進む」なら -1 に調整できます）
             const targetIndex = currentIndex + direction;
 
-            if (targetIndex >= 0 && targetIndex < window.entries.length) {
-                window.selectedEntryId = window.entries[targetIndex].id;
+            if (targetIndex >= 0 && targetIndex < currentList.length) {
+                window.selectedEntryId = currentList[targetIndex].id;
                 renderDetailView();
                 renderBreadcrumbs();
             }
