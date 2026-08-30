@@ -2124,27 +2124,27 @@ function applyCurrentThemeToUI() {
 }
 window.applyCurrentThemeToUI = applyCurrentThemeToUI;
 
-   // 記事詳細画面での `<` `>` ボタンによる切り替え関数
-window.navigateDetail = function(direction) {
-    if (!window.entries || window.entries.length === 0) return;
-    if (!window.selectedEntryId) return;
+  // 記事詳細画面での `<` `>` ボタンによる切り替え関数
+        window.navigateDetail = function(direction) {
+            if (!window.entries || window.entries.length === 0) return;
+            if (!window.selectedEntryId) return;
 
-    // 現在表示している記事のインデックスを探す
-    const currentIndex = window.entries.findIndex(e => e.id === window.selectedEntryId);
-    if (currentIndex === -1) return;
+            // 現在表示している記事のインデックスを探す
+            const currentIndex = window.entries.findIndex(e => e.id === window.selectedEntryId);
+            if (currentIndex === -1) return;
 
-    // direction: 1 (新しい方へ), -1 (古い方へ)
-    const targetIndex = currentIndex - direction;
+            // 🌟 引き算ではなく足し算にすることで、HTMLの指示（direction: 1 または -1）と綺麗に一致させる
+            const targetIndex = currentIndex + direction;
 
-    // 配列の範囲内であれば切り替えを実行
-    if (targetIndex >= 0 && targetIndex < window.entries.length) {
-        const targetEntry = window.entries[targetIndex];
-        
-        // 正しく第2引数にIDを渡して画面遷移を実行
-        if (typeof window.navigateTo === 'function') {
-            window.navigateTo('detail', targetEntry.id);
-        }
-    }
-};
+            // 配列の範囲内であれば切り替えを実行
+            if (targetIndex >= 0 && targetIndex < window.entries.length) {
+                const targetEntry = window.entries[targetIndex];
+                
+                // 正しく第2引数にIDを渡して画面遷移を実行
+                if (typeof window.navigateTo === 'function') {
+                    window.navigateTo('detail', targetEntry.id);
+                }
+            }
+        };
     
 </script>
