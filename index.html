@@ -604,72 +604,99 @@ function getCircledNumber(num) {
         }
         window.renderBreadcrumbs = renderBreadcrumbs;
 
-       function navigateTo(view, param = null) {
-        console.log("navigateTo called with:", view, param);
-        window.currentView = view;
-        
-        // 💡 修正：ギャラリー表示のとき、または明確に年月が指定されたときだけ `selectedYearMonth` を更新する
-        if (view === 'gallery' && param) {
-            window.selectedYearMonth = param;
-        }
-        
-        const viewMonths = document.getElementById('view-months');
-        const viewGallery = document.getElementById('view-gallery');
-        const viewDetail = document.getElementById('view-detail');
-        const searchToolbar = document.getElementById('searchToolbarSection');
-        const searchResultsArea = document.getElementById('searchResultsArea');
+       // 詳細画面を描画する関数（引数 `entryParam` があればそれを使い、なければ `window.selectedEntryId` から探す）
+        function renderDetailView(entryParam = null) {
+            const entry = entryParam || (window.entries || []).find(e => e.id === window.selectedEntryId);
+            if (!entry) return;
 
-        if (viewMonths) viewMonths.classList.add('hidden');
-        if (viewGallery) viewGallery.classList.add('hidden');
-        if (viewDetail) viewDetail.classList.add('hidden');
-        if (searchResultsArea) searchResultsArea.classList.add('hidden');
+            // グローバル変数も確実に同期
+            window.selectedEntryId = entry.id;
 
-        if (view === 'months') {
-            if (viewMonths) viewMonths.classList.remove('hidden');
-            if (searchToolbar) searchToolbar.classList.remove('hidden');
-            if (typeof renderMonthFolders === 'function') renderMonthFolders();
-        } else if (view === 'gallery') {
-            if (viewGallery) viewGallery.classList.remove('hidden');
-            if (searchToolbar) searchToolbar.classList.remove('hidden');
+            const detailImg = document.getElementById('detailImage') || document.getElementById('entryDetailImage');
+            if (detailImg) detailImg.src = entry.imageUrl || '';
+
+            const dateObj = new Date(entry.date);
+            const days = ['日', '月', '火', '水', '木', '金', '土'];
+            const dayOfWeek = isNaN(dateObj.getDay()) ? '' : days[dateObj.getDay()];
+            const formattedDate = entry.date ? `${entry.date.replace(/-/g, '.')} (${dayOfWeek})` : '';
+
+            const detailDate = document.getElementById('detailDate') || document.getElementById('entryDetailDate');
+            if (detailDate) detailDate.textContent = formattedDate;
             
-            if (typeof renderGalleryView === 'function') {
-                renderGalleryView();
-            }
-        } else if (view === 'detail') {
-            if (viewDetail) viewDetail.classList.remove('hidden');
-            
-            const entryId = param;
-            const entry = (window.entries || []).find(e => e.id === entryId);
-            if (entry) {
-                // グローバル変数にも保存しておく（他の関数で使う用）
-                window.selectedEntryId = entryId;
+            const detailWeather = document.getElementById('detailWeather');
+            if (detailWeather) detailWeather.textContent = entry.weather || '晴れ ☀️';
 
-                // 1. 画像を表示する（複数の代表的なIDに対応）
-                const imgEl = document.getElementById('detailImage') || document.getElementById('entryDetailImage');
-                if (imgEl) {
-                    imgEl.src = entry.imageUrl || '';
-                }
-
-                // 2. 日付を表示する
-                const dateEl = document.getElementById('detailDate') || document.getElementById('entryDetailDate');
-                if (dateEl) {
-                    dateEl.textContent = entry.date || '';
-                }
-
-                // 3. 本文・内容を表示する
-                const contentEl = document.getElementById('detailContent') || document.getElementById('entryDetailContent');
-                if (contentEl) {
-                    contentEl.textContent = entry.content || '';
-                }
-
-                // 4. もし元々詳細を描画する専用の関数があればそれを呼ぶ
-                if (typeof renderDetailView === 'function') {
-                    renderDetailView(entry);
+            // シナリオタイトルを画面に反映する処理
+            const detailScenarioTitle = document.getElementById('detailScenarioTitle');
+            if (detailScenarioTitle) {
+                if (entry.scenarioTitle && entry.scenarioTitle.trim() !== '') {
+                    detailScenarioTitle.textContent = entry.scenarioTitle;
+                    detailScenarioTitle.classList.remove('hidden');
+                } else {
+                    detailScenarioTitle.textContent = '';
+                    detailScenarioTitle.classList.add('hidden');
                 }
             }
+
+            const detailContent = document.getElementById('detailContent') || document.getElementById('entryDetailContent');
+            if (detailContent) {
+                // スポイラー解析があれば使う、なければそのまま
+                detailContent.innerHTML = typeof parseSpoilers === 'function' ? parseSpoilers(entry.content || '') : (entry.content || '');
+            }
+
+            const secretContainer = document.getElementById('detailSecretContainer');
+            const secretContentEl = document.getElementById('detailSecretContent');
+            const secretOverlay = document.getElementById('secretOverlay');
+
+            window.isSecretRevealed = false;
+
+            if (secretContainer && secretContentEl) {
+                if (entry.secretContent && entry.secretContent.trim() !== '') {
+                    secretContentEl.textContent = entry.secretContent;
+                    secretContentEl.classList.add('secret-card-blur');
+                    if (secretOverlay) secretOverlay.classList.remove('hidden');
+                    secretContainer.classList.remove('hidden');
+                } else {
+                    secretContainer.classList.add('hidden');
+                }
+            }
+
+            // 🌟 全データ（window.entries）を対象に、一覧と同じ順番でソートしてボタン（端っこ）を判定
+            let currentList = [...(window.entries || [])];
+            const timeSlotOrder = { 'night': 1, 'afternoon': 2, 'morning': 3 };
+            
+            currentList.sort((a, b) => {
+                const dateCompare = (b.date || '').localeCompare(a.date || '');
+                if (dateCompare !== 0) return dateCompare;
+                
+                const slotA = timeSlotOrder[a.timeSlot || 'afternoon'] || 2;
+                const slotB = timeSlotOrder[b.timeSlot || 'afternoon'] || 2;
+                if (slotA !== slotB) return slotA - slotB;
+
+                return (a.id || '').localeCompare(b.id || '');
+            });
+
+            const currentIndex = currentList.findIndex(e => e.id === window.selectedEntryId);
+            const prevBtn = document.getElementById('prevDetailBtn');
+            const nextBtn = document.getElementById('nextDetailBtn');
+
+            // ボタンの有効・無効判定
+            if (nextBtn) nextBtn.disabled = (currentIndex <= 0);
+            if (prevBtn) prevBtn.disabled = (currentIndex === -1 || currentIndex >= currentList.length - 1);
+
+            // 管理者（Admin）のときだけ「編集ボタン」と「削除ボタン」を表示する
+            const editBtn = document.getElementById('editEntryBtn');
+            const deleteBtn = document.getElementById('deleteEntryBtn');
+            
+            if (window.isAdmin) {
+                if (editBtn) editBtn.classList.remove('hidden');
+                if (deleteBtn) deleteBtn.classList.remove('hidden');
+            } else {
+                if (editBtn) editBtn.classList.add('hidden');
+                if (deleteBtn) deleteBtn.classList.add('hidden');
+            }
         }
-    }
-    window.navigateTo = navigateTo;
+        window.renderDetailView = renderDetailView;
         
        // ギャラリー描画用メイン関数
     function renderGalleryView() {
