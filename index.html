@@ -1420,10 +1420,12 @@ function handleImageSelect(event) {
                 saveBtn.textContent = '保存中...';
             }
 
-            let targetId = window.editingEntryId;
+            // 🌟 ここを整理：editingEntryId が空文字や null なら「新規作成」、あれば「編集」とする
+            let targetId = window.editingEntryId ? window.editingEntryId : null;
             let entryData;
 
             if (targetId) {
+                // 既存編集の処理
                 const index = (window.entries || []).findIndex(e => e.id === targetId);
                 if (index !== -1) {
                     window.entries[index] = {
@@ -1440,6 +1442,7 @@ function handleImageSelect(event) {
                 }
             }
 
+            // もし編集対象が見つからない、または新規作成の場合
             if (!entryData) {
                 targetId = `${date}_${Date.now()}`;
                 entryData = {
@@ -1452,6 +1455,7 @@ function handleImageSelect(event) {
                     imageUrl: window.tempBase64Image,
                     updatedAt: new Date().toISOString()
                 };
+                if (!window.entries) window.entries = [];
                 window.entries.unshift(entryData);
             }
 
@@ -1462,6 +1466,7 @@ function handleImageSelect(event) {
                     const { doc, setDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
                     const docRef = doc(window.db, 'artifacts', window.appId, 'public', 'data', 'entries', targetId);
                     await setDoc(docRef, entryData);
+                    console.log("🔥 Firestoreへの保存に成功しました:", targetId);
                 }
 
                 closePostModal();
