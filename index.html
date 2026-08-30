@@ -931,32 +931,26 @@ function getCircledNumber(num) {
                 }
             }
 
-            // 🌟 一覧と同じ「絞り込み＆ソート済みリスト」をここで正しく作成する
-            let currentList = window.entries || [];
-            if (window.selectedYearMonth) {
-                currentList = currentList.filter(e => e.date && e.date.startsWith(window.selectedYearMonth));
+            // 🌟 月をまたいで全体をシームレスに動かすため、全データ（window.entries）を対象にソートする
+            let currentList = [...(window.entries || [])];
+            const timeSlotOrder = { 'night': 1, 'afternoon': 2, 'morning': 3 };
+            currentList.sort((a, b) => {
+                const dateCompare = b.date.localeCompare(a.date);
+                if (dateCompare !== 0) return dateCompare;
                 
-                const timeSlotOrder = { 'night': 1, 'afternoon': 2, 'morning': 3 };
-                currentList.sort((a, b) => {
-                    const dateCompare = b.date.localeCompare(a.date);
-                    if (dateCompare !== 0) return dateCompare;
-                    
-                    const slotA = timeSlotOrder[a.timeSlot || 'afternoon'] || 2;
-                    const slotB = timeSlotOrder[b.timeSlot || 'afternoon'] || 2;
-                    if (slotA !== slotB) return slotA - slotB;
+                const slotA = timeSlotOrder[a.timeSlot || 'afternoon'] || 2;
+                const slotB = timeSlotOrder[b.timeSlot || 'afternoon'] || 2;
+                if (slotA !== slotB) return slotA - slotB;
 
-                    return (a.id || '').localeCompare(b.id || '');
-                });
-            }
+                return (a.id || '').localeCompare(b.id || '');
+            });
 
             const currentIndex = currentList.findIndex(e => e.id === window.selectedEntryId);
             const prevBtn = document.getElementById('prevDetailBtn');
             const nextBtn = document.getElementById('nextDetailBtn');
 
-            // 🌟 並び順に合わせた正しい端っこ判定（インデックス0が一番新しく、末尾が一番古い）
-            // 左ボタン（＜・新しい方へ）：一番新しい記事（index 0）のときは押せない
+            // 端っこ判定（全体リスト基準）
             if (nextBtn) nextBtn.disabled = (currentIndex <= 0);
-            // 右ボタン（＞・古い方へ）：一番古い記事（末尾）のときは押せない
             if (prevBtn) prevBtn.disabled = (currentIndex === -1 || currentIndex >= currentList.length - 1);
 
             // 管理者（Admin）のときだけ「編集ボタン」と「削除ボタン」を表示する
@@ -973,7 +967,6 @@ function getCircledNumber(num) {
         }
 
         window.renderDetailView = renderDetailView;
-
         function toggleSecretMemo() {
             const secretContentEl = document.getElementById('detailSecretContent');
             const secretOverlay = document.getElementById('secretOverlay');
