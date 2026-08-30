@@ -985,21 +985,14 @@ function getCircledNumber(num) {
         window.toggleSecretMemo = toggleSecretMemo;
 
        function navigateDetail(direction) {
-            const currentEntry = (window.entries || []).find(e => e.id === window.selectedEntryId);
-            if (!currentEntry || !currentEntry.date) return;
-
-            const currentYearMonth = currentEntry.date.substring(0, 7);
-            let currentList = (window.entries || []).filter(e => e.date && e.date.startsWith(currentYearMonth));
+            let currentList = [...(window.entries || [])];
             
-            // 🌟 タイムスタンプの優先順位（朝 → 昼 → 夜 の順に並べる）
+            // 一覧と同じルール（新着順 ＋ 朝→昼→夜）で全データを完全にソート
             const timeSlotOrder = { 'morning': 1, 'afternoon': 2, 'night': 3 };
-            
             currentList.sort((a, b) => {
-                // 🌟 日付の比較：新しい順 (b vs a)
                 const dateCompare = b.date.localeCompare(a.date);
                 if (dateCompare !== 0) return dateCompare;
                 
-                // 同じ日付の中なら 時間帯（朝→昼→夜）で並べる
                 const slotA = timeSlotOrder[a.timeSlot || 'afternoon'] || 2;
                 const slotB = timeSlotOrder[b.timeSlot || 'afternoon'] || 2;
                 if (slotA !== slotB) return slotA - slotB;
@@ -1007,12 +1000,14 @@ function getCircledNumber(num) {
                 return (a.id || '').localeCompare(b.id || '');
             });
 
+            // 現在表示している記事のインデックスを探す
             const currentIndex = currentList.findIndex(e => e.id === window.selectedEntryId);
             if (currentIndex === -1) return;
 
-            // 🌟 ボタンの方向（direction）に合わせてインデックスを動かす
+            // ボタンの向きに合わせてインデックスを移動（HTML側の定義：左=-1, 右=1 に合わせる）
             const targetIndex = currentIndex + direction;
 
+            // 配列の範囲内であれば、日付や月をまたいで確実に移動
             if (targetIndex >= 0 && targetIndex < currentList.length) {
                 window.selectedEntryId = currentList[targetIndex].id;
                 renderDetailView();
