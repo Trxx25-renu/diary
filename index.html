@@ -993,8 +993,8 @@ function getCircledNumber(num) {
             const currentIndex = currentList.findIndex(e => e.id === window.selectedEntryId);
             if (currentIndex === -1) return;
 
-            // 3. インデックスの移動方向を完全に同期（- direction に修正済み）
-            const targetIndex = currentIndex - direction;
+            // 3. HTML側の設定（左=-1, 右=1）に合わせた正しい移動方向（+ direction）
+            const targetIndex = currentIndex + direction;
 
             if (targetIndex >= 0 && targetIndex < currentList.length) {
                 window.selectedEntryId = currentList[targetIndex].id;
