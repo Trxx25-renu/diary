@@ -970,7 +970,6 @@ function getCircledNumber(num) {
         window.toggleSecretMemo = toggleSecretMemo;
 
         function navigateDetail(direction) {
-            // 1. 現在表示している月や条件に合った「絞り込み＆ソート済み」のリストを取得
             let currentList = window.entries || [];
             
             if (window.selectedYearMonth) {
@@ -978,7 +977,8 @@ function getCircledNumber(num) {
                 
                 const timeSlotOrder = { 'morning': 1, 'afternoon': 2, 'night': 3 };
                 currentList.sort((a, b) => {
-                    const dateCompare = b.date.localeCompare(a.date);
+                    // 🌟 データの並び順をあえて反転させてテスト
+                    const dateCompare = a.date.localeCompare(b.date);
                     if (dateCompare !== 0) return dateCompare;
                     
                     const slotA = timeSlotOrder[a.timeSlot || 'afternoon'] || 2;
@@ -989,11 +989,9 @@ function getCircledNumber(num) {
                 });
             }
 
-            // 2. リスト内での現在地のインデックスを探す
             const currentIndex = currentList.findIndex(e => e.id === window.selectedEntryId);
             if (currentIndex === -1) return;
 
-            // 3. HTML側の設定（左=-1, 右=1）に合わせた正しい移動方向（+ direction）
             const targetIndex = currentIndex + direction;
 
             if (targetIndex >= 0 && targetIndex < currentList.length) {
