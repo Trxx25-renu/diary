@@ -40,7 +40,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Playfair+Display:ital,wght@0,600;1,400&display=swap" rel="stylesheet">
     
-    <style>
+   <style>
         body {
             font-family: 'Noto Sans JP', sans-serif;
             background-color: #fcfbf9;
@@ -48,6 +48,18 @@
         }
         .font-serif-title {
             font-family: 'Playfair Display', 'Noto Sans JP', serif;
+        }
+        
+        /* スマホでフォームをタップしたときに画面が勝手にズームするのを防ぐ（16px以上にする） */
+        input[type="text"],
+        input[type="number"],
+        input[type="email"],
+        input[type="password"],
+        input[type="search"],
+        input[type="date"],
+        select,
+        textarea {
+            font-size: 16px !important;
         }
         
         /* 画像の長押し保存・右クリック防止 */
