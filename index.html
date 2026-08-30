@@ -2181,20 +2181,46 @@ window.applyCurrentThemeToUI = applyCurrentThemeToUI;
             if (!window.entries || window.entries.length === 0) return;
             if (!window.selectedEntryId) return;
 
-            // 現在表示している記事のインデックスを探す
-            const currentIndex = window.entries.findIndex(e => e.id === window.selectedEntryId);
+            // 1. 一覧や詳細画面と同じ順番（新しい順＋時間帯順）にしっかりソートする
+            let currentList = [...window.entries];
+            const timeSlotOrder = { 'night': 1, 'afternoon': 2, 'morning': 3 };
+            
+            currentList.sort((a, b) => {
+                const dateCompare = (b.date || '').localeCompare(a.date || '');
+                if (dateCompare !== 0) return dateCompare;
+                
+                const slotA = timeSlotOrder[a.timeSlot || 'afternoon'] || 2;
+                const slotB = timeSlotOrder[b.timeSlot || 'afternoon'] || 2;
+                if (slotA !== slotB) return slotA - slotB;
+
+                return (a.id || '').localeCompare(b.id || '');
+            });
+
+            // 2. ソート済みのリストから現在の位置を探す
+            const currentIndex = currentList.findIndex(e => e.id === window.selectedEntryId);
             if (currentIndex === -1) return;
 
-            // 🌟 引き算ではなく足し算にすることで、HTMLの指示（direction: 1 または -1）と綺麗に一致させる
-            const targetIndex = currentIndex + direction;
+            // 3. ボタンの向き（direction）に合わせて次のインデックスを計算
+            // （※新しい順なので、古い方へ進むときはインデックスが増える）
+            const targetIndex = currentIndex - direction;
 
-            // 配列の範囲内であれば切り替えを実行
-            if (targetIndex >= 0 && targetIndex < window.entries.length) {
-                const targetEntry = window.entries[targetIndex];
+            // 4. 配列の範囲内であれば切り替えを実行
+            if (targetIndex >= 0 && targetIndex < currentList.length) {
+                const targetEntry = currentList[targetIndex];
                 
-                // 正しく第2引数にIDを渡して画面遷移を実行
-                if (typeof window.navigateTo === 'function') {
-                    window.navigateTo('detail', targetEntry.id);
+                // グローバル変数も同期
+                window.selectedEntryId = targetEntry.id;
+                if (targetEntry.date) {
+                    window.selectedYearMonth = targetEntry.date.substring(0, 7);
+                }
+                
+                // 5. 綺麗に `renderDetailView` を呼んで画面を更新する
+                if (typeof renderDetailView === 'function') {
+                    renderDetailView(targetEntry);
+                }
+                
+                if (typeof renderBreadcrumbs === 'function') {
+                    renderBreadcrumbs();
                 }
             }
         };
