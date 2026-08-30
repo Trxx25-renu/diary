@@ -1343,7 +1343,9 @@ function handleImageSelect(event) {
                     const canvas = document.createElement('canvas');
                     let width = img.width;
                     let height = img.height;
-                    const maxDim = 1200;
+                    
+                    // 🌟 フルスクリーンの細かい文字も潰れないよう、少し大きめのサイズを維持
+                    const maxDim = 1600;
 
                     if (width > height && width > maxDim) {
                         height *= maxDim / width;
@@ -1360,10 +1362,18 @@ function handleImageSelect(event) {
                     ctx.clearRect(0, 0, width, height);
                     ctx.drawImage(img, 0, 0, width, height);
 
-                    const isTransparent = file.type === 'image/png' || file.type === 'image/webp' || file.type === 'image/gif';
-                    window.tempBase64Image = isTransparent 
-                        ? canvas.toDataURL('image/png') 
-                        : canvas.toDataURL('image/jpeg', 0.82);
+                    // 🌟 画質を保ちつつ、Firestoreの1MB制限（約95万文字のBase64）に収まるよう自動調整
+                    let quality = 0.90;
+                    let base64 = canvas.toDataURL('image/jpeg', quality);
+
+                    // もし1MB（文字数換算で約105万文字）を超えている場合は、サイズが収まるまで品質を少しずつ下げる
+                    while (base64.length > 1000000 && quality > 0.4) {
+                        quality -= 0.05;
+                        base64 = canvas.toDataURL('image/jpeg', quality);
+                    }
+
+                    window.tempBase64Image = base64;
+                    console.log(`📸 画像圧縮完了: 品質=${quality.toFixed(2)}, サイズ(約)=${Math.round(base64.length / 1024)}KB`);
 
                     const preview = document.getElementById('imagePreview');
                     const placeholder = document.getElementById('uploadPlaceholder');
