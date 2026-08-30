@@ -194,9 +194,9 @@
             loaded.push({ id: d.id, ...d.data() });
         });
 
+        // 🌟 データの格納とソート部分
         console.log("📖 読み込んだ記事の数:", loaded.length);
         if (loaded.length > 0) {
-            // 🌟 ここを「新しい日付順 ＋ 朝→昼→夜」のソートに統一
             const timeSlotOrder = { 'morning': 1, 'afternoon': 2, 'night': 3 };
             loaded.sort((a, b) => {
                 const dateCompare = b.date.localeCompare(a.date);
@@ -221,6 +221,12 @@
         console.error("❌ 初期化処理でエラーが発生しました:", e);
     }
 
+    // 🌟 【追加】画面を表示する前に必ず月別アルバムのカードを生成する
+    if (typeof renderMonthFolders === 'function') {
+        renderMonthFolders();
+    }
+
+    // 🌟 最初の画面を「月別アルバム」に指定して表示
     if (typeof window.navigateTo === 'function') {
         window.navigateTo('months');
     }
@@ -229,7 +235,7 @@
         window.applyCurrentThemeToUI();
     }
 });
-
+        
 // 1. ここに THEME_CLASSES を定義します（この定義が最上部にある必要があります）
         const THEME_CLASSES = {
             amber: {
