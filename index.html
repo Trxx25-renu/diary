@@ -675,7 +675,23 @@ function getCircledNumber(num) {
 
         // 選択された月の日記データだけに絞り込み
         const filtered = (window.entries || []).filter(e => e.date && e.date.startsWith(window.selectedYearMonth));
-        filtered.sort((a, b) => a.date.localeCompare(b.date));
+        
+        // 🌟 新しい日付順 ＋ 朝→昼→夜 の順にソートする
+        const timeSlotOrder = { 'morning': 1, 'afternoon': 2, 'night': 3 };
+        filtered.sort((a, b) => {
+            const dateCompare = b.date.localeCompare(a.date);
+            if (dateCompare !== 0) {
+                return dateCompare;
+            }
+            
+            const slotA = timeSlotOrder[a.timeSlot || 'afternoon'] || 2;
+            const slotB = timeSlotOrder[b.timeSlot || 'afternoon'] || 2;
+            if (slotA !== slotB) {
+                return slotA - slotB;
+            }
+
+            return (a.id || '').localeCompare(b.id || '');
+        });
 
         if (subtitleEl) subtitleEl.textContent = `全 ${filtered.length} 件の思い出`;
 
