@@ -1511,20 +1511,42 @@ function handleImageSelect(event) {
         window.handleSaveEntry = handleSaveEntry;
 
         async function deleteCurrentEntry() {
-            if (!window.selectedEntryId || !window.isAdmin) return;
+            console.log("🔍 削除ボタン押下 -> selectedEntryId:", window.selectedEntryId, "isAdmin:", window.isAdmin);
+
+            if (!window.selectedEntryId) {
+                console.error("❌ 削除対象のID (window.selectedEntryId) が見つかりません！");
+                showToast('削除する記事が選択されていません。', 'warning');
+                return;
+            }
+            if (!window.isAdmin) {
+                showToast('権限がありません。ログインしてください。', 'warning');
+                return;
+            }
 
             showConfirm('日記の削除', 'この日記を削除してもよろしいですか？', async () => {
                 try {
-                    if (window.db) {
+                    console.log("🗑️ Firestore削除処理を実行中... targetId:", window.selectedEntryId);
+
+                    if (window.db && window.appId) {
                         const { doc, deleteDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
                         const docRef = doc(window.db, 'artifacts', window.appId, 'public', 'data', 'entries', window.selectedEntryId);
                         await deleteDoc(docRef);
+                        console.log("🔥 Firestoreからの削除成功");
+                    } else {
+                        console.error("❌ window.db または window.appId が不足しています！");
                     }
-                    window.entries = window.entries.filter(e => e.id !== window.selectedEntryId);
-                    navigateTo('gallery', window.selectedYearMonth);
-                    showToast('日記を削除しました', 'info');
+
+                    // ローカル配列から除外
+                    window.entries = (window.entries || []).filter(e => e.id !== window.selectedEntryId);
+
+                    // 画面遷移
+                    const ym = window.selectedYearMonth || (window.selectedEntryId ? window.selectedEntryId.substring(0, 7) : null);
+                    navigateTo('gallery', ym);
+
+                    showToast('日記を削除しました', 'success');
+
                 } catch (err) {
-                    console.error("Delete error:", err);
+                    console.error("💥 Delete error 詳細:", err);
                     showToast('削除に失敗しました。', 'error');
                 }
             });
