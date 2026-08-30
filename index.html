@@ -985,32 +985,46 @@ function getCircledNumber(num) {
         window.toggleSecretMemo = toggleSecretMemo;
 
        function navigateDetail(direction) {
+            // 1. フィルターを一切かけず、全データを完全に複製して取得
             let currentList = [...(window.entries || [])];
-            
-            // 🌟 データの並び順に合わせた正しい時間帯の優先度（夜が先、朝が後）
+            if (currentList.length === 0) return;
+
+            // 2. 確実に意図通りの順序（日付が新しい順 ＋ 同じ日は 夜→昼→朝）でソート
             const timeSlotOrder = { 'night': 1, 'afternoon': 2, 'morning': 3 };
             
             currentList.sort((a, b) => {
-                const dateCompare = b.date.localeCompare(a.date);
+                // 日付の比較（例: "2026-08-30" と "2026-08-29"）
+                const dateA = a.date || '';
+                const dateB = b.date || '';
+                const dateCompare = dateB.localeCompare(dateA); // 新しい日付が上
                 if (dateCompare !== 0) return dateCompare;
                 
+                // 同じ日付の場合の時間帯比較
                 const slotA = timeSlotOrder[a.timeSlot || 'afternoon'] || 2;
                 const slotB = timeSlotOrder[b.timeSlot || 'afternoon'] || 2;
                 if (slotA !== slotB) return slotA - slotB;
 
+                // 最終的なフォールバックとしてID比較
                 return (a.id || '').localeCompare(b.id || '');
             });
 
-            // 現在表示している記事のインデックスを探す
+            // 3. 現在表示している記事のインデックスを正確に見つける
             const currentIndex = currentList.findIndex(e => e.id === window.selectedEntryId);
             if (currentIndex === -1) return;
 
-            // ボタンの向きに合わせてインデックスを移動
+            // 4. ボタンの向き（direction）に合わせてインデックスを移動
             const targetIndex = currentIndex + direction;
 
-            // 配列の範囲内であれば、日付や月をまたいで確実に移動
+            // 5. 全データの範囲内であれば、日付またぎも月またぎもスムーズに移動
             if (targetIndex >= 0 && targetIndex < currentList.length) {
                 window.selectedEntryId = currentList[targetIndex].id;
+                
+                // 移動先の記事の月に合わせて、選択中の月も自動で更新する
+                const targetEntry = currentList[targetIndex];
+                if (targetEntry && targetEntry.date) {
+                    window.selectedYearMonth = targetEntry.date.substring(0, 7);
+                }
+
                 renderDetailView();
                 renderBreadcrumbs();
             }
