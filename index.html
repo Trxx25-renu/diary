@@ -2004,7 +2004,8 @@ function handleImageSelect(event) {
         <!-- 検索結果エリア -->
         <section id="searchResultsArea" class="hidden flex flex-col gap-3">
             <h2 class="text-sm font-semibold text-stone-700">検索結果</h2>
-            <div id="searchResultsGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3"></div>
+            <!-- スマホで横3列に設定 -->
+            <div id="searchResultsGrid" class="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-4 gap-1.5 sm:gap-3"></div>
         </section>
 
         <!-- 第1階層：月別アルバムフォルダー表示 -->
@@ -2076,7 +2077,7 @@ function handleImageSelect(event) {
                             </div>
                         </div>
 
-                        <!-- ★【追加】シナリオタイトル表示エリア（未入力時は hidden で消える） -->
+                        <!-- シナリオタイトル表示エリア -->
                         <h2 id="detailScenarioTitle" class="text-base font-bold font-serif-title text-stone-800 hidden"></h2>
 
                         <p id="detailContent" class="text-sm text-stone-700 leading-relaxed whitespace-pre-wrap font-light"></p>
@@ -2108,7 +2109,6 @@ function handleImageSelect(event) {
                             <button onclick="goBack()" class="text-stone-600 hover:text-stone-800 bg-stone-100 hover:bg-stone-200 px-3 py-1.5 rounded-xl transition-colors flex items-center gap-1 font-medium">
                                 <i class="fa-solid fa-arrow-left text-[10px]"></i> 戻る
                             </button>
-                            <!-- ★【追加】編集ボタン -->
                             <button id="editBtn" onclick="openEditModalFromDetail()" class="hidden text-stone-700 hover:text-stone-900 hover:bg-stone-100 px-2.5 py-1.5 rounded-xl transition-colors flex items-center gap-1 font-medium">
                                 <i class="fa-regular fa-pen-to-square text-[11px]"></i> 編集
                             </button>
@@ -2245,13 +2245,11 @@ function handleImageSelect(event) {
                     </div>
                 </div>
 
-               <!-- ★【追加】シナリオタイトル入力欄 -->
-                <div>
+               <div>
                     <label class="block text-xs font-medium text-stone-700 mb-1">シナリオタイトル <span class="text-[10px] text-stone-400 font-normal">(任意)</span></label>
                     <input type="text" id="inputScenarioTitle" placeholder="例：〇〇の怪" class="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs focus:outline-none focus:border-stone-500 font-bold">
                 </div>
 
-                <!-- 🌟 日付・時間帯・タグをバランスよく配置 (grid-cols-3 に変更) -->
                 <div class="grid grid-cols-3 gap-2">
                     <div>
                         <label class="block text-xs font-medium text-stone-700 mb-1">日付</label>
@@ -2316,6 +2314,7 @@ function handleImageSelect(event) {
         <i id="toastIcon" class="fa-solid fa-circle-info text-blue-400"></i>
         <span id="toastMessage"></span>
     </div>
+</body>
 
     <!-- フッター -->
 <footer class="border-t border-stone-200/60 bg-white py-6 text-center text-xs text-stone-400 mt-auto">
