@@ -1902,10 +1902,10 @@ function handleImageSelect(event) {
 
                             <!-- 前後の日記切り替え -->
                             <div class="flex items-center gap-1 bg-stone-50 p-1 rounded-xl border border-stone-100">
-                                <button id="prevDetailBtn" onclick="navigateDetail(1)" class="p-1.5 text-stone-600 hover:bg-white hover:shadow-sm rounded-lg disabled:opacity-30 disabled:pointer-events-none transition-all" title="新しい日記へ">
+                                <button id="prevDetailBtn" onclick="navigateDetail(-1)" class="p-1.5 text-stone-600 hover:bg-white hover:shadow-sm rounded-lg disabled:opacity-30 disabled:pointer-events-none transition-all" title="新しい日記へ">
                                     <i class="fa-solid fa-chevron-left text-xs"></i>
                                 </button>
-                                <button id="nextDetailBtn" onclick="navigateDetail(-1)" class="p-1.5 text-stone-600 hover:bg-white hover:shadow-sm rounded-lg disabled:opacity-30 disabled:pointer-events-none transition-all" title="古い日記へ">
+                                <button id="nextDetailBtn" onclick="navigateDetail(1)" class="p-1.5 text-stone-600 hover:bg-white hover:shadow-sm rounded-lg disabled:opacity-30 disabled:pointer-events-none transition-all" title="古い日記へ">
                                     <i class="fa-solid fa-chevron-right text-xs"></i>
                                 </button>
                             </div>
