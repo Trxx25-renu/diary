@@ -880,7 +880,7 @@ function getCircledNumber(num) {
         }
         window.setThumbnailFitMode = setThumbnailFitMode;
 
-        // 詳細画面を描画する関数
+// 詳細画面を描画する関数
         function renderDetailView() {
             const entry = (window.entries || []).find(e => e.id === window.selectedEntryId);
             if (!entry) return;
@@ -931,11 +931,33 @@ function getCircledNumber(num) {
                 }
             }
 
-            const currentIndex = (window.entries || []).findIndex(e => e.id === window.selectedEntryId);
+            // 🌟 一覧と同じ「絞り込み＆ソート済みリスト」をここで正しく作成する
+            let currentList = window.entries || [];
+            if (window.selectedYearMonth) {
+                currentList = currentList.filter(e => e.date && e.date.startsWith(window.selectedYearMonth));
+                
+                const timeSlotOrder = { 'night': 1, 'afternoon': 2, 'morning': 3 };
+                currentList.sort((a, b) => {
+                    const dateCompare = b.date.localeCompare(a.date);
+                    if (dateCompare !== 0) return dateCompare;
+                    
+                    const slotA = timeSlotOrder[a.timeSlot || 'afternoon'] || 2;
+                    const slotB = timeSlotOrder[b.timeSlot || 'afternoon'] || 2;
+                    if (slotA !== slotB) return slotA - slotB;
+
+                    return (a.id || '').localeCompare(b.id || '');
+                });
+            }
+
+            const currentIndex = currentList.findIndex(e => e.id === window.selectedEntryId);
             const prevBtn = document.getElementById('prevDetailBtn');
             const nextBtn = document.getElementById('nextDetailBtn');
-            if (prevBtn) prevBtn.disabled = (currentIndex >= (window.entries || []).length - 1);
+
+            // 🌟 並び順に合わせた正しい端っこ判定（インデックス0が一番新しく、末尾が一番古い）
+            // 左ボタン（＜・新しい方へ）：一番新しい記事（index 0）のときは押せない
             if (nextBtn) nextBtn.disabled = (currentIndex <= 0);
+            // 右ボタン（＞・古い方へ）：一番古い記事（末尾）のときは押せない
+            if (prevBtn) prevBtn.disabled = (currentIndex === -1 || currentIndex >= currentList.length - 1);
 
             // 管理者（Admin）のときだけ「編集ボタン」と「削除ボタン」を表示する
             const editBtn = document.getElementById('editEntryBtn');
@@ -948,7 +970,7 @@ function getCircledNumber(num) {
                 if (editBtn) editBtn.classList.add('hidden');
                 if (deleteBtn) deleteBtn.classList.add('hidden');
             }
-        } // ← ここで renderDetailView 関数を確実に閉じる！
+        }
 
         window.renderDetailView = renderDetailView;
 
@@ -991,10 +1013,10 @@ function getCircledNumber(num) {
             const currentIndex = currentList.findIndex(e => e.id === window.selectedEntryId);
             if (currentIndex === -1) return;
 
-            // 🌟 目標のインデックスを計算
-            const targetIndex = currentIndex + direction;
+            // 🌟 データの並び（新しいものがインデックス0）に合わせ、
+            // 「＜（新しい方）」はインデックスを減らし、「＞（古い方）」はインデックスを増やすように修正
+            const targetIndex = currentIndex - direction;
 
-            // 🌟 配列の範囲内にしっかり収まるようにガード（端っこを超えて移動しようとしたら何もしない）
             if (targetIndex >= 0 && targetIndex < currentList.length) {
                 window.selectedEntryId = currentList[targetIndex].id;
                 renderDetailView();
