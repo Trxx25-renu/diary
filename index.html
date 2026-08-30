@@ -970,14 +970,12 @@ function getCircledNumber(num) {
         window.toggleSecretMemo = toggleSecretMemo;
 
         function navigateDetail(direction) {
-            // 🌟 1. 現在表示している月や条件に合った「絞り込み＆ソート済み」のリストを同じロジックで取得する
+            // 1. 現在表示している月や条件に合った「絞り込み＆ソート済み」のリストを取得
             let currentList = window.entries || [];
             
-            // もし年月の絞り込み（window.selectedYearMonth）がある場合は、一覧と同じ条件で絞る
             if (window.selectedYearMonth) {
                 currentList = currentList.filter(e => e.date && e.date.startsWith(window.selectedYearMonth));
                 
-                // 一覧と同じ「新しい日付順 ＋ 朝→昼→夜」でソートを確実に適用
                 const timeSlotOrder = { 'morning': 1, 'afternoon': 2, 'night': 3 };
                 currentList.sort((a, b) => {
                     const dateCompare = b.date.localeCompare(a.date);
@@ -991,13 +989,12 @@ function getCircledNumber(num) {
                 });
             }
 
-            // 2. そのリストの中から現在の日記のインデックスを探す
+            // 2. リスト内での現在地のインデックスを探す
             const currentIndex = currentList.findIndex(e => e.id === window.selectedEntryId);
             if (currentIndex === -1) return;
 
-            // 3. リストの並び順（新しいものがインデックス0）に合わせて次のインデックスを計算
-            // （※もし「古い方へ進む」ボタンなら +1、「新しい方へ進む」なら -1 に調整できます）
-            const targetIndex = currentIndex + direction;
+            // 3. インデックスの移動方向を完全に同期（- direction に修正済み）
+            const targetIndex = currentIndex - direction;
 
             if (targetIndex >= 0 && targetIndex < currentList.length) {
                 window.selectedEntryId = currentList[targetIndex].id;
