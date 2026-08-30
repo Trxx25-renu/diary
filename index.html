@@ -985,12 +985,11 @@ function getCircledNumber(num) {
         window.toggleSecretMemo = toggleSecretMemo;
 
        function navigateDetail(direction) {
-            // 1. フィルターを一切かけず、全データ（window.entries）をそのまま取得
+            // 1. 全データ（window.entries）を取得
             let currentList = [...(window.entries || [])];
             if (currentList.length === 0) return;
 
-            // 2. 一覧画面と完全に同じルールで全データをソート
-            // 基準：日付が新しい順 (b.date と a.date) ＞ 同日内は時間帯順 (夜 → 昼 → 朝)
+            // 2. 新しい順（日付降順）＋ 夜→昼→朝 で並べ替え
             const timeSlotOrder = { 'night': 1, 'afternoon': 2, 'morning': 3 };
             
             currentList.sort((a, b) => {
@@ -1008,15 +1007,16 @@ function getCircledNumber(num) {
             const currentIndex = currentList.findIndex(e => e.id === window.selectedEntryId);
             if (currentIndex === -1) return;
 
-            // 4. ボタンの向き（direction）に合わせてインデックスを移動
-            const targetIndex = currentIndex + direction;
+            // 🌟 4. 新しい順の配列に合わせて、引数 direction の正負を逆転させて正しく計算する
+            // （direction: 1 で古い記事へ[index+1]、direction: -1 で新しい記事へ[index-1]）
+            const targetIndex = currentIndex - direction;
 
-            // 5. 全体の範囲内であれば、日付や月をまたいでスムーズに移動する
+            // 5. 配列の範囲内であれば、日付や月を自由にまたいで移動する
             if (targetIndex >= 0 && targetIndex < currentList.length) {
                 const targetEntry = currentList[targetIndex];
                 window.selectedEntryId = targetEntry.id;
                 
-                // 移動先の記事の月に合わせて、選択中の月も自動で同期する
+                // 移動先の日時に合わせて表示月を同期
                 if (targetEntry.date) {
                     window.selectedYearMonth = targetEntry.date.substring(0, 7);
                 }
