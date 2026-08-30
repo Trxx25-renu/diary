@@ -985,31 +985,38 @@ function getCircledNumber(num) {
         window.toggleSecretMemo = toggleSecretMemo;
 
         function navigateDetail(direction) {
-            let currentList = window.entries || [];
+            // 1. 現在選択されている月（window.selectedYearMonth）を最優先で取得、なければ現在の記事の月から取得
+            let targetYearMonth = window.selectedYearMonth;
+            const currentEntry = (window.entries || []).find(e => e.id === window.selectedEntryId);
             
-            if (window.selectedYearMonth) {
-                currentList = currentList.filter(e => e.date && e.date.startsWith(window.selectedYearMonth));
-                
-                const timeSlotOrder = { 'night': 1, 'afternoon': 2, 'morning': 3 };
-                currentList.sort((a, b) => {
-                    const dateCompare = b.date.localeCompare(a.date);
-                    if (dateCompare !== 0) return dateCompare;
-                    
-                    const slotA = timeSlotOrder[a.timeSlot || 'afternoon'] || 2;
-                    const slotB = timeSlotOrder[b.timeSlot || 'afternoon'] || 2;
-                    if (slotA !== slotB) return slotA - slotB;
-
-                    return (a.id || '').localeCompare(b.id || '');
-                });
+            if (!targetYearMonth && currentEntry && currentEntry.date) {
+                targetYearMonth = currentEntry.date.substring(0, 7);
             }
+            if (!targetYearMonth) return;
 
+            // 2. その月の全データを取得し、一覧と同じ「新着順 ＋ ナイト→アフタヌーン→モーニング」で完全にソート
+            let currentList = (window.entries || []).filter(e => e.date && e.date.startsWith(targetYearMonth));
+            
+            const timeSlotOrder = { 'night': 1, 'afternoon': 2, 'morning': 3 };
+            currentList.sort((a, b) => {
+                const dateCompare = b.date.localeCompare(a.date);
+                if (dateCompare !== 0) return dateCompare;
+                
+                const slotA = timeSlotOrder[a.timeSlot || 'afternoon'] || 2;
+                const slotB = timeSlotOrder[b.timeSlot || 'afternoon'] || 2;
+                if (slotA !== slotB) return slotA - slotB;
+
+                return (a.id || '').localeCompare(b.id || '');
+            });
+
+            // 3. リスト内での現在地を探す
             const currentIndex = currentList.findIndex(e => e.id === window.selectedEntryId);
             if (currentIndex === -1) return;
 
-            // 🌟 データの並び（新しいものがインデックス0）に合わせ、
-            // 「＜（新しい方）」はインデックスを減らし、「＞（古い方）」はインデックスを増やすように修正
+            // 4. 次のインデックスを計算
             const targetIndex = currentIndex - direction;
 
+            // 5. その月の中であれば、日付をまたいで（8/29 ⇔ 8/30）スムーズに移動
             if (targetIndex >= 0 && targetIndex < currentList.length) {
                 window.selectedEntryId = currentList[targetIndex].id;
                 renderDetailView();
