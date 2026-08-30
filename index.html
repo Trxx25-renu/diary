@@ -971,44 +971,44 @@ window.renderBreadcrumbs = renderBreadcrumbs;
         window.renderCalendarLayout = renderCalendarLayout;
 
         function renderGridPhotoLayout(container, filtered) {
-            if (filtered.length === 0) {
-                container.innerHTML = `<div class="col-span-full text-center py-12 text-stone-400">この月の日記はありません。</div>`;
-                return;
-            }
+    if (filtered.length === 0) {
+        container.innerHTML = `<div class="col-span-full text-center py-12 text-stone-400">この月の日記はありません。</div>`;
+        return;
+    }
 
-            let imgFitClass = 'object-cover object-center';
-            if (window.thumbnailFitMode === 'top') {
-                imgFitClass = 'object-cover object-top';
-            } else if (window.thumbnailFitMode === 'contain') {
-                imgFitClass = 'object-contain object-center bg-stone-900';
-            }
+    let imgFitClass = 'object-cover object-center';
+    if (window.thumbnailFitMode === 'top') {
+        imgFitClass = 'object-cover object-top';
+    } else if (window.thumbnailFitMode === 'contain') {
+        imgFitClass = 'object-contain object-center bg-stone-900';
+    }
 
-            const grid = document.createElement('div');
-            grid.className = 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3';
+    const grid = document.createElement('div');
+    // 検索結果画面と完全に同じ横3列レイアウトに統一
+    grid.className = 'grid grid-cols-3 sm:grid-cols-3 md:grid-cols-4 gap-1.5 sm:gap-3';
 
-            filtered.forEach(entry => {
-                const dayNum = entry.date.split('-')[2];
-                const card = document.createElement('div');
-                card.className = 'group relative aspect-square bg-stone-100 rounded-xl overflow-hidden cursor-pointer shadow-sm border border-stone-200/50 hover:shadow-md transition-all';
-                card.onclick = () => navigateTo('detail', entry.id);
+    filtered.forEach(entry => {
+        const dayNum = entry.date.split('-')[2];
+        const card = document.createElement('div');
+        card.className = 'group relative aspect-square bg-stone-100 rounded-xl overflow-hidden cursor-pointer shadow-sm border border-stone-200/50 hover:shadow-md transition-all';
+        card.onclick = () => navigateTo('detail', entry.id);
 
-                card.innerHTML = `
-                    <img src="${entry.imageUrl}" alt="${entry.date}" draggable="false" oncontextmenu="return false;" class="protect-image w-full h-full ${imgFitClass} group-hover:scale-105 transition-transform duration-300">
-                    <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity p-3 flex flex-col justify-end text-white">
-                        <span class="text-xs font-serif-title font-bold">${entry.date.replace(/-/g, '.')}</span>
-                        <p class="text-[11px] text-stone-200 line-clamp-1 mt-0.5">${formatPreviewText(entry.content)}</p>
-                    </div>
-                    <div class="absolute top-2 left-2 bg-black/50 backdrop-blur-md text-white text-[10px] font-semibold px-2 py-0.5 rounded-full">
-                        ${parseInt(dayNum, 10)}日
-                    </div>
-                `;
-                grid.appendChild(card);
-            });
+        card.innerHTML = `
+            <img src="${entry.imageUrl}" alt="${entry.date}" draggable="false" oncontextmenu="return false;" class="protect-image w-full h-full ${imgFitClass} group-hover:scale-105 transition-transform duration-300">
+            <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity p-3 flex flex-col justify-end text-white">
+                <span class="text-xs font-serif-title font-bold">${entry.date.replace(/-/g, '.')}</span>
+                <p class="text-[11px] text-stone-200 line-clamp-1 mt-0.5">${formatPreviewText(entry.content)}</p>
+            </div>
+            <div class="absolute top-2 left-2 bg-black/50 backdrop-blur-md text-white text-[10px] font-semibold px-2 py-0.5 rounded-full">
+                ${parseInt(dayNum, 10)}日
+            </div>
+        `;
+        grid.appendChild(card);
+    });
 
-            container.appendChild(grid);
-        }
-        window.renderGridPhotoLayout = renderGridPhotoLayout;
-
+    container.appendChild(grid);
+}
+window.renderGridPhotoLayout = renderGridPhotoLayout;
         // ビュー切替時の関数（900行目付近にある古い方と置き換えてください）
         function setGalleryViewMode(mode) {
             window.galleryViewMode = mode;
