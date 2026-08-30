@@ -1557,6 +1557,77 @@ function handleImageSelect(event) {
         }
         window.deleteCurrentEntry = deleteCurrentEntry;
 
+        // 📝 詳細画面から編集モードでモーダルを開く関数
+        function openEditModalFromDetail() {
+            if (!window.isAdmin) {
+                showToast('権限がありません。ログインしてください。', 'warning');
+                return;
+            }
+
+            if (!window.selectedEntryId || !window.entries) {
+                showToast('編集する記事データが見つかりません。', 'warning');
+                return;
+            }
+
+            // 現在選択されているエントリを配列から探す
+            const entry = window.entries.find(e => e.id === window.selectedEntryId);
+            if (!entry) {
+                showToast('対象の記事が見つかりませんでした。', 'error');
+                return;
+            }
+
+            // 編集モードとしてIDを保持
+            window.editingEntryId = entry.id;
+
+            // フォームの各入力欄に既存のデータを流し込む
+            const dateInput = document.getElementById('inputDate');
+            const scenarioTitleInput = document.getElementById('inputScenarioTitle');
+            const weatherInput = document.getElementById('inputWeather');
+            const contentInput = document.getElementById('inputContent');
+            const secretContentInput = document.getElementById('inputSecretContent');
+            const preview = document.getElementById('imagePreview');
+            const placeholder = document.getElementById('uploadPlaceholder');
+
+            if (dateInput) dateInput.value = entry.date || '';
+            if (scenarioTitleInput) scenarioTitleInput.value = entry.scenarioTitle || '';
+            if (weatherInput) weatherInput.value = entry.weather || '';
+            if (contentInput) contentInput.value = entry.content || '';
+            if (secretContentInput) secretContentInput.value = entry.secretContent || '';
+
+            // 画像の復元
+            if (entry.imageUrl) {
+                window.tempBase64Image = entry.imageUrl;
+                if (preview) {
+                    preview.src = entry.imageUrl;
+                    preview.classList.remove('hidden');
+                }
+                if (placeholder) placeholder.classList.add('hidden');
+            } else {
+                window.tempBase64Image = null;
+                if (preview) preview.classList.add('hidden');
+                if (placeholder) placeholder.classList.remove('hidden');
+            }
+
+            // 詳細モーダルを閉じて、投稿（編集）モーダルを開く
+            if (typeof closeDetailModal === 'function') {
+                closeDetailModal();
+            }
+
+            // 投稿モーダルを開く関数（openPostModalなど）を呼び出す
+            if (typeof openPostModal === 'function') {
+                openPostModal();
+            } else {
+                // もし関数名が違う場合のフォールバック
+                const postModal = document.getElementById('postModal') || document.getElementById('entryModal');
+                if (postModal) {
+                    postModal.classList.remove('opacity-0', 'pointer-events-none');
+                }
+            }
+
+            showToast('編集モードで開きました', 'info');
+        }
+        window.openEditModalFromDetail = openEditModalFromDetail;
+
         function sharePublicUrl() {
             const cleanUrl = window.location.origin + window.location.pathname;
 
