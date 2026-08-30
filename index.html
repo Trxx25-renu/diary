@@ -1143,7 +1143,9 @@ function getCircledNumber(num) {
             const newPostBtn = document.getElementById('newPostBtn');
             const configBtn = document.getElementById('siteConfigBtn');
             const deleteBtn = document.getElementById('deleteBtn');
-            const editBtn = document.getElementById('editEntryBtn'); // 🌟 編集ボタンも取得
+            
+            // 複数のID候補に対応できるようにする
+            const editBtn = document.getElementById('editEntryBtn') || document.getElementById('editBtn');
 
             if (window.isAdmin) {
                 if (statusText) statusText.textContent = 'ログアウト';
@@ -1155,8 +1157,6 @@ function getCircledNumber(num) {
                     newPostBtn.classList.add('flex');
                 }
                 if (configBtn) configBtn.classList.remove('hidden');
-                
-                // 🌟 ビューの条件をなくし、管理者ならいつでもボタンを表示できるようにする
                 if (deleteBtn) deleteBtn.classList.remove('hidden');
                 if (editBtn) editBtn.classList.remove('hidden');
 
@@ -1520,7 +1520,6 @@ function handleImageSelect(event) {
             console.log("🔍 削除ボタン押下 -> selectedEntryId:", window.selectedEntryId, "isAdmin:", window.isAdmin);
 
             if (!window.selectedEntryId) {
-                console.error("❌ 削除対象のID (window.selectedEntryId) が見つかりません！");
                 showToast('削除する記事が選択されていません。', 'warning');
                 return;
             }
@@ -1531,29 +1530,28 @@ function handleImageSelect(event) {
 
             showConfirm('日記の削除', 'この日記を削除してもよろしいですか？', async () => {
                 try {
-                    console.log("🗑️ Firestore削除処理を実行中... targetId:", window.selectedEntryId);
+                    console.log("🗑️ Firestore削除処理を実行中...");
 
                     if (window.db && window.appId) {
+                        // 保存時と同じモジュール・書き方で確実に削除
                         const { doc, deleteDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
                         const docRef = doc(window.db, 'artifacts', window.appId, 'public', 'data', 'entries', window.selectedEntryId);
                         await deleteDoc(docRef);
                         console.log("🔥 Firestoreからの削除成功");
-                    } else {
-                        console.error("❌ window.db または window.appId が不足しています！");
                     }
 
                     // ローカル配列から除外
                     window.entries = (window.entries || []).filter(e => e.id !== window.selectedEntryId);
 
                     // 画面遷移
-                    const ym = window.selectedYearMonth || (window.selectedEntryId ? window.selectedEntryId.substring(0, 7) : null);
+                    const ym = window.selectedYearMonth || window.selectedEntryId.substring(0, 7);
                     navigateTo('gallery', ym);
 
                     showToast('日記を削除しました', 'success');
 
                 } catch (err) {
                     console.error("💥 Delete error 詳細:", err);
-                    showToast('削除に失敗しました。', 'error');
+                    showToast('削除に失敗しました（コンソールを確認してください）。', 'error');
                 }
             });
         }
