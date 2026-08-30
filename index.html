@@ -1344,7 +1344,7 @@ function handleImageSelect(event) {
                     let width = img.width;
                     let height = img.height;
                     
-                    // 🌟 フルスクリーンの細かい文字も潰れないよう、少し大きめのサイズを維持
+                    // フルスクリーンの細かい文字も潰れないよう大きめの解像度を維持
                     const maxDim = 1600;
 
                     if (width > height && width > maxDim) {
@@ -1362,18 +1362,22 @@ function handleImageSelect(event) {
                     ctx.clearRect(0, 0, width, height);
                     ctx.drawImage(img, 0, 0, width, height);
 
-                    // 🌟 画質を保ちつつ、Firestoreの1MB制限（約95万文字のBase64）に収まるよう自動調整
+                    // 🌟 Firestoreの1MB制限（1,048,487バイト）を確実にクリアするための厳密な自動圧縮
                     let quality = 0.90;
                     let base64 = canvas.toDataURL('image/jpeg', quality);
 
-                    // もし1MB（文字数換算で約105万文字）を超えている場合は、サイズが収まるまで品質を少しずつ下げる
-                    while (base64.length > 1000000 && quality > 0.4) {
+                    // Base64の文字数から、およその実データバイト数を逆算して1MB未満にする
+                    // (Base64のデータサイズ = 文字数 * 3 / 4)
+                    let byteSize = (base64.length * 3) / 4;
+
+                    while (byteSize > 980000 && quality > 0.3) {
                         quality -= 0.05;
                         base64 = canvas.toDataURL('image/jpeg', quality);
+                        byteSize = (base64.length * 3) / 4;
                     }
 
                     window.tempBase64Image = base64;
-                    console.log(`📸 画像圧縮完了: 品質=${quality.toFixed(2)}, サイズ(約)=${Math.round(base64.length / 1024)}KB`);
+                    console.log(`📸 画像圧縮完了: 品質=${quality.toFixed(2)}, 実データサイズ=${Math.round(byteSize / 1024)}KB`);
 
                     const preview = document.getElementById('imagePreview');
                     const placeholder = document.getElementById('uploadPlaceholder');
