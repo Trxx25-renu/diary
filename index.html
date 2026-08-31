@@ -197,6 +197,15 @@
             window.applySiteConfig();
         }
 
+        // 🌟 アイコン画像をHTMLのヘッダーに動的に反映する処理
+        if (window.siteConfig && window.siteConfig.logoImageUrl) {
+            const appleIcon = document.getElementById('appleTouchIcon');
+            if (appleIcon) appleIcon.href = window.siteConfig.logoImageUrl;
+
+            const favicon = document.getElementById('faviconIcon');
+            if (favicon) favicon.href = window.siteConfig.logoImageUrl;
+        }
+
         // 🌟 起動時にも管理者UIの状態を反映する
         if (typeof updateAdminUI === 'function') {
             updateAdminUI();
@@ -1386,49 +1395,56 @@ window.renderGridPhotoLayout = renderGridPhotoLayout;
         window.clearLogoImage = clearLogoImage;
 
         async function handleSaveConfig(event) {
-            event.preventDefault();
+    event.preventDefault();
 
-            if (!window.isAdmin) return;
+    if (!window.isAdmin) return;
 
-            const title = document.getElementById('inputSiteTitle').value.trim();
-            const subtitle = document.getElementById('inputSiteSubtitle').value.trim();
-            const logoChar = document.getElementById('inputLogoChar').value.trim() || 'P';
-            const logoImageUrl = document.getElementById('inputLogoImageUrl').value.trim();
-            const themeColor = document.getElementById('inputThemeColor').value;
-            const weatherRaw = document.getElementById('inputWeatherOptions').value;
+    const title = document.getElementById('inputSiteTitle').value.trim();
+    const subtitle = document.getElementById('inputSiteSubtitle').value.trim();
+    const logoChar = document.getElementById('inputLogoChar').value.trim() || 'P';
+    const logoImageUrl = document.getElementById('inputLogoImageUrl').value.trim();
+    const themeColor = document.getElementById('inputThemeColor').value;
+    const weatherRaw = document.getElementById('inputWeatherOptions').value;
 
-            const weatherOptions = weatherRaw
-                .split(',')
-                .map(w => w.trim())
-                .filter(w => w.length > 0);
+    const weatherOptions = weatherRaw
+        .split(',')
+        .map(w => w.trim())
+        .filter(w => w.length > 0);
 
-            window.siteConfig = {
-                title: title || '日々の卓日記',
-                subtitle: subtitle || 'Session Log',
-                logoChar: logoChar,
-                logoImageUrl: logoImageUrl,
-                themeColor: themeColor,
-                weatherOptions: weatherOptions.length > 0 ? weatherOptions : ['晴れ ☀️', '快晴 🌤️', 'くもり ☁️', '雨 ☔', '雪 ❄️']
-            };
+    window.siteConfig = {
+        title: title || '日々の卓日記',
+        subtitle: subtitle || 'Session Log',
+        logoChar: logoChar,
+        logoImageUrl: logoImageUrl,
+        themeColor: themeColor,
+        weatherOptions: weatherOptions.length > 0 ? weatherOptions : ['晴れ ☀️', '快晴 🌤️', 'くもり ☁️', '雨 ☔', '雪 ❄️']
+    };
 
-            if (window.db) {
-                try {
-                    const { doc, setDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
-                    const configRef = doc(window.db, 'artifacts', window.appId, 'public', 'data', 'config', 'settings');
-                    await setDoc(configRef, {
-                        passcode: window.storedPasscode,
-                        ...window.siteConfig
-                    });
-                } catch (err) {
-                    console.error("Config save error:", err);
-                }
-            }
-
-            applySiteConfig();
-            closeConfigModal();
-            showToast('ホームページの設定を更新しました！', 'success');
+    if (window.db) {
+        try {
+            const { doc, setDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
+            const configRef = doc(window.db, 'artifacts', window.appId, 'public', 'data', 'config', 'settings');
+            await setDoc(configRef, {
+                passcode: window.storedPasscode,
+                ...window.siteConfig
+            });
+        } catch (err) {
+            console.error("Config save error:", err);
         }
-        window.handleSaveConfig = handleSaveConfig;
+    }
+
+    // 🌟 アイコン画像をその場で即座にHTMLタグへ反映
+    const appleIcon = document.getElementById('appleTouchIcon');
+    if (appleIcon) appleIcon.href = logoImageUrl || '';
+
+    const favicon = document.getElementById('faviconIcon');
+    if (favicon) favicon.href = logoImageUrl || '';
+
+    applySiteConfig();
+    closeConfigModal();
+    showToast('ホームページの設定を更新しました！', 'success');
+}
+window.handleSaveConfig = handleSaveConfig;
 
         // 📝 新規投稿ボタンを押したときに呼ばれる関数
         function openPostModal() {
