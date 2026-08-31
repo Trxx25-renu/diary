@@ -137,6 +137,24 @@
             };
         }
         
+        // 🚀 【ここに追加】通信を待たずに即座にキャッシュを適用してチラつきを防ぐ
+        try {
+            const cachedConfig = localStorage.getItem('cachedSiteConfig');
+            if (cachedConfig) {
+                const config = JSON.parse(cachedConfig);
+                if (config.title) document.title = config.title;
+                if (config.logoImageUrl) {
+                    const appleIcon = document.getElementById('appleTouchIcon');
+                    if (appleIcon) appleIcon.href = config.logoImageUrl;
+
+                    const favicon = document.getElementById('faviconIcon');
+                    if (favicon) favicon.href = config.logoImageUrl;
+                }
+            }
+        } catch (e) {
+            console.error("Instant cache load error:", e);
+        }
+
         try {
         if (typeof window.appId === 'undefined' || !window.appId) {
             window.appId = "default-app-id"; 
@@ -1412,13 +1430,20 @@ window.renderGridPhotoLayout = renderGridPhotoLayout;
         .filter(w => w.length > 0);
 
     window.siteConfig = {
-        title: title || '日々の卓日記',
+        title: title || '卓日記',
         subtitle: subtitle || 'Session Log',
         logoChar: logoChar,
         logoImageUrl: logoImageUrl,
         themeColor: themeColor,
         weatherOptions: weatherOptions.length > 0 ? weatherOptions : ['晴れ ☀️', '快晴 🌤️', 'くもり ☁️', '雨 ☔', '雪 ❄️']
     };
+
+    // 🌟 【追加】ローカルストレージに今の設定を即座にキャッシュ保存する
+    try {
+        localStorage.setItem('cachedSiteConfig', JSON.stringify(window.siteConfig));
+    } catch (e) {
+        console.error("Cache save error:", e);
+    }
 
     if (window.db) {
         try {
@@ -1433,7 +1458,7 @@ window.renderGridPhotoLayout = renderGridPhotoLayout;
         }
     }
 
-    // 🌟 アイコン画像をその場で即座にHTMLタグへ反映
+    // アイコン画像をその場で即座にHTMLタグへ反映
     const appleIcon = document.getElementById('appleTouchIcon');
     if (appleIcon) appleIcon.href = logoImageUrl || '';
 
