@@ -508,11 +508,14 @@
                 writeBtn.className = `${window.isAdmin ? 'flex' : 'hidden'} px-3.5 py-1.5 rounded-xl text-xs font-medium text-white ${theme.bgPrimary} ${theme.hoverPrimary} transition-colors shadow-sm items-center gap-1.5`;
             }
 
-           // 2. ロゴ（文字 または 画像）の反映
+          // 2. ロゴ（文字 または 画像）の反映
         const logoTextEl = document.getElementById('siteHeaderLogo');
         const logoImgEl = document.getElementById('siteHeaderLogoImg');
         const appleIconEl = document.getElementById('appleTouchIcon');
         const faviconEl = document.getElementById('faviconIcon');
+
+        // スマホやプレビュー用に、画像がない場合のデフォルト画像URLを用意しておく
+        const defaultIconUrl = 'https://images.unsplash.com/photo-1522383225653-ed111181a951?auto=format&fit=crop&w=180&h=180&q=80';
 
         if (config.logoImageUrl && config.logoImageUrl.trim() !== '') {
             if (logoTextEl) {
@@ -536,11 +539,15 @@
                 logoTextEl.style.display = 'block';
                 logoTextEl.classList.remove('hidden');
             }
+            // 画像未設定のときは、スマホプレビュー用にデフォルトの画像URLを入れておく
+            if (appleIconEl) appleIconEl.href = defaultIconUrl;
+            if (faviconEl) faviconEl.href = defaultIconUrl;
         }
-                
-            // フィルター等の再描画
-            if (typeof renderWeatherFilterButtons === 'function') renderWeatherFilterButtons();
-            if (typeof renderWeatherSelectOptions === 'function') renderWeatherSelectOptions();
+
+        // フィルター等の再描画
+        if (typeof renderWeatherFilterButtons === 'function') renderWeatherFilterButtons();
+        if (typeof renderWeatherSelectOptions === 'function') renderWeatherSelectOptions();
+    }
 
             // 4. カレンダー / 一覧ビュー切替スイッチのテーマカラー反映
             const mode = window.galleryViewMode || 'calendar';
