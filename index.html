@@ -1144,109 +1144,118 @@ window.renderGridPhotoLayout = renderGridPhotoLayout;
         }
         window.navigateDetail = navigateDetail;
         
-        function setWeatherFilter(weatherKey) {
-            window.selectedWeatherFilter = weatherKey;
-            renderWeatherFilterButtons();
-            handleSearch();
+       function setWeatherFilter(weatherKey) {
+        window.selectedWeatherFilter = weatherKey;
+        renderWeatherFilterButtons();
+        handleSearch();
+    }
+    window.setWeatherFilter = setWeatherFilter;
+
+    function clearSearchInput() {
+        const el = document.getElementById('searchInput');
+        if (el) el.value = '';
+        handleSearch();
+    }
+    window.clearSearchInput = clearSearchInput;
+
+    function resetAllFilters() {
+        const el = document.getElementById('searchInput');
+        if (el) el.value = '';
+        setWeatherFilter('all');
+    }
+    window.resetAllFilters = resetAllFilters;
+
+    function handleSearch() {
+        if (window.currentView === 'detail') return;
+
+        const textQuery = (document.getElementById('searchInput')?.value || '').trim().toLowerCase();
+        const weatherFilter = window.selectedWeatherFilter;
+
+        const resultsArea = document.getElementById('searchResultsArea');
+        const resultsGrid = document.getElementById('searchResultsGrid');
+        const folderGrid = document.getElementById('monthFolderGrid');
+        const galleryView = document.getElementById('view-gallery');
+        const clearTextBtn = document.getElementById('clearTextBtn');
+        const activeFilterBadge = document.getElementById('activeFilterBadge');
+        const filterDesc = document.getElementById('filterDescription');
+
+        if (clearTextBtn) {
+            if (textQuery) clearTextBtn.classList.remove('hidden');
+            else clearTextBtn.classList.add('hidden');
         }
-        window.setWeatherFilter = setWeatherFilter;
 
-        function clearSearchInput() {
-            const el = document.getElementById('searchInput');
-            if (el) el.value = '';
-            handleSearch();
+        const isActive = textQuery !== '' || weatherFilter !== 'all';
+
+        if (!isActive) {
+            if (resultsArea) resultsArea.classList.add('hidden');
+            if (folderGrid && window.currentView === 'months') folderGrid.classList.remove('hidden');
+            if (galleryView && window.currentView === 'gallery') galleryView.classList.remove('hidden');
+            if (activeFilterBadge) activeFilterBadge.classList.add('hidden');
+            return;
         }
-        window.clearSearchInput = clearSearchInput;
 
-        function resetAllFilters() {
-            const el = document.getElementById('searchInput');
-            if (el) el.value = '';
-            setWeatherFilter('all');
+        // 🌟 1. ベースとなるエントリーを取得
+        let baseEntries = window.entries || [];
+
+        // 🌟 2. もし今「2階層目（ギャラリー画面）」にいるなら、その月のデータだけに絞り込む
+        if (window.currentView === 'gallery' && window.selectedYearMonth) {
+            baseEntries = baseEntries.filter(e => e.date && e.date.startsWith(window.selectedYearMonth));
         }
-        window.resetAllFilters = resetAllFilters;
 
-        function handleSearch() {
-            if (window.currentView === 'detail') return;
-
-            const textQuery = (document.getElementById('searchInput')?.value || '').trim().toLowerCase();
-            const weatherFilter = window.selectedWeatherFilter;
-
-            const resultsArea = document.getElementById('searchResultsArea');
-            const resultsGrid = document.getElementById('searchResultsGrid');
-            const folderGrid = document.getElementById('monthFolderGrid');
-            const galleryView = document.getElementById('view-gallery');
-            const clearTextBtn = document.getElementById('clearTextBtn');
-            const activeFilterBadge = document.getElementById('activeFilterBadge');
-            const filterDesc = document.getElementById('filterDescription');
-
-            if (clearTextBtn) {
-                if (textQuery) clearTextBtn.classList.remove('hidden');
-                else clearTextBtn.classList.add('hidden');
+        // 🌟 3. キーワードやタグの条件でマッチング
+        const matched = baseEntries.filter(e => {
+            if (textQuery) {
+                const matchContent = (e.content || '').toLowerCase().includes(textQuery);
+                const matchDate = (e.date || '').includes(textQuery);
+                if (!matchContent && !matchDate) return false;
             }
-
-            const isActive = textQuery !== '' || weatherFilter !== 'all';
-
-            if (!isActive) {
-                if (resultsArea) resultsArea.classList.add('hidden');
-                if (folderGrid && window.currentView === 'months') folderGrid.classList.remove('hidden');
-                if (galleryView && window.currentView === 'gallery') galleryView.classList.remove('hidden');
-                if (activeFilterBadge) activeFilterBadge.classList.add('hidden');
-                return;
+            if (weatherFilter !== 'all') {
+                if (!e.weather || !e.weather.includes(weatherFilter)) return false;
             }
+            return true;
+        });
 
-            const matched = (window.entries || []).filter(e => {
-                if (textQuery) {
-                    const matchContent = (e.content || '').toLowerCase().includes(textQuery);
-                    const matchDate = (e.date || '').includes(textQuery);
-                    if (!matchContent && !matchDate) return false;
-                }
-                if (weatherFilter !== 'all') {
-                    if (!e.weather || !e.weather.includes(weatherFilter)) return false;
-                }
-                return true;
-            });
+        let descParts = [];
+        if (textQuery) descParts.push(`キーワード: 「${escapeHtml(textQuery)}」`);
+        if (weatherFilter !== 'all') descParts.push(`タグ: ${weatherFilter}`);
+        const descText = descParts.join(' ＋ ');
 
-            let descParts = [];
-            if (textQuery) descParts.push(`キーワード: 「${escapeHtml(textQuery)}」`);
-            if (weatherFilter !== 'all') descParts.push(`タグ: ${weatherFilter}`);
-            const descText = descParts.join(' ＋ ');
+        if (folderGrid) folderGrid.classList.add('hidden');
+        if (galleryView) galleryView.classList.add('hidden');
+        if (resultsArea) resultsArea.classList.remove('hidden');
+        if (activeFilterBadge) {
+            activeFilterBadge.classList.remove('hidden');
+            activeFilterBadge.classList.add('flex');
+        }
+        if (filterDesc) filterDesc.textContent = `${descText} (${matched.length}件ヒット)`;
 
-            if (folderGrid) folderGrid.classList.add('hidden');
-            if (galleryView) galleryView.classList.add('hidden');
-            if (resultsArea) resultsArea.classList.remove('hidden');
-            if (activeFilterBadge) {
-                activeFilterBadge.classList.remove('hidden');
-                activeFilterBadge.classList.add('flex');
-            }
-            if (filterDesc) filterDesc.textContent = `${descText} (${matched.length}件ヒット)`;
+        if (!resultsGrid) return;
+        resultsGrid.innerHTML = '';
 
-            if (!resultsGrid) return;
-            resultsGrid.innerHTML = '';
+        if (matched.length === 0) {
+            resultsGrid.innerHTML = `<div class="col-span-full text-stone-400 text-xs py-8 text-center bg-stone-50 rounded-xl border border-dashed border-stone-200">条件に一致する日記は見つかりませんでした。</div>`;
+            return;
+        }
 
-            if (matched.length === 0) {
-                resultsGrid.innerHTML = `<div class="col-span-full text-stone-400 text-xs py-8 text-center bg-stone-50 rounded-xl border border-dashed border-stone-200">条件に一致する日記は見つかりませんでした。</div>`;
-                return;
-            }
+        matched.forEach(entry => {
+            const card = document.createElement('div');
+            card.className = 'group relative aspect-square bg-stone-100 rounded-xl overflow-hidden cursor-pointer shadow-sm border border-stone-200/50 hover:shadow-md transition-all';
+            card.onclick = () => navigateTo('detail', entry.id);
 
-            matched.forEach(entry => {
-                const card = document.createElement('div');
-                card.className = 'group relative aspect-square bg-stone-100 rounded-xl overflow-hidden cursor-pointer shadow-sm border border-stone-200/50 hover:shadow-md transition-all';
-                card.onclick = () => navigateTo('detail', entry.id);
-
-                card.innerHTML = `
-                    <img src="${entry.imageUrl}" alt="${entry.date}" draggable="false" oncontextmenu="return false;" class="protect-image w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
-                    <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-90 p-2.5 flex flex-col justify-end text-white">
-                        <div class="flex items-center justify-between mb-0.5">
-                            <span class="text-[10px] font-serif-title font-bold">${entry.date.replace(/-/g, '.')}</span>
-                            <span class="text-[10px] opacity-90">${entry.weather || ''}</span>
-                        </div>
-                        <p class="text-[11px] text-stone-200 line-clamp-2">${formatPreviewText(entry.content)}</p>
+            card.innerHTML = `
+                <img src="${entry.imageUrl}" alt="${entry.date}" draggable="false" oncontextmenu="return false;" class="protect-image w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-90 p-2.5 flex flex-col justify-end text-white">
+                    <div class="flex items-center justify-between mb-0.5">
+                        <span class="text-[10px] font-serif-title font-bold">${entry.date.replace(/-/g, '.')}</span>
+                        <span class="text-[10px] opacity-90">${entry.weather || ''}</span>
                     </div>
-                `;
-                resultsGrid.appendChild(card);
-            });
-        }
-        window.handleSearch = handleSearch;
+                    <p class="text-[11px] text-stone-200 line-clamp-2">${formatPreviewText(entry.content)}</p>
+                </div>
+            `;
+            resultsGrid.appendChild(card);
+        });
+    }
+    window.handleSearch = handleSearch;
 
         function openAuthModal() {
             const modal = document.getElementById('authModal');
