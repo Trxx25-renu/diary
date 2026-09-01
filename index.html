@@ -5,16 +5,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="noindex, nofollow">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>日々の卓日記 - Session Log</title>
+    <title id="siteTitleTag">日々の卓日記 - Session Log</title>
 
-<!-- Firebase App & SDK (CDN Module) -->
+    <!-- 🚀 【超重要】通信やJSファイルの読み込みを待たずに、一瞬でローカルのキャッシュを適用するスクリプト -->
+    <script>
+        try {
+            const cached = localStorage.getItem('cachedSiteConfig');
+            if (cached) {
+                const cfg = JSON.parse(cached);
+                if (cfg.title) {
+                    document.write(`<style>/* チラつき防止 */</style><title>${cfg.title}</title>`);
+                }
+            }
+        } catch(e) {}
+    </script>
+
+    <!-- Firebase App & SDK (CDN Module) -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js";
 
-        // グローバル（window）に公開して、通常のスクリプトからも使えるようにする
         window.initializeApp = initializeApp;
         window.getAuth = getAuth;
         window.signInAnonymously = signInAnonymously;
@@ -26,20 +38,36 @@
         window.getAnalytics = getAnalytics;
     </script>
 
-    <!-- ホーム画面追加用アイコン & PWA設定タグ -->
-    <link rel="apple-touch-icon" id="appleTouchIcon" href="https://images.unsplash.com/photo-1522383225653-ed111181a951?auto=format&fit=crop&w=180&h=180&q=80">
-    <link rel="icon" type="image/png" id="faviconIcon" href="https://images.unsplash.com/photo-1522383225653-ed111181a951?auto=format&fit=crop&w=180&h=180&q=80">
+    <!-- ホーム画面追加用アイコン & PWA設定タグ（hrefの初期値は空っぽにしておくか、ローカルから即時反映させる） -->
+    <link rel="apple-touch-icon" id="appleTouchIcon" href="">
+    <link rel="icon" type="image/png" id="faviconIcon" href="">
     <meta name="apple-mobile-web-app-title" id="appleAppTitle" content="写真日記">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="theme-color" content="#fcfbf9">
+
+    <!-- 🚀 アイコンもキャッシュがあれば一瞬で適用するスクリプト -->
+    <script>
+        try {
+            const cached = localStorage.getItem('cachedSiteConfig');
+            if (cached) {
+                const cfg = JSON.parse(cached);
+                if (cfg.logoImageUrl) {
+                    // タグのhrefをあらかじめキャッシュの画像にしておく
+                    document.write(`
+                        <link rel="apple-touch-icon" id="appleTouchIcon" href="${cfg.logoImageUrl}">
+                        <link rel="icon" type="image/png" id="faviconIcon" href="${cfg.logoImageUrl}">
+                    `);
+                }
+            }
+        } catch(e) {}
+    </script>
 
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Playfair+Display:ital,wght@0,600;1,400&display=swap" rel="stylesheet">
-    
    <style>
         body {
             font-family: 'Noto Sans JP', sans-serif;
