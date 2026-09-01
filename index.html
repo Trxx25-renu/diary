@@ -308,19 +308,26 @@
     }
 });
 
-   // 🌟 アプリ全体の画面切り替え ＆ パンくず更新を行うルーター関数
+  // 🌟 アプリ全体の画面切り替え ＆ パンくず更新を行うルーター関数
         function navigateTo(view, param = null) {
             const viewMonths = document.getElementById('view-months');
             const viewGallery = document.getElementById('view-gallery');
             const viewDetail = document.getElementById('view-detail');
             const searchToolbar = document.getElementById('searchToolbarSection');
+            const resultsArea = document.getElementById('searchResultsArea'); // 👈 検索結果エリア
             const breadcrumbs = document.getElementById('breadcrumbs');
 
-            // 1. すべてのビューをいったん隠す
+            // 1. すべてのビューや検索結果をいったん隠す
             if (viewMonths) viewMonths.classList.add('hidden');
             if (viewGallery) viewGallery.classList.add('hidden');
             if (viewDetail) viewDetail.classList.add('hidden');
             if (searchToolbar) searchToolbar.classList.add('hidden');
+
+            // 🌟 検索結果エリアを隠す（flexクラスも同時に外して確実に消す）
+            if (resultsArea) {
+                resultsArea.classList.add('hidden');
+                resultsArea.classList.remove('flex'); // 👈 ここがポイント！
+            }
 
             // 2. パンくずリストとビューの切り替え
             if (view === 'months') {
@@ -366,7 +373,6 @@
 
             } else if (view === 'detail') {
                 if (viewDetail) viewDetail.classList.remove('hidden');
-                // 🌟 ここでは searchToolbar.classList.remove を呼ばないので、検索バーは隠れたままになる！
                 if (param) window.selectedEntryId = param;
 
                 // カレンダーなどから直接詳細が開かれた場合、年月が未設定なら記事データから逆算する
@@ -395,6 +401,7 @@
                         <a href="javascript:void(0)" onclick="navigateTo('months')" class="hover:text-stone-900 transition-colors flex items-center gap-1">
                             <i class="fa-solid fa-house text-[10px]"></i> ホーム (月別)
                         </a>
+                        <span class="text-stone-300">/</span>
                         <span class="text-stone-300">/</span>
                         <a href="javascript:void(0)" onclick="navigateTo('gallery')" class="hover:text-stone-900 transition-colors">${displayYm}</a>
                         <span class="text-stone-300">/</span>
