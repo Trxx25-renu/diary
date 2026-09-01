@@ -508,7 +508,7 @@
                 writeBtn.className = `${window.isAdmin ? 'flex' : 'hidden'} px-3.5 py-1.5 rounded-xl text-xs font-medium text-white ${theme.bgPrimary} ${theme.hoverPrimary} transition-colors shadow-sm items-center gap-1.5`;
             }
 
-          // 2. ロゴ（文字 または 画像）の反映
+// 2. ロゴ（文字 または 画像）の反映
         const logoTextEl = document.getElementById('siteHeaderLogo');
         const logoImgEl = document.getElementById('siteHeaderLogoImg');
         const appleIconEl = document.getElementById('appleTouchIcon');
@@ -547,35 +547,31 @@
         // フィルター等の再描画
         if (typeof renderWeatherFilterButtons === 'function') renderWeatherFilterButtons();
         if (typeof renderWeatherSelectOptions === 'function') renderWeatherSelectOptions();
-    }
 
-            // 4. カレンダー / 一覧ビュー切替スイッチのテーマカラー反映
-            const mode = window.galleryViewMode || 'calendar';
-            const calBtn = document.getElementById('viewModeCalBtn');
-            const gridBtn = document.getElementById('viewModeGridBtn');
-            
-            const container = calBtn ? calBtn.closest('.theme-toggle-container') : null;
-            if (container) {
-                container.className = `theme-toggle-container p-1 rounded-xl flex items-center gap-1 ${theme.bgLight || 'bg-rose-50'}`;
-            }
+        // 4. カレンダー / 一覧ビュー切替スイッチのテーマカラー反映
+        const mode = window.galleryViewMode || 'calendar';
+        const calBtn = document.getElementById('viewModeCalBtn');
+        const gridBtn = document.getElementById('viewModeGridBtn');
+        
+        const container = calBtn ? calBtn.closest('.theme-toggle-container') : null;
+        if (container) {
+            container.className = `theme-toggle-container p-1 rounded-xl flex items-center gap-1 ${theme.bgLight || 'bg-rose-50'}`;
+        }
 
-            if (calBtn && gridBtn) {
-                // 選択中：選んだテーマの濃い背景 ＋ 強制的に白文字（!text-white）
-                const activeClass = `${theme.bgPrimary} !text-white font-semibold shadow-sm`;
-                
-                // 未選択：背景なし ＋ はっきりした濃い文字
-                const inactiveClass = 'text-stone-900 hover:text-black bg-transparent shadow-none font-medium';
+        if (calBtn && gridBtn) {
+            const activeClass = `${theme.bgPrimary} !text-white font-semibold shadow-sm`;
+            const inactiveClass = 'text-stone-900 hover:text-black bg-transparent shadow-none font-medium';
 
-                if (mode === 'calendar') {
-                    calBtn.className = `px-3.5 py-1.5 rounded-lg text-xs transition-all flex items-center gap-1 ${activeClass}`;
-                    gridBtn.className = `px-3.5 py-1.5 rounded-lg text-xs transition-all flex items-center gap-1 ${inactiveClass}`;
-                } else {
-                    gridBtn.className = `px-3.5 py-1.5 rounded-lg text-xs transition-all flex items-center gap-1 ${activeClass}`;
-                    calBtn.className = `px-3.5 py-1.5 rounded-lg text-xs transition-all flex items-center gap-1 ${inactiveClass}`;
-                }
+            if (mode === 'calendar') {
+                calBtn.className = `px-3.5 py-1.5 rounded-lg text-xs transition-all flex items-center gap-1 ${activeClass}`;
+                gridBtn.className = `px-3.5 py-1.5 rounded-lg text-xs transition-all flex items-center gap-1 ${inactiveClass}`;
+            } else {
+                gridBtn.className = `px-3.5 py-1.5 rounded-lg text-xs transition-all flex items-center gap-1 ${activeClass}`;
+                calBtn.className = `px-3.5 py-1.5 rounded-lg text-xs transition-all flex items-center gap-1 ${inactiveClass}`;
             }
         }
-        window.applySiteConfig = applySiteConfig;
+    } // ← ここで applySiteConfig が正しく閉じるようにする
+    window.applySiteConfig = applySiteConfig;
 
         // 3. フィルターボタン描画関数
         function renderWeatherFilterButtons() {
