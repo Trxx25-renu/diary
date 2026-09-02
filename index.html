@@ -318,90 +318,124 @@
     }
 });
 
-  // 🌟 アプリ全体の画面切り替え ＆ パンくず更新を行うルーター関数
+  // 🌟 日記アプリ専用：画面切り替え ＆ パンくず・アクション更新を行うルーター関数
 function navigateTo(view, param = null) {
-    const viewFolders = document.getElementById('view-folders');
-    const viewList = document.getElementById('view-list');
-    const viewDetail = document.getElementById('view-detail');
+    // 日記アプリ用のHTMLのIDを取得
+    const viewMonths = document.getElementById('view-months');     // 第1階層：月別アルバム
+    const viewGallery = document.getElementById('view-gallery');   // 第2階層：カレンダー・ギャラリー
+    const viewDetail = document.getElementById('view-detail');     // 詳細画面（もしあれば）
     const breadcrumbs = document.getElementById('breadcrumbs');
     const breadcrumbAction = document.getElementById('breadcrumbAction');
 
-    if (viewFolders) viewFolders.classList.add('hidden');
-    if (viewList) viewList.classList.add('hidden');
+    // すべてのビューを一度非表示にする
+    if (viewMonths) viewMonths.classList.add('hidden');
+    if (viewGallery) viewGallery.classList.add('hidden');
     if (viewDetail) viewDetail.classList.add('hidden');
 
-    // 安全のため、配列が未定義でもエラーにならないようにするフォールバック
-    const systems = window.systems || [];
-    const characters = window.characters || [];
-
-    if (view === 'folders') {
-        if (viewFolders) viewFolders.classList.remove('hidden');
+    // 1. 第1階層：月別アルバム一覧画面
+    if (view === 'months') {
+        if (viewMonths) viewMonths.classList.remove('hidden');
+        
+        // パンくずの更新
         if (breadcrumbs) {
-            breadcrumbs.innerHTML = `<span class="text-stone-700 font-medium flex items-center gap-1"><i class="fa-solid fa-house text-[10px]"></i> システム一覧</span>`;
+            breadcrumbs.innerHTML = `
+                <span class="text-stone-700 font-medium flex items-center gap-1">
+                    <i class="fa-solid fa-book-open text-[10px]"></i> 月別アルバム
+                </span>
+            `;
         }
-        // ▼ ここ：システム一覧（トップ）にいるときは「日記へ」ボタンを表示する
+        
+        // 右上のアクションボタン（例: キャラクター一覧へ戻る等）
         if (breadcrumbAction) {
             breadcrumbAction.innerHTML = `
-                <a href="index.html" class="flex items-center gap-1.5 text-xs text-stone-600 hover:text-stone-900 bg-stone-100 hover:bg-stone-200/70 px-3 py-1.5 rounded-xl transition-all">
-                    <i class="fa-solid fa-book-open text-[10px]"></i>
-                    <span>日記へ</span>
+                <a href="characters.html" class="flex items-center gap-1.5 text-xs text-stone-600 hover:text-stone-900 bg-stone-100 hover:bg-stone-200/70 px-3 py-1.5 rounded-xl transition-all">
+                    <i class="fa-solid fa-users text-[11px] text-stone-500"></i>
+                    <span>キャラクター一覧へ</span>
                 </a>
             `;
         }
-        const searchInput = document.getElementById('folderSearchInput');
-        if (searchInput) searchInput.value = '';
-        if (typeof renderSystemFolders === 'function') renderSystemFolders();
 
-    } else if (view === 'characterList') {
-        if (viewList) viewList.classList.remove('hidden');
-        const sys = systems.find(s => s.id === param);
-        const sysName = sys ? sys.name : 'キャラクター一覧';
+        // 検索窓のクリアなど
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) searchInput.value = '';
+
+        // 月一覧の描画関数を実行
+        if (typeof renderMonthFolders === 'function') {
+            renderMonthFolders();
+        }
+
+    } 
+    // 2. 第2階層：カレンダー・ギャラリー画面
+    else if (view === 'gallery') {
+        if (viewGallery) viewGallery.classList.remove('hidden');
+
+        // パラメータ（年月: '2026-03'など）を保存
+        if (param) {
+            window.selectedYearMonth = param;
+        }
+
+        // 年月を「2026年3月」のような表示形式に分解・整形する
+        let yearMonthText = 'アルバム';
+        if (window.selectedYearMonth) {
+            const parts = window.selectedYearMonth.split('-');
+            if (parts.length === 2) {
+                yearMonthText = `${parts[0]}年${parseInt(parts[1], 10)}月`;
+            }
+        }
+
+        // パンくずの更新
         if (breadcrumbs) {
             breadcrumbs.innerHTML = `
-                <a href="javascript:void(0)" onclick="navigateTo('folders')" class="hover:text-stone-900 transition-colors flex items-center gap-1"><i class="fa-solid fa-house text-[10px]"></i> システム一覧</a>
+                <a href="javascript:void(0)" onclick="navigateTo('months')" class="hover:text-stone-900 transition-colors flex items-center gap-1">
+                    <i class="fa-solid fa-book-open text-[10px]"></i> 月別アルバム
+                </a>
                 <span class="text-stone-300">/</span>
-                <span class="text-stone-700 font-medium">${sysName}</span>
+                <span class="text-stone-700 font-medium">${yearMonthText}</span>
             `;
         }
-        // ▼ ここ：キャラクター一覧にいるときは「システム一覧へ戻る」ボタンを表示する
-        if (breadcrumbAction) {
-            breadcrumbAction.innerHTML = `
-                <button onclick="navigateTo('folders')" class="flex items-center gap-1.5 text-xs text-stone-600 hover:text-stone-900 bg-stone-100 hover:bg-stone-200/70 px-3 py-1.5 rounded-xl transition-all">
-                    <i class="fa-solid fa-house text-[10px]"></i>
-                    <span>システム一覧へ</span>
-                </button>
-            `;
-        }
-        const searchInput = document.getElementById('characterSearchInput');
-        if (searchInput) searchInput.value = '';
-        if (typeof renderCharacterList === 'function') renderCharacterList(param);
 
-    } else if (view === 'detail') {
-        if (viewDetail) viewDetail.classList.remove('hidden');
-        const ch = characters.find(c => c.id === param);
-        const charName = ch ? ch.name : 'キャラクター詳細';
-        const targetSystemId = ch ? ch.systemId : window.selectedSystemId;
-        const sys = systems.find(s => s.id === targetSystemId);
-        
-        if (breadcrumbs) {
-            breadcrumbs.innerHTML = `
-                <a href="javascript:void(0)" onclick="navigateTo('folders')" class="hover:text-stone-900 transition-colors flex items-center gap-1"><i class="fa-solid fa-house text-[10px]"></i> システム一覧</a>
-                <span class="text-stone-300">/</span>
-                <a href="javascript:void(0)" onclick="navigateTo('characterList', '${targetSystemId}')" class="hover:text-stone-900 transition-colors">${sys?.name || '一覧'}</a>
-                <span class="text-stone-300">/</span>
-                <span class="text-stone-700 font-medium">${charName}</span>
-            `;
-        }
-        // ▼ ここ：詳細画面にいるときは「キャラクター一覧へ戻る」ボタンを表示する
+        // 右上のアクションボタン（月一覧に戻るボタン）
         if (breadcrumbAction) {
             breadcrumbAction.innerHTML = `
-                <button onclick="navigateTo('characterList', '${targetSystemId}')" class="flex items-center gap-1.5 text-xs text-stone-600 hover:text-stone-900 bg-stone-100 hover:bg-stone-200/70 px-3 py-1.5 rounded-xl transition-all">
+                <button onclick="navigateTo('months')" class="flex items-center gap-1.5 text-xs text-stone-600 hover:text-stone-900 bg-stone-100 hover:bg-stone-200/70 px-3 py-1.5 rounded-xl transition-all">
                     <i class="fa-solid fa-arrow-left text-[10px]"></i>
-                    <span>キャラクター一覧へ</span>
+                    <span>月一覧に戻る</span>
                 </button>
             `;
         }
-        if (typeof renderCharacterDetail === 'function') renderCharacterDetail(param);
+
+        // ギャラリー（カレンダー/一覧）の描画関数を実行
+        if (typeof renderGalleryView === 'function') {
+            renderGalleryView();
+        }
+
+    } 
+    // 3. 詳細画面（もし日記の詳細表示などがある場合）
+    else if (view === 'detail') {
+        if (viewDetail) viewDetail.classList.remove('hidden');
+
+        if (breadcrumbs) {
+            breadcrumbs.innerHTML = `
+                <a href="javascript:void(0)" onclick="navigateTo('months')" class="hover:text-stone-900 transition-colors flex items-center gap-1">
+                    <i class="fa-solid fa-book-open text-[10px]"></i> 月別アルバム
+                </a>
+                <span class="text-stone-300">/</span>
+                <span class="text-stone-700 font-medium">詳細</span>
+            `;
+        }
+
+        if (breadcrumbAction) {
+            breadcrumbAction.innerHTML = `
+                <button onclick="navigateTo('gallery', window.selectedYearMonth)" class="flex items-center gap-1.5 text-xs text-stone-600 hover:text-stone-900 bg-stone-100 hover:bg-stone-200/70 px-3 py-1.5 rounded-xl transition-all">
+                    <i class="fa-solid fa-arrow-left text-[10px]"></i>
+                    <span>ギャラリーへ戻る</span>
+                </button>
+            `;
+        }
+
+        if (typeof renderEntryDetail === 'function' && param) {
+            renderEntryDetail(param);
+        }
     }
 }
 window.navigateTo = navigateTo;
