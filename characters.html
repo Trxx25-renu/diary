@@ -26,12 +26,57 @@
         input[type="text"], input[type="number"], input[type="password"], input[type="color"], select, textarea {
             font-size: 16px !important;
         }
+
+        /* 🔒 ネタバレ（目隠し）用のスタイル */
+        .spoiler-text {
+            background-color: #333;
+            color: #333;
+            cursor: pointer;
+            border-radius: 4px;
+            padding: 0 4px;
+            user-select: none;
+            transition: background-color 0.2s, color 0.2s;
+        }
+        .spoiler-text:hover {
+            background-color: #555;
+        }
+        .spoiler-text.revealed {
+            background-color: #f3f4f6;
+            color: #1f2937;
+            user-select: text;
+        }
     </style>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, getDocs, doc, getDoc, setDoc, addDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // HTMLエスケープ処理
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&'`<>""]/g, function(match) {
+                return {
+                    '&': '&amp;',
+                    "'": '&#x27;',
+                    '`': '&#x60;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    '"': '&quot;',
+                }[match];
+            });
+        }
+        window.escapeHtml = escapeHtml;
+
+        // 🔒 ネタバレパーサー（||で囲まれた部分を目隠しにする。複数行対応）
+        function parseSpoilers(text) {
+            if (!text) return '';
+            const escaped = escapeHtml(text);
+            return escaped.replace(/\|\|([\s\S]*?)\|\|/g, (match, p1) => {
+                return `<span class="spoiler-text" onclick="this.classList.toggle('revealed')" title="タップでネタバレを表示">${p1}</span>`;
+            });
+        }
+        window.parseSpoilers = parseSpoilers;
 
         document.addEventListener("DOMContentLoaded", async () => {
             console.log("🚀 キャラクター管理ページ初期化開始...");
@@ -89,7 +134,7 @@
                 insane: {
                     status: [],
                     text: [
-                        { id: 'secret', label: '秘密' }
+                        { id: 'secret', label: '秘密 / 使命' }
                     ]
                 }
             };
@@ -388,13 +433,14 @@
 
             const textFields = sysFields.text || [];
             if (textFields.length > 0) {
-                customFieldsHtml += `<div class="space-y-2 mt-4 pt-4 border-t border-stone-100"><h4 class="text-xs font-bold text-stone-500">基本カスタム情報</h4>`;
+                customFieldsHtml += `<div class="space-y-2.5 mt-4 pt-4 border-t border-stone-100"><h4 class="text-xs font-bold text-stone-500">カスタム情報（ネタバレはクリックで表示）</h4>`;
                 textFields.forEach(f => {
-                    const val = ch.customValues && ch.customValues[f.id] !== undefined ? ch.customValues[f.id] : '-';
+                    const rawVal = ch.customValues && ch.customValues[f.id] !== undefined ? String(ch.customValues[f.id]) : '-';
+                    const parsedVal = parseSpoilers(rawVal);
                     customFieldsHtml += `
-                        <div class="flex justify-between text-xs">
-                            <span class="font-medium text-stone-400 w-32">${f.label}:</span>
-                            <span class="text-stone-800 font-bold">${val}</span>
+                        <div class="flex flex-col sm:flex-row sm:justify-between text-xs gap-1">
+                            <span class="font-medium text-stone-400 w-32 shrink-0">${f.label}:</span>
+                            <span class="text-stone-800 font-bold break-all">${parsedVal}</span>
                         </div>
                     `;
                 });
@@ -667,15 +713,15 @@
 
             if (sysConfig.text && sysConfig.text.length > 0) {
                 const textHeader = document.createElement('p');
-                textHeader.className = 'text-[11px] font-bold text-stone-500 mt-2';
-                textHeader.textContent = '【基本カスタム項目（テキスト）】';
+                textHeader.className = 'text-[11px] font-bold text-stone-500 mt-2 flex items-center justify-between';
+                textHeader.innerHTML = `<span>【基本カスタム情報（テキスト）】</span><span class="text-[10px] text-amber-700 font-normal">||ネタバレ|| で目隠し可</span>`;
                 container.appendChild(textHeader);
 
                 sysConfig.text.forEach(f => {
                     const div = document.createElement('div');
                     div.innerHTML = `
                         <label class="block text-xs font-bold text-stone-600 mb-1">${f.label}</label>
-                        <input type="text" name="custom_${f.id}" placeholder="入力..." class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-sm text-stone-800 focus:outline-none focus:border-stone-400">
+                        <input type="text" name="custom_${f.id}" placeholder="例：||ここに秘密や使命を書く||" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-sm text-stone-800 focus:outline-none focus:border-stone-400">
                     `;
                     container.appendChild(div);
                 });
@@ -967,7 +1013,6 @@
                     <span>Character Roster</span>
                 </h1>
             </div>
-            <!-- ご提示いただいた通りの並び順（サイト設定 ➔ 鍵 ➔ キャラを追加ボタン） -->
             <div class="flex items-center gap-3">
                 <button onclick="handleOpenSettingsModal()" class="bg-white hover:bg-stone-50 text-stone-700 text-xs font-bold px-3.5 py-2 rounded-full border border-stone-200 shadow-sm transition-all flex items-center gap-1.5">
                     <i class="fa-solid fa-gear text-stone-500"></i>
