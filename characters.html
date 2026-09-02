@@ -23,7 +23,7 @@
         .font-serif-title {
             font-family: 'Playfair Display', 'Noto Sans JP', serif;
         }
-        input[type="text"], input[type="number"], input[type="password"], select, textarea {
+        input[type="text"], input[type="number"], input[type="password"], input[type="color"], select, textarea {
             font-size: 16px !important;
         }
     </style>
@@ -67,6 +67,34 @@
                 { id: 'insane', name: 'インセイン', desc: 'マルチジャンルホラーRPG', badgeColor: 'bg-purple-900/80' }
             ];
 
+            // デフォルトのシステム別カスタム項目定義（B方式：ステータス・テキストに分類）
+            window.systemCustomFields = {
+                coc: {
+                    status: [
+                        { id: 'san', label: 'SAN (正気度)', max: 99 },
+                        { id: 'hp', label: 'HP', max: 12 }
+                    ],
+                    text: [
+                        { id: 'mythos', label: 'クトゥルフ神話技能' }
+                    ]
+                },
+                sw25: {
+                    status: [
+                        { id: 'hp', label: 'HP', max: 30 },
+                        { id: 'mp', label: 'MP', max: 30 }
+                    ],
+                    text: [
+                        { id: 'race', label: '種族' }
+                    ]
+                },
+                insane: {
+                    status: [],
+                    text: [
+                        { id: 'secret', label: '秘密' }
+                    ]
+                }
+            };
+
             try {
                 const configRef = doc(db, 'artifacts', window.appId, 'public', 'data', 'config', 'settings');
                 const configSnap = await getDoc(configRef);
@@ -80,6 +108,9 @@
                     const data = rosterSnap.data();
                     window.rosterSettings = data;
                     applyRosterSettings(data);
+                    if (data.customFields) {
+                        window.systemCustomFields = data.customFields;
+                    }
                 } else {
                     window.rosterSettings = { title: "キャラクター管理 | 卓日記", favicon: "" };
                 }
@@ -126,6 +157,7 @@
                 const matchesSystem = sys.name.toLowerCase().includes(keyword) || sys.desc.toLowerCase().includes(keyword);
                 const matchedChars = sysChars.filter(c => 
                     (c.name && c.name.toLowerCase().includes(keyword)) ||
+                    (c.epithet && c.epithet.toLowerCase().includes(keyword)) ||
                     (c.occupation && c.occupation.toLowerCase().includes(keyword))
                 );
 
@@ -187,9 +219,10 @@
             const filteredChars = systemChars.filter(c => {
                 if (!keyword) return true;
                 const nameMatch = c.name && c.name.toLowerCase().includes(keyword);
+                const epithetMatch = c.epithet && c.epithet.toLowerCase().includes(keyword);
                 const occMatch = c.occupation && c.occupation.toLowerCase().includes(keyword);
                 const ageMatch = c.age && String(c.age).includes(keyword);
-                return nameMatch || occMatch || ageMatch;
+                return nameMatch || epithetMatch || occMatch || ageMatch;
             });
 
             if (filteredChars.length === 0) {
@@ -204,19 +237,27 @@
 
             filteredChars.forEach(ch => {
                 const card = document.createElement('div');
-                card.className = 'bg-white rounded-2xl p-4 border border-stone-200/80 shadow-sm hover:shadow-md transition-all cursor-pointer flex flex-col gap-3';
+                card.className = 'bg-white rounded-2xl p-4 border border-stone-200/80 shadow-sm hover:shadow-md transition-all cursor-pointer flex flex-col gap-3 relative overflow-hidden';
                 card.onclick = () => navigateTo('detail', ch.id);
+
+                // カードの左端などにテーマカラーのアクセント線を入れるとスマート
+                const themeColor = ch.themeColor || '#78716c';
+                card.style.borderLeft = `4px solid ${themeColor}`;
 
                 let thumbHtml = `<div class="w-full h-full flex items-center justify-center text-stone-300 bg-stone-50"><i class="fa-solid fa-user text-3xl"></i></div>`;
                 if (ch.thumbnail) {
                     thumbHtml = `<img src="${ch.thumbnail}" class="w-full h-full object-cover">`;
                 }
 
+                // 二つ名があれば上に小さく表示
+                const epithetHtml = ch.epithet ? `<p class="text-[10px] font-bold text-stone-500 truncate" style="color: ${themeColor}">${ch.epithet}</p>` : '';
+
                 card.innerHTML = `
                     <div class="aspect-square w-full rounded-xl overflow-hidden relative border border-stone-100">
                         ${thumbHtml}
                     </div>
                     <div>
+                        ${epithetHtml}
                         <h4 class="font-bold text-sm text-stone-800 truncate">${ch.name}</h4>
                         <p class="text-xs text-stone-400 mt-0.5 truncate">${ch.age ? ch.age + '歳' : ''} ${ch.occupation || ''}</p>
                     </div>
@@ -307,6 +348,27 @@
         }
         window.navigateTo = navigateTo;
 
+        // カラーコードが明るすぎて見にくい場合の自動調整コントラスト判定関数
+        function getAdjustedColor(hexColor) {
+            if (!hexColor || !hexColor.startsWith('#')) return '#44403c';
+            let r = parseInt(hexColor.slice(1, 3), 16);
+            let g = parseInt(hexColor.slice(3, 5), 16);
+            let b = parseInt(hexColor.slice(5, 7), 16);
+            
+            // 輝度計算 (YIQ公式)
+            let yiq = (r * 299 + g * 587 + b * 114) / 1000;
+            
+            // もし白っぽすぎる（明るすぎる）場合は、少しトーンを落とした色に自動補正する
+            if (yiq > 200) {
+                // ちょい暗めにシフト
+                r = Math.floor(r * 0.7);
+                g = Math.floor(g * 0.7);
+                b = Math.floor(b * 0.7);
+                return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
+            }
+            return hexColor;
+        }
+
         function renderCharacterDetail(characterId) {
             const detailContainer = document.getElementById('view-detail');
             if (!detailContainer) return;
@@ -317,13 +379,72 @@
                 return;
             }
 
+            // テーマカラーの取得（自動調整適用）
+            const rawThemeColor = ch.themeColor || '#292524';
+            const themeColor = getAdjustedColor(rawThemeColor);
+
             let avatarHtml = `<div class="w-full h-64 sm:h-96 flex items-center justify-center text-stone-300 bg-stone-100 rounded-2xl"><i class="fa-solid fa-user text-5xl"></i></div>`;
             if (ch.avatar) {
                 avatarHtml = `<img src="${ch.avatar}" class="w-full h-auto max-h-[500px] object-contain rounded-2xl bg-stone-900/5">`;
             }
 
+            // 二つ名の描画（未入力なら非表示）
+            let epithetHtml = '';
+            if (ch.epithet && ch.epithet.trim() !== '') {
+                epithetHtml = `<p class="text-xs font-bold tracking-wider mb-1" style="color: ${themeColor}">${ch.epithet}</p>`;
+            }
+
+            // カスタム項目の描画（ステータス ＆ テキスト）
+            const sysFields = window.systemCustomFields[ch.systemId] || { status: [], text: [] };
+            let customFieldsHtml = '';
+
+            // 1. テキスト項目
+            const textFields = sysFields.text || [];
+            if (textFields.length > 0) {
+                customFieldsHtml += `<div class="space-y-2 mt-4 pt-4 border-t border-stone-100"><h4 class="text-xs font-bold text-stone-500">基本カスタム情報</h4>`;
+                textFields.forEach(f => {
+                    const val = ch.customValues && ch.customValues[f.id] !== undefined ? ch.customValues[f.id] : '-';
+                    customFieldsHtml += `
+                        <div class="flex justify-between text-xs">
+                            <span class="font-medium text-stone-400 w-32">${f.label}:</span>
+                            <span class="text-stone-800 font-bold">${val}</span>
+                        </div>
+                    `;
+                });
+                customFieldsHtml += `</div>`;
+            }
+
+            // 2. ステータス項目（棒グラフ）
+            const statusFields = sysFields.status || [];
+            if (statusFields.length > 0) {
+                customFieldsHtml += `<div class="space-y-3 mt-4 pt-4 border-t border-stone-100"><h4 class="text-xs font-bold text-stone-500">ステータス / ゲージ</h4>`;
+                statusFields.forEach(f => {
+                    const val = ch.customValues && ch.customValues[f.id] !== undefined ? ch.customValues[f.id] : '-';
+                    const numVal = Number(val) || 0;
+                    const maxVal = Number(f.max) || 100;
+                    const percentage = Math.min(Math.round((numVal / maxVal) * 100), 100);
+                    const isExceeded = numVal > maxVal;
+                    
+                    const barColor = isExceeded ? '#9333ea' : themeColor;
+                    const badgeText = isExceeded ? `<span class="text-[10px] text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded font-bold ml-1">上限突破!</span>` : '';
+
+                    customFieldsHtml += `
+                        <div>
+                            <div class="flex justify-between text-xs mb-1">
+                                <span class="font-medium text-stone-600">${f.label}</span>
+                                <span><strong class="text-stone-800">${val}</strong> / 最大 ${f.max} ${badgeText}</span>
+                            </div>
+                            <div class="w-full h-2.5 bg-stone-100 rounded-full overflow-hidden">
+                                <div class="h-full rounded-full transition-all duration-500" style="width: ${percentage}%; background-color: ${barColor};"></div>
+                            </div>
+                        </div>
+                    `;
+                });
+                customFieldsHtml += `</div>`;
+            }
+
             detailContainer.innerHTML = `
-                <div class="bg-white rounded-3xl p-6 border border-stone-200/80 shadow-sm space-y-6">
+                <div class="bg-white rounded-3xl p-6 border border-stone-200/80 shadow-sm space-y-6 relative overflow-hidden" style="border-top: 6px solid ${themeColor};">
                     <div class="flex flex-col md:flex-row gap-6">
                         <div class="w-full md:w-1/2">
                             ${avatarHtml}
@@ -331,15 +452,17 @@
                         <div class="w-full md:w-1/2 flex flex-col justify-between">
                             <div>
                                 <div class="flex items-center justify-between mb-2">
-                                    <span class="text-[10px] font-medium px-2.5 py-1 rounded-lg bg-stone-800 text-white">
+                                    <span class="text-[10px] font-medium px-2.5 py-1 rounded-lg text-white" style="background-color: ${themeColor}">
                                         ${window.systems.find(s => s.id === ch.systemId)?.name || 'システム'}
                                     </span>
                                 </div>
-                                <h2 class="text-2xl font-bold text-stone-800 mb-4">${ch.name}</h2>
-                                <div class="space-y-2 text-xs text-stone-600 border-t border-stone-100 pt-4">
-                                    <p><strong class="text-stone-400 w-20 inline-block">年齢:</strong> ${ch.age ? ch.age + '歳' : '未設定'}</p>
-                                    <p><strong class="text-stone-400 w-20 inline-block">職業/クラス:</strong> ${ch.occupation || '未設定'}</p>
+                                ${epithetHtml}
+                                <h2 class="text-2xl font-bold text-stone-800 mb-2">${ch.name}</h2>
+                                <div class="space-y-1.5 text-xs text-stone-600 border-t border-stone-100 pt-3">
+                                    <p><strong class="text-stone-400 w-24 inline-block">年齢:</strong> ${ch.age ? ch.age + '歳' : '未設定'}</p>
+                                    <p><strong class="text-stone-400 w-24 inline-block">職業 / クラス:</strong> ${ch.occupation || '未設定'}</p>
                                 </div>
+                                ${customFieldsHtml}
                             </div>
                             <div class="pt-6 mt-6 border-t border-stone-100 flex items-center justify-between">
                                 <button onclick="navigateTo('characterList', '${ch.systemId}')" class="text-xs font-medium text-stone-600 hover:text-stone-900 bg-stone-100 hover:bg-stone-200 px-4 py-2 rounded-xl transition-all flex items-center gap-1.5">
@@ -425,6 +548,7 @@
         }
         window.handleAuthSubmit = handleAuthSubmit;
 
+        // 📝 キャラクター登録モーダルを開く ＆ 動的カスタム項目フォームの生成
         function handleOpenAddModal() {
             checkAdminPermission(() => {
                 const systemSelect = document.getElementById('charSystemSelect');
@@ -432,14 +556,65 @@
                     systemSelect.value = window.selectedSystemId;
                 }
                 document.getElementById('characterForm').reset();
+                document.getElementById('charThemeColor').value = '#292524'; // デフォルト色
                 window.currentThumbnailBase64 = "";
                 window.currentAvatarBase64 = "";
                 document.getElementById('thumbPreview').classList.add('hidden');
                 document.getElementById('avatarPreview').classList.add('hidden');
+                
+                updateDynamicFormFields();
                 document.getElementById('characterModal').classList.remove('hidden');
             });
         }
         window.handleOpenAddModal = handleOpenAddModal;
+
+        function handleSystemChangeInModal() {
+            updateDynamicFormFields();
+        }
+        window.handleSystemChangeInModal = handleSystemChangeInModal;
+
+        function updateDynamicFormFields() {
+            const systemId = document.getElementById('charSystemSelect').value;
+            const container = document.getElementById('dynamicCustomFieldsContainer');
+            if (!container) return;
+
+            container.innerHTML = '';
+            const sysConfig = window.systemCustomFields[systemId] || { status: [], text: [] };
+
+            // テキスト項目フォーム生成
+            if (sysConfig.text && sysConfig.text.length > 0) {
+                const textHeader = document.createElement('p');
+                textHeader.className = 'text-[11px] font-bold text-stone-500 mt-2';
+                textHeader.textContent = '【基本カスタム項目（テキスト）】';
+                container.appendChild(textHeader);
+
+                sysConfig.text.forEach(f => {
+                    const div = document.createElement('div');
+                    div.innerHTML = `
+                        <label class="block text-xs font-bold text-stone-600 mb-1">${f.label}</label>
+                        <input type="text" name="custom_${f.id}" placeholder="入力..." class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-sm text-stone-800 focus:outline-none focus:border-stone-400">
+                    `;
+                    container.appendChild(div);
+                });
+            }
+
+            // ステータス項目フォーム生成
+            if (sysConfig.status && sysConfig.status.length > 0) {
+                const statusHeader = document.createElement('p');
+                statusHeader.className = 'text-[11px] font-bold text-stone-500 mt-3';
+                statusHeader.textContent = '【ステータス項目（数値・グラフ）】';
+                container.appendChild(statusHeader);
+
+                sysConfig.status.forEach(f => {
+                    const div = document.createElement('div');
+                    div.innerHTML = `
+                        <label class="block text-xs font-bold text-stone-600 mb-1">${f.label} (上限: ${f.max})</label>
+                        <input type="number" name="custom_${f.id}" placeholder="例：50" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-sm text-stone-800 focus:outline-none focus:border-stone-400">
+                    `;
+                    container.appendChild(div);
+                });
+            }
+        }
 
         function closeCharacterModal() {
             document.getElementById('characterModal').classList.add('hidden');
@@ -447,6 +622,7 @@
         }
         window.closeCharacterModal = closeCharacterModal;
 
+        // ⚙️ サイト・カスタム項目設定モーダル（B方式：ステータスとテキストを分離して設定）
         function handleOpenSettingsModal() {
             checkAdminPermission(() => {
                 document.getElementById('settingTitleInput').value = window.rosterSettings?.title || "キャラクター管理 | 卓日記";
@@ -460,17 +636,97 @@
                     preview.classList.add('hidden');
                 }
 
+                renderSettingsFieldsEditor();
                 document.getElementById('settingsModal').classList.remove('hidden');
             });
         }
         window.handleOpenSettingsModal = handleOpenSettingsModal;
+
+        function renderSettingsFieldsEditor() {
+            const container = document.getElementById('settingsFieldsEditorContainer');
+            if (!container) return;
+            container.innerHTML = '';
+
+            window.systems.forEach(sys => {
+                const sysConfig = window.systemCustomFields[sys.id] || { status: [], text: [] };
+                
+                // テキスト項目エディタ
+                let textHtml = (sysConfig.text || []).map((f, idx) => `
+                    <div class="flex items-center gap-2 bg-stone-50 p-2 rounded-xl border border-stone-200 text-xs">
+                        <span class="text-[10px] text-stone-400 font-bold w-12">テキスト</span>
+                        <input type="text" value="${f.label}" data-sys="${sys.id}" data-cat="text" data-idx="${idx}" data-key="label" onchange="updateSettingFieldData(this)" placeholder="項目名" class="flex-1 bg-white border border-stone-200 rounded-lg px-2 py-1">
+                        <button type="button" onclick="removeSettingField('${sys.id}', 'text', ${idx})" class="text-rose-500 hover:text-rose-700 px-1.5"><i class="fa-solid fa-trash"></i></button>
+                    </div>
+                `).join('');
+
+                // ステータス項目エディタ
+                let statusHtml = (sysConfig.status || []).map((f, idx) => `
+                    <div class="flex items-center gap-2 bg-stone-50 p-2 rounded-xl border border-stone-200 text-xs">
+                        <span class="text-[10px] text-stone-400 font-bold w-12">ステータス</span>
+                        <input type="text" value="${f.label}" data-sys="${sys.id}" data-cat="status" data-idx="${idx}" data-key="label" onchange="updateSettingFieldData(this)" placeholder="項目名" class="flex-1 bg-white border border-stone-200 rounded-lg px-2 py-1">
+                        <input type="number" value="${f.max || 100}" data-sys="${sys.id}" data-cat="status" data-idx="${idx}" data-key="max" onchange="updateSettingFieldData(this)" placeholder="最大値" class="w-20 bg-white border border-stone-200 rounded-lg px-2 py-1" title="最大値">
+                        <button type="button" onclick="removeSettingField('${sys.id}', 'status', ${idx})" class="text-rose-500 hover:text-rose-700 px-1.5"><i class="fa-solid fa-trash"></i></button>
+                    </div>
+                `).join('');
+
+                const section = document.createElement('div');
+                section.className = 'border border-stone-200 p-3 rounded-2xl space-y-3';
+                section.innerHTML = `
+                    <div class="flex items-center justify-between border-b border-stone-100 pb-2">
+                        <span class="font-bold text-xs text-stone-800">${sys.name}</span>
+                        <div class="flex gap-1.5">
+                            <button type="button" onclick="addSettingField('${sys.id}', 'text')" class="text-[10px] bg-stone-100 hover:bg-stone-200 px-2 py-1 rounded-lg text-stone-700 font-medium">+ テキスト追加</button>
+                            <button type="button" onclick="addSettingField('${sys.id}', 'status')" class="text-[10px] bg-stone-800 hover:bg-stone-700 px-2 py-1 rounded-lg text-white font-medium">+ ステータス追加</button>
+                        </div>
+                    </div>
+                    <div class="space-y-2">
+                        ${textHtml}
+                        ${statusHtml}
+                        ${(!sysConfig.text?.length && !sysConfig.status?.length) ? '<p class="text-[11px] text-stone-400 text-center py-1">カスタム項目はありません</p>' : ''}
+                    </div>
+                `;
+                container.appendChild(section);
+            });
+        }
+        window.renderSettingsFieldsEditor = renderSettingsFieldsEditor;
+
+        function addSettingField(sysId, category) {
+            if (!window.systemCustomFields[sysId]) window.systemCustomFields[sysId] = { status: [], text: [] };
+            if (!window.systemCustomFields[sysId][category]) window.systemCustomFields[sysId][category] = [];
+            
+            const newId = 'field_' + Date.now();
+            if (category === 'text') {
+                window.systemCustomFields[sysId].text.push({ id: newId, label: '新規項目' });
+            } else {
+                window.systemCustomFields[sysId].status.push({ id: newId, label: '新規ステータス', max: 99 });
+            }
+            renderSettingsFieldsEditor();
+        }
+        window.addSettingField = addSettingField;
+
+        function removeSettingField(sysId, category, idx) {
+            window.systemCustomFields[sysId][category].splice(idx, 1);
+            renderSettingsFieldsEditor();
+        }
+        window.removeSettingField = removeSettingField;
+
+        function updateSettingFieldData(element) {
+            const sysId = element.dataset.sys;
+            const category = element.dataset.cat;
+            const idx = element.dataset.idx;
+            const key = element.dataset.key;
+            let val = element.value;
+            if (key === 'max') val = val ? Number(val) : 100;
+            window.systemCustomFields[sysId][category][idx][key] = val;
+        }
+        window.updateSettingFieldData = updateSettingFieldData;
 
         function closeSettingsModal() {
             document.getElementById('settingsModal').classList.add('hidden');
         }
         window.closeSettingsModal = closeSettingsModal;
 
-        // 🖼️ 汎用：高解像度画像自動圧縮関数
+        // 🖼️ 圧縮関数
         function compressImageFile(file, maxDimension, quality, callback) {
             if (!file) return;
             const reader = new FileReader();
@@ -550,18 +806,33 @@
             event.preventDefault();
             const systemId = document.getElementById('charSystemSelect').value;
             const name = document.getElementById('charName').value.trim();
+            const epithet = document.getElementById('charEpithet').value.trim();
             const age = document.getElementById('charAge').value;
             const occupation = document.getElementById('charOccupation').value.trim();
+            const themeColor = document.getElementById('charThemeColor').value;
             
             const thumbnail = window.currentThumbnailBase64 || "";
             const avatar = window.currentAvatarBase64 || "";
 
+            // 動的カスタム項目の値収集（テキスト・ステータス両方）
+            const customValues = {};
+            const sysConfig = window.systemCustomFields[systemId] || { status: [], text: [] };
+            
+            [...(sysConfig.text || []), ...(sysConfig.status || [])].forEach(f => {
+                const inputEl = document.querySelector(`[name="custom_${f.id}"]`);
+                if (inputEl) {
+                    const isStatus = (sysConfig.status || []).some(s => s.id === f.id);
+                    customValues[f.id] = isStatus ? (inputEl.value ? Number(inputEl.value) : '') : inputEl.value;
+                }
+            });
+
             if (!name) { alert("キャラクター名は必須です。"); return; }
 
             const newCharData = {
-                systemId, name,
+                systemId, name, epithet,
                 age: age ? Number(age) : '',
-                occupation, thumbnail, avatar,
+                occupation, themeColor, thumbnail, avatar,
+                customValues,
                 createdAt: new Date().toISOString()
             };
 
@@ -585,7 +856,11 @@
             const title = document.getElementById('settingTitleInput').value.trim();
             const favicon = window.currentFaviconBase64 || window.rosterSettings?.favicon || "";
 
-            const newSettings = { title, favicon };
+            const newSettings = { 
+                title, 
+                favicon, 
+                customFields: window.systemCustomFields 
+            };
 
             try {
                 const rosterConfigRef = doc(db, 'artifacts', window.appId, 'public', 'data', 'config', 'characterRosterSettings');
@@ -627,11 +902,9 @@
                 </h1>
             </div>
             <div class="flex items-center gap-2">
-                <!-- ギア（設定）ボタン -->
                 <button onclick="handleOpenSettingsModal()" class="w-8 h-8 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-600 flex items-center justify-center transition-all" title="サイト設定">
                     <i class="fa-solid fa-gear text-xs"></i>
                 </button>
-                <!-- カギ（ログイン・ログアウト）ボタン -->
                 <button id="headerKeyBtn" onclick="handleHeaderKeyClick()" class="w-8 h-8 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-600 flex items-center justify-center transition-all" title="管理者ログイン">
                     <i class="fa-solid fa-key text-xs"></i>
                 </button>
@@ -642,7 +915,7 @@
     <!-- メインコンテンツ -->
     <main class="max-w-4xl mx-auto w-full p-4 flex-1">
         
-        <!-- パンくずリスト ＆ 右側アクションボタン用の行 -->
+        <!-- パンくずリスト ＆ 右側アクション -->
         <div class="flex items-center justify-between gap-2 mb-6">
             <nav id="breadcrumbs" class="flex items-center gap-2 text-xs text-stone-400 overflow-x-auto whitespace-nowrap pb-1">
                 <span class="text-stone-700 font-medium flex items-center gap-1">
@@ -717,16 +990,23 @@
             <form id="characterForm" onsubmit="saveCharacter(event)" class="space-y-4">
                 <div>
                     <label class="block text-xs font-bold text-stone-600 mb-1">TRPGシステム</label>
-                    <select id="charSystemSelect" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-sm text-stone-800 focus:outline-none focus:border-stone-400">
+                    <select id="charSystemSelect" onchange="handleSystemChangeInModal()" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-sm text-stone-800 focus:outline-none focus:border-stone-400">
                         <option value="coc">クトゥルフ神話TRPG</option>
                         <option value="sw25">ソード・ワールド2.5</option>
                         <option value="insane">インセイン</option>
                     </select>
                 </div>
+                
+                <div>
+                    <label class="block text-xs font-bold text-stone-600 mb-1">二つ名（任意）</label>
+                    <input type="text" id="charEpithet" placeholder="例：紅蓮の探偵 / 狂気の求道者" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-sm text-stone-800 focus:outline-none focus:border-stone-400">
+                </div>
+
                 <div>
                     <label class="block text-xs font-bold text-stone-600 mb-1">キャラクター名 <span class="text-rose-500">*</span></label>
                     <input type="text" id="charName" required placeholder="例：探索者 太郎" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-sm text-stone-800 focus:outline-none focus:border-stone-400">
                 </div>
+
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs font-bold text-stone-600 mb-1">年齢</label>
@@ -738,9 +1018,20 @@
                     </div>
                 </div>
 
-                <!-- サムネイル画像（ファイル自動圧縮） -->
                 <div>
-                    <label class="block text-xs font-bold text-stone-600 mb-1">一覧用アイコン画像（ファイル選択 / 自動圧縮）</label>
+                    <label class="block text-xs font-bold text-stone-600 mb-1">イメージカラー</label>
+                    <div class="flex items-center gap-3">
+                        <input type="color" id="charThemeColor" value="#292524" class="w-12 h-10 rounded-xl bg-stone-50 border border-stone-200 cursor-pointer p-1">
+                        <span class="text-[11px] text-stone-400">詳細画面のテーマカラーやゲージの色に反映されます</span>
+                    </div>
+                </div>
+
+                <!-- 🔄 動的カスタム項目エリア（B方式） -->
+                <div id="dynamicCustomFieldsContainer" class="space-y-3 pt-2 border-t border-stone-100"></div>
+
+                <!-- サムネイル画像 -->
+                <div class="pt-2 border-t border-stone-100">
+                    <label class="block text-xs font-bold text-stone-600 mb-1">一覧用アイコン画像（自動圧縮）</label>
                     <input type="file" id="thumbFile" accept="image/*" onchange="handleThumbnailFileSelect(event)" class="w-full text-xs text-stone-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-stone-100 file:text-stone-700 hover:file:bg-stone-200 cursor-pointer">
                     <div class="mt-2 flex items-center gap-2">
                         <span class="text-[10px] text-stone-400">プレビュー:</span>
@@ -748,9 +1039,9 @@
                     </div>
                 </div>
 
-                <!-- 立ち絵画像（大サイズPNG対応・自動圧縮） -->
+                <!-- 立ち絵画像 -->
                 <div>
-                    <label class="block text-xs font-bold text-stone-600 mb-1">立ち絵画像（最大5MB超のPNGも自動圧縮）</label>
+                    <label class="block text-xs font-bold text-stone-600 mb-1">立ち絵画像（大サイズPNG対応）</label>
                     <input type="file" id="avatarFile" accept="image/*" onchange="handleAvatarFileSelect(event)" class="w-full text-xs text-stone-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-stone-100 file:text-stone-700 hover:file:bg-stone-200 cursor-pointer">
                     <div class="mt-2 flex items-center gap-2">
                         <span class="text-[10px] text-stone-400">プレビュー:</span>
@@ -766,13 +1057,13 @@
         </div>
     </div>
 
-    <!-- ⚙️ サイト設定モーダル -->
+    <!-- ⚙️ サイト＆カスタム項目設定モーダル -->
     <div id="settingsModal" class="hidden fixed inset-0 z-50 bg-stone-900/40 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-xl border border-stone-200">
+        <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-xl border border-stone-200 max-h-[90vh] overflow-y-auto">
             <div class="flex items-center justify-between mb-4 pb-2 border-b border-stone-100">
                 <h3 class="font-bold text-stone-800 text-sm flex items-center gap-2">
                     <i class="fa-solid fa-gear text-stone-600"></i>
-                    <span>キャラクター管理 サイト設定</span>
+                    <span>サイト＆システム項目設定</span>
                 </h3>
                 <button onclick="closeSettingsModal()" class="text-stone-400 hover:text-stone-700 p-1">
                     <i class="fa-solid fa-xmark text-lg"></i>
@@ -785,16 +1076,21 @@
                     <input type="text" id="settingTitleInput" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-sm text-stone-800 focus:outline-none focus:border-stone-400">
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-stone-600 mb-1">ファビコン画像（自動圧縮）</label>
-                    <div class="flex items-center gap-3">
-                        <input type="file" id="settingFaviconFile" accept="image/*" onchange="handleFaviconFileSelect(event)" class="w-full text-xs text-stone-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-stone-100 file:text-stone-700 hover:file:bg-stone-200 cursor-pointer">
-                    </div>
+                    <label class="block text-xs font-bold text-stone-600 mb-1">ファビコン画像</label>
+                    <input type="file" id="settingFaviconFile" accept="image/*" onchange="handleFaviconFileSelect(event)" class="w-full text-xs text-stone-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-stone-100 file:text-stone-700 hover:file:bg-stone-200 cursor-pointer">
                     <div class="mt-2 flex items-center gap-2">
-                        <span class="text-[10px] text-stone-400">現在のアイコンプレビュー:</span>
+                        <span class="text-[10px] text-stone-400">プレビュー:</span>
                         <img id="settingFaviconPreview" class="w-8 h-8 rounded-lg object-cover border border-stone-200 hidden">
                     </div>
                 </div>
-                <div class="pt-3 flex items-center justify-end gap-2">
+
+                <div class="pt-2 border-t border-stone-100">
+                    <h4 class="text-xs font-bold text-stone-700 mb-2">システム別 カスタム項目設定</h4>
+                    <p class="text-[11px] text-stone-400 mb-3">「テキスト（秘密や種族など）」と「ステータス（HP・SANなどグラフ用）」をそれぞれシステムごとに自由に追加・編集できます</p>
+                    <div id="settingsFieldsEditorContainer" class="space-y-3"></div>
+                </div>
+
+                <div class="pt-3 flex items-center justify-end gap-2 border-t border-stone-100">
                     <button type="button" onclick="closeSettingsModal()" class="px-4 py-2 rounded-xl text-xs font-medium text-stone-600 hover:bg-stone-100 transition-all">キャンセル</button>
                     <button type="submit" class="bg-stone-800 text-white px-5 py-2 rounded-xl text-xs font-medium shadow-sm hover:bg-stone-700 transition-all">設定を保存</button>
                 </div>
