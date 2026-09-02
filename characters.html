@@ -353,7 +353,7 @@
             `;
         }
 
-        // 🛡️ 権限チェック＆パスコードモーダル制御
+        // 🛡️ 権限チェック＆パスコード・ログアウト制御
         let pendingAction = null;
 
         function checkAdminPermission(callback) {
@@ -365,6 +365,20 @@
             }
         }
         window.checkAdminPermission = checkAdminPermission;
+
+        function handleHeaderKeyClick() {
+            if (window.isAdmin) {
+                if (confirm("管理者モードからログアウトしますか？")) {
+                    window.isAdmin = false;
+                    sessionStorage.removeItem('isAdminSession');
+                    updateAdminStateDisplay();
+                    alert("ログアウトしました。");
+                }
+            } else {
+                openAuthModal();
+            }
+        }
+        window.handleHeaderKeyClick = handleHeaderKeyClick;
 
         function openAuthModal() {
             const modal = document.getElementById('authModal');
@@ -417,7 +431,6 @@
                 if (systemSelect && window.selectedSystemId) {
                     systemSelect.value = window.selectedSystemId;
                 }
-                // 初期化
                 document.getElementById('characterForm').reset();
                 window.currentThumbnailBase64 = "";
                 window.currentAvatarBase64 = "";
@@ -457,7 +470,7 @@
         }
         window.closeSettingsModal = closeSettingsModal;
 
-        // 🖼️ 汎用：高解像度画像（3MB〜5MB超、2000x4000px等）を自動圧縮する関数
+        // 🖼️ 汎用：高解像度画像自動圧縮関数
         function compressImageFile(file, maxDimension, quality, callback) {
             if (!file) return;
             const reader = new FileReader();
@@ -468,7 +481,6 @@
                     let width = img.width;
                     let height = img.height;
 
-                    // 指定された最大解像度（長辺）に収まるよう自動縮小
                     if (width > height) {
                         if (width > maxDimension) {
                             height *= maxDimension / width;
@@ -486,7 +498,6 @@
                     const ctx = canvas.getContext('2d');
                     ctx.drawImage(img, 0, 0, width, height);
 
-                    // 容量オーバーしないよう、画質を保ちつつ軽量な WebP 形式に変換（対応していなければJPEG）
                     let dataUrl = canvas.toDataURL('image/webp', quality);
                     if (!dataUrl.startsWith('data:image/webp')) {
                         dataUrl = canvas.toDataURL('image/jpeg', quality);
@@ -499,7 +510,6 @@
             reader.readAsDataURL(file);
         }
 
-        // ファビコン画像ファイル選択 (最大64px)
         function handleFaviconFileSelect(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -512,7 +522,6 @@
         }
         window.handleFaviconFileSelect = handleFaviconFileSelect;
 
-        // キャラクターサムネイル画像選択 (正方形・最大400px)
         function handleThumbnailFileSelect(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -525,11 +534,9 @@
         }
         window.handleThumbnailFileSelect = handleThumbnailFileSelect;
 
-        // キャラクター立ち絵画像選択 (大サイズ・最大1200pxで自動圧縮)
         function handleAvatarFileSelect(event) {
             const file = event.target.files[0];
             if (!file) return;
-            // 3MB〜5MB以上の高解像度PNGでも、最大1200px・品質0.75に圧縮すれば安全に数拾KB〜200KB以内に収まります
             compressImageFile(file, 1200, 0.75, (resultUrl) => {
                 window.currentAvatarBase64 = resultUrl;
                 const preview = document.getElementById('avatarPreview');
@@ -546,9 +553,8 @@
             const age = document.getElementById('charAge').value;
             const occupation = document.getElementById('charOccupation').value.trim();
             
-            // アップロードされた圧縮画像データ、または手入力されたURLを使用
-            const thumbnail = window.currentThumbnailBase64 || document.getElementById('charThumbnailUrlInput')?.value.trim() || "";
-            const avatar = window.currentAvatarBase64 || document.getElementById('charAvatarUrlInput')?.value.trim() || "";
+            const thumbnail = window.currentThumbnailBase64 || "";
+            const avatar = window.currentAvatarBase64 || "";
 
             if (!name) { alert("キャラクター名は必須です。"); return; }
 
@@ -597,8 +603,15 @@
         window.saveRosterSettings = saveRosterSettings;
 
         function updateAdminStateDisplay() {
-            const badge = document.getElementById('adminStateBadge');
-            if (badge && window.isAdmin) badge.classList.remove('hidden');
+            const keyBtn = document.getElementById('headerKeyBtn');
+            if (!keyBtn) return;
+            if (window.isAdmin) {
+                keyBtn.className = "w-8 h-8 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 flex items-center justify-center transition-all";
+                keyBtn.title = "管理者モード（クリックでログアウト）";
+            } else {
+                keyBtn.className = "w-8 h-8 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-600 flex items-center justify-center transition-all";
+                keyBtn.title = "管理者ログイン";
+            }
         }
     </script>
 </head>
@@ -614,11 +627,13 @@
                 </h1>
             </div>
             <div class="flex items-center gap-2">
-                <span id="adminStateBadge" class="hidden text-[10px] font-medium bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-md">
-                    管理者モード
-                </span>
+                <!-- ギア（設定）ボタン -->
                 <button onclick="handleOpenSettingsModal()" class="w-8 h-8 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-600 flex items-center justify-center transition-all" title="サイト設定">
                     <i class="fa-solid fa-gear text-xs"></i>
+                </button>
+                <!-- カギ（ログイン・ログアウト）ボタン -->
+                <button id="headerKeyBtn" onclick="handleHeaderKeyClick()" class="w-8 h-8 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-600 flex items-center justify-center transition-all" title="管理者ログイン">
+                    <i class="fa-solid fa-key text-xs"></i>
                 </button>
             </div>
         </div>
@@ -735,7 +750,7 @@
 
                 <!-- 立ち絵画像（大サイズPNG対応・自動圧縮） -->
                 <div>
-                    <label class="block text-xs font-bold text-stone-600 mb-1">立ち絵画像（3MB〜5MB超のPNGも自動で安全に軽量化）</label>
+                    <label class="block text-xs font-bold text-stone-600 mb-1">立ち絵画像（最大5MB超のPNGも自動圧縮）</label>
                     <input type="file" id="avatarFile" accept="image/*" onchange="handleAvatarFileSelect(event)" class="w-full text-xs text-stone-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-stone-100 file:text-stone-700 hover:file:bg-stone-200 cursor-pointer">
                     <div class="mt-2 flex items-center gap-2">
                         <span class="text-[10px] text-stone-400">プレビュー:</span>
