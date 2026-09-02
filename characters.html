@@ -23,7 +23,7 @@
         .font-serif-title {
             font-family: 'Playfair Display', 'Noto Sans JP', serif;
         }
-        input[type="text"], input[type="number"], select, textarea {
+        input[type="text"], input[type="number"], input[type="password"], select, textarea {
             font-size: 16px !important;
         }
     </style>
@@ -61,14 +61,12 @@
 
             await signInAnonymously(auth);
 
-            // システム一覧データ
             window.systems = [
                 { id: 'coc', name: 'クトゥルフ神話TRPG', desc: 'CoC 6版 / 7版', badgeColor: 'bg-amber-900/80' },
                 { id: 'sw25', name: 'ソード・ワールド2.5', desc: 'SW2.5 ルールブック', badgeColor: 'bg-emerald-800/80' },
                 { id: 'insane', name: 'インセイン', desc: 'マルチジャンルホラーRPG', badgeColor: 'bg-purple-900/80' }
             ];
 
-            // 設定の取得
             try {
                 const configRef = doc(db, 'artifacts', window.appId, 'public', 'data', 'config', 'settings');
                 const configSnap = await getDoc(configRef);
@@ -92,7 +90,6 @@
             updateAdminStateDisplay();
         });
 
-        // 🎨 サイト設定適用
         function applyRosterSettings(settings) {
             if (settings.title) {
                 document.getElementById('pageTitle').textContent = settings.title;
@@ -102,7 +99,6 @@
             }
         }
 
-        // 📥 Firestoreからキャラクター読み込み
         async function loadCharactersFromFirestore() {
             try {
                 const charsRef = collection(db, 'artifacts', window.appId, 'public', 'data', 'characters');
@@ -118,7 +114,6 @@
             }
         }
 
-        // 🌟 1階層目：システムフォルダ一覧（＋検索対応）
         function renderSystemFolders(filterKeyword = "") {
             const container = document.getElementById('systemFoldersContainer');
             if (!container) return;
@@ -176,7 +171,6 @@
         }
         window.handleFolderSearchInput = handleFolderSearchInput;
 
-        // 🌟 2階層目：キャラクター一覧
         function renderCharacterList(systemId, filterKeyword = "") {
             window.selectedSystemId = systemId;
             const sys = window.systems.find(s => s.id === systemId);
@@ -237,7 +231,6 @@
         }
         window.handleCharacterSearchInput = handleCharacterSearchInput;
 
-        // 🔀 ルーター関数
         function navigateTo(view, param = null) {
             const viewFolders = document.getElementById('view-folders');
             const viewList = document.getElementById('view-list');
@@ -288,7 +281,6 @@
         }
         window.navigateTo = navigateTo;
 
-        // 🌟 3階層目：キャラクター詳細
         function renderCharacterDetail(characterId) {
             const detailContainer = document.getElementById('view-detail');
             if (!detailContainer) return;
@@ -335,14 +327,73 @@
             `;
         }
 
-        // 🛡️ モーダル操作・認証
-        function handleOpenAddModal() {
-            if (!checkAdminPermission()) return;
-            const systemSelect = document.getElementById('charSystemSelect');
-            if (systemSelect && window.selectedSystemId) {
-                systemSelect.value = window.selectedSystemId;
+        // 🛡️ 権限チェック＆パスコードモーダル制御
+        let pendingAction = null;
+
+        function checkAdminPermission(callback) {
+            if (window.isAdmin) {
+                callback();
+            } else {
+                pendingAction = callback;
+                openAuthModal();
             }
-            document.getElementById('characterModal').classList.remove('hidden');
+        }
+        window.checkAdminPermission = checkAdminPermission;
+
+        function openAuthModal() {
+            const modal = document.getElementById('authModal');
+            const input = document.getElementById('inputPasscode');
+            const errorMsg = document.getElementById('authErrorMsg');
+            if (input) input.value = '';
+            if (errorMsg) errorMsg.classList.add('hidden');
+            if (modal) {
+                modal.classList.remove('opacity-0', 'pointer-events-none');
+                modal.querySelector('div > div').classList.remove('scale-95');
+                if (input) input.focus();
+            }
+        }
+        window.openAuthModal = openAuthModal;
+
+        function closeAuthModal() {
+            const modal = document.getElementById('authModal');
+            if (modal) {
+                modal.classList.add('opacity-0', 'pointer-events-none');
+                modal.querySelector('div > div').classList.add('scale-95');
+            }
+            pendingAction = null;
+        }
+        window.closeAuthModal = closeAuthModal;
+
+        function handleAuthSubmit(event) {
+            event.preventDefault();
+            const inputCode = document.getElementById('inputPasscode').value;
+            const errorMsg = document.getElementById('authErrorMsg');
+
+            if (inputCode === window.storedPasscode) {
+                window.isAdmin = true;
+                sessionStorage.setItem('isAdminSession', 'true');
+                updateAdminStateDisplay();
+                closeAuthModal();
+                
+                if (pendingAction) {
+                    pendingAction();
+                    pendingAction = null;
+                }
+            } else {
+                if (errorMsg) errorMsg.classList.remove('hidden');
+            }
+        }
+        window.handleAuthSubmit = handleAuthSubmit;
+
+        // モーダルを開くトリガー
+        function handleOpenAddModal() {
+            checkAdminPermission(() => {
+                const systemSelect = document.getElementById('charSystemSelect');
+                if (systemSelect && window.selectedSystemId) {
+                    systemSelect.value = window.selectedSystemId;
+                }
+                document.getElementById('characterModal').classList.remove('hidden');
+            });
         }
         window.handleOpenAddModal = handleOpenAddModal;
 
@@ -353,20 +404,20 @@
         window.closeCharacterModal = closeCharacterModal;
 
         function handleOpenSettingsModal() {
-            if (!checkAdminPermission()) return;
-            document.getElementById('settingTitleInput').value = window.rosterSettings?.title || "キャラクター管理 | 卓日記";
-            
-            // プレビュー用画像を設定
-            const preview = document.getElementById('settingFaviconPreview');
-            window.currentFaviconBase64 = window.rosterSettings?.favicon || "";
-            if (window.currentFaviconBase64) {
-                preview.src = window.currentFaviconBase64;
-                preview.classList.remove('hidden');
-            } else {
-                preview.classList.add('hidden');
-            }
+            checkAdminPermission(() => {
+                document.getElementById('settingTitleInput').value = window.rosterSettings?.title || "キャラクター管理 | 卓日記";
+                
+                const preview = document.getElementById('settingFaviconPreview');
+                window.currentFaviconBase64 = window.rosterSettings?.favicon || "";
+                if (window.currentFaviconBase64) {
+                    preview.src = window.currentFaviconBase64;
+                    preview.classList.remove('hidden');
+                } else {
+                    preview.classList.add('hidden');
+                }
 
-            document.getElementById('settingsModal').classList.remove('hidden');
+                document.getElementById('settingsModal').classList.remove('hidden');
+            });
         }
         window.handleOpenSettingsModal = handleOpenSettingsModal;
 
@@ -375,26 +426,6 @@
         }
         window.closeSettingsModal = closeSettingsModal;
 
-        function checkAdminPermission() {
-            if (!window.isAdmin) {
-                const inputCode = prompt("編集者用パスコードを入力してください：");
-                if (inputCode && inputCode === window.storedPasscode) {
-                    window.isAdmin = true;
-                    sessionStorage.setItem('isAdminSession', 'true');
-                    updateAdminStateDisplay();
-                    alert("管理者認証に成功しました！");
-                    return true;
-                } else if (inputCode !== null) {
-                    alert("パスコードが違います。");
-                    return false;
-                } else {
-                    return false;
-                }
-            }
-            return true;
-        }
-
-        // 🖼️ ファビコンファイル選択時のBase64変換処理
         function handleFaviconFileSelect(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -410,7 +441,6 @@
         }
         window.handleFaviconFileSelect = handleFaviconFileSelect;
 
-        // 💾 キャラクター保存
         async function saveCharacter(event) {
             event.preventDefault();
             const systemId = document.getElementById('charSystemSelect').value;
@@ -444,7 +474,6 @@
         }
         window.saveCharacter = saveCharacter;
 
-        // 💾 サイト設定保存
         async function saveRosterSettings(event) {
             event.preventDefault();
             const title = document.getElementById('settingTitleInput').value.trim();
@@ -635,6 +664,30 @@
                 <div class="pt-3 flex items-center justify-end gap-2">
                     <button type="button" onclick="closeSettingsModal()" class="px-4 py-2 rounded-xl text-xs font-medium text-stone-600 hover:bg-stone-100 transition-all">キャンセル</button>
                     <button type="submit" class="bg-stone-800 text-white px-5 py-2 rounded-xl text-xs font-medium shadow-sm hover:bg-stone-700 transition-all">設定を保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 🔑 【追加】パスコード入力モーダル -->
+    <div id="authModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/40 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-200">
+        <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-xl border border-stone-200 scale-95 transition-transform duration-200 flex flex-col gap-4">
+            <div class="text-center">
+                <div class="w-12 h-12 rounded-2xl bg-stone-50 text-stone-600 flex items-center justify-center mx-auto text-xl mb-2">
+                    <i class="fa-solid fa-key"></i>
+                </div>
+                <h3 class="text-base font-bold text-stone-800">管理者ログイン</h3>
+                <p class="text-xs text-stone-500 mt-1">キャラクターの追加や設定変更を行うにはパスコードを入力してください。</p>
+            </div>
+
+            <form onsubmit="handleAuthSubmit(event)" class="flex flex-col gap-3">
+                <div>
+                    <input type="password" id="inputPasscode" placeholder="パスコードを入力" required class="w-full px-4 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-center text-sm focus:outline-none focus:ring-2 focus:ring-stone-500/20 focus:border-stone-500 transition-all">
+                    <p id="authErrorMsg" class="hidden text-[11px] text-rose-500 text-center mt-1">パスコードが違います。</p>
+                </div>
+                <div class="flex items-center gap-2 mt-2">
+                    <button type="button" onclick="closeAuthModal()" class="flex-1 py-2 text-xs font-medium text-stone-600 bg-stone-100 hover:bg-stone-200 rounded-xl transition-colors">キャンセル</button>
+                    <button type="submit" class="flex-1 py-2 text-xs font-medium text-white bg-stone-700 hover:bg-stone-800 rounded-xl transition-colors shadow-sm">認証する</button>
                 </div>
             </form>
         </div>
