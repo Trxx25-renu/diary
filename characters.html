@@ -362,7 +362,7 @@ const epithetHtml = ch.epithet
         return;
     }
 
-    // フォーム要素へ値をセット
+   // フォーム要素へ値をセット
     const nameInput = document.getElementById('charName');
     const nameKanaInput = document.getElementById('charNameKana');
     const epithetInput = document.getElementById('charEpithet');
@@ -372,6 +372,7 @@ const epithetHtml = ch.epithet
     const birthdateInput = document.getElementById('charBirthdate');
     const colorInput = document.getElementById('charThemeColor');
     const sheetUrlInput = document.getElementById('charSheetUrl');
+    const systemInput = document.getElementById('charSystemSelect');
 
     if (nameInput) nameInput.value = ch.name || '';
     if (nameKanaInput) nameKanaInput.value = ch.nameKana || '';
@@ -380,8 +381,14 @@ const epithetHtml = ch.epithet
     if (ageInput) ageInput.value = ch.age || '';
     if (genderInput) genderInput.value = ch.gender || '';
     if (birthdateInput) birthdateInput.value = ch.birthdate || '';
-    if (colorInput) colorInput.value = ch.themeColor || '';
+    if (colorInput) colorInput.value = ch.themeColor || '#292524';
     if (sheetUrlInput) sheetUrlInput.value = ch.sheetUrl || '';
+
+    // 【追加】システムをセットして、編集時は変更できないようにロックする
+    if (systemInput) {
+        systemInput.value = ch.systemId;
+        systemInput.disabled = true; 
+    }
 
     window.editingCharacterId = characterId;
 
@@ -1348,21 +1355,20 @@ window.closeCharacterModal = closeCharacterModal;
                     <select id="charSystemSelect" onchange="handleSystemChangeInModal()" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-sm text-stone-800 focus:outline-none focus:border-stone-400"></select>
                 </div>
                 
-                <!-- 二つ名と二つ名の読み仮名 -->
-<div class="grid grid-cols-2 gap-3 mt-3">
-    <div>
-        <label class="block text-xs font-bold text-stone-600 mb-1">二つ名の読み仮名</label>
-        <input type="text" id="charEpithetKana" placeholder="例: こっこうのすないぱー" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-800 focus:outline-none focus:border-stone-400">
-    </div>
-    <div>
-        <label class="block text-xs font-bold text-stone-600 mb-1">二つ名（称号など）</label>
-        <input type="text" id="charEpithet" placeholder="例: 孤高の狙撃手" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-800 focus:outline-none focus:border-stone-400">
-    </div>
-</div>
+               <!-- 二つ名と二つ名の読み仮名 -->
+                <div class="grid grid-cols-2 gap-3 mt-3">
+                    <div>
+                        <label class="block text-xs font-bold text-stone-600 mb-1">二つ名の読み仮名</label>
+                        <input type="text" id="charEpithetKana" placeholder="例: こっこうのすないぱー" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-800 focus:outline-none focus:border-stone-400">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-stone-600 mb-1">二つ名（称号など）</label>
+                        <input type="text" id="charEpithet" placeholder="例: 孤高の狙撃手" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-800 focus:outline-none focus:border-stone-400">
+                    </div>
+                </div>
 
-               <!-- 名前と名前の読み仮名 -->
-                <div class="grid grid-cols-2 gap-3">
-
+                <!-- 名前と名前の読み仮名 -->
+                <div class="grid grid-cols-2 gap-3 mt-3">
                     <div>
                         <label class="block text-xs font-bold text-stone-600 mb-1">名前の読み仮名</label>
                         <input type="text" id="charNameKana" placeholder="例: やまだ たろう" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-800 focus:outline-none focus:border-stone-400">
@@ -1373,25 +1379,38 @@ window.closeCharacterModal = closeCharacterModal;
                     </div>
                 </div>
 
-                <div class="grid grid-cols-2 gap-x-4 gap-y-2 text-xs text-stone-600 border-t border-stone-100 pt-3">
-                                    <p><strong class="text-stone-400 inline-block mr-1">年齢:</strong> ${ch.age ? ch.age + '歳' : '未設定'}</p>
-                                    <p><strong class="text-stone-400 inline-block mr-1">性別:</strong> ${ch.gender || '未設定'}</p>
-                                    <p><strong class="text-stone-400 inline-block mr-1">誕生日:</strong> ${ch.birthdate || '未設定'}</p>
-                                    <p class="flex items-center gap-1.5"><strong class="text-stone-400 inline-block mr-1">カラー:</strong> <span class="w-3 h-3 rounded-full inline-block border border-stone-200" style="background-color: ${themeColor}"></span><span class="font-mono">${rawThemeColor}</span></p>
-                                </div>
+                <!-- 【修正】年齢・性別・誕生日・カラーコードの入力欄 -->
+                <div class="grid grid-cols-2 gap-3 mt-3">
+                    <div>
+                        <label class="block text-xs font-bold text-stone-600 mb-1">年齢</label>
+                        <input type="text" id="charAge" placeholder="例: 20" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-800 focus:outline-none focus:border-stone-400">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-stone-600 mb-1">性別</label>
+                        <input type="text" id="charGender" placeholder="例: 女性" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-800 focus:outline-none focus:border-stone-400">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-stone-600 mb-1">誕生日</label>
+                        <input type="text" id="charBirthdate" placeholder="例: 4月1日" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-800 focus:outline-none focus:border-stone-400">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-stone-600 mb-1">テーマカラー</label>
+                        <div class="flex items-center gap-2 bg-stone-50 border border-stone-200 rounded-xl px-3 py-1.5">
+                            <input type="color" id="charThemeColor" value="#292524" class="w-6 h-6 rounded cursor-pointer border-0 bg-transparent">
+                            <span class="text-xs text-stone-500">カラー選択</span>
+                        </div>
+                    </div>
+                </div>
                 
                 <!-- キャラクターシートURL入力欄（必須） -->
-                <div>
+                <div class="mt-3">
                     <label class="block text-xs font-bold text-stone-600 mb-1">
                         キャラクターシートURL <span class="text-rose-500">*</span>
                     </label>
                     <input type="url" id="charSheetUrl" placeholder="https://iachara.com/... など" required class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-800 focus:outline-none focus:border-stone-400">
                 </div>
 
-                <div id="dynamicCustomFieldsContainer" class="space-y-3 pt-2 border-t border-stone-100"></div>
-
-                <div id="dynamicCustomFieldsContainer" class="space-y-3 pt-2 border-t border-stone-100"></div>
-
+                <!-- 重複していたコンテナを1つに整理 -->
                 <div id="dynamicCustomFieldsContainer" class="space-y-3 pt-2 border-t border-stone-100"></div>
 
                 <div class="pt-2 border-t border-stone-100">
