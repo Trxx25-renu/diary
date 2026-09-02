@@ -3,8 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>キャラクター管理 | 卓日記</title>
+    <title id="pageTitle">キャラクター管理 | 卓日記</title>
     
+    <!-- 動的ファビコン用 -->
+    <link id="dynamicFavicon" rel="icon" href="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" type="image/x-icon">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -28,12 +31,11 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, getDocs, doc, getDoc, addDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, doc, getDoc, setDoc, addDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         document.addEventListener("DOMContentLoaded", async () => {
             console.log("🚀 キャラクター管理ページ初期化開始...");
 
-            // 1. 管理者セッションの復元
             try {
                 if (sessionStorage.getItem('isAdminSession') === 'true') {
                     window.isAdmin = true;
@@ -58,7 +60,6 @@
             window.db = db;
 
             await signInAnonymously(auth);
-            console.log("🔑 キャラクター管理: 匿名認証成功");
 
             // システム一覧データ
             window.systems = [
@@ -67,24 +68,42 @@
                 { id: 'insane', name: 'インセイン', desc: 'マルチジャンルホラーRPG', badgeColor: 'bg-purple-900/80' }
             ];
 
-            // 2. 設定（パスコード）の取得
+            // 設定の取得（パスコード ＆ サイト独自設定）
             try {
                 const configRef = doc(db, 'artifacts', window.appId, 'public', 'data', 'config', 'settings');
                 const configSnap = await getDoc(configRef);
                 if (configSnap.exists()) {
                     window.storedPasscode = configSnap.data().passcode;
                 }
+
+                // キャラクター管理専用のサイト設定を取得
+                const rosterConfigRef = doc(db, 'artifacts', window.appId, 'public', 'data', 'config', 'characterRosterSettings');
+                const rosterSnap = await getDoc(rosterConfigRef);
+                if (rosterSnap.exists()) {
+                    const data = rosterSnap.data();
+                    window.rosterSettings = data;
+                    applyRosterSettings(data);
+                } else {
+                    window.rosterSettings = { title: "キャラクター管理 | 卓日記", favicon: "" };
+                }
             } catch (e) { console.error("Config load error:", e); }
 
-            // 3. Firestoreからキャラクターデータを取得
             await loadCharactersFromFirestore();
-
-            // 初期画面（1階層目：システム別フォルダ）を描画
             renderSystemFolders();
             updateAdminStateDisplay();
         });
 
-        // 📥 Firestoreからキャラクターを読み込む関数
+        // 🎨 サイト設定を画面に反映する関数
+        function applyRosterSettings(settings) {
+            if (settings.title) {
+                document.getElementById('pageTitle').textContent = settings.title;
+            }
+            if (settings.favicon) {
+                document.getElementById('dynamicFavicon').href = settings.favicon;
+            }
+        }
+
+        // 📥 Firestoreからキャラクターを読み込む
         async function loadCharactersFromFirestore() {
             try {
                 const charsRef = collection(db, 'artifacts', window.appId, 'public', 'data', 'characters');
@@ -94,14 +113,13 @@
                     loaded.push({ id: d.id, ...d.data() });
                 });
                 window.characters = loaded;
-                console.log("📖 取得したキャラクター数:", window.characters.length);
             } catch (e) {
                 console.error("Characters load error:", e);
                 window.characters = [];
             }
         }
 
-        // 🌟 1階層目：システムフォルダ一覧の描画
+        // 🌟 1階層目：システムフォルダ一覧
         function renderSystemFolders() {
             const container = document.getElementById('systemFoldersContainer');
             if (!container) return;
@@ -109,7 +127,6 @@
             container.innerHTML = '';
             window.systems.forEach(sys => {
                 const count = window.characters.filter(c => c.systemId === sys.id).length;
-
                 const card = document.createElement('div');
                 card.className = 'bg-white rounded-2xl p-5 border border-stone-200/80 shadow-sm hover:border-stone-400 transition-all cursor-pointer flex flex-col justify-between gap-4 group';
                 card.onclick = () => navigateTo('characterList', sys.id);
@@ -132,7 +149,7 @@
             });
         }
 
-        // 🌟 2階層目：キャラクター一覧の描画（スクエアアイコン対応）
+        // 🌟 2階層目：キャラクター一覧
         function renderCharacterList(systemId) {
             window.selectedSystemId = systemId;
             const sys = window.systems.find(s => s.id === systemId);
@@ -214,24 +231,9 @@
         }
         window.navigateTo = navigateTo;
 
-        // 🛡️ 管理者チェック付きのキャラクター追加ボタン押下処理
+        // 🛡️ 管理者チェック付き・キャラ追加モーダル
         function handleOpenAddModal() {
-            if (!window.isAdmin) {
-                const inputCode = prompt("編集者用パスコードを入力してください：");
-                if (inputCode && inputCode === window.storedPasscode) {
-                    window.isAdmin = true;
-                    sessionStorage.setItem('isAdminSession', 'true');
-                    updateAdminStateDisplay();
-                    alert("管理者認証に成功しました！");
-                } else if (inputCode !== null) {
-                    alert("パスコードが違います。");
-                    return;
-                } else {
-                    return;
-                }
-            }
-
-            // モーダルを開く（現在選択中のシステムをデフォルト選択にする）
+            if (!checkAdminPermission()) return;
             const systemSelect = document.getElementById('charSystemSelect');
             if (systemSelect && window.selectedSystemId) {
                 systemSelect.value = window.selectedSystemId;
@@ -246,10 +248,46 @@
         }
         window.closeCharacterModal = closeCharacterModal;
 
-        // 💾 キャラクター保存処理
+        // ⚙️ サイト設定モーダルを開く（パスコード保護）
+        function handleOpenSettingsModal() {
+            if (!checkAdminPermission()) return;
+            
+            // 現在の値をフォームにセット
+            document.getElementById('settingTitleInput').value = window.rosterSettings?.title || "キャラクター管理 | 卓日記";
+            document.getElementById('settingFaviconInput').value = window.rosterSettings?.favicon || "";
+            
+            document.getElementById('settingsModal').classList.remove('hidden');
+        }
+        window.handleOpenSettingsModal = handleOpenSettingsModal;
+
+        function closeSettingsModal() {
+            document.getElementById('settingsModal').classList.add('hidden');
+        }
+        window.closeSettingsModal = closeSettingsModal;
+
+        // 🔐 共通の管理者チェック関数
+        function checkAdminPermission() {
+            if (!window.isAdmin) {
+                const inputCode = prompt("編集者用パスコードを入力してください：");
+                if (inputCode && inputCode === window.storedPasscode) {
+                    window.isAdmin = true;
+                    sessionStorage.setItem('isAdminSession', 'true');
+                    updateAdminStateDisplay();
+                    alert("管理者認証に成功しました！");
+                    return true;
+                } else if (inputCode !== null) {
+                    alert("パスコードが違います。");
+                    return false;
+                } else {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        // 💾 キャラクター保存
         async function saveCharacter(event) {
             event.preventDefault();
-            
             const systemId = document.getElementById('charSystemSelect').value;
             const name = document.getElementById('charName').value.trim();
             const age = document.getElementById('charAge').value;
@@ -257,28 +295,19 @@
             const thumbnail = document.getElementById('charThumbnail').value.trim();
             const avatar = document.getElementById('charAvatar').value.trim();
 
-            if (!name) {
-                alert("キャラクター名は必須です。");
-                return;
-            }
+            if (!name) { alert("キャラクター名は必須です。"); return; }
 
             const newCharData = {
-                systemId,
-                name,
+                systemId, name,
                 age: age ? Number(age) : '',
-                occupation,
-                thumbnail,
-                avatar,
+                occupation, thumbnail, avatar,
                 createdAt: new Date().toISOString()
             };
 
             try {
                 const charsRef = collection(db, 'artifacts', window.appId, 'public', 'data', 'characters');
                 const docRef = await addDoc(charsRef, newCharData);
-                
-                // ローカル配列にも追加して再描画
                 window.characters.push({ id: docRef.id, ...newCharData });
-                
                 closeCharacterModal();
                 renderCharacterList(systemId);
                 renderSystemFolders();
@@ -289,6 +318,29 @@
             }
         }
         window.saveCharacter = saveCharacter;
+
+        // 💾 サイト設定の保存
+        async function saveRosterSettings(event) {
+            event.preventDefault();
+            const title = document.getElementById('settingTitleInput').value.trim();
+            const favicon = document.getElementById('settingFaviconInput').value.trim();
+
+            const newSettings = { title, favicon };
+
+            try {
+                const rosterConfigRef = doc(db, 'artifacts', window.appId, 'public', 'data', 'config', 'characterRosterSettings');
+                await setDoc(rosterConfigRef, newSettings);
+                
+                window.rosterSettings = newSettings;
+                applyRosterSettings(newSettings);
+                closeSettingsModal();
+                alert("サイト設定を保存しました！");
+            } catch (e) {
+                console.error("Settings save error:", e);
+                alert("設定の保存に失敗しました。");
+            }
+        }
+        window.saveRosterSettings = saveRosterSettings;
 
         function updateAdminStateDisplay() {
             const badge = document.getElementById('adminStateBadge');
@@ -315,6 +367,10 @@
                 <span id="adminStateBadge" class="hidden text-[10px] font-medium bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-md">
                     管理者モード
                 </span>
+                <!-- サイト設定ボタン（パスコード保護） -->
+                <button onclick="handleOpenSettingsModal()" class="w-8 h-8 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-600 flex items-center justify-center transition-all" title="サイト設定">
+                    <i class="fa-solid fa-gear text-xs"></i>
+                </button>
             </div>
         </div>
     </header>
@@ -322,7 +378,6 @@
     <!-- メインコンテンツ -->
     <main class="max-w-4xl mx-auto w-full p-4 flex-1">
         
-        <!-- パンくずリスト -->
         <nav id="breadcrumbs" class="flex items-center gap-2 text-xs text-stone-400 mb-6">
             <span class="text-stone-700 font-medium flex items-center gap-1">
                 <i class="fa-solid fa-house text-[10px]"></i> システム一覧
@@ -337,9 +392,7 @@
                     <p class="text-xs text-stone-400">管理したいTRPGシステムを選んでください</p>
                 </div>
             </div>
-            <div id="systemFoldersContainer" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                <!-- 動的生成 -->
-            </div>
+            <div id="systemFoldersContainer" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4"></div>
         </div>
 
         <!-- 📂 【2階層目】キャラクター一覧ビュー -->
@@ -349,22 +402,15 @@
                     <h2 id="currentSystemTitle" class="text-lg font-bold text-stone-800">キャラクター一覧</h2>
                     <p class="text-xs text-stone-400">登録されている探索者・NPC</p>
                 </div>
-                <!-- キャラ追加ボタン（パスコード保護） -->
                 <button onclick="handleOpenAddModal()" class="bg-stone-800 text-white text-xs font-medium px-4 py-2.5 rounded-2xl shadow-sm hover:bg-stone-700 transition-all flex items-center gap-1.5">
                     <i class="fa-solid fa-plus text-[10px]"></i>
                     <span>キャラ追加</span>
                 </button>
             </div>
-            <div id="characterGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                <!-- 動的生成 -->
-            </div>
+            <div id="characterGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4"></div>
         </div>
 
-        <!-- 📂 【3階層目】詳細ビュー（準備中） -->
-        <div id="view-detail" class="hidden">
-            <!-- 次のステップで実装 -->
-        </div>
-
+        <div id="view-detail" class="hidden"></div>
     </main>
 
     <!-- 📝 キャラクター登録モーダル -->
@@ -389,12 +435,10 @@
                         <option value="insane">インセイン</option>
                     </select>
                 </div>
-
                 <div>
                     <label class="block text-xs font-bold text-stone-600 mb-1">キャラクター名 <span class="text-rose-500">*</span></label>
                     <input type="text" id="charName" required placeholder="例：探索者 太郎" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-sm text-stone-800 focus:outline-none focus:border-stone-400">
                 </div>
-
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs font-bold text-stone-600 mb-1">年齢</label>
@@ -405,21 +449,48 @@
                         <input type="text" id="charOccupation" placeholder="例：私立探偵" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-sm text-stone-800 focus:outline-none focus:border-stone-400">
                     </div>
                 </div>
-
                 <div>
                     <label class="block text-xs font-bold text-stone-600 mb-1">アイコン画像URL（正方形サムネイル用）</label>
                     <input type="text" id="charThumbnail" placeholder="https://..." class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-sm text-stone-800 focus:outline-none focus:border-stone-400">
-                    <p class="text-[10px] text-stone-400 mt-1">※未入力の場合はデフォルトのアイコンが表示されます</p>
                 </div>
-
                 <div>
                     <label class="block text-xs font-bold text-stone-600 mb-1">立ち絵画像URL（メイン・通常）</label>
                     <input type="text" id="charAvatar" placeholder="https://..." class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-sm text-stone-800 focus:outline-none focus:border-stone-400">
                 </div>
-
                 <div class="pt-3 flex items-center justify-end gap-2">
                     <button type="button" onclick="closeCharacterModal()" class="px-4 py-2 rounded-xl text-xs font-medium text-stone-600 hover:bg-stone-100 transition-all">キャンセル</button>
                     <button type="submit" class="bg-stone-800 text-white px-5 py-2 rounded-xl text-xs font-medium shadow-sm hover:bg-stone-700 transition-all">登録する</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ⚙️ サイト設定モーダル -->
+    <div id="settingsModal" class="hidden fixed inset-0 z-50 bg-stone-900/40 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-xl border border-stone-200">
+            <div class="flex items-center justify-between mb-4 pb-2 border-b border-stone-100">
+                <h3 class="font-bold text-stone-800 text-sm flex items-center gap-2">
+                    <i class="fa-solid fa-gear text-stone-600"></i>
+                    <span>キャラクター管理 サイト設定</span>
+                </h3>
+                <button onclick="closeSettingsModal()" class="text-stone-400 hover:text-stone-700 p-1">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <form onsubmit="saveRosterSettings(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-stone-600 mb-1">ページタイトル</label>
+                    <input type="text" id="settingTitleInput" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-sm text-stone-800 focus:outline-none focus:border-stone-400">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-stone-600 mb-1">ファビコン画像URL（タブ用アイコン）</label>
+                    <input type="text" id="settingFaviconInput" placeholder="https://..." class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-sm text-stone-800 focus:outline-none focus:border-stone-400">
+                    <p class="text-[10px] text-stone-400 mt-1">※このページ専用のブラウザータブ用アイコンを指定できます</p>
+                </div>
+                <div class="pt-3 flex items-center justify-end gap-2">
+                    <button type="button" onclick="closeSettingsModal()" class="px-4 py-2 rounded-xl text-xs font-medium text-stone-600 hover:bg-stone-100 transition-all">キャンセル</button>
+                    <button type="submit" class="bg-stone-800 text-white px-5 py-2 rounded-xl text-xs font-medium shadow-sm hover:bg-stone-700 transition-all">設定を保存</button>
                 </div>
             </form>
         </div>
