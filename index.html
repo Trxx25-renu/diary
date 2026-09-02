@@ -1580,40 +1580,22 @@ window.renderGridPhotoLayout = renderGridPhotoLayout;
         }
         window.handleAuthSubmit = handleAuthSubmit;
 
-// 修正版：タイトルや説明文、ボタンの文言も柔軟に受け取れる showConfirm 関数
-function showConfirm(title, desc, onYesCallback, yesBtnText = 'はい', cancelBtnText = 'いいえ') {
+// 🌟 実際のHTML構造に完全に合わせた確定版 showConfirm & closeConfirmModal
+let currentConfirmCallback = null;
+
+function showConfirm(title, desc, onYesCallback) {
     const modal = document.getElementById('confirmModal');
-    const titleEl = document.getElementById('confirmTitle');
-    const descEl = document.getElementById('confirmDesc');
-    const yesBtn = document.getElementById('confirmYesBtn');
-    const cancelBtn = modal ? modal.querySelector('button[onclick*="closeConfirmModal"]') : null;
+    const titleEl = document.getElementById('confirmModalTitle');
+    const msgEl = document.getElementById('confirmModalMsg');
 
-    // タイトルと説明文をしっかりと反映
+    // 実際のHTMLにあるIDへ確実に流し込む
     if (titleEl) titleEl.textContent = title || '確認';
-    if (descEl) {
-        descEl.textContent = desc || '';
-        descEl.style.display = desc ? 'block' : 'none'; // 説明文がなければ隠す
-    }
+    if (msgEl) msgEl.textContent = desc || '';
 
-    // ボタンのテキストも必要に応じて変更
-    if (yesBtn) {
-        yesBtn.textContent = yesBtnText;
-        const newYesBtn = yesBtn.cloneNode(true);
-        yesBtn.parentNode.replaceChild(newYesBtn, yesBtn);
+    // 「実行する（はい）」が押されたときのコールバックを保持
+    currentConfirmCallback = onYesCallback;
 
-        newYesBtn.addEventListener('click', () => {
-            closeConfirmModal();
-            if (typeof onYesCallback === 'function') {
-                onYesCallback();
-            }
-        });
-    }
-
-    if (cancelBtn && cancelBtnText) {
-        cancelBtn.textContent = cancelBtnText;
-    }
-
-    // モーダルを表示
+    // モーダルを表示状態にする
     if (modal) {
         modal.classList.remove('opacity-0', 'pointer-events-none');
         const innerCard = modal.querySelector('.scale-95');
@@ -1624,6 +1606,26 @@ function showConfirm(title, desc, onYesCallback, yesBtnText = 'はい', cancelBt
     }
 }
 window.showConfirm = showConfirm;
+
+        function closeConfirmModal(isYes) {
+    const modal = document.getElementById('confirmModal');
+    if (modal) {
+        modal.classList.add('opacity-0', 'pointer-events-none');
+        const innerCard = modal.querySelector('.scale-100');
+        if (innerCard) {
+            innerCard.classList.remove('scale-100');
+            innerCard.classList.add('scale-95');
+        }
+    }
+
+    // 「実行する」が押された場合のみ、保持していたログアウト等の処理を実行
+    if (isYes && typeof currentConfirmCallback === 'function') {
+        currentConfirmCallback();
+    }
+    
+    currentConfirmCallback = null;
+}
+window.closeConfirmModal = closeConfirmModal;
 
 // ❓ モーダルを閉じる関数（もし無ければ追加）
 function closeConfirmModal() {
