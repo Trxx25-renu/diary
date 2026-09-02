@@ -927,10 +927,22 @@ window.deleteCharacter = deleteCharacter;
         }
 
         function closeCharacterModal() {
-            document.getElementById('characterModal').classList.add('hidden');
-            document.getElementById('characterForm').reset();
-        }
-        window.closeCharacterModal = closeCharacterModal;
+    const modal = document.getElementById('characterModal');
+    if (modal) {
+        modal.classList.add('hidden');
+    }
+    
+    const form = document.getElementById('characterForm');
+    if (form) {
+        form.reset();
+    }
+    
+    // 編集IDをクリアし、モーダルタイトルを新規用にリセット
+    window.editingCharacterId = null;
+    const modalTitle = document.querySelector('#characterModal h3 span');
+    if (modalTitle) modalTitle.textContent = '新規キャラクター登録';
+}
+window.closeCharacterModal = closeCharacterModal;
 
         // ⚙️ サイト設定モーダル（システム並び替え対応）
         function handleOpenSettingsModal() {
