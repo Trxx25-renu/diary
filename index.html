@@ -806,7 +806,42 @@ function renderBreadcrumbs() {
 }
 window.renderBreadcrumbs = renderBreadcrumbs;
         
-       // 詳細画面を描画する関数（引数 `entryParam` があればそれを使い、なければ `window.selectedEntryId` から探す）
+      // 🌟 現在表示している画像の何枚目かを保持する変数
+        window.currentImageIndex = 0;
+
+        // 🌟 画像を切り替える関数（HTMLの左右ボタンから呼び出す）
+        function switchDetailImage(direction) {
+            const entry = (window.entries || []).find(e => e.id === window.selectedEntryId);
+            if (!entry) return;
+
+            const images = (entry.imageUrls && entry.imageUrls.length > 0) 
+                ? entry.imageUrls 
+                : (entry.imageUrl ? [entry.imageUrl] : []);
+
+            if (images.length <= 1) return;
+
+            window.currentImageIndex += direction;
+
+            // ループさせる設定（最後の次 -> 最初、最初の前 -> 最後）
+            if (window.currentImageIndex < 0) {
+                window.currentImageIndex = images.length - 1;
+            } else if (window.currentImageIndex >= images.length) {
+                window.currentImageIndex = 0;
+            }
+
+            // 画像とページャー（何枚目か）を更新
+            const detailImg = document.getElementById('detailImage') || document.getElementById('entryDetailImage');
+            if (detailImg) detailImg.src = images[window.currentImageIndex];
+
+            const pageIndicator = document.getElementById('detailImagePageIndicator');
+            if (pageIndicator) {
+                pageIndicator.textContent = `${window.currentImageIndex + 1} / ${images.length}`;
+            }
+        }
+        window.switchDetailImage = switchDetailImage;
+
+
+        // 🌟 詳細画面を描画する関数（複数画像・スライド対応版）
         function renderDetailView(entryParam = null) {
             const entry = entryParam || (window.entries || []).find(e => e.id === window.selectedEntryId);
             if (!entry) return;
@@ -814,8 +849,40 @@ window.renderBreadcrumbs = renderBreadcrumbs;
             // グローバル変数も確実に同期
             window.selectedEntryId = entry.id;
 
+            // 🌟 画像配列の取得（imageUrls があれば優先、なければ従来通り imageUrl を配列化）
+            const images = (entry.imageUrls && entry.imageUrls.length > 0) 
+                ? entry.imageUrls 
+                : (entry.imageUrl ? [entry.imageUrl] : []);
+
+            // 記事が変わったら画像のインデックスを 0 (1枚目) にリセット
+            if (window.lastLoadedEntryId !== entry.id) {
+                window.currentImageIndex = 0;
+                window.lastLoadedEntryId = entry.id;
+            }
+
+            // 画像の表示
             const detailImg = document.getElementById('detailImage') || document.getElementById('entryDetailImage');
-            if (detailImg) detailImg.src = entry.imageUrl || '';
+            if (detailImg) {
+                detailImg.src = images[window.currentImageIndex] || '';
+            }
+
+            // 🌟 複数枚あるときだけ左右のボタンやインジケーターを表示する制御
+            const prevImgBtn = document.getElementById('prevImageBtn'); 
+            const nextImgBtn = document.getElementById('nextImageBtn');
+            const pageIndicator = document.getElementById('detailImagePageIndicator');
+
+            if (images.length > 1) {
+                if (prevImgBtn) prevImgBtn.classList.remove('hidden');
+                if (nextImgBtn) nextImgBtn.classList.remove('hidden');
+                if (pageIndicator) {
+                    pageIndicator.classList.remove('hidden');
+                    pageIndicator.textContent = `${window.currentImageIndex + 1} / ${images.length}`;
+                }
+            } else {
+                if (prevImgBtn) prevImgBtn.classList.add('hidden');
+                if (nextImgBtn) nextImgBtn.classList.add('hidden');
+                if (pageIndicator) pageIndicator.classList.add('hidden');
+            }
 
             const dateObj = new Date(entry.date);
             const days = ['日', '月', '火', '水', '木', '金', '土'];
@@ -842,7 +909,6 @@ window.renderBreadcrumbs = renderBreadcrumbs;
 
             const detailContent = document.getElementById('detailContent') || document.getElementById('entryDetailContent');
             if (detailContent) {
-                // スポイラー解析があれば使う、なければそのまま
                 detailContent.innerHTML = typeof parseSpoilers === 'function' ? parseSpoilers(entry.content || '') : (entry.content || '');
             }
 
@@ -863,7 +929,7 @@ window.renderBreadcrumbs = renderBreadcrumbs;
                 }
             }
 
-            // 🌟 全データ（window.entries）を対象に、一覧と同じ順番でソートしてボタン（端っこ）を判定
+            // 全データを対象に、一覧と同じ順番でソートして前後の記事ボタンを判定
             let currentList = [...(window.entries || [])];
             const timeSlotOrder = { 'night': 1, 'afternoon': 2, 'morning': 3 };
             
@@ -882,11 +948,9 @@ window.renderBreadcrumbs = renderBreadcrumbs;
             const prevBtn = document.getElementById('prevDetailBtn');
             const nextBtn = document.getElementById('nextDetailBtn');
 
-            // ボタンの有効・無効判定
             if (nextBtn) nextBtn.disabled = (currentIndex <= 0);
             if (prevBtn) prevBtn.disabled = (currentIndex === -1 || currentIndex >= currentList.length - 1);
 
-            // 管理者（Admin）のときだけ「編集ボタン」と「削除ボタン」を表示する
             const editBtn = document.getElementById('editEntryBtn');
             const deleteBtn = document.getElementById('deleteEntryBtn');
             
@@ -2257,24 +2321,37 @@ function handleImageSelect(event) {
         </section>
         
         <!-- 第3階層：詳細表示 -->
-        <section id="view-detail" class="hidden flex flex-col gap-3">
-            <div class="bg-white rounded-3xl border border-stone-200/80 overflow-hidden shadow-sm flex flex-col md:flex-row">
-                <!-- 写真 -->
-                <div class="md:w-3/5 bg-stone-900 flex items-center justify-center relative min-h-[300px]">
-                    <img id="detailImage" src="" alt="日記の写真" class="protect-image max-h-[600px] w-full object-contain">
-                </div>
+    <section id="view-detail" class="hidden flex flex-col gap-3">
+        <div class="bg-white rounded-3xl border border-stone-200/80 overflow-hidden shadow-sm flex flex-col md:flex-row">
+            <!-- 写真（複数画像の左右切り替え ＆ インジケーター対応版） -->
+            <div class="md:w-3/5 bg-stone-900 flex items-center justify-center relative min-h-[300px] group">
+                <img id="detailImage" src="" alt="日記の写真" class="protect-image max-h-[600px] w-full object-contain">
+                
+                <!-- ⬅️ 左側の画像切り替えボタン -->
+                <button id="prevImageBtn" onclick="switchDetailImage(-1)" class="absolute left-3 top-1/2 -translate-y-1/2 bg-black/50 text-white w-10 h-10 flex items-center justify-center rounded-full hidden hover:bg-black/70 transition-all shadow-md">
+                    <i class="fa-solid fa-chevron-left text-sm"></i>
+                </button>
+                
+                <!-- ➡️ 右側の画像切り替えボタン -->
+                <button id="nextImageBtn" onclick="switchDetailImage(1)" class="absolute right-3 top-1/2 -translate-y-1/2 bg-black/50 text-white w-10 h-10 flex items-center justify-center rounded-full hidden hover:bg-black/70 transition-all shadow-md">
+                    <i class="fa-solid fa-chevron-right text-sm"></i>
+                </button>
 
-                <!-- 本文・情報 -->
-                <div class="md:w-2/5 p-6 flex flex-col justify-between gap-6">
-                    <div class="flex flex-col gap-4">
-                        <div class="flex items-center justify-between border-b border-stone-100 pb-3">
-                            <div>
-                                <h3 id="detailDate" class="text-lg font-serif-title font-bold text-stone-800">2026.03.28 (金)</h3>
-                                <span id="detailWeather" class="inline-block text-xs font-medium text-stone-700 bg-stone-50 px-2.5 py-1 rounded-full border border-stone-200/50 mt-1.5">晴れ ☀️</span>
-                            </div>
+                <!-- 🏷️ 何枚目かを表示するインジケーター（右下） -->
+                <span id="detailImagePageIndicator" class="absolute bottom-3 right-3 bg-black/60 backdrop-blur-md text-white text-xs px-2.5 py-1 rounded-md hidden font-medium"></span>
+            </div>
 
-                            <!-- 前後の日記切り替え -->
-                            <div class="flex items-center gap-1 bg-stone-50 p-1 rounded-xl border border-stone-100">
+            <!-- 本文・情報 -->
+            <div class="md:w-2/5 p-6 flex flex-col justify-between gap-6">
+                <div class="flex flex-col gap-4">
+                    <div class="flex items-center justify-between border-b border-stone-100 pb-3">
+                        <div>
+                            <h3 id="detailDate" class="text-lg font-serif-title font-bold text-stone-800">2026.03.28 (金)</h3>
+                            <span id="detailWeather" class="inline-block text-xs font-medium text-stone-700 bg-stone-50 px-2.5 py-1 rounded-full border border-stone-200/50 mt-1.5">晴れ ☀️</span>
+                        </div>
+
+                        <!-- 前後の日記切り替え -->
+                        <div class="flex items-center gap-1 bg-stone-50 p-1 rounded-xl border border-stone-100">
                                 <button id="prevDetailBtn" onclick="navigateDetail(-1)" class="p-1.5 text-stone-600 hover:bg-white hover:shadow-sm rounded-lg disabled:opacity-30 disabled:pointer-events-none transition-all" title="新しい日記へ">
                                     <i class="fa-solid fa-chevron-left text-xs"></i>
                                 </button>
