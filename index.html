@@ -319,86 +319,92 @@
 });
 
   // 🌟 アプリ全体の画面切り替え ＆ パンくず更新を行うルーター関数
-        function navigateTo(view, param = null) {
-            const viewFolders = document.getElementById('view-folders');
-            const viewList = document.getElementById('view-list');
-            const viewDetail = document.getElementById('view-detail');
-            const breadcrumbs = document.getElementById('breadcrumbs');
-            const breadcrumbAction = document.getElementById('breadcrumbAction');
+function navigateTo(view, param = null) {
+    const viewFolders = document.getElementById('view-folders');
+    const viewList = document.getElementById('view-list');
+    const viewDetail = document.getElementById('view-detail');
+    const breadcrumbs = document.getElementById('breadcrumbs');
+    const breadcrumbAction = document.getElementById('breadcrumbAction');
 
-            if (viewFolders) viewFolders.classList.add('hidden');
-            if (viewList) viewList.classList.add('hidden');
-            if (viewDetail) viewDetail.classList.add('hidden');
+    if (viewFolders) viewFolders.classList.add('hidden');
+    if (viewList) viewList.classList.add('hidden');
+    if (viewDetail) viewDetail.classList.add('hidden');
 
-            if (view === 'folders') {
-                if (viewFolders) viewFolders.classList.remove('hidden');
-                if (breadcrumbs) {
-                    breadcrumbs.innerHTML = `<span class="text-stone-700 font-medium flex items-center gap-1"><i class="fa-solid fa-house text-[10px]"></i> システム一覧</span>`;
-                }
-                // ▼ ここ：システム一覧（トップ）にいるときは「日記へ」ボタンを表示する
-                if (breadcrumbAction) {
-                    breadcrumbAction.innerHTML = `
-                        <a href="index.html" class="flex items-center gap-1.5 text-xs text-stone-600 hover:text-stone-900 bg-stone-100 hover:bg-stone-200/70 px-3 py-1.5 rounded-xl transition-all">
-                            <i class="fa-solid fa-book-open text-[10px]"></i>
-                            <span>日記へ</span>
-                        </a>
-                    `;
-                }
-                const searchInput = document.getElementById('folderSearchInput');
-                if (searchInput) searchInput.value = '';
-                renderSystemFolders();
-            } else if (view === 'characterList') {
-                if (viewList) viewList.classList.remove('hidden');
-                const sys = window.systems.find(s => s.id === param);
-                const sysName = sys ? sys.name : 'キャラクター一覧';
-                if (breadcrumbs) {
-                    breadcrumbs.innerHTML = `
-                        <a href="javascript:void(0)" onclick="navigateTo('folders')" class="hover:text-stone-900 transition-colors flex items-center gap-1"><i class="fa-solid fa-house text-[10px]"></i> システム一覧</a>
-                        <span class="text-stone-300">/</span>
-                        <span class="text-stone-700 font-medium">${sysName}</span>
-                    `;
-                }
-                // ▼ ここ：キャラクター一覧にいるときは「システム一覧へ戻る」ボタンを表示する
-                if (breadcrumbAction) {
-                    breadcrumbAction.innerHTML = `
-                        <button onclick="navigateTo('folders')" class="flex items-center gap-1.5 text-xs text-stone-600 hover:text-stone-900 bg-stone-100 hover:bg-stone-200/70 px-3 py-1.5 rounded-xl transition-all">
-                            <i class="fa-solid fa-house text-[10px]"></i>
-                            <span>システム一覧へ</span>
-                        </button>
-                    `;
-                }
-                const searchInput = document.getElementById('characterSearchInput');
-                if (searchInput) searchInput.value = '';
-                renderCharacterList(param);
-            } else if (view === 'detail') {
-                if (viewDetail) viewDetail.classList.remove('hidden');
-                const ch = window.characters.find(c => c.id === param);
-                const charName = ch ? ch.name : 'キャラクター詳細';
-                const targetSystemId = ch ? ch.systemId : window.selectedSystemId;
-                const sys = window.systems.find(s => s.id === targetSystemId);
-                
-                if (breadcrumbs) {
-                    breadcrumbs.innerHTML = `
-                        <a href="javascript:void(0)" onclick="navigateTo('folders')" class="hover:text-stone-900 transition-colors flex items-center gap-1"><i class="fa-solid fa-house text-[10px]"></i> システム一覧</a>
-                        <span class="text-stone-300">/</span>
-                        <a href="javascript:void(0)" onclick="navigateTo('characterList', '${targetSystemId}')" class="hover:text-stone-900 transition-colors">${sys?.name || '一覧'}</a>
-                        <span class="text-stone-300">/</span>
-                        <span class="text-stone-700 font-medium">${charName}</span>
-                    `;
-                }
-                // ▼ ここ：詳細画面にいるときは「キャラクター一覧へ戻る」ボタンを表示する
-                if (breadcrumbAction) {
-                    breadcrumbAction.innerHTML = `
-                        <button onclick="navigateTo('characterList', '${targetSystemId}')" class="flex items-center gap-1.5 text-xs text-stone-600 hover:text-stone-900 bg-stone-100 hover:bg-stone-200/70 px-3 py-1.5 rounded-xl transition-all">
-                            <i class="fa-solid fa-arrow-left text-[10px]"></i>
-                            <span>キャラクター一覧へ</span>
-                        </button>
-                    `;
-                }
-                renderCharacterDetail(param);
-            }
+    // 安全のため、配列が未定義でもエラーにならないようにするフォールバック
+    const systems = window.systems || [];
+    const characters = window.characters || [];
+
+    if (view === 'folders') {
+        if (viewFolders) viewFolders.classList.remove('hidden');
+        if (breadcrumbs) {
+            breadcrumbs.innerHTML = `<span class="text-stone-700 font-medium flex items-center gap-1"><i class="fa-solid fa-house text-[10px]"></i> システム一覧</span>`;
         }
-        window.navigateTo = navigateTo;
+        // ▼ ここ：システム一覧（トップ）にいるときは「日記へ」ボタンを表示する
+        if (breadcrumbAction) {
+            breadcrumbAction.innerHTML = `
+                <a href="index.html" class="flex items-center gap-1.5 text-xs text-stone-600 hover:text-stone-900 bg-stone-100 hover:bg-stone-200/70 px-3 py-1.5 rounded-xl transition-all">
+                    <i class="fa-solid fa-book-open text-[10px]"></i>
+                    <span>日記へ</span>
+                </a>
+            `;
+        }
+        const searchInput = document.getElementById('folderSearchInput');
+        if (searchInput) searchInput.value = '';
+        if (typeof renderSystemFolders === 'function') renderSystemFolders();
+
+    } else if (view === 'characterList') {
+        if (viewList) viewList.classList.remove('hidden');
+        const sys = systems.find(s => s.id === param);
+        const sysName = sys ? sys.name : 'キャラクター一覧';
+        if (breadcrumbs) {
+            breadcrumbs.innerHTML = `
+                <a href="javascript:void(0)" onclick="navigateTo('folders')" class="hover:text-stone-900 transition-colors flex items-center gap-1"><i class="fa-solid fa-house text-[10px]"></i> システム一覧</a>
+                <span class="text-stone-300">/</span>
+                <span class="text-stone-700 font-medium">${sysName}</span>
+            `;
+        }
+        // ▼ ここ：キャラクター一覧にいるときは「システム一覧へ戻る」ボタンを表示する
+        if (breadcrumbAction) {
+            breadcrumbAction.innerHTML = `
+                <button onclick="navigateTo('folders')" class="flex items-center gap-1.5 text-xs text-stone-600 hover:text-stone-900 bg-stone-100 hover:bg-stone-200/70 px-3 py-1.5 rounded-xl transition-all">
+                    <i class="fa-solid fa-house text-[10px]"></i>
+                    <span>システム一覧へ</span>
+                </button>
+            `;
+        }
+        const searchInput = document.getElementById('characterSearchInput');
+        if (searchInput) searchInput.value = '';
+        if (typeof renderCharacterList === 'function') renderCharacterList(param);
+
+    } else if (view === 'detail') {
+        if (viewDetail) viewDetail.classList.remove('hidden');
+        const ch = characters.find(c => c.id === param);
+        const charName = ch ? ch.name : 'キャラクター詳細';
+        const targetSystemId = ch ? ch.systemId : window.selectedSystemId;
+        const sys = systems.find(s => s.id === targetSystemId);
+        
+        if (breadcrumbs) {
+            breadcrumbs.innerHTML = `
+                <a href="javascript:void(0)" onclick="navigateTo('folders')" class="hover:text-stone-900 transition-colors flex items-center gap-1"><i class="fa-solid fa-house text-[10px]"></i> システム一覧</a>
+                <span class="text-stone-300">/</span>
+                <a href="javascript:void(0)" onclick="navigateTo('characterList', '${targetSystemId}')" class="hover:text-stone-900 transition-colors">${sys?.name || '一覧'}</a>
+                <span class="text-stone-300">/</span>
+                <span class="text-stone-700 font-medium">${charName}</span>
+            `;
+        }
+        // ▼ ここ：詳細画面にいるときは「キャラクター一覧へ戻る」ボタンを表示する
+        if (breadcrumbAction) {
+            breadcrumbAction.innerHTML = `
+                <button onclick="navigateTo('characterList', '${targetSystemId}')" class="flex items-center gap-1.5 text-xs text-stone-600 hover:text-stone-900 bg-stone-100 hover:bg-stone-200/70 px-3 py-1.5 rounded-xl transition-all">
+                    <i class="fa-solid fa-arrow-left text-[10px]"></i>
+                    <span>キャラクター一覧へ</span>
+                </button>
+            `;
+        }
+        if (typeof renderCharacterDetail === 'function') renderCharacterDetail(param);
+    }
+}
+window.navigateTo = navigateTo;
         
         // 🌟 指定した方向に1ヶ月分ズラしてギャラリーを再描画する関数
         function changeMonth(direction) {
