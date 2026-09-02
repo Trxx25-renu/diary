@@ -1151,6 +1151,7 @@
                     <input type="text" id="folderSearchInput" oninput="handleFolderSearchInput(event)" placeholder="システムやキャラ名で検索..." class="w-full bg-white border border-stone-200 rounded-2xl pl-9 pr-4 py-2 text-xs text-stone-800 focus:outline-none focus:border-stone-400 shadow-sm">
                 </div>
             </div>
+            <!-- ★ フォルダ側のコンテナ（生成されるカード側で hover:shadow-md transition-all が効くようになります） -->
             <div id="systemFoldersContainer" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4"></div>
         </div>
 
@@ -1170,6 +1171,7 @@
                     </div>
                 </div>
             </div>
+            <!-- ★ キャラクター一覧のグリッド -->
             <div id="characterGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4"></div>
         </div>
 
@@ -1253,7 +1255,7 @@
         </div>
     </div>
 
-    <!-- ⚙️ サイト設定モーダル（システム並び替え・項目エディタ） -->
+    <!-- ⚙️ サイト設定モーダル -->
     <div id="settingsModal" class="hidden fixed inset-0 z-50 bg-stone-900/40 backdrop-blur-sm flex items-center justify-center p-4">
         <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-xl border border-stone-200 max-h-[90vh] overflow-y-auto">
             <div class="flex items-center justify-between mb-4 pb-2 border-b border-stone-100">
@@ -1280,14 +1282,12 @@
                     </div>
                 </div>
 
-                <!-- ↕️ システムの表示順並び替えエディタ -->
                 <div class="pt-2 border-t border-stone-100">
                     <h4 class="text-xs font-bold text-stone-700 mb-1">システムの表示順・名前変更</h4>
                     <p class="text-[11px] text-stone-400 mb-3">矢印ボタンでトップページに表示されるシステムの並び順を変更できます</p>
                     <div id="settingsSystemsEditorContainer" class="space-y-2"></div>
                 </div>
 
-                <!-- 📝 システム別カスタム項目エディタ -->
                 <div class="pt-2 border-t border-stone-100">
                     <h4 class="text-xs font-bold text-stone-700 mb-1">システム別 カスタム項目設定</h4>
                     <p class="text-[11px] text-stone-400 mb-3">「テキスト（ネタバレ可）」と「ステータス」をそれぞれシステムごとに自由に追加・編集できます</p>
