@@ -236,6 +236,7 @@
             const viewList = document.getElementById('view-list');
             const viewDetail = document.getElementById('view-detail');
             const breadcrumbs = document.getElementById('breadcrumbs');
+            const breadcrumbAction = document.getElementById('breadcrumbAction');
 
             if (viewFolders) viewFolders.classList.add('hidden');
             if (viewList) viewList.classList.add('hidden');
@@ -245,6 +246,14 @@
                 if (viewFolders) viewFolders.classList.remove('hidden');
                 if (breadcrumbs) {
                     breadcrumbs.innerHTML = `<span class="text-stone-700 font-medium flex items-center gap-1"><i class="fa-solid fa-house text-[10px]"></i> システム一覧</span>`;
+                }
+                if (breadcrumbAction) {
+                    breadcrumbAction.innerHTML = `
+                        <a href="index.html" class="flex items-center gap-1.5 text-xs text-stone-600 hover:text-stone-900 bg-stone-100 hover:bg-stone-200/70 px-3 py-1.5 rounded-xl transition-all">
+                            <i class="fa-solid fa-book-open text-[10px]"></i>
+                            <span>日記へ</span>
+                        </a>
+                    `;
                 }
                 const searchInput = document.getElementById('folderSearchInput');
                 if (searchInput) searchInput.value = '';
@@ -258,6 +267,14 @@
                         <a href="javascript:void(0)" onclick="navigateTo('folders')" class="hover:text-stone-900 transition-colors flex items-center gap-1"><i class="fa-solid fa-house text-[10px]"></i> システム一覧</a>
                         <span class="text-stone-300">/</span>
                         <span class="text-stone-700 font-medium">${sysName}</span>
+                    `;
+                }
+                if (breadcrumbAction) {
+                    breadcrumbAction.innerHTML = `
+                        <button onclick="navigateTo('folders')" class="flex items-center gap-1.5 text-xs text-stone-600 hover:text-stone-900 bg-stone-100 hover:bg-stone-200/70 px-3 py-1.5 rounded-xl transition-all">
+                            <i class="fa-solid fa-house text-[10px]"></i>
+                            <span>システム一覧へ</span>
+                        </button>
                     `;
                 }
                 const searchInput = document.getElementById('characterSearchInput');
@@ -274,6 +291,15 @@
                         <a href="javascript:void(0)" onclick="navigateTo('characterList', '${ch ? ch.systemId : window.selectedSystemId}')" class="hover:text-stone-900 transition-colors">${window.systems.find(s => s.id === (ch ? ch.systemId : window.selectedSystemId))?.name || '一覧'}</a>
                         <span class="text-stone-300">/</span>
                         <span class="text-stone-700 font-medium">${charName}</span>
+                    `;
+                }
+                const targetSystemId = ch ? ch.systemId : window.selectedSystemId;
+                if (breadcrumbAction) {
+                    breadcrumbAction.innerHTML = `
+                        <button onclick="navigateTo('characterList', '${targetSystemId}')" class="flex items-center gap-1.5 text-xs text-stone-600 hover:text-stone-900 bg-stone-100 hover:bg-stone-200/70 px-3 py-1.5 rounded-xl transition-all">
+                            <i class="fa-solid fa-arrow-left text-[10px]"></i>
+                            <span>キャラクター一覧へ</span>
+                        </button>
                     `;
                 }
                 renderCharacterDetail(param);
@@ -391,6 +417,12 @@
                 if (systemSelect && window.selectedSystemId) {
                     systemSelect.value = window.selectedSystemId;
                 }
+                // 初期化
+                document.getElementById('characterForm').reset();
+                window.currentThumbnailBase64 = "";
+                window.currentAvatarBase64 = "";
+                document.getElementById('thumbPreview').classList.add('hidden');
+                document.getElementById('avatarPreview').classList.add('hidden');
                 document.getElementById('characterModal').classList.remove('hidden');
             });
         }
@@ -425,20 +457,87 @@
         }
         window.closeSettingsModal = closeSettingsModal;
 
-        function handleFaviconFileSelect(event) {
-            const file = event.target.files[0];
+        // 🖼️ 汎用：高解像度画像（3MB〜5MB超、2000x4000px等）を自動圧縮する関数
+        function compressImageFile(file, maxDimension, quality, callback) {
             if (!file) return;
-
             const reader = new FileReader();
             reader.onload = function(e) {
-                window.currentFaviconBase64 = e.target.result;
-                const preview = document.getElementById('settingFaviconPreview');
-                preview.src = window.currentFaviconBase64;
-                preview.classList.remove('hidden');
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    let width = img.width;
+                    let height = img.height;
+
+                    // 指定された最大解像度（長辺）に収まるよう自動縮小
+                    if (width > height) {
+                        if (width > maxDimension) {
+                            height *= maxDimension / width;
+                            width = maxDimension;
+                        }
+                    } else {
+                        if (height > maxDimension) {
+                            width *= maxDimension / height;
+                            height = maxDimension;
+                        }
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    // 容量オーバーしないよう、画質を保ちつつ軽量な WebP 形式に変換（対応していなければJPEG）
+                    let dataUrl = canvas.toDataURL('image/webp', quality);
+                    if (!dataUrl.startsWith('data:image/webp')) {
+                        dataUrl = canvas.toDataURL('image/jpeg', quality);
+                    }
+
+                    callback(dataUrl);
+                };
+                img.src = e.target.result;
             };
             reader.readAsDataURL(file);
         }
+
+        // ファビコン画像ファイル選択 (最大64px)
+        function handleFaviconFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            compressImageFile(file, 64, 0.8, (resultUrl) => {
+                window.currentFaviconBase64 = resultUrl;
+                const preview = document.getElementById('settingFaviconPreview');
+                preview.src = resultUrl;
+                preview.classList.remove('hidden');
+            });
+        }
         window.handleFaviconFileSelect = handleFaviconFileSelect;
+
+        // キャラクターサムネイル画像選択 (正方形・最大400px)
+        function handleThumbnailFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            compressImageFile(file, 400, 0.75, (resultUrl) => {
+                window.currentThumbnailBase64 = resultUrl;
+                const preview = document.getElementById('thumbPreview');
+                preview.src = resultUrl;
+                preview.classList.remove('hidden');
+            });
+        }
+        window.handleThumbnailFileSelect = handleThumbnailFileSelect;
+
+        // キャラクター立ち絵画像選択 (大サイズ・最大1200pxで自動圧縮)
+        function handleAvatarFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            // 3MB〜5MB以上の高解像度PNGでも、最大1200px・品質0.75に圧縮すれば安全に数拾KB〜200KB以内に収まります
+            compressImageFile(file, 1200, 0.75, (resultUrl) => {
+                window.currentAvatarBase64 = resultUrl;
+                const preview = document.getElementById('avatarPreview');
+                preview.src = resultUrl;
+                preview.classList.remove('hidden');
+            });
+        }
+        window.handleAvatarFileSelect = handleAvatarFileSelect;
 
         async function saveCharacter(event) {
             event.preventDefault();
@@ -446,8 +545,10 @@
             const name = document.getElementById('charName').value.trim();
             const age = document.getElementById('charAge').value;
             const occupation = document.getElementById('charOccupation').value.trim();
-            const thumbnail = document.getElementById('charThumbnail').value.trim();
-            const avatar = document.getElementById('charAvatar').value.trim();
+            
+            // アップロードされた圧縮画像データ、または手入力されたURLを使用
+            const thumbnail = window.currentThumbnailBase64 || document.getElementById('charThumbnailUrlInput')?.value.trim() || "";
+            const avatar = window.currentAvatarBase64 || document.getElementById('charAvatarUrlInput')?.value.trim() || "";
 
             if (!name) { alert("キャラクター名は必須です。"); return; }
 
@@ -468,7 +569,7 @@
                 alert("キャラクターを登録しました！");
             } catch (e) {
                 console.error("Save error:", e);
-                alert("保存に失敗しました。");
+                alert("保存に失敗しました。画像サイズが大きすぎないか確認してください。");
             }
         }
         window.saveCharacter = saveCharacter;
@@ -507,10 +608,6 @@
     <header class="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-stone-200/80 px-4 py-3.5">
         <div class="max-w-4xl mx-auto flex items-center justify-between">
             <div class="flex items-center gap-3">
-                <a href="index.html" class="flex items-center gap-1.5 text-xs text-stone-600 hover:text-stone-900 bg-stone-100 hover:bg-stone-200/70 px-3 py-1.5 rounded-xl transition-all">
-                    <i class="fa-solid fa-arrow-left text-[10px]"></i>
-                    <span>日記へ</span>
-                </a>
                 <h1 class="text-base font-bold font-serif-title text-stone-800 flex items-center gap-2">
                     <i class="fa-solid fa-users text-stone-600 text-xs"></i>
                     <span>Character Roster</span>
@@ -530,11 +627,20 @@
     <!-- メインコンテンツ -->
     <main class="max-w-4xl mx-auto w-full p-4 flex-1">
         
-        <nav id="breadcrumbs" class="flex items-center gap-2 text-xs text-stone-400 mb-6 overflow-x-auto whitespace-nowrap pb-1">
-            <span class="text-stone-700 font-medium flex items-center gap-1">
-                <i class="fa-solid fa-house text-[10px]"></i> システム一覧
-            </span>
-        </nav>
+        <!-- パンくずリスト ＆ 右側アクションボタン用の行 -->
+        <div class="flex items-center justify-between gap-2 mb-6">
+            <nav id="breadcrumbs" class="flex items-center gap-2 text-xs text-stone-400 overflow-x-auto whitespace-nowrap pb-1">
+                <span class="text-stone-700 font-medium flex items-center gap-1">
+                    <i class="fa-solid fa-house text-[10px]"></i> システム一覧
+                </span>
+            </nav>
+            <div id="breadcrumbAction" class="shrink-0">
+                <a href="index.html" class="flex items-center gap-1.5 text-xs text-stone-600 hover:text-stone-900 bg-stone-100 hover:bg-stone-200/70 px-3 py-1.5 rounded-xl transition-all">
+                    <i class="fa-solid fa-book-open text-[10px]"></i>
+                    <span>日記へ</span>
+                </a>
+            </div>
+        </div>
 
         <!-- 📂 システム別フォルダビュー -->
         <div id="view-folders">
@@ -616,14 +722,27 @@
                         <input type="text" id="charOccupation" placeholder="例：私立探偵" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-sm text-stone-800 focus:outline-none focus:border-stone-400">
                     </div>
                 </div>
+
+                <!-- サムネイル画像（ファイル自動圧縮） -->
                 <div>
-                    <label class="block text-xs font-bold text-stone-600 mb-1">アイコン画像URL（正方形サムネイル用）</label>
-                    <input type="text" id="charThumbnail" placeholder="https://..." class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-sm text-stone-800 focus:outline-none focus:border-stone-400">
+                    <label class="block text-xs font-bold text-stone-600 mb-1">一覧用アイコン画像（ファイル選択 / 自動圧縮）</label>
+                    <input type="file" id="thumbFile" accept="image/*" onchange="handleThumbnailFileSelect(event)" class="w-full text-xs text-stone-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-stone-100 file:text-stone-700 hover:file:bg-stone-200 cursor-pointer">
+                    <div class="mt-2 flex items-center gap-2">
+                        <span class="text-[10px] text-stone-400">プレビュー:</span>
+                        <img id="thumbPreview" class="w-10 h-10 rounded-lg object-cover border border-stone-200 hidden">
+                    </div>
                 </div>
+
+                <!-- 立ち絵画像（大サイズPNG対応・自動圧縮） -->
                 <div>
-                    <label class="block text-xs font-bold text-stone-600 mb-1">立ち絵画像URL（メイン・通常）</label>
-                    <input type="text" id="charAvatar" placeholder="https://..." class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-sm text-stone-800 focus:outline-none focus:border-stone-400">
+                    <label class="block text-xs font-bold text-stone-600 mb-1">立ち絵画像（3MB〜5MB超のPNGも自動で安全に軽量化）</label>
+                    <input type="file" id="avatarFile" accept="image/*" onchange="handleAvatarFileSelect(event)" class="w-full text-xs text-stone-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-stone-100 file:text-stone-700 hover:file:bg-stone-200 cursor-pointer">
+                    <div class="mt-2 flex items-center gap-2">
+                        <span class="text-[10px] text-stone-400">プレビュー:</span>
+                        <img id="avatarPreview" class="w-12 h-16 rounded-lg object-contain bg-stone-900/5 border border-stone-200 hidden">
+                    </div>
                 </div>
+
                 <div class="pt-3 flex items-center justify-end gap-2">
                     <button type="button" onclick="closeCharacterModal()" class="px-4 py-2 rounded-xl text-xs font-medium text-stone-600 hover:bg-stone-100 transition-all">キャンセル</button>
                     <button type="submit" class="bg-stone-800 text-white px-5 py-2 rounded-xl text-xs font-medium shadow-sm hover:bg-stone-700 transition-all">登録する</button>
@@ -651,7 +770,7 @@
                     <input type="text" id="settingTitleInput" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-sm text-stone-800 focus:outline-none focus:border-stone-400">
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-stone-600 mb-1">ファビコン画像（ファイルアップロード）</label>
+                    <label class="block text-xs font-bold text-stone-600 mb-1">ファビコン画像（自動圧縮）</label>
                     <div class="flex items-center gap-3">
                         <input type="file" id="settingFaviconFile" accept="image/*" onchange="handleFaviconFileSelect(event)" class="w-full text-xs text-stone-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-stone-100 file:text-stone-700 hover:file:bg-stone-200 cursor-pointer">
                     </div>
