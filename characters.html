@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>キャラクター管理 | 卓日記</title>
+    
+    <!-- 卓日記と統一されたデザインリソース -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Playfair+Display:ital,wght@0,600;1,400&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background-color: #fcfbf9;
+            color: #292524;
+        }
+        .font-serif-title {
+            font-family: 'Playfair Display', 'Noto Sans JP', serif;
+        }
+        input[type="text"], input[type="number"], select, textarea {
+            font-size: 16px !important; /* スマホズーム防止 */
+        }
+    </style>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        document.addEventListener("DOMContentLoaded", async () => {
+            console.log("🚀 キャラクター管理ページ初期化開始...");
+
+            // 🌟 1. sessionStorage から管理者セッションの復元
+            try {
+                if (sessionStorage.getItem('isAdminSession') === 'true') {
+                    window.isAdmin = true;
+                    console.log("🔐 セッションを復元: 管理者モード有効");
+                }
+            } catch (e) { console.error(e); }
+
+            // 🌟 2. メインの卓日記と同じ appId と Firebase設定
+            window.appId = "photo-journal-app"; // メインアプリと同じappIdを指定
+
+            const firebaseConfig = {
+                apiKey: "AIzaSyA2ctX9sUpJmLSVJomU9cbMzrUX_AXNjuE",
+                authDomain: "diary-36d77.firebaseapp.com",
+                projectId: "diary-36d77",
+                storageBucket: "diary-36d77.firebasestorage.app",
+                messagingSenderId: "1060563209082",
+                appId: "1:1060563209082:web:1c6cfc21a496548309e4c3",
+                measurementId: "G-RBK7ZN6NF1"
+            };
+
+            const app = initializeApp(firebaseConfig);
+            const auth = getAuth(app);
+            const db = getFirestore(app);
+            window.db = db;
+
+            await signInAnonymously(auth);
+            console.log("🔑 キャラクター管理: 匿名認証成功");
+
+            // UI状態の更新
+            updateAdminStateDisplay();
+        });
+
+        // 管理者表示の更新関数
+        function updateAdminStateDisplay() {
+            const badge = document.getElementById('adminStateBadge');
+            if (badge) {
+                if (window.isAdmin) {
+                    badge.classList.remove('hidden');
+                } else {
+                    badge.classList.add('hidden');
+                }
+            }
+        }
+    </script>
+</head>
+<body class="min-h-screen flex flex-col justify-between">
+
+    <!-- ヘッダーエリア -->
+    <header class="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-stone-200/80 px-4 py-3.5">
+        <div class="max-w-4xl mx-auto flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <!-- 卓日記メインへ戻るボタン -->
+                <a href="index.html" class="flex items-center gap-1.5 text-xs text-stone-600 hover:text-stone-900 bg-stone-100 hover:bg-stone-200/70 px-3 py-1.5 rounded-xl transition-all">
+                    <i class="fa-solid fa-arrow-left text-[10px]"></i>
+                    <span>日記へ</span>
+                </a>
+                <h1 class="text-base font-bold font-serif-title text-stone-800 flex items-center gap-2">
+                    <i class="fa-solid fa-users text-stone-600 text-xs"></i>
+                    <span>Character Roster</span>
+                </h1>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <!-- 管理者バッジ (復元時・管理者時のみ表示) -->
+                <span id="adminStateBadge" class="hidden text-[10px] font-medium bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-md">
+                    管理者モード
+                </span>
+            </div>
+        </div>
+    </header>
+
+    <!-- メインコンテンツ領域 -->
+    <main class="max-w-4xl mx-auto w-full p-4 flex-1">
+        
+        <!-- ヘッダーアクション / 案内 -->
+        <div class="flex items-center justify-between mb-6">
+            <div>
+                <h2 class="text-lg font-bold text-stone-800">キャラクター一覧</h2>
+                <p class="text-xs text-stone-400">登録された探索者・NPCの名簿</p>
+            </div>
+            
+            <!-- 新規追加ボタン (後ほどモーダル連動) -->
+            <button onclick="alert('次回ステップで登録モーダルを作成します！')" class="bg-stone-800 text-white text-xs font-medium px-4 py-2.5 rounded-2xl shadow-sm hover:bg-stone-700 transition-all flex items-center gap-1.5">
+                <i class="fa-solid fa-plus text-[10px]"></i>
+                <span>キャラ新規作成</span>
+            </button>
+        </div>
+
+        <!-- キャラクターカード一覧（ダミープレビュー） -->
+        <div id="characterListGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+            
+            <!-- ダミーカード例 -->
+            <div class="bg-white rounded-2xl p-4 border border-stone-200/80 shadow-sm flex flex-col gap-3">
+                <div class="aspect-[3/4] w-full bg-stone-100 rounded-xl overflow-hidden relative border border-stone-100">
+                    <div class="w-full h-full flex items-center justify-center text-stone-300">
+                        <i class="fa-solid fa-user text-4xl"></i>
+                    </div>
+                    <span class="absolute top-2 left-2 bg-stone-800/80 text-white text-[10px] px-2 py-0.5 rounded-full backdrop-blur-sm">CoC6版</span>
+                </div>
+                <div>
+                    <h3 class="font-bold text-sm text-stone-800">サンプル探索者</h3>
+                    <p class="text-xs text-stone-400 mt-0.5">24歳 / 私立探偵</p>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- フッター -->
+    <footer class="text-center py-6 text-[11px] text-stone-400 border-t border-stone-100 mt-12">
+        <p>© Session Log Character Roster</p>
+    </footer>
+
+</body>
+</html>
