@@ -184,6 +184,16 @@
             console.error("Instant cache load error:", e);
         }
 
+        // 🌟 【ここに管理者状態の復元を追加】
+        try {
+            if (sessionStorage.getItem('isAdminSession') === 'true') {
+                window.isAdmin = true;
+                console.log("🔐 セッションストレージから管理者状態を復元しました");
+            }
+        } catch (e) {
+            console.error("Session restore error:", e);
+        }
+
         try {
         if (typeof window.appId === 'undefined' || !window.appId) {
             window.appId = "default-app-id"; 
@@ -1518,6 +1528,7 @@ window.renderGridPhotoLayout = renderGridPhotoLayout;
                     }
                 }
                 window.isAdmin = true;
+                sessionStorage.setItem('isAdminSession', 'true'); // 🌟 追加
                 updateAdminUI();
                 closeAuthModal();
                 showToast('パスコードを設定しました。管理者モードになりました。', 'success');
@@ -1526,6 +1537,7 @@ window.renderGridPhotoLayout = renderGridPhotoLayout;
 
             if (inputVal === window.storedPasscode) {
                 window.isAdmin = true;
+                sessionStorage.setItem('isAdminSession', 'true'); // 🌟 追加
                 updateAdminUI();
                 closeAuthModal();
                 showToast('管理者としてログインしました。', 'success');
