@@ -351,6 +351,61 @@
         }
         window.renderCharacterList = renderCharacterList;
 
+        function openEditCharacterModal(characterId) {
+    const ch = window.characters.find(c => c.id === characterId);
+    if (!ch) {
+        showToast('キャラクターが見つかりませんでした', 'error');
+        return;
+    }
+
+    // 例として、フォームに既存のデータをセットする処理
+    const nameInput = document.getElementById('charName'); // 実際のIDに合わせて調整してください
+    const ageInput = document.getElementById('charAge');
+    const genderInput = document.getElementById('charGender');
+    const birthdateInput = document.getElementById('charBirthdate');
+    const colorInput = document.getElementById('charThemeColor');
+
+    if (nameInput) nameInput.value = ch.name || '';
+    if (ageInput) ageInput.value = ch.age || '';
+    if (genderInput) genderInput.value = ch.gender || '';
+    if (birthdateInput) birthdateInput.value = ch.birthdate || '';
+    if (colorInput) colorInput.value = ch.themeColor || '';
+
+    // 編集対象のIDを保持（保存時に使うためなど）
+    window.editingCharacterId = characterId;
+
+    // 編集用モーダルを開く処理（お手元のモーダル表示関数名に合わせて変更してください）
+    const modal = document.getElementById('characterModal'); // 実際のモーダルIDに合わせて調整
+    if (modal) {
+        modal.classList.remove('opacity-0', 'pointer-events-none');
+    }
+}
+window.openEditCharacterModal = openEditCharacterModal;
+
+        function deleteCharacter(characterId) {
+    const ch = window.characters.find(c => c.id === characterId);
+    const charName = ch ? ch.name : 'このキャラクター';
+
+    // 共通の確認モーダル（または通常のconfirm）を使って削除確認
+    showConfirm('キャラクターの削除', `「${charName}」を削除してもよろしいですか？この操作は元に戻せません。`, () => {
+        // Firebase / Firestore からの削除、またはローカル配列からの削除処理
+        window.characters = window.characters.filter(c => c.id !== characterId);
+        
+        // Firestoreに保存している場合の処理例：
+        // db.collection('characters').doc(characterId).delete().then(() => { ... });
+
+        showToast('キャラクターを削除しました', 'info');
+        
+        // 一覧画面に戻る
+        if (window.selectedSystemId) {
+            navigateTo('characterList', window.selectedSystemId);
+        } else {
+            navigateTo('systemList');
+        }
+    });
+}
+window.deleteCharacter = deleteCharacter;
+
         function handleCharacterSearchInput(e) {
             renderCharacterList(window.selectedSystemId, e.target.value);
         }
