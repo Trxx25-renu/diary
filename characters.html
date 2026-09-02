@@ -323,7 +323,7 @@
 
             filteredChars.forEach(ch => {
                 const card = document.createElement('div');
-                card.className = 'bg-white rounded-2xl p-4 border border-stone-200/80 shadow-sm hover:shadow-md transition-all cursor-pointer flex flex-col gap-3 relative overflow-hidden';
+                card.className = 'bg-white rounded-2xl p-4 border border-stone-200/60 shadow-sm hover:shadow-md transition-all cursor-pointer flex flex-col gap-3 relative overflow-hidden';
                 card.onclick = () => navigateTo('detail', ch.id);
 
                 const themeColor = ch.themeColor || '#78716c';
