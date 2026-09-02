@@ -1580,22 +1580,27 @@ window.renderGridPhotoLayout = renderGridPhotoLayout;
         }
         window.handleAuthSubmit = handleAuthSubmit;
 
-// ❓ アプリ共通の確認モーダルを表示する関数
-function showConfirm(title, desc, onYesCallback) {
+// 修正版：タイトルや説明文、ボタンの文言も柔軟に受け取れる showConfirm 関数
+function showConfirm(title, desc, onYesCallback, yesBtnText = 'はい', cancelBtnText = 'いいえ') {
     const modal = document.getElementById('confirmModal');
     const titleEl = document.getElementById('confirmTitle');
     const descEl = document.getElementById('confirmDesc');
     const yesBtn = document.getElementById('confirmYesBtn');
+    const cancelBtn = modal ? modal.querySelector('button[onclick*="closeConfirmModal"]') : null;
 
-    if (titleEl) titleEl.textContent = title;
-    if (descEl) descEl.textContent = desc;
+    // タイトルと説明文をしっかりと反映
+    if (titleEl) titleEl.textContent = title || '確認';
+    if (descEl) {
+        descEl.textContent = desc || '';
+        descEl.style.display = desc ? 'block' : 'none'; // 説明文がなければ隠す
+    }
 
+    // ボタンのテキストも必要に応じて変更
     if (yesBtn) {
-        // イベントの重複を防ぐためにボタンを複製して置き換え
+        yesBtn.textContent = yesBtnText;
         const newYesBtn = yesBtn.cloneNode(true);
         yesBtn.parentNode.replaceChild(newYesBtn, yesBtn);
 
-        // 「はい」が押されたときの処理
         newYesBtn.addEventListener('click', () => {
             closeConfirmModal();
             if (typeof onYesCallback === 'function') {
@@ -1604,7 +1609,11 @@ function showConfirm(title, desc, onYesCallback) {
         });
     }
 
-    // モーダルを表示状態にする（不透明化 ＆ 拡大アニメーション）
+    if (cancelBtn && cancelBtnText) {
+        cancelBtn.textContent = cancelBtnText;
+    }
+
+    // モーダルを表示
     if (modal) {
         modal.classList.remove('opacity-0', 'pointer-events-none');
         const innerCard = modal.querySelector('.scale-95');
