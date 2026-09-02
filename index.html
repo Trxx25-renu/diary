@@ -314,19 +314,19 @@
             const viewGallery = document.getElementById('view-gallery');
             const viewDetail = document.getElementById('view-detail');
             const searchToolbar = document.getElementById('searchToolbarSection');
-            const resultsArea = document.getElementById('searchResultsArea'); // 👈 検索結果エリア
+            const resultsArea = document.getElementById('searchResultsArea');
             const breadcrumbs = document.getElementById('breadcrumbs');
 
-            // 1. すべてのビューや検索結果をいったん隠す
+            // 1. すべてのビューをいったん隠す
             if (viewMonths) viewMonths.classList.add('hidden');
             if (viewGallery) viewGallery.classList.add('hidden');
             if (viewDetail) viewDetail.classList.add('hidden');
             if (searchToolbar) searchToolbar.classList.add('hidden');
 
-            // 🌟 検索結果エリアを隠す（flexクラスも同時に外して確実に消す）
+            // 検索結果エリアを隠す
             if (resultsArea) {
                 resultsArea.classList.add('hidden');
-                resultsArea.classList.remove('flex'); // 👈 ここがポイント！
+                resultsArea.classList.remove('flex');
             }
 
             // 2. パンくずリストとビューの切り替え
@@ -334,7 +334,6 @@
                 if (viewMonths) viewMonths.classList.remove('hidden');
                 if (searchToolbar) searchToolbar.classList.remove('hidden'); // ホームでは表示
                 
-                // ホーム（月別）のときのパンくず
                 if (breadcrumbs) {
                     breadcrumbs.innerHTML = `
                         <span class="text-stone-700 font-medium flex items-center gap-1">
@@ -352,18 +351,41 @@
                 if (searchToolbar) searchToolbar.classList.remove('hidden'); // ギャラリーでも表示
                 if (param) window.selectedYearMonth = param;
 
-                // ギャラリー表示中のときのパンくず
+                // 🌟 2階層目のヘッダー（左に年月と件数、右に ＜ ＞ と カレンダー一覧）
                 if (breadcrumbs) {
                     const ym = window.selectedYearMonth || '';
                     const [y, m] = ym.split('-');
                     const displayYm = y && m ? `${y}年${parseInt(m, 10)}月` : ym;
 
+                    // その月の記事数を計算
+                    let count = 0;
+                    if (window.entries && ym) {
+                        count = window.entries.filter(e => e.date && e.date.startsWith(ym)).length;
+                    }
+
                     breadcrumbs.innerHTML = `
-                        <a href="javascript:void(0)" onclick="navigateTo('months')" class="hover:text-stone-900 transition-colors flex items-center gap-1">
-                            <i class="fa-solid fa-house text-[10px]"></i> ホーム (月別)
-                        </a>
-                        <span class="text-stone-300">/</span>
-                        <span class="text-stone-700 font-medium">${displayYm}</span>
+                        <div class="w-full flex items-center justify-between py-1">
+                            <!-- 左側：年月 ＆ 件数 -->
+                            <div class="flex flex-col">
+                                <h1 class="text-base sm:text-lg font-serif-title font-bold text-stone-800">${displayYm}</h1>
+                                <span class="text-xs text-stone-500">全 ${count} 件の思い出</span>
+                            </div>
+
+                            <!-- 右側：前月・次月ボタン ＆ カレンダー一覧などのアクション -->
+                            <div class="flex items-center gap-2">
+                                <div class="flex items-center bg-stone-100 rounded-lg p-0.5 border border-stone-200">
+                                    <button onclick="changeMonth(-1)" class="w-7 h-7 flex items-center justify-center rounded-md hover:bg-white text-stone-600 shadow-sm transition-all" title="前月へ">
+                                        <i class="fa-solid fa-chevron-left text-xs"></i>
+                                    </button>
+                                    <button onclick="changeMonth(1)" class="w-7 h-7 flex items-center justify-center rounded-md hover:bg-white text-stone-600 shadow-sm transition-all" title="次月へ">
+                                        <i class="fa-solid fa-chevron-right text-xs"></i>
+                                    </button>
+                                </div>
+                                <a href="javascript:void(0)" onclick="navigateTo('months')" class="text-xs font-medium text-stone-600 hover:text-stone-900 bg-stone-100 hover:bg-stone-200/70 px-3 py-1.5 rounded-lg border border-stone-200 transition-all flex items-center gap-1.5">
+                                    <i class="fa-solid fa-folder-open text-[11px]"></i> ホーム一覧
+                                </a>
+                            </div>
+                        </div>
                     `;
                 }
 
@@ -375,7 +397,6 @@
                 if (viewDetail) viewDetail.classList.remove('hidden');
                 if (param) window.selectedEntryId = param;
 
-                // カレンダーなどから直接詳細が開かれた場合、年月が未設定なら記事データから逆算する
                 if (!window.selectedYearMonth && window.selectedEntryId && window.entries) {
                     const targetEntry = window.entries.find(e => e.id === window.selectedEntryId);
                     if (targetEntry && targetEntry.date) {
@@ -383,7 +404,6 @@
                     }
                 }
 
-                // 詳細表示中のときのパンくず
                 if (breadcrumbs) {
                     const ym = window.selectedYearMonth || '';
                     const [y, m] = ym.split('-');
@@ -417,6 +437,28 @@
 
         window.navigateTo = navigateTo;
         
+        // 🌟 指定した方向に1ヶ月分ズラしてギャラリーを再描画する関数
+        function changeMonth(direction) {
+            if (!window.selectedYearMonth) return;
+            
+            // "2026-08" のような文字列を [2026, 8] に分解
+            let [y, m] = window.selectedYearMonth.split('-').map(Number);
+            
+            m += direction; // -1 または +1
+            
+            if (m < 1) {
+                m = 12;
+                y -= 1;
+            } else if (m > 12) {
+                m = 1;
+                y += 1;
+            }
+            
+            const newYm = `${y}-${String(m).padStart(2, '0')}`;
+            navigateTo('gallery', newYm);
+        }
+        window.changeMonth = changeMonth;
+
 // 1. ここに THEME_CLASSES を定義します（この定義が最上部にある必要があります）
         const THEME_CLASSES = {
             amber: {
