@@ -326,12 +326,15 @@
                 card.className = 'bg-white rounded-2xl p-4 border border-stone-200/60 shadow-sm hover:shadow-md transition-all cursor-pointer flex flex-col gap-3 relative overflow-hidden';
                 card.onclick = () => navigateTo('detail', ch.id);
 
+                // 各カードごとのテーマカラーを取得（未設定ならデフォルトのグレー系）
+                const themeColor = ch.themeColor || '#78716c';
+
                 let thumbHtml = `<div class="w-full h-full flex items-center justify-center text-stone-300 bg-stone-50"><i class="fa-solid fa-user text-3xl"></i></div>`;
                 if (ch.thumbnail) {
                     thumbHtml = `<img src="${ch.thumbnail}" class="w-full h-full object-cover">`;
                 }
 
-                const epithetHtml = ch.epithet ? `<p class="text-[10px] font-bold text-stone-500 truncate" style="color: ${themeColor}">${ch.epithet}</p>` : '';
+                const epithetHtml = ch.epithet ? `<p class="text-[10px] font-bold truncate" style="color: ${themeColor}">${ch.epithet}</p>` : '';
 
                 card.innerHTML = `
                     <div class="aspect-square w-full rounded-xl overflow-hidden relative border border-stone-100">
