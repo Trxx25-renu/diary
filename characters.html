@@ -1010,15 +1010,20 @@
             <div class="flex items-center gap-3">
                 <h1 class="text-base font-bold font-serif-title text-stone-800 flex items-center gap-2">
                     <i class="fa-solid fa-users text-stone-600 text-xs"></i>
-                    <span>Character Roster</span>
+                    <span id="headerTitleText">Character Roster</span>
                 </h1>
             </div>
-            <div class="flex items-center gap-3">
+            <div class="flex items-center gap-2 sm:gap-3">
+                <!-- 共有ボタンを日記側と合わせて追加 -->
+                <button onclick="handleOpenShareModal()" class="bg-white hover:bg-stone-50 text-stone-700 text-xs font-bold px-3.5 py-2 rounded-full border border-stone-200 shadow-sm transition-all flex items-center gap-1.5">
+                    <i class="fa-solid fa-share-nodes text-stone-500"></i>
+                    <span>共有</span>
+                </button>
                 <button onclick="handleOpenSettingsModal()" class="bg-white hover:bg-stone-50 text-stone-700 text-xs font-bold px-3.5 py-2 rounded-full border border-stone-200 shadow-sm transition-all flex items-center gap-1.5">
                     <i class="fa-solid fa-gear text-stone-500"></i>
                     <span>サイト設定</span>
                 </button>
-                <button id="headerKeyBtn" onclick="handleHeaderKeyClick()" class="text-stone-600 hover:text-stone-800 transition-colors p-1 text-base" title="管理者ログイン">
+                <button id="headerKeyBtn" onclick="handleHeaderKeyClick()" class="text-stone-600 hover:text-stone-800 transition-colors p-2 text-base" title="管理者ログイン">
                     <i class="fa-solid fa-lock"></i>
                 </button>
                 <button onclick="handleOpenAddModal()" class="bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold px-4 py-2 rounded-full shadow-sm transition-all flex items-center gap-1.5">
