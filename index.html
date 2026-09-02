@@ -1803,18 +1803,40 @@ window.handleSaveConfig = handleSaveConfig;
                         window.tempImageUrls[index] = base64;
                         processedCount++;
 
-                        // すべてのファイルの処理が終わったら
+                       // すべてのファイルの処理が終わったら
                         if (processedCount === filesToProcess.length) {
                             // 互換性のために1枚目を window.tempBase64Image にも入れておく
                             window.tempBase64Image = window.tempImageUrls[0] || '';
                             console.log(`📸 複数画像圧縮完了: 計 ${window.tempImageUrls.length} 枚`);
 
-                            const preview = document.getElementById('imagePreview');
+                            // 🌟 複数枚のサムネイルをプレビューコンテナに並べて表示する処理
+                            const previewContainer = document.getElementById('imagePreviewContainer');
                             const placeholder = document.getElementById('uploadPlaceholder');
-                            if (preview) {
-                                preview.src = window.tempBase64Image;
-                                preview.classList.remove('hidden');
+                            
+                            if (previewContainer) {
+                                // 一旦中身をクリア
+                                previewContainer.innerHTML = '';
+                                
+                                // 選ばれた画像ごとにサムネイル要素を作成して並べる
+                                window.tempImageUrls.forEach((url, i) => {
+                                    const thumbWrapper = document.createElement('div');
+                                    thumbWrapper.className = 'relative w-20 h-20 rounded-xl overflow-hidden border border-stone-200 shrink-0 bg-white shadow-sm';
+                                    
+                                    const img = document.createElement('img');
+                                    img.src = url;
+                                    img.className = 'w-full h-full object-cover';
+                                    
+                                    // 何枚目か分かりやすいように右下に番号をつける
+                                    const badge = document.createElement('span');
+                                    badge.className = 'absolute bottom-1 right-1 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded-md font-bold';
+                                    badge.textContent = `${i + 1}`;
+                                    
+                                    thumbWrapper.appendChild(img);
+                                    thumbWrapper.appendChild(badge);
+                                    previewContainer.appendChild(thumbWrapper);
+                                });
                             }
+                            
                             if (placeholder) placeholder.classList.add('hidden');
                         }
                     };
@@ -2525,23 +2547,26 @@ window.handleSaveConfig = handleSaveConfig;
                 </button>
             </div>
 
-            <form id="postForm" onsubmit="handleSaveEntry(event)" class="flex flex-col gap-4">
+          <form id="postForm" onsubmit="handleSaveEntry(event)" class="flex flex-col gap-4">
                 <div>
                     <label class="block text-xs font-medium text-stone-700 mb-1">写真 (必須・最大3枚まで)</label>
-                    <div class="relative w-full aspect-[16/10] bg-stone-50 border-2 border-dashed border-stone-200 rounded-2xl overflow-hidden hover:border-stone-500/50 transition-colors cursor-pointer flex flex-col items-center justify-center text-center p-4">
-                        <!-- 🌟 multiple属性を追加しました -->
-                        <input type="file" accept="image/*" multiple onchange="handleImageSelect(event)" class="absolute inset-0 opacity-0 cursor-pointer z-10">
+                    <!-- 🌟 枠全体をクリックしたときにファイル選択が開くように onclick を追加 -->
+                    <div class="relative w-full bg-stone-50 border-2 border-dashed border-stone-200 rounded-2xl p-3 hover:border-stone-500/50 transition-colors cursor-pointer" onclick="document.getElementById('imageInput').click()">
                         
-                        <img id="imagePreview" src="" alt="プレビュー" class="hidden w-full h-full object-cover">
+                        <!-- 🌟 id="imageInput" を追加 -->
+                        <input type="file" id="imageInput" accept="image/*" multiple onchange="handleImageSelect(event)" class="hidden">
                         
-                        <div id="uploadPlaceholder" class="flex flex-col items-center gap-2 text-stone-400">
-                            <i class="fa-regular fa-image text-2xl"></i>
-                            <span class="text-xs">クリックまたはタップして写真を選択 (複数選択可)</span>
+                        <!-- 🌟 複数枚のサムネイルが横に並ぶコンテナ -->
+                        <div id="imagePreviewContainer" class="flex gap-2 overflow-x-auto min-h-[90px] items-center justify-center py-2">
+                            <div id="uploadPlaceholder" class="flex flex-col items-center gap-2 text-stone-400">
+                                <i class="fa-regular fa-image text-2xl"></i>
+                                <span class="text-xs">クリックまたはタップして写真を選択 (複数可)</span>
+                            </div>
                         </div>
                     </div>
                 </div>
-
                <div>
+                   
                     <label class="block text-xs font-medium text-stone-700 mb-1">シナリオタイトル <span class="text-[10px] text-stone-400 font-normal">(任意)</span></label>
                     <input type="text" id="inputScenarioTitle" placeholder="例：〇〇の怪" class="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs focus:outline-none focus:border-stone-500 font-bold">
                 </div>
