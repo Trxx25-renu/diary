@@ -1580,6 +1580,56 @@ window.renderGridPhotoLayout = renderGridPhotoLayout;
         }
         window.handleAuthSubmit = handleAuthSubmit;
 
+// ❓ アプリ共通の確認モーダルを表示する関数
+function showConfirm(title, desc, onYesCallback) {
+    const modal = document.getElementById('confirmModal');
+    const titleEl = document.getElementById('confirmTitle');
+    const descEl = document.getElementById('confirmDesc');
+    const yesBtn = document.getElementById('confirmYesBtn');
+
+    if (titleEl) titleEl.textContent = title;
+    if (descEl) descEl.textContent = desc;
+
+    if (yesBtn) {
+        // イベントの重複を防ぐためにボタンを複製して置き換え
+        const newYesBtn = yesBtn.cloneNode(true);
+        yesBtn.parentNode.replaceChild(newYesBtn, yesBtn);
+
+        // 「はい」が押されたときの処理
+        newYesBtn.addEventListener('click', () => {
+            closeConfirmModal();
+            if (typeof onYesCallback === 'function') {
+                onYesCallback();
+            }
+        });
+    }
+
+    // モーダルを表示状態にする（不透明化 ＆ 拡大アニメーション）
+    if (modal) {
+        modal.classList.remove('opacity-0', 'pointer-events-none');
+        const innerCard = modal.querySelector('.scale-95');
+        if (innerCard) {
+            innerCard.classList.remove('scale-95');
+            innerCard.classList.add('scale-100');
+        }
+    }
+}
+window.showConfirm = showConfirm;
+
+// ❓ モーダルを閉じる関数（もし無ければ追加）
+function closeConfirmModal() {
+    const modal = document.getElementById('confirmModal');
+    if (modal) {
+        modal.classList.add('opacity-0', 'pointer-events-none');
+        const innerCard = modal.querySelector('.scale-100');
+        if (innerCard) {
+            innerCard.classList.remove('scale-100');
+            innerCard.classList.add('scale-95');
+        }
+    }
+}
+window.closeConfirmModal = closeConfirmModal;
+        
         function updateAdminUI() {
             const statusText = document.getElementById('authLockStatus');
             const icon = document.getElementById('authLockIcon');
