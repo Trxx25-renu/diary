@@ -1607,7 +1607,8 @@ function showConfirm(title, desc, onYesCallback) {
 }
 window.showConfirm = showConfirm;
 
-        function closeConfirmModal(isYes) {
+// 🌟 引数を受け取れる統合版の closeConfirmModal（これ一本のみにします）
+function closeConfirmModal(isYes) {
     const modal = document.getElementById('confirmModal');
     if (modal) {
         modal.classList.add('opacity-0', 'pointer-events-none');
@@ -1624,20 +1625,6 @@ window.showConfirm = showConfirm;
     }
     
     currentConfirmCallback = null;
-}
-window.closeConfirmModal = closeConfirmModal;
-
-// ❓ モーダルを閉じる関数（もし無ければ追加）
-function closeConfirmModal() {
-    const modal = document.getElementById('confirmModal');
-    if (modal) {
-        modal.classList.add('opacity-0', 'pointer-events-none');
-        const innerCard = modal.querySelector('.scale-100');
-        if (innerCard) {
-            innerCard.classList.remove('scale-100');
-            innerCard.classList.add('scale-95');
-        }
-    }
 }
 window.closeConfirmModal = closeConfirmModal;
         
