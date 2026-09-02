@@ -1306,7 +1306,7 @@ window.deleteCharacter = deleteCharacter;
                     <input type="text" id="charName" required placeholder="例：探索者 太郎" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-sm text-stone-800 focus:outline-none focus:border-stone-400">
                 </div>
 
-                <!-- 必須4項目グリッドレイアウト -->
+<!-- 必須4項目グリッドレイアウト（年齢、性別、誕生日、カラーコード） -->
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs font-bold text-stone-600 mb-1">年齢</label>
@@ -1322,20 +1322,19 @@ window.deleteCharacter = deleteCharacter;
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-stone-600 mb-1">カラーコード</label>
-                        <input type="text" id="charThemeColor" value="#78716c" placeholder="#78716c" maxlength="7" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-xs font-mono text-stone-800 focus:outline-none focus:border-stone-400">
+                        <input type="text" id="charThemeColor" placeholder="#78716c" maxlength="7" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-xs font-mono text-stone-800 focus:outline-none focus:border-stone-400">
                     </div>
                 </div>
 
-                <div id="dynamicCustomFieldsContainer" class="space-y-3 pt-2 border-t border-stone-100"></div>
+                <!-- キャラクターシートURL入力欄（必須） -->
+                <div>
+                    <label class="block text-xs font-bold text-stone-600 mb-1">
+                        キャラクターシートURL <span class="text-rose-500">*</span>
+                    </label>
+                    <input type="url" id="charSheetUrl" placeholder="https://iachara.com/... など" required class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-800 focus:outline-none focus:border-stone-400">
+                </div>
 
-               <div>
-    <label class="block text-xs font-bold text-stone-600 mb-1">イメージカラー（カラーコード）</label>
-    <div class="flex items-center gap-3">
-        <!-- value を削除し、placeholder だけにしました -->
-        <input type="text" id="charThemeColor" placeholder="#………" maxlength="7" class="w-36 bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-xs font-mono text-stone-800 focus:outline-none focus:border-stone-400">
-        <span class="text-[11px] text-stone-400">詳細画面のテーマカラーやゲージの色に反映されます（例: #78716c）</span>
-    </div>
-</div>
+                <div id="dynamicCustomFieldsContainer" class="space-y-3 pt-2 border-t border-stone-100"></div>
 
                 <div id="dynamicCustomFieldsContainer" class="space-y-3 pt-2 border-t border-stone-100"></div>
 
