@@ -2288,12 +2288,20 @@ window.handleSaveConfig = handleSaveConfig;
 
     <main class="max-w-5xl mx-auto w-full px-4 py-6 flex-1 flex flex-col gap-6">
 
-       <!-- ナビゲーション パンくずリスト -->
-<nav id="breadcrumbs" class="text-xs text-stone-500 flex items-center gap-2 flex-wrap">
-    <a href="javascript:void(0)" onclick="navigateTo('months')" class="hover:text-stone-900 transition-colors flex items-center gap-1">
-        <i class="fa-solid fa-house text-[10px]"></i> ホーム (月別)
+       <!-- ナビゲーション ＆ キャラクター一覧ボタン（左右配置） -->
+<div class="flex items-center justify-between flex-wrap gap-2">
+    <!-- 左側：パンくずリスト -->
+    <nav id="breadcrumbs" class="text-xs text-stone-500 flex items-center gap-2 flex-wrap">
+        <a href="javascript:void(0)" onclick="navigateTo('months')" class="hover:text-stone-900 transition-colors flex items-center gap-1">
+            <i class="fa-solid fa-house text-[10px]"></i> ホーム (月別)
+        </a>
+    </nav>
+
+    <!-- 右側：キャラクター一覧へボタン -->
+    <a href="characters.html" class="px-3 py-1.5 rounded-xl bg-white hover:bg-stone-50 border border-stone-200 text-stone-700 text-xs font-medium flex items-center gap-1.5 transition-colors shadow-sm">
+        <i class="fa-solid fa-users text-[11px] text-stone-500"></i> キャラクター一覧へ
     </a>
-</nav>
+</div>
 
         <!-- 検索・フィルター ツールバー -->
         <section id="searchToolbarSection" class="bg-white rounded-2xl border border-stone-200/80 p-4 shadow-sm flex flex-col gap-3">
