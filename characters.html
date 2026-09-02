@@ -354,40 +354,47 @@ const epithetHtml = ch.epithet
         window.renderCharacterList = renderCharacterList;
 
         function openEditCharacterModal(characterId) {
-    const ch = window.characters.find(c => c.id === characterId);
+    // 文字列・数値を揃えてキャラクターを検索
+    const ch = window.characters.find(c => String(c.id) === String(characterId));
     if (!ch) {
         showToast('キャラクターが見つかりませんでした', 'error');
+        console.error("見つかったキャラクター一覧:", window.characters, "探しているID:", characterId);
         return;
     }
 
-    // 既存のデータをフォームにセットする処理
+    // フォーム要素へ値をセット
     const nameInput = document.getElementById('charName');
-    const nameKanaInput = document.getElementById('charNameKana'); // 追加
-    const epithetInput = document.getElementById('charEpithet');   // 追加
-    const epithetKanaInput = document.getElementById('charEpithetKana'); // 追加
+    const nameKanaInput = document.getElementById('charNameKana');
+    const epithetInput = document.getElementById('charEpithet');
+    const epithetKanaInput = document.getElementById('charEpithetKana');
     const ageInput = document.getElementById('charAge');
     const genderInput = document.getElementById('charGender');
     const birthdateInput = document.getElementById('charBirthdate');
     const colorInput = document.getElementById('charThemeColor');
-    const sheetUrlInput = document.getElementById('charSheetUrl'); // 追加
+    const sheetUrlInput = document.getElementById('charSheetUrl');
 
     if (nameInput) nameInput.value = ch.name || '';
-    if (nameKanaInput) nameKanaInput.value = ch.nameKana || '';         // 追加
-    if (epithetInput) epithetInput.value = ch.epithet || '';           // 追加
-    if (epithetKanaInput) epithetKanaInput.value = ch.epithetKana || ''; // 追加
+    if (nameKanaInput) nameKanaInput.value = ch.nameKana || '';
+    if (epithetInput) epithetInput.value = ch.epithet || '';
+    if (epithetKanaInput) epithetKanaInput.value = ch.epithetKana || '';
     if (ageInput) ageInput.value = ch.age || '';
     if (genderInput) genderInput.value = ch.gender || '';
     if (birthdateInput) birthdateInput.value = ch.birthdate || '';
     if (colorInput) colorInput.value = ch.themeColor || '';
-    if (sheetUrlInput) sheetUrlInput.value = ch.sheetUrl || '';       // 追加
+    if (sheetUrlInput) sheetUrlInput.value = ch.sheetUrl || '';
 
-    // 編集対象のIDを保持（保存時に使うためなど）
     window.editingCharacterId = characterId;
 
-    // 編集用モーダルを開く処理（お手元のモーダル表示関数名に合わせて変更してください）
-    const modal = document.getElementById('characterModal'); // 実際のモーダルIDに合わせて調整
+    // モーダルのタイトルを「編集」用に書き換える（あれば）
+    const modalTitle = document.querySelector('#characterModal h3 span');
+    if (modalTitle) modalTitle.textContent = 'キャラクター編集';
+
+    // 💡 hiddenクラスを外してモーダルを表示
+    const modal = document.getElementById('characterModal');
     if (modal) {
-        modal.classList.remove('opacity-0', 'pointer-events-none');
+        modal.classList.remove('hidden');
+    } else {
+        showToast('編集モーダルが見つかりません', 'error');
     }
 }
 window.openEditCharacterModal = openEditCharacterModal;
