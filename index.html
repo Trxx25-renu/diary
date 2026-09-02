@@ -2283,12 +2283,16 @@ window.handleSaveConfig = handleSaveConfig;
 
     <main class="max-w-5xl mx-auto w-full px-4 py-6 flex-1 flex flex-col gap-6">
 
-        <!-- ナビゲーション パンくずリスト -->
-        <nav id="breadcrumbs" class="text-xs text-stone-500 flex items-center gap-2 flex-wrap">
-            <a href="javascript:void(0)" onclick="navigateTo('months')" class="hover:text-stone-900 transition-colors flex items-center gap-1">
-                <i class="fa-solid fa-house text-[10px]"></i> ホーム (月別)
-            </a>
-        </nav>
+       <!-- ナビゲーション パンくずリスト -->
+<nav id="breadcrumbs" class="text-xs text-stone-500 flex items-center gap-2 flex-wrap">
+    <a href="javascript:void(0)" onclick="navigateTo('months')" class="hover:text-stone-900 transition-colors flex items-center gap-1">
+        <i class="fa-solid fa-house text-[10px]"></i> ホーム (月別)
+    </a>
+    <i class="fa-solid fa-chevron-right text-[10px] text-stone-400"></i>
+    <a href="characters.html" class="hover:text-stone-900 transition-colors flex items-center gap-1">
+        <i class="fa-solid fa-users text-[10px]"></i> キャラクター一覧
+    </a>
+</nav>
 
         <!-- 検索・フィルター ツールバー -->
         <section id="searchToolbarSection" class="bg-white rounded-2xl border border-stone-200/80 p-4 shadow-sm flex flex-col gap-3">
