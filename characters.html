@@ -334,8 +334,10 @@
                     thumbHtml = `<img src="${ch.thumbnail}" class="w-full h-full object-cover">`;
                 }
 
-                const epithetHtml = ch.epithet ? `<p class="text-[10px] font-bold truncate" style="color: ${themeColor}">${ch.epithet}</p>` : '';
-
+                // 読み仮名がある場合はルビ付き、ない場合はそのまま二つ名を表示
+const epithetHtml = ch.epithet 
+    ? `<p class="text-[10px] font-bold truncate" style="color: ${themeColor}"><ruby><rt class="font-normal text-[8px] text-stone-400">${ch.epithetKana || ''}</rt>${ch.epithet}</ruby></p>` 
+    : '';
                 card.innerHTML = `
                     <div class="aspect-square w-full rounded-xl overflow-hidden relative border border-stone-100">
                         ${thumbHtml}
@@ -358,18 +360,26 @@
         return;
     }
 
-    // 例として、フォームに既存のデータをセットする処理
-    const nameInput = document.getElementById('charName'); // 実際のIDに合わせて調整してください
+    // 既存のデータをフォームにセットする処理
+    const nameInput = document.getElementById('charName');
+    const nameKanaInput = document.getElementById('charNameKana'); // 追加
+    const epithetInput = document.getElementById('charEpithet');   // 追加
+    const epithetKanaInput = document.getElementById('charEpithetKana'); // 追加
     const ageInput = document.getElementById('charAge');
     const genderInput = document.getElementById('charGender');
     const birthdateInput = document.getElementById('charBirthdate');
     const colorInput = document.getElementById('charThemeColor');
+    const sheetUrlInput = document.getElementById('charSheetUrl'); // 追加
 
     if (nameInput) nameInput.value = ch.name || '';
+    if (nameKanaInput) nameKanaInput.value = ch.nameKana || '';         // 追加
+    if (epithetInput) epithetInput.value = ch.epithet || '';           // 追加
+    if (epithetKanaInput) epithetKanaInput.value = ch.epithetKana || ''; // 追加
     if (ageInput) ageInput.value = ch.age || '';
     if (genderInput) genderInput.value = ch.gender || '';
     if (birthdateInput) birthdateInput.value = ch.birthdate || '';
     if (colorInput) colorInput.value = ch.themeColor || '';
+    if (sheetUrlInput) sheetUrlInput.value = ch.sheetUrl || '';       // 追加
 
     // 編集対象のIDを保持（保存時に使うためなど）
     window.editingCharacterId = characterId;
@@ -532,9 +542,31 @@ window.deleteCharacter = deleteCharacter;
                 avatarHtml = `<img src="${ch.avatar}" class="w-full h-auto max-h-[500px] object-contain rounded-2xl bg-stone-900/5">`;
             }
 
+            // 【対応】二つ名にルビ（読み仮名）を反映
             let epithetHtml = '';
             if (ch.epithet && ch.epithet.trim() !== '') {
-                epithetHtml = `<p class="text-xs font-bold tracking-wider mb-1" style="color: ${themeColor}">${ch.epithet}</p>`;
+                const epithetRuby = ch.epithetKana 
+                    ? `<ruby>${ch.epithet}<rt class="text-[8px] font-normal text-stone-400 opacity-80">${ch.epithetKana}</rt></ruby>` 
+                    : ch.epithet;
+                epithetHtml = `<p class="text-xs font-bold tracking-wider mb-1" style="color: ${themeColor}">${epithetRuby}</p>`;
+            }
+
+            // 【対応】名前にもルビ（読み仮名）を反映
+            const nameRuby = ch.nameKana 
+                ? `<ruby>${ch.name || ''}<rt class="text-[10px] font-normal text-stone-400 opacity-80">${ch.nameKana}</rt></ruby>` 
+                : (ch.name || '');
+
+            // 【対応】キャラクターシートURLへのリンクボタン
+            let sheetLinkHtml = '';
+            if (ch.sheetUrl) {
+                sheetLinkHtml = `
+                    <div class="mt-4 pt-4 border-t border-stone-100">
+                        <a href="${ch.sheetUrl}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 text-xs font-bold text-white px-4 py-2 rounded-xl shadow-sm hover:opacity-95 transition-all" style="background-color: ${themeColor}">
+                            <i class="fa-solid fa-external-link-alt text-[10px]"></i>
+                            <span>キャラクターシートを開く</span>
+                        </a>
+                    </div>
+                `;
             }
 
             const sysFields = window.systemCustomFields[ch.systemId] || { status: [], text: [] };
@@ -569,7 +601,6 @@ window.deleteCharacter = deleteCharacter;
                     const barColor = isExceeded ? '#9333ea' : themeColor;
                     const badgeText = isExceeded ? `<span class="text-[10px] text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded font-bold ml-1">上限突破!</span>` : '';
 
-                    // 【修正】「最大 XX」の表示を削除し、数値のみシンプルに表示するように変更
                     customFieldsHtml += `
                         <div>
                             <div class="flex justify-between text-xs mb-1">
@@ -585,7 +616,7 @@ window.deleteCharacter = deleteCharacter;
                 customFieldsHtml += `</div>`;
             }
 
-            // 通過シナリオ一覧（仮のモックまたは実装枠。将来日記とリンク予定）
+            // 通過シナリオ一覧（仮のモック）
             const scenariosHtml = `
                 <div class="mt-6 pt-6 border-t border-stone-100">
                     <div class="flex items-center justify-between mb-3">
@@ -596,12 +627,10 @@ window.deleteCharacter = deleteCharacter;
                     </div>
                     <div class="bg-stone-50 rounded-2xl p-4 text-center text-xs text-stone-400 border border-stone-100">
                         <p>まだ通過シナリオが登録されていません。</p>
-                        <!-- 将来的にここに日記の記事リンクやシナリオ名リストが並びます -->
                     </div>
                 </div>
             `;
 
-            // 【修正】一番上の大きなカードのスタイルから、目立つ上部ボーダーを外しスッキリさせました
             detailContainer.innerHTML = `
                 <div class="bg-white rounded-3xl p-6 border border-stone-200/80 shadow-sm space-y-6 relative overflow-hidden">
                     <div class="flex flex-col md:flex-row gap-6">
@@ -616,20 +645,20 @@ window.deleteCharacter = deleteCharacter;
                                     </span>
                                 </div>
                                 ${epithetHtml}
-                                <h2 class="text-2xl font-bold text-stone-800 mb-2">${ch.name}</h2>
+                                <h2 class="text-2xl font-bold text-stone-800 mb-2">${nameRuby}</h2>
                                 <div class="space-y-1.5 text-xs text-stone-600 border-t border-stone-100 pt-3">
                                     <p><strong class="text-stone-400 w-24 inline-block">年齢:</strong> ${ch.age ? ch.age + '歳' : '未設定'}</p>
-                                    <p><strong class="text-stone-400 w-24 inline-block">職業 / クラス:</strong> ${ch.occupation || '未設定'}</p>
+                                    <p><strong class="text-stone-400 w-24 inline-block">性別:</strong> ${ch.gender || '未設定'}</p>
+                                    <p><strong class="text-stone-400 w-24 inline-block">誕生日:</strong> ${ch.birthdate || '未設定'}</p>
                                 </div>
+                                ${sheetLinkHtml}
                                 ${customFieldsHtml}
                             </div>
                         </div>
                     </div>
 
-                    <!-- 【追加】通過シナリオ一覧エリア -->
                     ${scenariosHtml}
 
-                    <!-- 【修正】下部アクションボタン（一覧に戻る、編集、削除を横並び） -->
                     <div class="pt-6 mt-6 border-t border-stone-100 flex items-center justify-between flex-wrap gap-3">
                         <button onclick="navigateTo('characterList', '${ch.systemId}')" class="text-xs font-medium text-stone-600 hover:text-stone-900 bg-stone-100 hover:bg-stone-200 px-4 py-2 rounded-xl transition-all flex items-center gap-1.5">
                             <i class="fa-solid fa-arrow-left text-[10px]"></i>
@@ -649,6 +678,7 @@ window.deleteCharacter = deleteCharacter;
                 </div>
             `;
         }
+        window.renderCharacterDetail = renderCharacterDetail;
 
         // 🍞 トースト通知・確認モーダルヘルパー
         function showToast(message, type = 'info') {
@@ -1296,15 +1326,29 @@ window.deleteCharacter = deleteCharacter;
                     <select id="charSystemSelect" onchange="handleSystemChangeInModal()" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-sm text-stone-800 focus:outline-none focus:border-stone-400"></select>
                 </div>
                 
-                <div>
-                    <label class="block text-xs font-bold text-stone-600 mb-1">二つ名（任意）</label>
-                    <input type="text" id="charEpithet" placeholder="例：紅蓮の探偵 / 狂気の求道者" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-sm text-stone-800 focus:outline-none focus:border-stone-400">
-                </div>
+                <!-- 二つ名と二つ名の読み仮名 -->
+<div class="grid grid-cols-2 gap-3 mt-3">
+    <div>
+        <label class="block text-xs font-bold text-stone-600 mb-1">二つ名の読み仮名</label>
+        <input type="text" id="charEpithetKana" placeholder="例: こっこうのすないぱー" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-800 focus:outline-none focus:border-stone-400">
+    </div>
+    <div>
+        <label class="block text-xs font-bold text-stone-600 mb-1">二つ名（称号など）</label>
+        <input type="text" id="charEpithet" placeholder="例: 孤高の狙撃手" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-800 focus:outline-none focus:border-stone-400">
+    </div>
+</div>
 
-                <div>
-                    <label class="block text-xs font-bold text-stone-600 mb-1">キャラクター名 <span class="text-rose-500">*</span></label>
-                    <input type="text" id="charName" required placeholder="例：探索者 太郎" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-sm text-stone-800 focus:outline-none focus:border-stone-400">
-                </div>
+               <!-- 名前と名前の読み仮名 -->
+<div class="grid grid-cols-2 gap-3">
+    <div>
+        <label class="block text-xs font-bold text-stone-600 mb-1">名前の読み仮名</label>
+        <input type="text" id="charNameKana" placeholder="例: やまだ たろう" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-800 focus:outline-none focus:border-stone-400">
+    </div>
+    <div>
+        <label class="block text-xs font-bold text-stone-600 mb-1">名前 <span class="text-rose-500">*</span></label>
+        <input type="text" id="charName" placeholder="例: 山田 太郎" required class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-800 focus:outline-none focus:border-stone-400">
+    </div>
+</div>
 
 <!-- 必須4項目グリッドレイアウト（年齢、性別、誕生日、カラーコード） -->
                 <div class="grid grid-cols-2 gap-3">
