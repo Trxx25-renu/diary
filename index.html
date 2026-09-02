@@ -2488,6 +2488,23 @@ window.handleSaveConfig = handleSaveConfig;
         </div>
     </div>
 
+    <!-- モーダル: ログアウト・各種確認用 -->
+<div id="confirmModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-200">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-xl border border-stone-200 scale-95 transition-transform duration-200 flex flex-col gap-4">
+        <div class="text-center">
+            <div class="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mx-auto text-xl mb-2">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <h3 id="confirmTitle" class="text-base font-bold text-stone-800">確認</h3>
+            <p id="confirmDesc" class="text-xs text-stone-500 mt-1">本当に実行しますか？</p>
+        </div>
+        <div class="flex items-center gap-2 mt-2">
+            <button type="button" onclick="closeConfirmModal()" class="flex-1 py-2.5 text-xs font-medium text-stone-600 bg-stone-100 hover:bg-stone-200 rounded-xl transition-colors">いいえ</button>
+            <button type="button" id="confirmYesBtn" class="flex-1 py-2.5 text-xs font-medium text-white bg-amber-700 hover:bg-amber-800 rounded-xl transition-colors shadow-sm">はい</button>
+        </div>
+    </div>
+</div>
+
     <!-- モーダル: サイト設定 -->
     <div id="configModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-200">
         <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-xl border border-stone-200 scale-95 transition-transform duration-200 flex flex-col gap-4 max-h-[90vh] overflow-y-auto">
