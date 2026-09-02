@@ -2146,22 +2146,26 @@ window.handleSaveConfig = handleSaveConfig;
         }
         window.escapeHtml = escapeHtml;
 
-        // 🔐 管理者ログイン・ログアウトのトリガー（キャラクター一覧側と完全同期）
-        function triggerAdminAccess() {
-            if (window.isAdmin) {
-                // すでにログイン中の場合は、自作の綺麗な確認モーダルを表示する
-                showConfirm('ログアウト', '管理者モードからログアウトしますか？', () => {
-                    window.isAdmin = false;
-                    sessionStorage.removeItem('isAdminSession');
-                    updateAdminUI();
-                    showToast('ログアウトしました', 'info');
-                });
-            } else {
-                // 未ログインの場合はパスコード入力モーダルを開く
-                openAuthModal();
-            }
+        // 🔑 HTMLの onclick="triggerAdminAccess()" に対応させる関数
+function triggerAdminAccess() {
+    if (window.isAdmin) {
+        // すでにログイン中なら、即座にログアウト確認
+        if (typeof showConfirm === 'function') {
+            showConfirm('ログアウト', '管理者モードからログアウトしますか？', () => {
+                window.isAdmin = false;
+                sessionStorage.removeItem('isAdminSession');
+                if (typeof updateAdminUI === 'function') updateAdminUI();
+                if (typeof showToast === 'function') showToast('ログアウトしました', 'info');
+                location.reload();
+            });
         }
-        window.triggerAdminAccess = triggerAdminAccess;
+    } else {
+        // 未ログインなら通常のパスコード画面（authModal）を開く
+        openAuthModal();
+    }
+}
+// グローバルに登録
+window.triggerAdminAccess = triggerAdminAccess;
 
         // 引っ張り更新（プル・トゥ・リフレッシュ）の処理
         document.addEventListener('DOMContentLoaded', () => {
