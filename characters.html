@@ -1339,37 +1339,25 @@ window.deleteCharacter = deleteCharacter;
 </div>
 
                <!-- 名前と名前の読み仮名 -->
-<div class="grid grid-cols-2 gap-3">
-    <div>
-        <label class="block text-xs font-bold text-stone-600 mb-1">名前の読み仮名</label>
-        <input type="text" id="charNameKana" placeholder="例: やまだ たろう" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-800 focus:outline-none focus:border-stone-400">
-    </div>
-    <div>
-        <label class="block text-xs font-bold text-stone-600 mb-1">名前 <span class="text-rose-500">*</span></label>
-        <input type="text" id="charName" placeholder="例: 山田 太郎" required class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-800 focus:outline-none focus:border-stone-400">
-    </div>
-</div>
-
-<!-- 必須4項目グリッドレイアウト（年齢、性別、誕生日、カラーコード） -->
                 <div class="grid grid-cols-2 gap-3">
+
                     <div>
-                        <label class="block text-xs font-bold text-stone-600 mb-1">年齢</label>
-                        <input type="text" id="charAge" placeholder="例: 27歳" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-800 focus:outline-none focus:border-stone-400">
+                        <label class="block text-xs font-bold text-stone-600 mb-1">名前の読み仮名</label>
+                        <input type="text" id="charNameKana" placeholder="例: やまだ たろう" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-800 focus:outline-none focus:border-stone-400">
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-stone-600 mb-1">性別</label>
-                        <input type="text" id="charGender" placeholder="例: 男性 / 女性 / 不明" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-800 focus:outline-none focus:border-stone-400">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-stone-600 mb-1">誕生日</label>
-                        <input type="text" id="charBirthdate" placeholder="例: 5月12日" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-800 focus:outline-none focus:border-stone-400">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-stone-600 mb-1">カラーコード</label>
-                        <input type="text" id="charThemeColor" placeholder="#78716c" maxlength="7" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-xs font-mono text-stone-800 focus:outline-none focus:border-stone-400">
+                        <label class="block text-xs font-bold text-stone-600 mb-1">名前 <span class="text-rose-500">*</span></label>
+                        <input type="text" id="charName" placeholder="例: 山田 太郎" required class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-800 focus:outline-none focus:border-stone-400">
                     </div>
                 </div>
 
+                <div class="grid grid-cols-2 gap-x-4 gap-y-2 text-xs text-stone-600 border-t border-stone-100 pt-3">
+                                    <p><strong class="text-stone-400 inline-block mr-1">年齢:</strong> ${ch.age ? ch.age + '歳' : '未設定'}</p>
+                                    <p><strong class="text-stone-400 inline-block mr-1">性別:</strong> ${ch.gender || '未設定'}</p>
+                                    <p><strong class="text-stone-400 inline-block mr-1">誕生日:</strong> ${ch.birthdate || '未設定'}</p>
+                                    <p class="flex items-center gap-1.5"><strong class="text-stone-400 inline-block mr-1">カラー:</strong> <span class="w-3 h-3 rounded-full inline-block border border-stone-200" style="background-color: ${themeColor}"></span><span class="font-mono">${rawThemeColor}</span></p>
+                                </div>
+                
                 <!-- キャラクターシートURL入力欄（必須） -->
                 <div>
                     <label class="block text-xs font-bold text-stone-600 mb-1">
