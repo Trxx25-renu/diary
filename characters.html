@@ -514,11 +514,12 @@
                     const barColor = isExceeded ? '#9333ea' : themeColor;
                     const badgeText = isExceeded ? `<span class="text-[10px] text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded font-bold ml-1">上限突破!</span>` : '';
 
+                    // 【修正】「最大 XX」の表示を削除し、数値のみシンプルに表示するように変更
                     customFieldsHtml += `
                         <div>
                             <div class="flex justify-between text-xs mb-1">
                                 <span class="font-medium text-stone-600">${f.label}</span>
-                                <span><strong class="text-stone-800">${val}</strong> / 最大 ${f.max} ${badgeText}</span>
+                                <span><strong class="text-stone-800">${val}</strong> ${badgeText}</span>
                             </div>
                             <div class="w-full h-2.5 bg-stone-100 rounded-full overflow-hidden">
                                 <div class="h-full rounded-full transition-all duration-500" style="width: ${percentage}%; background-color: ${barColor};"></div>
@@ -529,8 +530,25 @@
                 customFieldsHtml += `</div>`;
             }
 
+            // 通過シナリオ一覧（仮のモックまたは実装枠。将来日記とリンク予定）
+            const scenariosHtml = `
+                <div class="mt-6 pt-6 border-t border-stone-100">
+                    <div class="flex items-center justify-between mb-3">
+                        <h4 class="text-xs font-bold text-stone-500 flex items-center gap-1.5">
+                            <i class="fa-solid fa-book-bookmark text-stone-400"></i> 通過シナリオ一覧
+                        </h4>
+                        <span class="text-[10px] text-stone-400 bg-stone-100 px-2 py-0.5 rounded-full">0件</span>
+                    </div>
+                    <div class="bg-stone-50 rounded-2xl p-4 text-center text-xs text-stone-400 border border-stone-100">
+                        <p>まだ通過シナリオが登録されていません。</p>
+                        <!-- 将来的にここに日記の記事リンクやシナリオ名リストが並びます -->
+                    </div>
+                </div>
+            `;
+
+            // 【修正】一番上の大きなカードのスタイルから、目立つ上部ボーダーを外しスッキリさせました
             detailContainer.innerHTML = `
-                <div class="bg-white rounded-3xl p-6 border border-stone-200/80 shadow-sm space-y-6 relative overflow-hidden" style="border-top: 6px solid ${themeColor};">
+                <div class="bg-white rounded-3xl p-6 border border-stone-200/80 shadow-sm space-y-6 relative overflow-hidden">
                     <div class="flex flex-col md:flex-row gap-6">
                         <div class="w-full md:w-1/2">
                             ${avatarHtml}
@@ -550,12 +568,27 @@
                                 </div>
                                 ${customFieldsHtml}
                             </div>
-                            <div class="pt-6 mt-6 border-t border-stone-100 flex items-center justify-between">
-                                <button onclick="navigateTo('characterList', '${ch.systemId}')" class="text-xs font-medium text-stone-600 hover:text-stone-900 bg-stone-100 hover:bg-stone-200 px-4 py-2 rounded-xl transition-all flex items-center gap-1.5">
-                                    <i class="fa-solid fa-arrow-left text-[10px]"></i>
-                                    <span>一覧に戻る</span>
-                                </button>
-                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 【追加】通過シナリオ一覧エリア -->
+                    ${scenariosHtml}
+
+                    <!-- 【修正】下部アクションボタン（一覧に戻る、編集、削除を横並び） -->
+                    <div class="pt-6 mt-6 border-t border-stone-100 flex items-center justify-between flex-wrap gap-3">
+                        <button onclick="navigateTo('characterList', '${ch.systemId}')" class="text-xs font-medium text-stone-600 hover:text-stone-900 bg-stone-100 hover:bg-stone-200 px-4 py-2 rounded-xl transition-all flex items-center gap-1.5">
+                            <i class="fa-solid fa-arrow-left text-[10px]"></i>
+                            <span>一覧に戻る</span>
+                        </button>
+                        <div class="flex items-center gap-2">
+                            <button onclick="openEditCharacterModal('${characterId}')" class="flex items-center gap-1.5 text-xs text-stone-600 hover:text-stone-900 bg-stone-100 hover:bg-stone-200/70 px-4 py-2 rounded-xl transition-all">
+                                <i class="fa-solid fa-pen text-[10px]"></i>
+                                <span>編集</span>
+                            </button>
+                            <button onclick="deleteCharacter('${characterId}')" class="flex items-center gap-1.5 text-xs text-rose-600 hover:text-rose-900 bg-rose-50 hover:bg-rose-100 px-4 py-2 rounded-xl transition-all">
+                                <i class="fa-solid fa-trash text-[10px]"></i>
+                                <span>削除</span>
+                            </button>
                         </div>
                     </div>
                 </div>
