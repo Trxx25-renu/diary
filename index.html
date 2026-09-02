@@ -2309,7 +2309,7 @@ window.triggerAdminAccess = triggerAdminAccess;
                 </button>
 
                 <!-- 3. 管理者ログイン制御（鍵アイコン） -->
-                <button id="adminTrigger" onclick="triggerAdminAccess()" class="p-2 text-stone-400 hover:text-stone-600 transition-colors rounded-lg text-xs" title="管理者ログイン">
+                <button id="adminTrigger" onclick="handleHeaderKeyClick()" class="p-2 text-stone-400 hover:text-stone-600 transition-colors rounded-lg text-xs" title="管理者ログイン / ログアウト">
                     <i id="authLockIcon" class="fa-solid fa-lock text-stone-400"></i>
                 </button>
 
@@ -2815,5 +2815,21 @@ window.applyCurrentThemeToUI = applyCurrentThemeToUI;
                 }
             }
         };
+    <!-- ❓ 確認モーダル (ログアウト用など) -->
+<div id="confirmModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/40 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-200">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-xl border border-stone-200 scale-95 transition-transform duration-200 flex flex-col gap-4 text-center">
+        <div class="w-12 h-12 rounded-2xl bg-amber-50 text-amber-700 flex items-center justify-center mx-auto text-xl mb-1">
+            <i class="fa-solid fa-circle-exclamation"></i>
+        </div>
+        <div>
+            <h3 id="confirmTitle" class="text-base font-bold text-stone-800">確認</h3>
+            <p id="confirmDesc" class="text-xs text-stone-500 mt-1">本当によろしいですか？</p>
+        </div>
+        <div class="flex items-center gap-2 mt-2">
+            <button type="button" onclick="closeConfirmModal()" class="flex-1 py-2 text-xs font-medium text-stone-600 bg-stone-100 hover:bg-stone-200 rounded-xl transition-colors">いいえ</button>
+            <button type="button" id="confirmYesBtn" class="flex-1 py-2 text-xs font-medium text-white bg-amber-700 hover:bg-amber-800 rounded-xl transition-colors shadow-sm">はい</button>
+        </div>
+    </div>
+</div>
     
 </script>
