@@ -106,12 +106,17 @@
 
             await signInAnonymously(auth);
 
+            // デフォルトのシステムリスト（ご指定のひな型順）
             window.systems = [
-                { id: 'coc', name: 'クトゥルフ神話TRPG', desc: 'CoC 6版 / 7版', badgeColor: 'bg-amber-900/80' },
-                { id: 'sw25', name: 'ソード・ワールド2.5', desc: 'SW2.5 ルールブック', badgeColor: 'bg-emerald-800/80' },
-                { id: 'insane', name: 'インセイン', desc: 'マルチジャンルホラーRPG', badgeColor: 'bg-purple-900/80' }
+                { id: 'coc', name: 'クトゥルフ神話TRPG (6版)', desc: 'CoC 6版', badgeColor: 'bg-amber-900/80' },
+                { id: 'dx3', name: 'ダブルクロス The 3rd Edition', desc: 'DX3rd', badgeColor: 'bg-rose-900/80' },
+                { id: 'shinobigami', name: 'シノビガミ', desc: '現代忍法アクション', badgeColor: 'bg-cyan-900/80' },
+                { id: 'insane', name: 'インセイン', desc: 'マルチジャンルホラー', badgeColor: 'bg-purple-900/80' },
+                { id: 'magica', name: 'マギカロギア', desc: '魔法使いRPG', badgeColor: 'bg-indigo-900/80' },
+                { id: 'sw25', name: 'ソード・ワールド2.5', desc: 'SW2.5', badgeColor: 'bg-emerald-800/80' }
             ];
 
+            // デフォルトのシステム別カスタムフィールド
             window.systemCustomFields = {
                 coc: {
                     status: [
@@ -119,7 +124,45 @@
                         { id: 'hp', label: 'HP', max: 12 }
                     ],
                     text: [
-                        { id: 'mythos', label: 'クトゥルフ神話技能' }
+                        { id: 'mythos', label: 'クトゥルフ神話技能' },
+                        { id: 'artifact', label: '所持アーティファクト / 呪文' }
+                    ]
+                },
+                dx3: {
+                    status: [
+                        { id: 'hp', label: 'HP', max: 35 },
+                        { id: '侵蝕率', label: '侵蝕率', max: 150 }
+                    ],
+                    text: [
+                        { id: 'syndrome', label: 'シンドローム' },
+                        { id: 'ror', label: 'ロイス' }
+                    ]
+                },
+                shinobigami: {
+                    status: [
+                        { id: 'hp', label: '生命力', max: 6 }
+                    ],
+                    text: [
+                        { id: 'ryuha', label: '流派 / 階級' },
+                        { id: 'secret', label: '秘密 / 使命' }
+                    ]
+                },
+                insane: {
+                    status: [
+                        { id: 'hp', label: '狂気点', max: 6 }
+                    ],
+                    text: [
+                        { id: 'secret', label: '秘密 / 使命' },
+                        { id: 'horror', label: 'ホラー / ゾンビなど' }
+                    ]
+                },
+                magica: {
+                    status: [
+                        { id: 'hp', label: '生命力', max: 5 }
+                    ],
+                    text: [
+                        { id: 'kanei', label: '経緯 / 位階' },
+                        { id: 'mahou', label: '魔法 / 使命' }
                     ]
                 },
                 sw25: {
@@ -128,13 +171,7 @@
                         { id: 'mp', label: 'MP', max: 30 }
                     ],
                     text: [
-                        { id: 'race', label: '種族' }
-                    ]
-                },
-                insane: {
-                    status: [],
-                    text: [
-                        { id: 'secret', label: '秘密 / 使命' }
+                        { id: 'race', label: '種族 / レベル' }
                     ]
                 }
             };
@@ -152,11 +189,14 @@
                     const data = rosterSnap.data();
                     window.rosterSettings = data;
                     applyRosterSettings(data);
+                    if (data.systems) {
+                        window.systems = data.systems; // 保存された並び順を反映
+                    }
                     if (data.customFields) {
                         window.systemCustomFields = data.customFields;
                     }
                 } else {
-                    window.rosterSettings = { title: "キャラクター管理 | 卓日記", favicon: "" };
+                    window.rosterSettings = { title: "Character Roster", favicon: "" };
                 }
             } catch (e) { console.error("Config load error:", e); }
 
@@ -168,6 +208,8 @@
         function applyRosterSettings(settings) {
             if (settings.title) {
                 document.getElementById('pageTitle').textContent = settings.title;
+                const headerText = document.getElementById('headerTitleText');
+                if (headerText) headerText.textContent = settings.title;
             }
             if (settings.favicon) {
                 document.getElementById('dynamicFavicon').href = settings.favicon;
@@ -216,7 +258,7 @@
                 card.innerHTML = `
                     <div>
                         <div class="flex items-center justify-between mb-3">
-                            <span class="text-[10px] font-medium text-white px-2.5 py-1 rounded-lg ${sys.badgeColor}">${sys.desc}</span>
+                            <span class="text-[10px] font-medium text-white px-2.5 py-1 rounded-lg ${sys.badgeColor || 'bg-stone-700'}">${sys.desc}</span>
                             <i class="fa-solid fa-folder-open text-stone-300 group-hover:text-stone-600 transition-colors"></i>
                         </div>
                         <h3 class="font-bold text-base text-stone-800 group-hover:text-stone-900">${sys.name}</h3>
@@ -367,16 +409,18 @@
                 if (viewDetail) viewDetail.classList.remove('hidden');
                 const ch = window.characters.find(c => c.id === param);
                 const charName = ch ? ch.name : 'キャラクター詳細';
+                const targetSystemId = ch ? ch.systemId : window.selectedSystemId;
+                const sys = window.systems.find(s => s.id === targetSystemId);
+
                 if (breadcrumbs) {
                     breadcrumbs.innerHTML = `
                         <a href="javascript:void(0)" onclick="navigateTo('folders')" class="hover:text-stone-900 transition-colors flex items-center gap-1"><i class="fa-solid fa-house text-[10px]"></i> システム一覧</a>
                         <span class="text-stone-300">/</span>
-                        <a href="javascript:void(0)" onclick="navigateTo('characterList', '${ch ? ch.systemId : window.selectedSystemId}')" class="hover:text-stone-900 transition-colors">${window.systems.find(s => s.id === (ch ? ch.systemId : window.selectedSystemId))?.name || '一覧'}</a>
+                        <a href="javascript:void(0)" onclick="navigateTo('characterList', '${targetSystemId}')" class="hover:text-stone-900 transition-colors">${sys?.name || '一覧'}</a>
                         <span class="text-stone-300">/</span>
                         <span class="text-stone-700 font-medium">${charName}</span>
                     `;
                 }
-                const targetSystemId = ch ? ch.systemId : window.selectedSystemId;
                 if (breadcrumbAction) {
                     breadcrumbAction.innerHTML = `
                         <button onclick="navigateTo('characterList', '${targetSystemId}')" class="flex items-center gap-1.5 text-xs text-stone-600 hover:text-stone-900 bg-stone-100 hover:bg-stone-200/70 px-3 py-1.5 rounded-xl transition-all">
@@ -668,11 +712,11 @@
             const keyBtn = document.getElementById('headerKeyBtn');
             if (!keyBtn) return;
             if (window.isAdmin) {
-                keyBtn.className = "text-stone-600 hover:text-stone-800 transition-colors p-1 text-base";
+                keyBtn.className = "text-stone-600 hover:text-stone-800 transition-colors p-2 text-base";
                 keyBtn.innerHTML = '<i class="fa-solid fa-unlock"></i>';
                 keyBtn.title = "管理者モード（クリックでログアウト）";
             } else {
-                keyBtn.className = "text-stone-600 hover:text-stone-800 transition-colors p-1 text-base";
+                keyBtn.className = "text-stone-600 hover:text-stone-800 transition-colors p-2 text-base";
                 keyBtn.innerHTML = '<i class="fa-solid fa-lock"></i>';
                 keyBtn.title = "管理者ログイン";
             }
@@ -682,8 +726,11 @@
         function handleOpenAddModal() {
             checkAdminPermission(() => {
                 const systemSelect = document.getElementById('charSystemSelect');
-                if (systemSelect && window.selectedSystemId) {
-                    systemSelect.value = window.selectedSystemId;
+                if (systemSelect) {
+                    systemSelect.innerHTML = window.systems.map(sys => `<option value="${sys.id}">${sys.name}</option>`).join('');
+                    if (window.selectedSystemId) {
+                        systemSelect.value = window.selectedSystemId;
+                    }
                 }
                 document.getElementById('characterForm').reset();
                 document.getElementById('charThemeColor').value = '#292524';
@@ -750,10 +797,10 @@
         }
         window.closeCharacterModal = closeCharacterModal;
 
-        // ⚙️ サイト設定モーダル
+        // ⚙️ サイト設定モーダル（システム並び替え対応）
         function handleOpenSettingsModal() {
             checkAdminPermission(() => {
-                document.getElementById('settingTitleInput').value = window.rosterSettings?.title || "キャラクター管理 | 卓日記";
+                document.getElementById('settingTitleInput').value = window.rosterSettings?.title || "Character Roster";
                 
                 const preview = document.getElementById('settingFaviconPreview');
                 window.currentFaviconBase64 = window.rosterSettings?.favicon || "";
@@ -764,11 +811,52 @@
                     preview.classList.add('hidden');
                 }
 
+                renderSettingsSystemsEditor();
                 renderSettingsFieldsEditor();
                 document.getElementById('settingsModal').classList.remove('hidden');
             });
         }
         window.handleOpenSettingsModal = handleOpenSettingsModal;
+
+        function renderSettingsSystemsEditor() {
+            const container = document.getElementById('settingsSystemsEditorContainer');
+            if (!container) return;
+            container.innerHTML = '';
+
+            window.systems.forEach((sys, idx) => {
+                const row = document.createElement('div');
+                row.className = 'flex items-center gap-2 bg-stone-50 p-2.5 rounded-xl border border-stone-200 text-xs';
+                row.innerHTML = `
+                    <span class="font-bold text-stone-400 w-6 text-center">${idx + 1}</span>
+                    <input type="text" value="${sys.name}" data-idx="${idx}" data-key="name" onchange="updateSettingSystemData(this)" placeholder="システム名" class="flex-1 bg-white border border-stone-200 rounded-lg px-2 py-1 font-bold">
+                    <input type="text" value="${sys.desc || ''}" data-idx="${idx}" data-key="desc" onchange="updateSettingSystemData(this)" placeholder="説明文" class="w-28 bg-white border border-stone-200 rounded-lg px-2 py-1">
+                    <div class="flex items-center gap-1">
+                        <button type="button" onclick="moveSystemOrder(${idx}, -1)" ${idx === 0 ? 'disabled class="text-stone-300 p-1"' : 'class="text-stone-600 hover:text-stone-900 p-1"'} title="上に移動"><i class="fa-solid fa-arrow-up"></i></button>
+                        <button type="button" onclick="moveSystemOrder(${idx}, 1)" ${idx === window.systems.length - 1 ? 'disabled class="text-stone-300 p-1"' : 'class="text-stone-600 hover:text-stone-900 p-1"'} title="下に移動"><i class="fa-solid fa-arrow-down"></i></button>
+                    </div>
+                `;
+                container.appendChild(row);
+            });
+        }
+        window.renderSettingsSystemsEditor = renderSettingsSystemsEditor;
+
+        function updateSettingSystemData(element) {
+            const idx = element.dataset.idx;
+            const key = element.dataset.key;
+            window.systems[idx][key] = element.value;
+        }
+        window.updateSettingSystemData = updateSettingSystemData;
+
+        function moveSystemOrder(idx, direction) {
+            const targetIdx = idx + direction;
+            if (targetIdx < 0 || targetIdx >= window.systems.length) return;
+            const temp = window.systems[idx];
+            window.systems[idx] = window.systems[targetIdx];
+            window.systems[targetIdx] = temp;
+            renderSettingsSystemsEditor();
+            renderSettingsFieldsEditor();
+        }
+        window.moveSystemOrder = moveSystemOrder;
 
         function renderSettingsFieldsEditor() {
             const container = document.getElementById('settingsFieldsEditorContainer');
@@ -983,6 +1071,7 @@
             const newSettings = { 
                 title, 
                 favicon, 
+                systems: window.systems,
                 customFields: window.systemCustomFields 
             };
 
@@ -993,6 +1082,7 @@
                 window.rosterSettings = newSettings;
                 applyRosterSettings(newSettings);
                 closeSettingsModal();
+                renderSystemFolders();
                 showToast("サイト設定を保存しました！", "info");
             } catch (e) {
                 console.error("Settings save error:", e);
@@ -1014,11 +1104,6 @@
                 </h1>
             </div>
             <div class="flex items-center gap-2 sm:gap-3">
-                <!-- 共有ボタンを日記側と合わせて追加 -->
-                <button onclick="handleOpenShareModal()" class="bg-white hover:bg-stone-50 text-stone-700 text-xs font-bold px-3.5 py-2 rounded-full border border-stone-200 shadow-sm transition-all flex items-center gap-1.5">
-                    <i class="fa-solid fa-share-nodes text-stone-500"></i>
-                    <span>共有</span>
-                </button>
                 <button onclick="handleOpenSettingsModal()" class="bg-white hover:bg-stone-50 text-stone-700 text-xs font-bold px-3.5 py-2 rounded-full border border-stone-200 shadow-sm transition-all flex items-center gap-1.5">
                     <i class="fa-solid fa-gear text-stone-500"></i>
                     <span>サイト設定</span>
@@ -1108,11 +1193,7 @@
             <form id="characterForm" onsubmit="saveCharacter(event)" class="space-y-4">
                 <div>
                     <label class="block text-xs font-bold text-stone-600 mb-1">TRPGシステム</label>
-                    <select id="charSystemSelect" onchange="handleSystemChangeInModal()" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-sm text-stone-800 focus:outline-none focus:border-stone-400">
-                        <option value="coc">クトゥルフ神話TRPG</option>
-                        <option value="sw25">ソード・ワールド2.5</option>
-                        <option value="insane">インセイン</option>
-                    </select>
+                    <select id="charSystemSelect" onchange="handleSystemChangeInModal()" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-sm text-stone-800 focus:outline-none focus:border-stone-400"></select>
                 </div>
                 
                 <div>
@@ -1172,13 +1253,13 @@
         </div>
     </div>
 
-    <!-- ⚙️ サイト設定モーダル -->
+    <!-- ⚙️ サイト設定モーダル（システム並び替え・項目エディタ） -->
     <div id="settingsModal" class="hidden fixed inset-0 z-50 bg-stone-900/40 backdrop-blur-sm flex items-center justify-center p-4">
         <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-xl border border-stone-200 max-h-[90vh] overflow-y-auto">
             <div class="flex items-center justify-between mb-4 pb-2 border-b border-stone-100">
                 <h3 class="font-bold text-stone-800 text-sm flex items-center gap-2">
                     <i class="fa-solid fa-gear text-stone-600"></i>
-                    <span>サイト＆システム項目設定</span>
+                    <span>サイト設定 ＆ システム順序変更</span>
                 </h3>
                 <button onclick="closeSettingsModal()" class="text-stone-400 hover:text-stone-700 p-1">
                     <i class="fa-solid fa-xmark text-lg"></i>
@@ -1199,9 +1280,17 @@
                     </div>
                 </div>
 
+                <!-- ↕️ システムの表示順並び替えエディタ -->
                 <div class="pt-2 border-t border-stone-100">
-                    <h4 class="text-xs font-bold text-stone-700 mb-2">システム別 カスタム項目設定</h4>
-                    <p class="text-[11px] text-stone-400 mb-3">「テキスト」と「ステータス」をそれぞれシステムごとに自由に追加・編集できます</p>
+                    <h4 class="text-xs font-bold text-stone-700 mb-1">システムの表示順・名前変更</h4>
+                    <p class="text-[11px] text-stone-400 mb-3">矢印ボタンでトップページに表示されるシステムの並び順を変更できます</p>
+                    <div id="settingsSystemsEditorContainer" class="space-y-2"></div>
+                </div>
+
+                <!-- 📝 システム別カスタム項目エディタ -->
+                <div class="pt-2 border-t border-stone-100">
+                    <h4 class="text-xs font-bold text-stone-700 mb-1">システム別 カスタム項目設定</h4>
+                    <p class="text-[11px] text-stone-400 mb-3">「テキスト（ネタバレ可）」と「ステータス」をそれぞれシステムごとに自由に追加・編集できます</p>
                     <div id="settingsFieldsEditorContainer" class="space-y-3"></div>
                 </div>
 
