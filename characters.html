@@ -356,84 +356,42 @@
         }
         window.handleCharacterSearchInput = handleCharacterSearchInput;
 
-        function navigateTo(view, param = null) {
-            const viewFolders = document.getElementById('view-folders');
-            const viewList = document.getElementById('view-list');
-            const viewDetail = document.getElementById('view-detail');
-            const breadcrumbs = document.getElementById('breadcrumbs');
-            const breadcrumbAction = document.getElementById('breadcrumbAction');
+        } else if (view === 'detail') {
+            if (viewDetail) viewDetail.classList.remove('hidden');
+            const ch = window.characters.find(c => c.id === param);
+            const charName = ch ? ch.name : 'キャラクター詳細';
+            const targetSystemId = ch ? ch.systemId : window.selectedSystemId;
+            const sys = window.systems.find(s => s.id === targetSystemId);
 
-            if (viewFolders) viewFolders.classList.add('hidden');
-            if (viewList) viewList.classList.add('hidden');
-            if (viewDetail) viewDetail.classList.add('hidden');
-
-            if (view === 'folders') {
-                if (viewFolders) viewFolders.classList.remove('hidden');
-                if (breadcrumbs) {
-                    breadcrumbs.innerHTML = `<span class="text-stone-700 font-medium flex items-center gap-1"><i class="fa-solid fa-house text-[10px]"></i> システム一覧</span>`;
-                }
-                if (breadcrumbAction) {
-                    breadcrumbAction.innerHTML = `
-                        <a href="index.html" class="flex items-center gap-1.5 text-xs text-stone-600 hover:text-stone-900 bg-stone-100 hover:bg-stone-200/70 px-3 py-1.5 rounded-xl transition-all">
-                            <i class="fa-solid fa-book-open text-[10px]"></i>
-                            <span>日記へ</span>
-                        </a>
-                    `;
-                }
-                const searchInput = document.getElementById('folderSearchInput');
-                if (searchInput) searchInput.value = '';
-                renderSystemFolders();
-            } else if (view === 'characterList') {
-                if (viewList) viewList.classList.remove('hidden');
-                const sys = window.systems.find(s => s.id === param);
-                const sysName = sys ? sys.name : 'キャラクター一覧';
-                if (breadcrumbs) {
-                    breadcrumbs.innerHTML = `
-                        <a href="javascript:void(0)" onclick="navigateTo('folders')" class="hover:text-stone-900 transition-colors flex items-center gap-1"><i class="fa-solid fa-house text-[10px]"></i> システム一覧</a>
-                        <span class="text-stone-300">/</span>
-                        <span class="text-stone-700 font-medium">${sysName}</span>
-                    `;
-                }
-                if (breadcrumbAction) {
-                    breadcrumbAction.innerHTML = `
-                        <button onclick="navigateTo('folders')" class="flex items-center gap-1.5 text-xs text-stone-600 hover:text-stone-900 bg-stone-100 hover:bg-stone-200/70 px-3 py-1.5 rounded-xl transition-all">
-                            <i class="fa-solid fa-house text-[10px]"></i>
-                            <span>システム一覧へ</span>
+            if (breadcrumbs) {
+                breadcrumbs.innerHTML = `
+                    <a href="javascript:void(0)" onclick="navigateTo('folders')" class="hover:text-stone-900 transition-colors flex items-center gap-1"><i class="fa-solid fa-house text-[10px]"></i> システム一覧</a>
+                    <span class="text-stone-300">/</span>
+                    <a href="javascript:void(0)" onclick="navigateTo('characterList', '${targetSystemId}')" class="hover:text-stone-900 transition-colors">${sys?.name || '一覧'}</a>
+                    <span class="text-stone-300">/</span>
+                    <span class="text-stone-700 font-medium">${charName}</span>
+                `;
+            }
+            if (breadcrumbAction) {
+                breadcrumbAction.innerHTML = `
+                    <div class="flex items-center gap-2">
+                        <button onclick="openEditCharacterModal('${param}')" class="flex items-center gap-1.5 text-xs text-stone-600 hover:text-stone-900 bg-stone-100 hover:bg-stone-200/70 px-3 py-1.5 rounded-xl transition-all">
+                            <i class="fa-solid fa-pen text-[10px]"></i>
+                            <span>編集</span>
                         </button>
-                    `;
-                }
-                const searchInput = document.getElementById('characterSearchInput');
-                if (searchInput) searchInput.value = '';
-                renderCharacterList(param);
-            } else if (view === 'detail') {
-                if (viewDetail) viewDetail.classList.remove('hidden');
-                const ch = window.characters.find(c => c.id === param);
-                const charName = ch ? ch.name : 'キャラクター詳細';
-                const targetSystemId = ch ? ch.systemId : window.selectedSystemId;
-                const sys = window.systems.find(s => s.id === targetSystemId);
-
-                if (breadcrumbs) {
-                    breadcrumbs.innerHTML = `
-                        <a href="javascript:void(0)" onclick="navigateTo('folders')" class="hover:text-stone-900 transition-colors flex items-center gap-1"><i class="fa-solid fa-house text-[10px]"></i> システム一覧</a>
-                        <span class="text-stone-300">/</span>
-                        <a href="javascript:void(0)" onclick="navigateTo('characterList', '${targetSystemId}')" class="hover:text-stone-900 transition-colors">${sys?.name || '一覧'}</a>
-                        <span class="text-stone-300">/</span>
-                        <span class="text-stone-700 font-medium">${charName}</span>
-                    `;
-                }
-                if (breadcrumbAction) {
-                    breadcrumbAction.innerHTML = `
+                        <button onclick="deleteCharacter('${param}')" class="flex items-center gap-1.5 text-xs text-rose-600 hover:text-rose-900 bg-rose-50 hover:bg-rose-100 px-3 py-1.5 rounded-xl transition-all">
+                            <i class="fa-solid fa-trash text-[10px]"></i>
+                            <span>削除</span>
+                        </button>
                         <button onclick="navigateTo('characterList', '${targetSystemId}')" class="flex items-center gap-1.5 text-xs text-stone-600 hover:text-stone-900 bg-stone-100 hover:bg-stone-200/70 px-3 py-1.5 rounded-xl transition-all">
                             <i class="fa-solid fa-arrow-left text-[10px]"></i>
-                            <span>キャラクター一覧へ</span>
+                            <span>一覧へ</span>
                         </button>
-                    `;
-                }
-                renderCharacterDetail(param);
+                    </div>
+                `;
             }
+            renderCharacterDetail(param);
         }
-        window.navigateTo = navigateTo;
-
         function getAdjustedColor(hexColor) {
             if (!hexColor || !hexColor.startsWith('#')) return '#44403c';
             let r = parseInt(hexColor.slice(1, 3), 16);
