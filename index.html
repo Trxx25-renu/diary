@@ -1440,6 +1440,23 @@ window.renderGridPhotoLayout = renderGridPhotoLayout;
     }
     window.handleSearch = handleSearch;
 
+// 🔑 ヘッダーの鍵アイコンがクリックされたときの専用エントリーポイント
+        function handleHeaderKeyClick() {
+            if (window.isAdmin) {
+                // すでにログイン中なら、即座にログアウト確認モーダルを出す
+                showConfirm('ログアウト', '管理者モードからログアウトしますか？', () => {
+                    window.isAdmin = false;
+                    sessionStorage.removeItem('isAdminSession'); // セッションも確実に消す
+                    updateAdminUI();
+                    showToast('ログアウトしました', 'info');
+                });
+            } else {
+                // 未ログインなら通常のパスコード画面へ
+                openAuthModal();
+            }
+        }
+        window.handleHeaderKeyClick = handleHeaderKeyClick;
+
         function openAuthModal() {
             const modal = document.getElementById('authModal');
             const title = document.getElementById('authModalTitle');
@@ -2129,8 +2146,20 @@ window.handleSaveConfig = handleSaveConfig;
         }
         window.escapeHtml = escapeHtml;
 
+        // 🔐 管理者ログイン・ログアウトのトリガー
         function triggerAdminAccess() {
-            openAuthModal();
+            if (window.isAdmin) {
+                // すでにログイン中の場合はログアウト確認を表示
+                showConfirm('ログアウト', '管理者モードからログアウトしますか？', () => {
+                    window.isAdmin = false;
+                    sessionStorage.removeItem('isAdminSession'); // セッションストレージからも削除
+                    updateAdminUI();
+                    showToast('ログアウトしました', 'info');
+                });
+            } else {
+                // 未ログインの場合はパスコード入力モーダルを開く
+                openAuthModal();
+            }
         }
         window.triggerAdminAccess = triggerAdminAccess;
 
