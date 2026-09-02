@@ -318,7 +318,7 @@
     }
 });
 
-  // 🌟 日記アプリ専用：画面切り替え ＆ パンくず・アクション更新を行うルーター関数
+// 🌟 日記アプリ専用：画面切り替え ＆ パンくず・アクション更新を行うルーター関数
 function navigateTo(view, param = null) {
     // 日記アプリ用のHTMLのIDを取得
     const viewMonths = document.getElementById('view-months');     // 第1階層：月別アルバム
@@ -410,9 +410,14 @@ function navigateTo(view, param = null) {
         }
 
     } 
-    // 3. 詳細画面（もし日記の詳細表示などがある場合）
+    // 3. 詳細画面
     else if (view === 'detail') {
         if (viewDetail) viewDetail.classList.remove('hidden');
+
+        // ★もしparam（記事IDや日付）が渡されていれば一時保存する
+        if (param) {
+            window.selectedEntryId = param;
+        }
 
         if (breadcrumbs) {
             breadcrumbs.innerHTML = `
@@ -433,8 +438,12 @@ function navigateTo(view, param = null) {
             `;
         }
 
-        if (typeof renderEntryDetail === 'function' && param) {
-            renderEntryDetail(param);
+        // ★ param が無くなっていても、直前に保存した ID があればそれを使って描画するフォールバック
+        const targetId = param || window.selectedEntryId;
+        if (typeof renderEntryDetail === 'function' && targetId) {
+            renderEntryDetail(targetId);
+        } else {
+            console.error("詳細を表示するためのIDが指定されていません");
         }
     }
 }
