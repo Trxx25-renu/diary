@@ -420,7 +420,27 @@ if (typeof window.compressImageIfNeeded !== 'function') {
     window.compressImageIfNeeded = compressImageIfNeeded;
 }
         
-        function openEditCharacterModal(characterId) {
+       function populateSystemSelect() {
+    const systemInput = document.getElementById('charSystemSelect');
+    if (!systemInput) return;
+
+    systemInput.innerHTML = '';
+    if (window.systems && window.systems.length > 0) {
+        window.systems.forEach(sys => {
+            const option = document.createElement('option');
+            option.value = sys.id;
+            option.textContent = sys.name;
+            systemInput.appendChild(option);
+        });
+    } else {
+        const option = document.createElement('option');
+        option.value = '';
+        option.textContent = 'システムが登録されていません';
+        systemInput.appendChild(option);
+    }
+}
+window.populateSystemSelect = populateSystemSelect;
+
     // 文字列・数値を揃えてキャラクターを検索
     const ch = window.characters.find(c => String(c.id) === String(characterId));
     if (!ch) {
@@ -451,6 +471,11 @@ if (typeof window.compressImageIfNeeded !== 'function') {
     if (colorInput) colorInput.value = ch.themeColor || '#292524';
     if (sheetUrlInput) sheetUrlInput.value = ch.sheetUrl || '';
 
+    // 💡 編集モーダルを開いたときにカラープレビューの色も連動させる（お好みでどうぞ）
+    if (typeof updateColorPreview === 'function') {
+        updateColorPreview(ch.themeColor || '#292524');
+    }
+
     // 【追加】システムをセットして、編集時は変更できないようにロックする
     if (systemInput) {
         systemInput.value = ch.systemId;
@@ -472,7 +497,7 @@ if (typeof window.compressImageIfNeeded !== 'function') {
     }
 }
 window.openEditCharacterModal = openEditCharacterModal;
-
+        
         function deleteCharacter(characterId) {
     const ch = window.characters.find(c => c.id === characterId);
     const charName = ch ? ch.name : 'このキャラクター';
@@ -936,26 +961,33 @@ window.deleteCharacter = deleteCharacter;
 
         // 📝 キャラクター登録モーダル
         function handleOpenAddModal() {
-            checkAdminPermission(() => {
-                const systemSelect = document.getElementById('charSystemSelect');
-                if (systemSelect) {
-                    systemSelect.innerHTML = window.systems.map(sys => `<option value="${sys.id}">${sys.name}</option>`).join('');
-                    if (window.selectedSystemId) {
-                        systemSelect.value = window.selectedSystemId;
-                    }
-                }
-                document.getElementById('characterForm').reset();
-                document.getElementById('charThemeColor').value = '#292524';
-                window.currentThumbnailBase64 = "";
-                window.currentAvatarBase64 = "";
-                document.getElementById('thumbPreview').classList.add('hidden');
-                document.getElementById('avatarPreview').classList.add('hidden');
-                
-                updateDynamicFormFields();
-                document.getElementById('characterModal').classList.remove('hidden');
-            });
+    // 💡 新規作成時もシステム一覧をセレクトボックスに流し込む
+    if (typeof populateSystemSelect === 'function') {
+        populateSystemSelect();
+    }
+
+    const systemInput = document.getElementById('charSystemSelect');
+    if (systemInput) {
+        systemInput.disabled = false; // 新規時は選択可能にする
+        // 現在開いているシステムがあればそれを初期選択する
+        if (window.selectedSystemId) {
+            systemInput.value = window.selectedSystemId;
         }
-        window.handleOpenAddModal = handleOpenAddModal;
+    }
+
+    window.editingCharacterId = null;
+
+    // モーダルのタイトルを「新規作成」用に
+    const modalTitle = document.querySelector('#characterModal h3 span');
+    if (modalTitle) modalTitle.textContent = '新規キャラクター登録';
+
+    const form = document.getElementById('characterForm');
+    if (form) form.reset();
+
+    const modal = document.getElementById('characterModal');
+    if (modal) modal.classList.remove('hidden');
+}
+window.handleOpenAddModal = handleOpenAddModal;
 
         function handleSystemChangeInModal() {
             updateDynamicFormFields();
