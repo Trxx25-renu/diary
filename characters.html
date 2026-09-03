@@ -205,17 +205,6 @@
             updateAdminUI();
         });
 
-        function applyRosterSettings(settings) {
-            if (settings.title) {
-                document.getElementById('pageTitle').textContent = settings.title;
-                const headerText = document.getElementById('headerTitleText');
-                if (headerText) headerText.textContent = settings.title;
-            }
-            if (settings.favicon) {
-                document.getElementById('dynamicFavicon').href = settings.favicon;
-            }
-        }
-
         async function loadCharactersFromFirestore() {
             try {
                 const charsRef = collection(db, 'artifacts', window.appId, 'public', 'data', 'characters');
