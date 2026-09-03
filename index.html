@@ -1975,126 +1975,170 @@ window.handleSaveConfig = handleSaveConfig;
         } 
         window.closePostModal = closePostModal;
 
-        async function handleSaveEntry(event) {
-            event.preventDefault();
+        // 💡 画像が1MBを超えている場合に自動で縮小・圧縮するヘルパー関数
+async function compressImageIfNeeded(base64Str) {
+    if (!base64Str || !base64Str.startsWith('data:image')) return base64Str;
+    // 1MB未満（文字数で約100万文字未満）ならそのまま返す
+    if (base64Str.length < 1000000) return base64Str;
 
-            if (!window.isAdmin) {
-                showToast('編集権限がありません。ログインしてください。', 'warning');
-                return;
-            }
+    console.log("⚠️ 画像サイズが大きいため、自動圧縮します...");
 
-            const date = document.getElementById('inputDate').value;
-            const scenarioTitle = document.getElementById('inputScenarioTitle')?.value || '';
-            const weather = document.getElementById('inputWeather').value;
-            const content = document.getElementById('inputContent').value;
-            const secretContent = document.getElementById('inputSecretContent')?.value || '';
-
-            // 🌟 画像が選択されているかチェック
-            if (!window.tempImageUrls || window.tempImageUrls.length === 0) {
-                if (!window.tempBase64Image) {
-                    showToast('写真を選択してください。', 'warning');
-                    return;
-                } else {
-                    window.tempImageUrls = [window.tempBase64Image];
-                }
-            }
-
-            const saveBtn = document.getElementById('saveSubmitBtn');
-            if (saveBtn) {
-                saveBtn.disabled = true;
-                saveBtn.textContent = '保存中...';
-            }
-
-            const timeSlotInput = document.getElementById('inputTimeSlot');
-            const timeSlot = timeSlotInput ? timeSlotInput.value : 'afternoon';
-
-            let targetId = window.editingEntryId ? window.editingEntryId : null;
-            let entryData;
-
-            if (targetId) {
-                const index = (window.entries || []).findIndex(e => e.id === targetId);
-                if (index !== -1) {
-                    window.entries[index] = {
-                        ...window.entries[index],
-                        date: date,
-                        timeSlot: timeSlot,
-                        scenarioTitle: scenarioTitle.trim(),
-                        weather: weather,
-                        content: content,
-                        secretContent: secretContent.trim(),
-                        imageUrls: window.tempImageUrls, // 🌟 複数画像配列を保存
-                        imageUrl: window.tempImageUrls[0], // 互換用1枚目
-                        updatedAt: new Date().toISOString()
-                    };
-                    entryData = window.entries[index];
-                }
-            }
-
-            if (!entryData) {
-                targetId = `${date}_${Date.now()}`;
-                entryData = {
-                    id: targetId,
-                    date: date,
-                    timeSlot: timeSlot,
-                    scenarioTitle: scenarioTitle.trim(),
-                    weather: weather,
-                    content: content,
-                    secretContent: secretContent.trim(),
-                    imageUrls: window.tempImageUrls, // 🌟 複数画像配列を保存
-                    imageUrl: window.tempImageUrls[0], // 互換用1枚目
-                    updatedAt: new Date().toISOString()
-                };
-                if (!window.entries) window.entries = [];
-                window.entries.unshift(entryData);
-            }
-
-            const timeSlotOrder = { 'morning': 1, 'afternoon': 2, 'night': 3 };
-            window.entries.sort((a, b) => {
-                const dateCompare = b.date.localeCompare(a.date);
-                if (dateCompare !== 0) {
-                    return dateCompare;
-                }
-                
-                const slotA = timeSlotOrder[a.timeSlot || 'afternoon'] || 2;
-                const slotB = timeSlotOrder[b.timeSlot || 'afternoon'] || 2;
-                if (slotA !== slotB) {
-                    return slotA - slotB;
-                }
-
-                return (a.id || '').localeCompare(b.id || '');
-            });
+    return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = function() {
+            const canvas = document.createElement('canvas');
+            let width = img.width;
+            let height = img.height;
             
-            try {
-                console.log("🔍 保存直前チェック -> db:", window.db, "appId:", window.appId, "targetId:", targetId);
-
-                if (window.db && window.appId) {
-                    const { doc, setDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
-                    const docRef = doc(window.db, 'artifacts', window.appId, 'public', 'data', 'entries', targetId);
-                    await setDoc(docRef, entryData);
-                    console.log("🔥 Firestoreへの保存に成功しました:", targetId);
-                } else {
-                    console.error("❌ window.db または window.appId が不足しています！", { db: window.db, appId: window.appId });
-                }
-
-                closePostModal();
-                const ym = date.substring(0, 7);
-                navigateTo('gallery', ym);
-
-                const successMsg = window.editingEntryId ? '日記を更新しました！' : '日記を保存しました！';
-                showToast(successMsg, 'success');
-
-                window.editingEntryId = null;
-            } catch (error) {
-                console.error("❌ 保存エラー:", error);
-                showToast('保存に失敗しました。', 'error');
-            } finally {
-                if (saveBtn) {
-                    saveBtn.disabled = false;
-                    saveBtn.textContent = '保存する';
-                }
+            // 最大幅を 800px に制限
+            const maxWidth = 800;
+            if (width > maxWidth) {
+                height = Math.round((height * maxWidth) / width);
+                width = maxWidth;
             }
+            
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+            
+            // 画質 0.6 でJPEG圧縮して1MB以内に収める
+            const compressed = canvas.toDataURL('image/jpeg', 0.6);
+            console.log("✅ 圧縮完了:", Math.round(compressed.length / 1024), "KB");
+            resolve(compressed);
+        };
+        img.src = base64Str;
+    });
+}
+
+async function handleSaveEntry(event) {
+    event.preventDefault();
+
+    if (!window.isAdmin) {
+        showToast('編集権限がありません。ログインしてください。', 'warning');
+        return;
+    }
+
+    const date = document.getElementById('inputDate').value;
+    const scenarioTitle = document.getElementById('inputScenarioTitle')?.value || '';
+    const weather = document.getElementById('inputWeather').value;
+    const content = document.getElementById('inputContent').value;
+    const secretContent = document.getElementById('inputSecretContent')?.value || '';
+
+    // 🌟 画像が選択されているかチェック
+    if (!window.tempImageUrls || window.tempImageUrls.length === 0) {
+        if (!window.tempBase64Image) {
+            showToast('写真を選択してください。', 'warning');
+            return;
+        } else {
+            window.tempImageUrls = [window.tempBase64Image];
         }
-        window.handleSaveEntry = handleSaveEntry;
+    }
+
+    // 🌟【ここを追加】保存するすべての画像に対して、1MB超過なら自動圧縮を適用
+    window.tempImageUrls = await Promise.all(
+        window.tempImageUrls.map(async (imgStr) => {
+            return await compressImageIfNeeded(imgStr);
+        })
+    );
+    window.tempBase64Image = window.tempImageUrls[0]; // 互換用も更新
+
+    const saveBtn = document.getElementById('saveSubmitBtn');
+    if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.textContent = '保存中...';
+    }
+
+    const timeSlotInput = document.getElementById('inputTimeSlot');
+    const timeSlot = timeSlotInput ? timeSlotInput.value : 'afternoon';
+
+    let targetId = window.editingEntryId ? window.editingEntryId : null;
+    let entryData;
+
+    if (targetId) {
+        const index = (window.entries || []).findIndex(e => e.id === targetId);
+        if (index !== -1) {
+            window.entries[index] = {
+                ...window.entries[index],
+                date: date,
+                timeSlot: timeSlot,
+                scenarioTitle: scenarioTitle.trim(),
+                weather: weather,
+                content: content,
+                secretContent: secretContent.trim(),
+                imageUrls: window.tempImageUrls, // 🌟 複数画像配列を保存
+                imageUrl: window.tempImageUrls[0], // 互換用1枚目
+                updatedAt: new Date().toISOString()
+            };
+            entryData = window.entries[index];
+        }
+    }
+
+    if (!entryData) {
+        targetId = `${date}_${Date.now()}`;
+        entryData = {
+            id: targetId,
+            date: date,
+            timeSlot: timeSlot,
+            scenarioTitle: scenarioTitle.trim(),
+            weather: weather,
+            content: content,
+            secretContent: secretContent.trim(),
+            imageUrls: window.tempImageUrls, // 🌟 複数画像配列を保存
+            imageUrl: window.tempImageUrls[0], // 互換用1枚目
+            updatedAt: new Date().toISOString()
+        };
+        if (!window.entries) window.entries = [];
+        window.entries.unshift(entryData);
+    }
+
+    const timeSlotOrder = { 'morning': 1, 'afternoon': 2, 'night': 3 };
+    window.entries.sort((a, b) => {
+        const dateCompare = b.date.localeCompare(a.date);
+        if (dateCompare !== 0) {
+            return dateCompare;
+        }
+        
+        const slotA = timeSlotOrder[a.timeSlot || 'afternoon'] || 2;
+        const slotB = timeSlotOrder[b.timeSlot || 'afternoon'] || 2;
+        if (slotA !== slotB) {
+            return slotA - slotB;
+        }
+
+        return (a.id || '').localeCompare(b.id || '');
+    });
+    
+    try {
+        console.log("🔍 保存直前チェック -> db:", window.db, "appId:", window.appId, "targetId:", targetId);
+
+        if (window.db && window.appId) {
+            const { doc, setDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
+            const docRef = doc(window.db, 'artifacts', window.appId, 'public', 'data', 'entries', targetId);
+            await setDoc(docRef, entryData);
+            console.log("🔥 Firestoreへの保存に成功しました:", targetId);
+        } else {
+            console.error("❌ window.db または window.appId が不足しています！", { db: window.db, appId: window.appId });
+        }
+
+        closePostModal();
+        const ym = date.substring(0, 7);
+        navigateTo('gallery', ym);
+
+        const successMsg = window.editingEntryId ? '日記を更新しました！' : '日記を保存しました！';
+        showToast(successMsg, 'success');
+
+        window.editingEntryId = null;
+    } catch (error) {
+        console.error("❌ 保存エラー:", error);
+        showToast('保存に失敗しました。', 'error');
+    } finally {
+        if (saveBtn) {
+            saveBtn.disabled = false;
+            saveBtn.textContent = '保存する';
+        }
+    }
+}
+window.handleSaveEntry = handleSaveEntry;
 
     async function deleteCurrentEntry() {
         console.log("🔍 削除処理開始 -> selectedEntryId:", window.selectedEntryId);
