@@ -704,13 +704,22 @@ window.navigateTo = navigateTo;
         window.updateBackButtonVisibility = updateBackButtonVisibility;
 
         function parseSpoilers(text) {
-            if (!text) return '';
-            const escaped = escapeHtml(text);
-            return escaped.replace(/\|\|(.*?)\|\|/g, (match, p1) => {
-                return `<span class="spoiler-text" onclick="this.classList.toggle('revealed')" title="タップでネタバレを表示">${p1}</span>`;
-            });
-        }
-        window.parseSpoilers = parseSpoilers;
+    if (!text) return '';
+    // ||...|| をスポンサータグに変換
+    return text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/\|\|(.*?)\|\|/g, '<span class="spoiler-text">$1</span>');
+}
+window.parseSpoilers = parseSpoilers;
+
+        // 文書全体のクリックを監視して、ネタバレテキストの開閉を確実に制御
+document.addEventListener('click', (e) => {
+    if (e.target && e.target.classList.contains('spoiler-text')) {
+        e.target.classList.toggle('revealed');
+    }
+});
 
         function formatPreviewText(text) {
             if (!text) return '';
@@ -2135,7 +2144,7 @@ window.handleSaveConfig = handleSaveConfig;
         }
         window.deleteCurrentEntry = deleteCurrentEntry;
         
-        // 📝 詳細画面から編集モードでモーダルを開く関数
+        // 📝 詳細画面から編集モードでモーダルを開く関数（IDの揺れを完全自動吸収版）
 function openEditModalFromDetail() {
     if (!window.isAdmin) {
         showToast('権限がありません。ログインしてください。', 'warning');
@@ -2171,8 +2180,10 @@ function openEditModalFromDetail() {
     const weatherInput = document.getElementById('inputWeather');
     const contentInput = document.getElementById('inputContent');
     const secretContentInput = document.getElementById('inputSecretContent');
-    const preview = document.getElementById('imagePreview');
-    const placeholder = document.getElementById('uploadPlaceholder');
+
+    // 🌟 プレビュー要素のIDの揺れ（imagePreview, editImagePreview, previewなど）をすべて網羅して取得
+    const preview = document.getElementById('imagePreview') || document.getElementById('editImagePreview') || document.getElementById('preview');
+    const placeholder = document.getElementById('uploadPlaceholder') || document.getElementById('editUploadPlaceholder') || document.getElementById('placeholder');
 
     if (dateInput) dateInput.value = entry.date || '';
     if (timeSlotInput) timeSlotInput.value = entry.timeSlot || 'afternoon';
@@ -2202,7 +2213,7 @@ function openEditModalFromDetail() {
         }
         if (placeholder) {
             placeholder.classList.remove('hidden');
-            placeholder.style.display = 'flex'; // または block
+            placeholder.style.display = 'flex';
         }
     }
 
