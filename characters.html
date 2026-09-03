@@ -645,6 +645,22 @@ window.openEditCharacterModal = openEditCharacterModal;
         }
         window.checkAdminPermission = checkAdminPermission;
 
+        // 管理者ステータスに応じてヘッダーの鍵アイコンを切り替える関数
+function updateAdminUI() {
+    const keyBtn = document.getElementById('headerKeyBtn');
+    if (!keyBtn) return;
+    if (window.isAdmin) {
+        keyBtn.className = "text-stone-600 hover:text-stone-800 transition-colors p-2 text-base";
+        keyBtn.innerHTML = '<i class="fa-solid fa-unlock"></i>';
+        keyBtn.title = "管理者モード（クリックでログアウト）";
+    } else {
+        keyBtn.className = "text-stone-600 hover:text-stone-800 transition-colors p-2 text-base";
+        keyBtn.innerHTML = '<i class="fa-solid fa-lock"></i>';
+        keyBtn.title = "管理者ログイン";
+    }
+}
+window.updateAdminUI = updateAdminUI;
+
         function handleHeaderKeyClick() {
             openAuthModal();
         }
