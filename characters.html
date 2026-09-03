@@ -881,6 +881,135 @@ function renderCharacterDetail(characterId) {
         }
         window.saveRosterSettings = saveRosterSettings;
 
+        // ==========================================
+// 💡 1. キャラクター登録モーダルのシステムセレクトボックスを構築する関数
+// ==========================================
+function renderCharacterModalSystemSelect() {
+    const select = document.getElementById('charSystemSelect');
+    if (!select || !window.systems) return;
+
+    const currentVal = select.value;
+    select.innerHTML = '';
+    
+    // window.systems（定義済みのシステムリスト）からoptionを生成
+    window.systems.forEach(sys => {
+        const opt = document.createElement('option');
+        opt.value = sys.id;
+        opt.textContent = sys.name;
+        select.appendChild(opt);
+    });
+
+    if (currentVal) {
+        select.value = currentVal;
+    }
+    
+    // 選択されたシステムに応じたカスタム項目欄を更新
+    handleSystemChangeInModal();
+}
+window.renderCharacterModalSystemSelect = renderCharacterModalSystemSelect;
+
+// ==========================================
+// 💡 2. モーダル内でシステムが変更された時に動的項目を描画する関数
+// ==========================================
+function handleSystemChangeInModal() {
+    const select = document.getElementById('charSystemSelect');
+    const container = document.getElementById('dynamicCustomFieldsContainer');
+    if (!select || !container) return;
+
+    const systemId = select.value;
+    container.innerHTML = '';
+
+    // window.systemCustomFields から該当システムのフィールドを取得
+    const fields = window.systemCustomFields?.[systemId];
+    if (!fields) return;
+
+    // A. ステータス項目（数値入力など）の生成
+    if (fields.status && fields.status.length > 0) {
+        const statusWrapper = document.createElement('div');
+        statusWrapper.className = 'space-y-2';
+        statusWrapper.innerHTML = `<label class="block text-xs font-bold text-stone-600">ステータス設定</label>`;
+        
+        const grid = document.createElement('div');
+        grid.className = 'grid grid-cols-2 gap-2';
+
+        fields.status.forEach(st => {
+            const div = document.createElement('div');
+            div.innerHTML = `
+                <label class="block text-[10px] font-medium text-stone-400 mb-0.5">${st.label} (max: ${st.max || '-'})</label>
+                <input type="number" data-custom-status-id="${st.id}" placeholder="0" class="char-custom-status-input w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-1.5 text-xs text-stone-800 focus:outline-none focus:border-stone-400">
+            `;
+            grid.appendChild(div);
+        });
+        statusWrapper.appendChild(grid);
+        container.appendChild(statusWrapper);
+    }
+
+    // B. テキスト項目（メモやネタバレ可の項目など）の生成
+    if (fields.text && fields.text.length > 0) {
+        const textWrapper = document.createElement('div');
+        textWrapper.className = 'space-y-2 mt-2';
+        textWrapper.innerHTML = `<label class="block text-xs font-bold text-stone-600">カスタムテキスト項目</label>`;
+
+        fields.text.forEach(tx => {
+            const div = document.createElement('div');
+            div.innerHTML = `
+                <label class="block text-[10px] font-medium text-stone-400 mb-0.5">${tx.label}</label>
+                <textarea data-custom-text-id="${tx.id}" placeholder="入力してください" rows="2" class="char-custom-text-input w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-1.5 text-xs text-stone-800 focus:outline-none focus:border-stone-400"></textarea>
+            `;
+            textWrapper.appendChild(div);
+        });
+        container.appendChild(textWrapper);
+    }
+}
+window.handleSystemChangeInModal = handleSystemChangeInModal;
+
+// ==========================================
+// 💡 3. カラーピッカー（テーマカラー）のプレビュー連動関数
+// ==========================================
+function updateColorPreview(colorCode) {
+    const previewBox = document.getElementById('characterColorPreview');
+    if (!previewBox) return;
+
+    if (colorCode && colorCode.startsWith('#')) {
+        previewBox.style.backgroundColor = colorCode;
+    } else {
+        previewBox.style.backgroundColor = '';
+    }
+}
+window.updateColorPreview = updateColorPreview;
+
+// ==========================================
+// 💡 4. 新規キャラクター登録モーダルを開く関数
+// ==========================================
+function openCharacterModal() {
+    const modal = document.getElementById('characterModal');
+    if (modal) {
+        // 編集IDをクリアして新規作成モードにする
+        window.editingCharacterId = null;
+        
+        // モーダルのタイトルを「新規登録」用に書き戻す
+        const modalTitle = document.querySelector('#characterModal h3 span');
+        if (modalTitle) modalTitle.textContent = 'キャラクター登録';
+
+        // フォーム要素の初期化やシステムセレクトの構築
+        renderCharacterModalSystemSelect();
+        
+        const systemInput = document.getElementById('charSystemSelect');
+        if (systemInput) systemInput.disabled = false; // 新規時はシステム変更可能に
+
+        modal.classList.remove('hidden');
+    }
+}
+window.openCharacterModal = openCharacterModal;
+
+function closeCharacterModal() {
+    const modal = document.getElementById('characterModal');
+    if (modal) {
+        modal.classList.add('hidden');
+    }
+}
+window.closeCharacterModal = closeCharacterModal;
+
        // ==========================================
         // 💡 設定を画面に適用する関数
         // ==========================================
@@ -944,8 +1073,6 @@ function renderCharacterDetail(characterId) {
                 <h1 class="text-base font-bold font-serif-title text-stone-800 flex items-center gap-2">
                     <!-- 🌟 サイトアイコン画像（設定時のみ表示） -->
                     <img id="headerFaviconImg" class="w-5 h-5 rounded-md object-cover border border-stone-200 hidden" alt="Icon">
-                    <!-- 🌟 デフォルトの人型アイコン（未設定時に表示） -->
-                    <i id="headerDefaultIcon" class="fa-solid fa-users text-stone-600 text-xs"></i>
                     
                     <span id="headerTitleText">Character Roster</span>
                 </h1>
