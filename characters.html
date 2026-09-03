@@ -601,7 +601,7 @@ function renderCharacterDetail(characterId) {
                                     <p class="flex items-center gap-1.5"><strong class="text-stone-400 inline-block mr-1">カラー:</strong> <span class="w-3 h-3 rounded-full inline-block border border-stone-200" style="background-color: ${themeColor}"></span><span class="font-mono">${rawThemeColor}</span></p>
                                 </div>
 
-                                ${sheetLinkHtml}
+                               ${sheetLinkHtml}
                                 ${customFieldsHtml}
                             </div>
                         </div>
@@ -610,10 +610,7 @@ function renderCharacterDetail(characterId) {
                     ${scenariosHtml}
 
                     <div class="pt-6 mt-6 border-t border-stone-100 flex items-center justify-between flex-wrap gap-3">
-                        <button onclick="navigateTo('characterList', '${ch.systemId}')" class="text-xs font-medium text-stone-600 hover:text-stone-900 bg-stone-100 hover:bg-stone-200 px-4 py-2 rounded-xl transition-all flex items-center gap-1.5">
-                            <i class="fa-solid fa-arrow-left text-[10px]"></i>
-                            <span>一覧に戻る</span>
-                        </button>
+                        <!-- 🌟 編集と削除を左側に配置 -->
                         <div class="flex items-center gap-2">
                             <button onclick="openEditCharacterModal('${characterId}')" class="flex items-center gap-1.5 text-xs text-stone-600 hover:text-stone-900 bg-stone-100 hover:bg-stone-200/70 px-4 py-2 rounded-xl transition-all">
                                 <i class="fa-solid fa-pen text-[10px]"></i>
@@ -624,6 +621,11 @@ function renderCharacterDetail(characterId) {
                                 <span>削除</span>
                             </button>
                         </div>
+                        <!-- 🌟 一覧に戻るを右側に配置 -->
+                        <button onclick="navigateTo('characterList', '${ch.systemId}')" class="text-xs font-medium text-stone-600 hover:text-stone-900 bg-stone-100 hover:bg-stone-200 px-4 py-2 rounded-xl transition-all flex items-center gap-1.5">
+                            <i class="fa-solid fa-arrow-left text-[10px]"></i>
+                            <span>一覧に戻る</span>
+                        </button>
                     </div>
                 </div>
             `;
@@ -755,6 +757,17 @@ window.updateAdminUI = updateAdminUI;
             pendingAction = null;
         }
         window.closeAuthModal = closeAuthModal;
+
+        // 💡 キャラクター作成・編集モーダルを閉じる関数
+function closeCharacterModal() {
+    const modal = document.getElementById('characterModal');
+    if (modal) {
+        modal.classList.add('hidden');
+    }
+    // 編集中のIDもリセットしておく
+    window.editingCharacterId = null;
+}
+window.closeCharacterModal = closeCharacterModal;
 
         async function saveCharacter(event) {
             event.preventDefault();
