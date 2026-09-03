@@ -677,99 +677,128 @@ function renderCharacterDetail(characterId) {
             }
         };
 
-        // 🛡️ 権限チェック＆パスコード・ログアウト制御ロジック
-        let pendingAction = null;
+       // 🛡️ 権限チェック＆パスコード・ログアウト制御ロジック
+    let pendingAction = null;
 
-        function checkAdminPermission(callback) {
-            if (window.isAdmin) {
-                callback();
-            } else {
-                pendingAction = callback;
-                openAuthModal();
-            }
-        }
-        window.checkAdminPermission = checkAdminPermission;
-
-        // 管理者ステータスに応じてヘッダーの鍵アイコンを切り替える関数
-function updateAdminUI() {
-    const keyBtn = document.getElementById('headerKeyBtn');
-    if (!keyBtn) return;
-    if (window.isAdmin) {
-        keyBtn.className = "text-stone-600 hover:text-stone-800 transition-colors p-2 text-base";
-        keyBtn.innerHTML = '<i class="fa-solid fa-unlock"></i>';
-        keyBtn.title = "管理者モード（クリックでログアウト）";
-    } else {
-        keyBtn.className = "text-stone-600 hover:text-stone-800 transition-colors p-2 text-base";
-        keyBtn.innerHTML = '<i class="fa-solid fa-lock"></i>';
-        keyBtn.title = "管理者ログイン";
-    }
-}
-window.updateAdminUI = updateAdminUI;
-
-        function handleHeaderKeyClick() {
+    function checkAdminPermission(callback) {
+        if (window.isAdmin) {
+            callback();
+        } else {
+            pendingAction = callback;
             openAuthModal();
         }
-        window.handleHeaderKeyClick = handleHeaderKeyClick;
-
-        function openAuthModal() {
-            const modal = document.getElementById('authModal');
-            const title = document.getElementById('authModalTitle');
-            const desc = document.getElementById('authModalDesc');
-            const err = document.getElementById('authErrorMsg');
-
-            if (err) err.classList.add('hidden');
-            const passInput = document.getElementById('inputPasscode');
-            if (passInput) passInput.value = '';
-
-            if (window.isAdmin) {
-                showConfirm('ログアウト', '管理者モードからログアウトしますか？', () => {
-                    window.isAdmin = false;
-                    sessionStorage.removeItem('isAdminSession');
-                    updateAdminUI();
-                    showToast('ログアウトしました', 'info');
-                });
-                return;
-            }
-
-            if (!window.storedPasscode) {
-                if (title) title.textContent = '初期パスコード設定';
-                if (desc) desc.textContent = '管理者用のお好きなパスコードを設定してください。';
-            } else {
-                if (title) title.textContent = '管理者ログイン';
-                if (desc) desc.textContent = 'キャラクターの追加や設定変更をするにはパスコードが必要です。';
-            }
-
-            if (modal) {
-                modal.classList.remove('opacity-0', 'pointer-events-none');
-                modal.querySelector('div').classList.remove('scale-95');
-                modal.querySelector('div').classList.add('scale-100');
-                if (passInput) passInput.focus();
-            }
-        }
-        window.openAuthModal = openAuthModal;
-
-        function closeAuthModal() {
-            const modal = document.getElementById('authModal');
-            if (modal) {
-                modal.classList.add('opacity-0', 'pointer-events-none');
-                modal.querySelector('div').classList.remove('scale-100');
-                modal.querySelector('div').classList.add('scale-95');
-            }
-            pendingAction = null;
-        }
-        window.closeAuthModal = closeAuthModal;
-
-        // 💡 キャラクター作成・編集モーダルを閉じる関数
-function closeCharacterModal() {
-    const modal = document.getElementById('characterModal');
-    if (modal) {
-        modal.classList.add('hidden');
     }
-    // 編集中のIDもリセットしておく
-    window.editingCharacterId = null;
-}
-window.closeCharacterModal = closeCharacterModal;
+    window.checkAdminPermission = checkAdminPermission;
 
+    // 管理者ステータスに応じてヘッダーの鍵アイコンを切り替える関数
+    function updateAdminUI() {
+        const keyBtn = document.getElementById('headerKeyBtn');
+        if (!keyBtn) return;
+        if (window.isAdmin) {
+            keyBtn.className = "text-stone-600 hover:text-stone-800 transition-colors p-2 text-base";
+            keyBtn.innerHTML = '<i class="fa-solid fa-unlock"></i>';
+            keyBtn.title = "管理者モード（クリックでログアウト）";
+        } else {
+            keyBtn.className = "text-stone-600 hover:text-stone-800 transition-colors p-2 text-base";
+            keyBtn.innerHTML = '<i class="fa-solid fa-lock"></i>';
+            keyBtn.title = "管理者ログイン";
+        }
+    }
+    window.updateAdminUI = updateAdminUI;
+
+    function handleHeaderKeyClick() {
+        openAuthModal();
+    }
+    window.handleHeaderKeyClick = handleHeaderKeyClick;
+
+    function openAuthModal() {
+        const modal = document.getElementById('authModal');
+        const title = document.getElementById('authModalTitle');
+        const desc = document.getElementById('authModalDesc');
+        const err = document.getElementById('authErrorMsg');
+
+        if (err) err.classList.add('hidden');
+        const passInput = document.getElementById('inputPasscode');
+        if (passInput) passInput.value = '';
+
+        if (window.isAdmin) {
+            showConfirm('ログアウト', '管理者モードからログアウトしますか？', () => {
+                window.isAdmin = false;
+                sessionStorage.removeItem('isAdminSession');
+                updateAdminUI();
+                showToast('ログアウトしました', 'info');
+            });
+            return;
+        }
+
+        if (!window.storedPasscode) {
+            if (title) title.textContent = '初期パスコード設定';
+            if (desc) desc.textContent = '管理者用のお好きなパスコードを設定してください。';
+        } else {
+            if (title) title.textContent = '管理者ログイン';
+            if (desc) desc.textContent = 'キャラクターの追加や設定変更をするにはパスコードが必要です。';
+        }
+
+        if (modal) {
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            const innerDiv = modal.querySelector('div');
+            if (innerDiv) {
+                innerDiv.classList.remove('scale-95');
+                innerDiv.classList.add('scale-100');
+            }
+            if (passInput) passInput.focus();
+        }
+    }
+    window.openAuthModal = openAuthModal;
+
+    function closeAuthModal() {
+        const modal = document.getElementById('authModal');
+        if (modal) {
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            const innerDiv = modal.querySelector('div');
+            if (innerDiv) {
+                innerDiv.classList.remove('scale-100');
+                innerDiv.classList.add('scale-95');
+            }
+        }
+        pendingAction = null;
+    }
+    window.closeAuthModal = closeAuthModal;
+
+    // 💡 キャラクター作成・編集モーダルを閉じる関数
+    function closeCharacterModal() {
+        const modal = document.getElementById('characterModal');
+        if (modal) {
+            modal.classList.add('hidden');
+        }
+        // 編集中のIDもリセットしておく
+        window.editingCharacterId = null;
+    }
+    window.closeCharacterModal = closeCharacterModal;
+
+    // 💡 サイト設定モーダルを開く（権限チェックを挟む安全設計）
+    function handleOpenSettingsModal() {
+        checkAdminPermission(() => {
+            const titleInput = document.getElementById('settingTitleInput');
+            if (titleInput && window.rosterSettings) {
+                titleInput.value = window.rosterSettings.title || '';
+            }
+            const modal = document.getElementById('settingsModal');
+            if (modal) {
+                modal.classList.remove('hidden');
+            }
+        });
+    }
+    window.handleOpenSettingsModal = handleOpenSettingsModal;
+
+    // 💡 サイト設定モーダルを閉じる関数
+    function closeSettingsModal() {
+        const modal = document.getElementById('settingsModal');
+        if (modal) {
+            modal.classList.add('hidden');
+        }
+    }
+    window.closeSettingsModal = closeSettingsModal;
         async function saveCharacter(event) {
             event.preventDefault();
             const systemId = document.getElementById('charSystemSelect').value;
@@ -862,6 +891,27 @@ window.closeCharacterModal = closeCharacterModal;
             }
         }
         window.saveRosterSettings = saveRosterSettings;
+
+        // 💡 設定を画面に適用する関数（すでにあればその中身を確認・調整してください）
+function applyRosterSettings(settings) {
+    if (!settings) return;
+
+    // 1. 画面上のサイトタイトル（「キャラクター管理」など）を反映
+    const titleEls = document.querySelectorAll('.site-title-target, #siteTitleText');
+    titleEls.forEach(el => {
+        if (settings.title) el.textContent = settings.title;
+    });
+
+    // 2. ファビコンやロゴの反映
+    if (settings.favicon) {
+        const faviconEl = document.getElementById('faviconIcon') || document.querySelector("link[rel*='icon']");
+        if (faviconEl) faviconEl.href = settings.favicon;
+
+        const appleIconEl = document.getElementById('appleTouchIcon');
+        if (appleIconEl) appleIconEl.href = settings.favicon;
+    }
+}
+window.applyRosterSettings = applyRosterSettings;
 
         // 💡 ヘッダーのタイトルやアイコンを最新の設定に更新する関数
 function updateHeaderBranding() {
