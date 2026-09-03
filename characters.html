@@ -354,101 +354,18 @@ const epithetHtml = ch.epithet
         window.renderCharacterList = renderCharacterList;
 
 // ==========================================
-// 1. 共通の便利関数（画像圧縮やカラープレビューなど）
+// 💡 openEditCharacterModal 関数の定義を追加
 // ==========================================
-
-// 💡 カラーコードプレビュー用関数
-function updateColorPreview(colorCode) {
-    const previewBox = document.getElementById('characterColorPreview');
-    if (!previewBox) return;
-
-    const code = colorCode ? colorCode.trim() : '';
-    let validColor = code;
-    if (validColor.length === 3 || validColor.length === 6) {
-        if (!validColor.startsWith('#')) validColor = '#' + validColor;
-    }
-
-    previewBox.style.backgroundColor = '';
-    previewBox.style.backgroundColor = validColor;
-}
-window.updateColorPreview = updateColorPreview;
-
-
-// 💡 画像自動圧縮関数（エラー防止用セーフティ付き）
-if (typeof window.compressImageIfNeeded !== 'function') {
-    async function compressImageIfNeeded(base64Str) {
-        if (!base64Str || !base64Str.startsWith('data:image')) return base64Str;
-        if (base64Str.length < 900000) return base64Str;
-
-        return new Promise((resolve) => {
-            const img = new Image();
-            img.onerror = () => resolve(base64Str);
-            img.onload = function() {
-                const canvas = document.createElement('canvas');
-                let width = img.width;
-                let height = img.height;
-                
-                const maxDimension = 900; 
-                if (width > maxDimension || height > maxDimension) {
-                    if (width > height) {
-                        height = Math.round((height * maxDimension) / width);
-                        width = maxDimension;
-                    } else {
-                        width = Math.round((width * maxDimension) / height);
-                        height = maxDimension;
-                    }
-                }
-                
-                canvas.width = width;
-                canvas.height = height;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0, width, height);
-                
-                let quality = 0.7;
-                let compressed = canvas.toDataURL('image/jpeg', quality);
-                
-                while (compressed.length > 900000 && quality > 0.2) {
-                    quality -= 0.1;
-                    compressed = canvas.toDataURL('image/jpeg', quality);
-                }
-
-                resolve(compressed);
-            };
-            img.src = base64Str;
-        });
-    }
-    window.compressImageIfNeeded = compressImageIfNeeded;
-}
-        
-       function populateSystemSelect() {
-    const systemInput = document.getElementById('charSystemSelect');
-    if (!systemInput) return;
-
-    systemInput.innerHTML = '';
-    if (window.systems && window.systems.length > 0) {
-        window.systems.forEach(sys => {
-            const option = document.createElement('option');
-            option.value = sys.id;
-            option.textContent = sys.name;
-            systemInput.appendChild(option);
-        });
-    } else {
-        const option = document.createElement('option');
-        option.value = '';
-        option.textContent = 'システムが登録されていません';
-        systemInput.appendChild(option);
-    }
-}
-window.populateSystemSelect = populateSystemSelect;
-
+function openEditCharacterModal(characterId) {
     // 文字列・数値を揃えてキャラクターを検索
     const ch = window.characters.find(c => String(c.id) === String(characterId));
     if (!ch) {
         showToast('キャラクターが見つかりませんでした', 'error');
         console.error("見つかったキャラクター一覧:", window.characters, "探しているID:", characterId);
+        return; // ← 見つからない場合はここで処理を止めるようにすると安全です
     }
 
-   // フォーム要素へ値をセット
+    // フォーム要素へ値をセット
     const nameInput = document.getElementById('charName');
     const nameKanaInput = document.getElementById('charNameKana');
     const epithetInput = document.getElementById('charEpithet');
@@ -470,7 +387,7 @@ window.populateSystemSelect = populateSystemSelect;
     if (colorInput) colorInput.value = ch.themeColor || '#292524';
     if (sheetUrlInput) sheetUrlInput.value = ch.sheetUrl || '';
 
-    // 💡 編集モーダルを開いたときにカラープレビューの色も連動させる（お好みでどうぞ）
+    // 💡 編集モーダルを開いたときにカラープレビューの色も連動させる
     if (typeof updateColorPreview === 'function') {
         updateColorPreview(ch.themeColor || '#292524');
     }
@@ -494,125 +411,9 @@ window.populateSystemSelect = populateSystemSelect;
     } else {
         showToast('編集モーダルが見つかりません', 'error');
     }
+}
 window.openEditCharacterModal = openEditCharacterModal;
         
-        function deleteCharacter(characterId) {
-    const ch = window.characters.find(c => c.id === characterId);
-    const charName = ch ? ch.name : 'このキャラクター';
-
-    // 共通の確認モーダル（または通常のconfirm）を使って削除確認
-    showConfirm('キャラクターの削除', `「${charName}」を削除してもよろしいですか？この操作は元に戻せません。`, () => {
-        // Firebase / Firestore からの削除、またはローカル配列からの削除処理
-        window.characters = window.characters.filter(c => c.id !== characterId);
-        
-        // Firestoreに保存している場合の処理例：
-        // db.collection('characters').doc(characterId).delete().then(() => { ... });
-
-        showToast('キャラクターを削除しました', 'info');
-        
-        // 一覧画面に戻る
-        if (window.selectedSystemId) {
-            navigateTo('characterList', window.selectedSystemId);
-        } else {
-            navigateTo('systemList');
-        }
-    });
-}
-window.deleteCharacter = deleteCharacter;
-
-        function handleCharacterSearchInput(e) {
-            renderCharacterList(window.selectedSystemId, e.target.value);
-        }
-        window.handleCharacterSearchInput = handleCharacterSearchInput;
-
-        function navigateTo(view, param = null) {
-            const viewFolders = document.getElementById('view-folders');
-            const viewList = document.getElementById('view-list');
-            const viewDetail = document.getElementById('view-detail');
-            const breadcrumbs = document.getElementById('breadcrumbs');
-            const breadcrumbAction = document.getElementById('breadcrumbAction');
-
-            if (viewFolders) viewFolders.classList.add('hidden');
-            if (viewList) viewList.classList.add('hidden');
-            if (viewDetail) viewDetail.classList.add('hidden');
-
-            if (view === 'folders') {
-                if (viewFolders) viewFolders.classList.remove('hidden');
-                if (breadcrumbs) {
-                    breadcrumbs.innerHTML = `<span class="text-stone-700 font-medium flex items-center gap-1"><i class="fa-solid fa-house text-[10px]"></i> システム一覧</span>`;
-                }
-                if (breadcrumbAction) {
-                    breadcrumbAction.innerHTML = `
-                        <a href="index.html" class="flex items-center gap-1.5 text-xs text-stone-600 hover:text-stone-900 bg-stone-100 hover:bg-stone-200/70 px-3 py-1.5 rounded-xl transition-all">
-                            <i class="fa-solid fa-book-open text-[10px]"></i>
-                            <span>日記へ</span>
-                        </a>
-                    `;
-                }
-                const searchInput = document.getElementById('folderSearchInput');
-                if (searchInput) searchInput.value = '';
-                renderSystemFolders();
-            } else if (view === 'characterList') {
-                if (viewList) viewList.classList.remove('hidden');
-                const sys = window.systems.find(s => s.id === param);
-                const sysName = sys ? sys.name : 'キャラクター一覧';
-                if (breadcrumbs) {
-                    breadcrumbs.innerHTML = `
-                        <a href="javascript:void(0)" onclick="navigateTo('folders')" class="hover:text-stone-900 transition-colors flex items-center gap-1"><i class="fa-solid fa-house text-[10px]"></i> システム一覧</a>
-                        <span class="text-stone-300">/</span>
-                        <span class="text-stone-700 font-medium">${sysName}</span>
-                    `;
-                }
-                if (breadcrumbAction) {
-                    breadcrumbAction.innerHTML = `
-                        <button onclick="navigateTo('folders')" class="flex items-center gap-1.5 text-xs text-stone-600 hover:text-stone-900 bg-stone-100 hover:bg-stone-200/70 px-3 py-1.5 rounded-xl transition-all">
-                            <i class="fa-solid fa-house text-[10px]"></i>
-                            <span>システム一覧へ</span>
-                        </button>
-                    `;
-                }
-                const searchInput = document.getElementById('characterSearchInput');
-                if (searchInput) searchInput.value = '';
-                renderCharacterList(param);
-            } else if (view === 'detail') {
-                if (viewDetail) viewDetail.classList.remove('hidden');
-                const ch = window.characters.find(c => c.id === param);
-                const charName = ch ? ch.name : 'キャラクター詳細';
-                const targetSystemId = ch ? ch.systemId : window.selectedSystemId;
-                const sys = window.systems.find(s => s.id === targetSystemId);
-
-                if (breadcrumbs) {
-                    breadcrumbs.innerHTML = `
-                        <a href="javascript:void(0)" onclick="navigateTo('folders')" class="hover:text-stone-900 transition-colors flex items-center gap-1"><i class="fa-solid fa-house text-[10px]"></i> システム一覧</a>
-                        <span class="text-stone-300">/</span>
-                        <a href="javascript:void(0)" onclick="navigateTo('characterList', '${targetSystemId}')" class="hover:text-stone-900 transition-colors">${sys?.name || '一覧'}</a>
-                        <span class="text-stone-300">/</span>
-                        <span class="text-stone-700 font-medium">${charName}</span>
-                    `;
-                }
-                if (breadcrumbAction) {
-                    breadcrumbAction.innerHTML = `
-                        <div class="flex items-center gap-2">
-                            <button onclick="openEditCharacterModal('${param}')" class="flex items-center gap-1.5 text-xs text-stone-600 hover:text-stone-900 bg-stone-100 hover:bg-stone-200/70 px-3 py-1.5 rounded-xl transition-all">
-                                <i class="fa-solid fa-pen text-[10px]"></i>
-                                <span>編集</span>
-                            </button>
-                            <button onclick="deleteCharacter('${param}')" class="flex items-center gap-1.5 text-xs text-rose-600 hover:text-rose-900 bg-rose-50 hover:bg-rose-100 px-3 py-1.5 rounded-xl transition-all">
-                                <i class="fa-solid fa-trash text-[10px]"></i>
-                                <span>削除</span>
-                            </button>
-                            <button onclick="navigateTo('characterList', '${targetSystemId}')" class="flex items-center gap-1.5 text-xs text-stone-600 hover:text-stone-900 bg-stone-100 hover:bg-stone-200/70 px-3 py-1.5 rounded-xl transition-all">
-                                <i class="fa-solid fa-arrow-left text-[10px]"></i>
-                                <span>一覧へ</span>
-                            </button>
-                        </div>
-                    `;
-                }
-                renderCharacterDetail(param);
-            }
-        }
-        window.navigateTo = navigateTo;
-
         function getAdjustedColor(hexColor) {
             if (!hexColor || !hexColor.startsWith('#')) return '#44403c';
             let r = parseInt(hexColor.slice(1, 3), 16);
@@ -897,378 +698,6 @@ window.deleteCharacter = deleteCharacter;
         }
         window.closeAuthModal = closeAuthModal;
 
-        async function handleAuthSubmit(event) {
-            event.preventDefault();
-            const inputCode = document.getElementById('inputPasscode').value;
-            const errorMsg = document.getElementById('authErrorMsg');
-
-            if (!window.storedPasscode) {
-                try {
-                    const configRef = doc(db, 'artifacts', window.appId, 'public', 'data', 'config', 'settings');
-                    await setDoc(configRef, { passcode: inputCode }, { merge: true });
-                    window.storedPasscode = inputCode;
-                    window.isAdmin = true;
-                    sessionStorage.setItem('isAdminSession', 'true');
-                    updateAdminUI();
-                    closeAuthModal();
-                    showToast('パスコードを設定しました！', 'info');
-                    if (pendingAction) {
-                        pendingAction();
-                        pendingAction = null;
-                    }
-                } catch (e) {
-                    console.error(e);
-                    if (errorMsg) {
-                        errorMsg.textContent = '保存に失敗しました。';
-                        errorMsg.classList.remove('hidden');
-                    }
-                }
-            } else if (inputCode === window.storedPasscode) {
-                window.isAdmin = true;
-                sessionStorage.setItem('isAdminSession', 'true');
-                updateAdminUI();
-                closeAuthModal();
-                showToast('管理者としてログインしました', 'info');
-                
-                if (pendingAction) {
-                    pendingAction();
-                    pendingAction = null;
-                }
-            } else {
-                if (errorMsg) {
-                    errorMsg.textContent = 'パスコードが違います。';
-                    errorMsg.classList.remove('hidden');
-                }
-            }
-        }
-        window.handleAuthSubmit = handleAuthSubmit;
-
-        function updateAdminUI() {
-            const keyBtn = document.getElementById('headerKeyBtn');
-            if (!keyBtn) return;
-            if (window.isAdmin) {
-                keyBtn.className = "text-stone-600 hover:text-stone-800 transition-colors p-2 text-base";
-                keyBtn.innerHTML = '<i class="fa-solid fa-unlock"></i>';
-                keyBtn.title = "管理者モード（クリックでログアウト）";
-            } else {
-                keyBtn.className = "text-stone-600 hover:text-stone-800 transition-colors p-2 text-base";
-                keyBtn.innerHTML = '<i class="fa-solid fa-lock"></i>';
-                keyBtn.title = "管理者ログイン";
-            }
-        }
-
-        // 📝 キャラクター登録モーダル
-        function handleOpenAddModal() {
-    // 💡 新規作成時もシステム一覧をセレクトボックスに流し込む
-    if (typeof populateSystemSelect === 'function') {
-        populateSystemSelect();
-    }
-
-    const systemInput = document.getElementById('charSystemSelect');
-    if (systemInput) {
-        systemInput.disabled = false; // 新規時は選択可能にする
-        // 現在開いているシステムがあればそれを初期選択する
-        if (window.selectedSystemId) {
-            systemInput.value = window.selectedSystemId;
-        }
-    }
-
-    window.editingCharacterId = null;
-
-    // モーダルのタイトルを「新規作成」用に
-    const modalTitle = document.querySelector('#characterModal h3 span');
-    if (modalTitle) modalTitle.textContent = '新規キャラクター登録';
-
-    const form = document.getElementById('characterForm');
-    if (form) form.reset();
-
-    const modal = document.getElementById('characterModal');
-    if (modal) modal.classList.remove('hidden');
-}
-window.handleOpenAddModal = handleOpenAddModal;
-
-        function handleSystemChangeInModal() {
-            updateDynamicFormFields();
-        }
-        window.handleSystemChangeInModal = handleSystemChangeInModal;
-
-        function updateDynamicFormFields() {
-            const systemId = document.getElementById('charSystemSelect').value;
-            const container = document.getElementById('dynamicCustomFieldsContainer');
-            if (!container) return;
-
-            container.innerHTML = '';
-            const sysConfig = window.systemCustomFields[systemId] || { status: [], text: [] };
-
-            if (sysConfig.text && sysConfig.text.length > 0) {
-                const textHeader = document.createElement('p');
-                textHeader.className = 'text-[11px] font-bold text-stone-500 mt-2 flex items-center justify-between';
-                textHeader.innerHTML = `<span>【基本カスタム情報（テキスト）】</span><span class="text-[10px] text-amber-700 font-normal">||ネタバレ|| で目隠し可</span>`;
-                container.appendChild(textHeader);
-
-                sysConfig.text.forEach(f => {
-                    const div = document.createElement('div');
-                    div.innerHTML = `
-                        <label class="block text-xs font-bold text-stone-600 mb-1">${f.label}</label>
-                        <input type="text" name="custom_${f.id}" placeholder="例：||ここに秘密や使命を書く||" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-sm text-stone-800 focus:outline-none focus:border-stone-400">
-                    `;
-                    container.appendChild(div);
-                });
-            }
-
-            if (sysConfig.status && sysConfig.status.length > 0) {
-                const statusHeader = document.createElement('p');
-                statusHeader.className = 'text-[11px] font-bold text-stone-500 mt-3';
-                statusHeader.textContent = '【ステータス項目（数値・グラフ）】';
-                container.appendChild(statusHeader);
-
-                sysConfig.status.forEach(f => {
-                    const div = document.createElement('div');
-                    div.innerHTML = `
-                        <label class="block text-xs font-bold text-stone-600 mb-1">${f.label} (上限: ${f.max})</label>
-                        <input type="number" name="custom_${f.id}" placeholder="例：50" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-sm text-stone-800 focus:outline-none focus:border-stone-400">
-                    `;
-                    container.appendChild(div);
-                });
-            }
-        }
-
-        function closeCharacterModal() {
-    const modal = document.getElementById('characterModal');
-    if (modal) {
-        modal.classList.add('hidden');
-    }
-    
-    const form = document.getElementById('characterForm');
-    if (form) {
-        form.reset();
-    }
-    
-    // 編集IDをクリアし、モーダルタイトルを新規用にリセット
-    window.editingCharacterId = null;
-    const modalTitle = document.querySelector('#characterModal h3 span');
-    if (modalTitle) modalTitle.textContent = '新規キャラクター登録';
-}
-window.closeCharacterModal = closeCharacterModal;
-
-        // ⚙️ サイト設定モーダル（システム並び替え対応）
-        function handleOpenSettingsModal() {
-            checkAdminPermission(() => {
-                document.getElementById('settingTitleInput').value = window.rosterSettings?.title || "Character Roster";
-                
-                const preview = document.getElementById('settingFaviconPreview');
-                window.currentFaviconBase64 = window.rosterSettings?.favicon || "";
-                if (window.currentFaviconBase64) {
-                    preview.src = window.currentFaviconBase64;
-                    preview.classList.remove('hidden');
-                } else {
-                    preview.classList.add('hidden');
-                }
-
-                renderSettingsSystemsEditor();
-                renderSettingsFieldsEditor();
-                document.getElementById('settingsModal').classList.remove('hidden');
-            });
-        }
-        window.handleOpenSettingsModal = handleOpenSettingsModal;
-
-        function renderSettingsSystemsEditor() {
-            const container = document.getElementById('settingsSystemsEditorContainer');
-            if (!container) return;
-            container.innerHTML = '';
-
-            window.systems.forEach((sys, idx) => {
-                const row = document.createElement('div');
-                row.className = 'flex items-center gap-2 bg-stone-50 p-2.5 rounded-xl border border-stone-200 text-xs';
-                row.innerHTML = `
-                    <span class="font-bold text-stone-400 w-6 text-center">${idx + 1}</span>
-                    <input type="text" value="${sys.name}" data-idx="${idx}" data-key="name" onchange="updateSettingSystemData(this)" placeholder="システム名" class="flex-1 bg-white border border-stone-200 rounded-lg px-2 py-1 font-bold">
-                    <input type="text" value="${sys.desc || ''}" data-idx="${idx}" data-key="desc" onchange="updateSettingSystemData(this)" placeholder="説明文" class="w-28 bg-white border border-stone-200 rounded-lg px-2 py-1">
-                    <div class="flex items-center gap-1">
-                        <button type="button" onclick="moveSystemOrder(${idx}, -1)" ${idx === 0 ? 'disabled class="text-stone-300 p-1"' : 'class="text-stone-600 hover:text-stone-900 p-1"'} title="上に移動"><i class="fa-solid fa-arrow-up"></i></button>
-                        <button type="button" onclick="moveSystemOrder(${idx}, 1)" ${idx === window.systems.length - 1 ? 'disabled class="text-stone-300 p-1"' : 'class="text-stone-600 hover:text-stone-900 p-1"'} title="下に移動"><i class="fa-solid fa-arrow-down"></i></button>
-                    </div>
-                `;
-                container.appendChild(row);
-            });
-        }
-        window.renderSettingsSystemsEditor = renderSettingsSystemsEditor;
-
-        function updateSettingSystemData(element) {
-            const idx = element.dataset.idx;
-            const key = element.dataset.key;
-            window.systems[idx][key] = element.value;
-        }
-        window.updateSettingSystemData = updateSettingSystemData;
-
-        function moveSystemOrder(idx, direction) {
-            const targetIdx = idx + direction;
-            if (targetIdx < 0 || targetIdx >= window.systems.length) return;
-            const temp = window.systems[idx];
-            window.systems[idx] = window.systems[targetIdx];
-            window.systems[targetIdx] = temp;
-            renderSettingsSystemsEditor();
-            renderSettingsFieldsEditor();
-        }
-        window.moveSystemOrder = moveSystemOrder;
-
-        function renderSettingsFieldsEditor() {
-            const container = document.getElementById('settingsFieldsEditorContainer');
-            if (!container) return;
-            container.innerHTML = '';
-
-            window.systems.forEach(sys => {
-                const sysConfig = window.systemCustomFields[sys.id] || { status: [], text: [] };
-                
-                let textHtml = (sysConfig.text || []).map((f, idx) => `
-                    <div class="flex items-center gap-2 bg-stone-50 p-2 rounded-xl border border-stone-200 text-xs">
-                        <span class="text-[10px] text-stone-400 font-bold w-12">テキスト</span>
-                        <input type="text" value="${f.label}" data-sys="${sys.id}" data-cat="text" data-idx="${idx}" data-key="label" onchange="updateSettingFieldData(this)" placeholder="項目名" class="flex-1 bg-white border border-stone-200 rounded-lg px-2 py-1">
-                        <button type="button" onclick="removeSettingField('${sys.id}', 'text', ${idx})" class="text-rose-500 hover:text-rose-700 px-1.5"><i class="fa-solid fa-trash"></i></button>
-                    </div>
-                `).join('');
-
-                let statusHtml = (sysConfig.status || []).map((f, idx) => `
-                    <div class="flex items-center gap-2 bg-stone-50 p-2 rounded-xl border border-stone-200 text-xs">
-                        <span class="text-[10px] text-stone-400 font-bold w-12">ステータス</span>
-                        <input type="text" value="${f.label}" data-sys="${sys.id}" data-cat="status" data-idx="${idx}" data-key="label" onchange="updateSettingFieldData(this)" placeholder="項目名" class="flex-1 bg-white border border-stone-200 rounded-lg px-2 py-1">
-                        <input type="number" value="${f.max || 100}" data-sys="${sys.id}" data-cat="status" data-idx="${idx}" data-key="max" onchange="updateSettingFieldData(this)" placeholder="最大値" class="w-20 bg-white border border-stone-200 rounded-lg px-2 py-1" title="最大値">
-                        <button type="button" onclick="removeSettingField('${sys.id}', 'status', ${idx})" class="text-rose-500 hover:text-rose-700 px-1.5"><i class="fa-solid fa-trash"></i></button>
-                    </div>
-                `).join('');
-
-                const section = document.createElement('div');
-                section.className = 'border border-stone-200 p-3 rounded-2xl space-y-3';
-                section.innerHTML = `
-                    <div class="flex items-center justify-between border-b border-stone-100 pb-2">
-                        <span class="font-bold text-xs text-stone-800">${sys.name}</span>
-                        <div class="flex gap-1.5">
-                            <button type="button" onclick="addSettingField('${sys.id}', 'text')" class="text-[10px] bg-stone-100 hover:bg-stone-200 px-2 py-1 rounded-lg text-stone-700 font-medium">+ テキスト追加</button>
-                            <button type="button" onclick="addSettingField('${sys.id}', 'status')" class="text-[10px] bg-stone-800 hover:bg-stone-700 px-2 py-1 rounded-lg text-white font-medium">+ ステータス追加</button>
-                        </div>
-                    </div>
-                    <div class="space-y-2">
-                        ${textHtml}
-                        ${statusHtml}
-                        ${(!sysConfig.text?.length && !sysConfig.status?.length) ? '<p class="text-[11px] text-stone-400 text-center py-1">カスタム項目はありません</p>' : ''}
-                    </div>
-                `;
-                container.appendChild(section);
-            });
-        }
-        window.renderSettingsFieldsEditor = renderSettingsFieldsEditor;
-
-        function addSettingField(sysId, category) {
-            if (!window.systemCustomFields[sysId]) window.systemCustomFields[sysId] = { status: [], text: [] };
-            if (!window.systemCustomFields[sysId][category]) window.systemCustomFields[sysId][category] = [];
-            
-            const newId = 'field_' + Date.now();
-            if (category === 'text') {
-                window.systemCustomFields[sysId].text.push({ id: newId, label: '新規項目' });
-            } else {
-                window.systemCustomFields[sysId].status.push({ id: newId, label: '新規ステータス', max: 99 });
-            }
-            renderSettingsFieldsEditor();
-        }
-        window.addSettingField = addSettingField;
-
-        function removeSettingField(sysId, category, idx) {
-            window.systemCustomFields[sysId][category].splice(idx, 1);
-            renderSettingsFieldsEditor();
-        }
-        window.removeSettingField = removeSettingField;
-
-        function updateSettingFieldData(element) {
-            const sysId = element.dataset.sys;
-            const category = element.dataset.cat;
-            const idx = element.dataset.idx;
-            const key = element.dataset.key;
-            let val = element.value;
-            if (key === 'max') val = val ? Number(val) : 100;
-            window.systemCustomFields[sysId][category][idx][key] = val;
-        }
-        window.updateSettingFieldData = updateSettingFieldData;
-
-        function closeSettingsModal() {
-            document.getElementById('settingsModal').classList.add('hidden');
-        }
-        window.closeSettingsModal = closeSettingsModal;
-
-        function compressImageFile(file, maxDimension, quality, callback) {
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const img = new Image();
-                img.onload = function() {
-                    const canvas = document.createElement('canvas');
-                    let width = img.width;
-                    let height = img.height;
-
-                    if (width > height) {
-                        if (width > maxDimension) {
-                            height *= maxDimension / width;
-                            width = maxDimension;
-                        }
-                    } else {
-                        if (height > maxDimension) {
-                            width *= maxDimension / height;
-                            height = maxDimension;
-                        }
-                    }
-
-                    canvas.width = width;
-                    canvas.height = height;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0, width, height);
-
-                    let dataUrl = canvas.toDataURL('image/webp', quality);
-                    if (!dataUrl.startsWith('data:image/webp')) {
-                        dataUrl = canvas.toDataURL('image/jpeg', quality);
-                    }
-
-                    callback(dataUrl);
-                };
-                img.src = e.target.result;
-            };
-            reader.readAsDataURL(file);
-        }
-
-        function handleFaviconFileSelect(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            compressImageFile(file, 64, 0.8, (resultUrl) => {
-                window.currentFaviconBase64 = resultUrl;
-                const preview = document.getElementById('settingFaviconPreview');
-                preview.src = resultUrl;
-                preview.classList.remove('hidden');
-            });
-        }
-        window.handleFaviconFileSelect = handleFaviconFileSelect;
-
-        function handleThumbnailFileSelect(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            compressImageFile(file, 400, 0.75, (resultUrl) => {
-                window.currentThumbnailBase64 = resultUrl;
-                const preview = document.getElementById('thumbPreview');
-                preview.src = resultUrl;
-                preview.classList.remove('hidden');
-            });
-        }
-        window.handleThumbnailFileSelect = handleThumbnailFileSelect;
-
-        function handleAvatarFileSelect(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            compressImageFile(file, 1200, 0.75, (resultUrl) => {
-                window.currentAvatarBase64 = resultUrl;
-                const preview = document.getElementById('avatarPreview');
-                preview.src = resultUrl;
-                preview.classList.remove('hidden');
-            });
-        }
-        window.handleAvatarFileSelect = handleAvatarFileSelect;
-
         async function saveCharacter(event) {
             event.preventDefault();
             const systemId = document.getElementById('charSystemSelect').value;
@@ -1294,29 +723,46 @@ window.closeCharacterModal = closeCharacterModal;
 
             if (!name) { alert("キャラクター名は必須です。"); return; }
 
-            const newCharData = {
+            const charData = {
                 systemId, name, epithet,
                 age: age ? Number(age) : '',
                 occupation, themeColor, thumbnail, avatar,
                 customValues,
-                createdAt: new Date().toISOString()
+                updatedAt: new Date().toISOString()
             };
 
             try {
                 const charsRef = collection(db, 'artifacts', window.appId, 'public', 'data', 'characters');
-                const docRef = await addDoc(charsRef, newCharData);
-                window.characters.push({ id: docRef.id, ...newCharData });
+
+                if (window.editingCharacterId) {
+                    // 📝 編集（更新）の場合
+                    const docRef = doc(db, 'artifacts', window.appId, 'public', 'data', 'characters', window.editingCharacterId);
+                    await updateDoc(docRef, charData);
+
+                    // ローカルの配列も更新
+                    const index = window.characters.findIndex(c => c.id === window.editingCharacterId);
+                    if (index !== -1) {
+                        window.characters[index] = { id: window.editingCharacterId, ...window.characters[index], ...charData };
+                    }
+                    showToast("キャラクターを更新しました！", "info");
+                } else {
+                    // 🆕 新規作成の場合
+                    charData.createdAt = new Date().toISOString();
+                    const docRef = await addDoc(charsRef, charData);
+                    window.characters.push({ id: docRef.id, ...charData });
+                    showToast("キャラクターを登録しました！", "info");
+                }
+
                 closeCharacterModal();
                 renderCharacterList(systemId);
                 renderSystemFolders();
-                showToast("キャラクターを登録しました！", "info");
             } catch (e) {
                 console.error("Save error:", e);
                 alert("保存に失敗しました。画像サイズが大きすぎないか確認してください。");
             }
         }
         window.saveCharacter = saveCharacter;
-
+        
         async function saveRosterSettings(event) {
             event.preventDefault();
             const title = document.getElementById('settingTitleInput').value.trim();
@@ -1351,15 +797,17 @@ function updateHeaderBranding() {
     const faviconImgEl = document.getElementById('headerFaviconImg');
     const defaultIconEl = document.getElementById('headerDefaultIcon');
 
-    // タイトルの反映（window.siteTitle などに保存されている場合）
-    if (titleTextEl && window.siteTitle) {
-        titleTextEl.textContent = window.siteTitle;
+    // window.rosterSettings からタイトルを反映
+    const currentTitle = window.rosterSettings?.title;
+    if (titleTextEl && currentTitle) {
+        titleTextEl.textContent = currentTitle;
     }
 
-    // アイコンの反映（window.siteFavicon などにBase64やURLが入っている場合）
+    // window.rosterSettings からアイコン（favicon）を反映
+    const currentFavicon = window.rosterSettings?.favicon;
     if (faviconImgEl && defaultIconEl) {
-        if (window.siteFavicon && window.siteFavicon.trim() !== '') {
-            faviconImgEl.src = window.siteFavicon;
+        if (currentFavicon && currentFavicon.trim() !== '') {
+            faviconImgEl.src = currentFavicon;
             faviconImgEl.classList.remove('hidden'); // 画像を表示
             defaultIconEl.classList.add('hidden');    // デフォルトアイコンを隠す
         } else {
@@ -1369,9 +817,9 @@ function updateHeaderBranding() {
     }
 }
 window.updateHeaderBranding = updateHeaderBranding;
-        
     </script>
 </head>
+    
 <body class="min-h-screen flex flex-col justify-between">
 
   <!-- ヘッダー -->
