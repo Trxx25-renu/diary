@@ -70,70 +70,29 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Playfair+Display:ital,wght@0,600;1,400&display=swap" rel="stylesheet">
    
     <style>
-        body {
-            font-family: 'Noto Sans JP', sans-serif;
-            background-color: #fcfbf9;
-            color: #292524;
-        }
-        .font-serif-title {
-            font-family: 'Playfair Display', 'Noto Sans JP', serif;
-        }
-        
-        /* スマホでフォームをタップしたときに画面が勝手にズームするのを防ぐ（16px以上にする） */
-        input[type="text"],
-        input[type="number"],
-        input[type="email"],
-        input[type="password"],
-        input[type="search"],
-        input[type="date"],
-        select,
-        textarea {
-            font-size: 16px !important;
-        }
-        
-        /* 画像の長押し保存・右クリック防止 */
-        .protect-image {
-            -webkit-touch-callout: none;
-            -webkit-user-select: none;
-            -khtml-user-select: none;
-            -moz-user-select: none;
-            -ms-user-select: none;
-            user-select: none;
-            pointer-events: auto;
-        }
-
-        /* ネタバレ隠し（伏せ字）スタイル */
-.spoiler-text {
-    background-color: #292524 !important;
-    color: transparent !important;
-    border-radius: 0.25rem;
-    padding: 0 0.35rem;
-    margin: 0 0.1rem;
-    cursor: pointer;
-    user-select: none;
-    transition: all 0.2s ease;
-    display: inline-block;
-    vertical-align: baseline;
-}
-.spoiler-text:hover {
-    background-color: #44403c !important;
-}
-.spoiler-text.revealed {
-    background-color: #f3f4f6 !important;
-    color: #292524 !important;
-    user-select: text;
-    border: 1px solid #e7e5e4;
-}
-        /* 目隠しメモカードのスタイル */
-        .secret-card-blur {
-            filter: blur(5px);
-            user-select: none;
-            opacity: 0.3;
-        }
-       #pullToRefreshIndicator {
-            will-change: transform;
-        }
-    </style>
+    /* ネタバレ隠し（伏せ字）スタイル */
+    .spoiler-text {
+        background-color: #292524 !important;
+        color: transparent !important;
+        border-radius: 0.25rem;
+        padding: 0 0.35rem;
+        margin: 0 0.1rem;
+        cursor: pointer;
+        user-select: none;
+        transition: all 0.2s ease;
+        display: inline-block;
+        vertical-align: baseline;
+    }
+    .spoiler-text:hover {
+        background-color: #44403c !important;
+    }
+    .spoiler-text.revealed {
+        background-color: #f3f4f6 !important;
+        color: #292524 !important;
+        user-select: text;
+        border: 1px solid #e7e5e4;
+    }
+</style>
     
     <script type="module">
     document.addEventListener("DOMContentLoaded", async () => {
