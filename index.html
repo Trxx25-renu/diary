@@ -1799,48 +1799,55 @@ window.closeConfirmModal = closeConfirmModal;
 window.handleSaveConfig = handleSaveConfig;
 
         // 📝 新規投稿ボタンを押したときに呼ばれる関数
-        function openPostModal() {
-            // 新規作成なので編集IDはクリア
-            window.editingEntryId = null;
+function openPostModal() {
+    // 新規作成なので編集IDはクリア
+    window.editingEntryId = null;
 
-            // モーダルのタイトルを「新規投稿」等に変更（あれば）
-            const modalTitleEl = document.getElementById('postModalTitle');
-            if (modalTitleEl) modalTitleEl.textContent = '日記を書く';
+    // モーダルのタイトルを「新規投稿」等に変更（あれば）
+    const modalTitleEl = document.getElementById('postModalTitle');
+    if (modalTitleEl) modalTitleEl.textContent = '日記を書く';
 
-            // 入力欄をクリア
-            const dateEl = document.getElementById('inputDate');
-            const titleEl = document.getElementById('inputScenarioTitle');
-            const contentEl = document.getElementById('inputContent');
-            const secretEl = document.getElementById('inputSecretContent');
+    // 入力欄をクリア
+    const dateEl = document.getElementById('inputDate');
+    const titleEl = document.getElementById('inputScenarioTitle');
+    const contentEl = document.getElementById('inputContent');
+    const secretEl = document.getElementById('inputSecretContent');
 
-            if (dateEl) dateEl.value = new Date().toISOString().split('T')[0]; // 今日付を入れると便利
-            if (titleEl) titleEl.value = '';
-            if (contentEl) contentEl.value = '';
-            if (secretEl) secretEl.value = '';
+    if (dateEl) dateEl.value = new Date().toISOString().split('T')[0]; // 今日付を入れると便利
+    if (titleEl) titleEl.value = '';
+    if (contentEl) contentEl.value = '';
+    if (secretEl) secretEl.value = '';
 
-            // 🌟 画像配列・プレビューもクリア
-            window.tempImageUrls = [];
-            window.tempBase64Image = ''; // 互換用
-            const previewImg = document.getElementById('imagePreview');
-            const placeholder = document.getElementById('uploadPlaceholder');
-            if (previewImg) {
-                previewImg.src = '';
-                previewImg.classList.add('hidden');
-            }
-            if (placeholder) placeholder.classList.remove('hidden');
+    // 🌟 画像配列・プレビュー関連をすべて完全にクリア
+    window.tempImageUrls = [];
+    window.tempBase64Image = ''; // 互換用
 
-            // 編集時と同じ演出でモーダルを表示する
-            const modal = document.getElementById('postModal');
-            if (modal) {
-                modal.classList.remove('opacity-0', 'pointer-events-none');
-                const modalBox = modal.querySelector('div');
-                if (modalBox) {
-                    modalBox.classList.remove('scale-95');
-                    modalBox.classList.add('scale-100');
-                }
-            }
+    const previewContainer = document.getElementById('imagePreviewContainer');
+    const previewImg = document.getElementById('imagePreview');
+    const placeholder = document.getElementById('uploadPlaceholder');
+
+    // 💡 複数画像コンテナの中身を綺麗に消去
+    if (previewContainer) {
+        previewContainer.innerHTML = '';
+    }
+    if (previewImg) {
+        previewImg.src = '';
+        previewImg.classList.add('hidden');
+    }
+    if (placeholder) placeholder.classList.remove('hidden');
+
+    // 編集時と同じ演出でモーダルを表示する
+    const modal = document.getElementById('postModal');
+    if (modal) {
+        modal.classList.remove('opacity-0', 'pointer-events-none');
+        const modalBox = modal.querySelector('div');
+        if (modalBox) {
+            modalBox.classList.remove('scale-95');
+            modalBox.classList.add('scale-100');
         }
-        window.openPostModal = openPostModal;
+    }
+}
+window.openPostModal = openPostModal;
         
         // 🌟 複数画像（最大3枚）の選択と圧縮を行う関数
         function handleImageSelect(event) {
@@ -2220,35 +2227,47 @@ function openEditModalFromDetail() {
     if (contentInput) contentInput.value = entry.content || '';
     if (secretContentInput) secretContentInput.value = entry.secretContent || '';
 
-    const imgSrc = entry.imageUrl || entry.image || entry.photo || '';
-    const preview = document.getElementById('imagePreview') || document.getElementById('editImagePreview');
-    const placeholder = document.getElementById('uploadPlaceholder') || document.getElementById('editUploadPlaceholder');
+    // 🌟 複数画像プレビュー＆配列の完全リセットと再構築
+    window.tempImageUrls = [];
+    window.tempBase64Image = '';
 
-    if (imgSrc && imgSrc.trim() !== '') {
-        window.tempBase64Image = imgSrc;
-        if (preview) {
-            if (preview.tagName === 'IMG') {
-                preview.src = imgSrc;
-            } else {
-                preview.style.backgroundImage = `url(${imgSrc})`;
-                preview.style.backgroundSize = 'cover';
-                preview.style.backgroundPosition = 'center';
-            }
-            preview.classList.remove('hidden');
-            preview.style.display = 'block';
+    const previewContainer = document.getElementById('imagePreviewContainer');
+    const placeholder = document.getElementById('uploadPlaceholder');
+
+    if (previewContainer) {
+        previewContainer.innerHTML = ''; // 一旦完全にクリア
+    }
+
+    // 記事が持っている画像を取得（配列か、単体プロパティの互換性対応）
+    const images = entry.imageUrls || (entry.imageUrl ? [entry.imageUrl] : (entry.image ? [entry.image] : (entry.photo ? [entry.photo] : [])));
+
+    if (images.length > 0) {
+        window.tempImageUrls = [...images];
+        window.tempBase64Image = window.tempImageUrls[0] || '';
+
+        if (previewContainer) {
+            window.tempImageUrls.forEach((url, i) => {
+                const thumbWrapper = document.createElement('div');
+                thumbWrapper.className = 'relative w-20 h-20 rounded-xl overflow-hidden border border-stone-200 shrink-0 bg-white shadow-sm';
+                
+                const img = document.createElement('img');
+                img.src = url;
+                img.className = 'w-full h-full object-cover';
+                
+                const badge = document.createElement('span');
+                badge.className = 'absolute bottom-1 right-1 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded-md font-bold';
+                badge.textContent = `${i + 1}`;
+                
+                thumbWrapper.appendChild(img);
+                thumbWrapper.appendChild(badge);
+                previewContainer.appendChild(thumbWrapper);
+            });
         }
         if (placeholder) {
             placeholder.classList.add('hidden');
             placeholder.style.display = 'none';
         }
     } else {
-        window.tempBase64Image = null;
-        if (preview) {
-            if (preview.tagName === 'IMG') preview.src = '';
-            else preview.style.backgroundImage = '';
-            preview.classList.add('hidden');
-            preview.style.display = 'none';
-        }
         if (placeholder) {
             placeholder.classList.remove('hidden');
             placeholder.style.display = 'flex';
@@ -2257,7 +2276,7 @@ function openEditModalFromDetail() {
 
     if (typeof closeDetailModal === 'function') closeDetailModal();
 
-    // 🌟 モーダルを開く処理は必ず関数の中に含める
+    // 🌟 モーダルを開く処理
     const modal = document.getElementById('postModal');
     if (modal) {
         modal.classList.remove('opacity-0', 'pointer-events-none');
