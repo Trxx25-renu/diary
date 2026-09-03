@@ -2988,27 +2988,28 @@ function renderEntryDetail(targetId) {
         contentEl.innerHTML = typeof parseSpoilers === 'function' ? parseSpoilers(entry.content) : (entry.content || '');
     }
 
-    // 5. ネタバレ防止メモの反映
+   // 5. ネタバレ防止メモの反映
+    window.isSecretRevealed = false; // 記事を開くたびに「閉じた状態」にリセット
     if (secretContainer) {
         if (entry.secretContent && entry.secretContent.trim() !== '') {
             secretContainer.classList.remove('hidden');
+            
+            // 🌟 ① textContent ではなく parseSpoilers を通して HTML として反映する
             if (secretContentEl) {
-                secretContentEl.textContent = entry.secretContent;
+                secretContentEl.innerHTML = typeof parseSpoilers === 'function' ? parseSpoilers(entry.secretContent) : (entry.secretContent || '');
             }
+            
+            // 🌟 ② 確実に「閉じた状態（オーバーレイ表示・ぼかし有効）」にする
             if (secretOverlay) {
-                secretOverlay.style.display = 'flex';
+                secretOverlay.classList.remove('hidden');
+            }
+            if (secretContentEl) {
+                secretContentEl.classList.add('secret-card-blur');
             }
         } else {
             secretContainer.classList.add('hidden');
         }
     }
-
-    // 編集・削除ボタンの表示
-    const editBtn = document.getElementById('editBtn');
-    const deleteBtn = document.getElementById('deleteBtn');
-    if (editBtn) editBtn.classList.remove('hidden');
-    if (deleteBtn) deleteBtn.classList.remove('hidden');
-}
 window.renderEntryDetail = renderEntryDetail;
     
     // 1. ここでJavaScriptのscriptタグをしっかりと閉じます
