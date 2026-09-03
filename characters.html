@@ -446,7 +446,6 @@ window.populateSystemSelect = populateSystemSelect;
     if (!ch) {
         showToast('キャラクターが見つかりませんでした', 'error');
         console.error("見つかったキャラクター一覧:", window.characters, "探しているID:", characterId);
-        return;
     }
 
    // フォーム要素へ値をセット
@@ -1346,6 +1345,32 @@ window.closeCharacterModal = closeCharacterModal;
             }
         }
         window.saveRosterSettings = saveRosterSettings;
+
+        // 💡 ヘッダーのタイトルやアイコンを最新の設定に更新する関数
+function updateHeaderBranding() {
+    const titleTextEl = document.getElementById('headerTitleText');
+    const faviconImgEl = document.getElementById('headerFaviconImg');
+    const defaultIconEl = document.getElementById('headerDefaultIcon');
+
+    // タイトルの反映（window.siteTitle などに保存されている場合）
+    if (titleTextEl && window.siteTitle) {
+        titleTextEl.textContent = window.siteTitle;
+    }
+
+    // アイコンの反映（window.siteFavicon などにBase64やURLが入っている場合）
+    if (faviconImgEl && defaultIconEl) {
+        if (window.siteFavicon && window.siteFavicon.trim() !== '') {
+            faviconImgEl.src = window.siteFavicon;
+            faviconImgEl.classList.remove('hidden'); // 画像を表示
+            defaultIconEl.classList.add('hidden');    // デフォルトアイコンを隠す
+        } else {
+            faviconImgEl.classList.add('hidden');    // 画像を隠す
+            defaultIconEl.classList.remove('hidden'); // デフォルトアイコンを表示
+        }
+    }
+}
+window.updateHeaderBranding = updateHeaderBranding;
+        
     </script>
 </head>
 <body class="min-h-screen flex flex-col justify-between">
@@ -1355,7 +1380,11 @@ window.closeCharacterModal = closeCharacterModal;
         <div class="max-w-4xl mx-auto flex items-center justify-between">
             <div class="flex items-center gap-3">
                 <h1 class="text-base font-bold font-serif-title text-stone-800 flex items-center gap-2">
-                    <i class="fa-solid fa-users text-stone-600 text-xs"></i>
+                    <!-- 🌟 サイトアイコン画像（設定時のみ表示） -->
+                    <img id="headerFaviconImg" class="w-5 h-5 rounded-md object-cover border border-stone-200 hidden" alt="Icon">
+                    <!-- 🌟 デフォルトの人型アイコン（未設定時に表示） -->
+                    <i id="headerDefaultIcon" class="fa-solid fa-users text-stone-600 text-xs"></i>
+                    
                     <span id="headerTitleText">Character Roster</span>
                 </h1>
             </div>
