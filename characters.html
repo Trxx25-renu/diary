@@ -881,53 +881,57 @@ function renderCharacterDetail(characterId) {
         }
         window.saveRosterSettings = saveRosterSettings;
 
-        // 💡 設定を画面に適用する関数（すでにあればその中身を確認・調整してください）
-function applyRosterSettings(settings) {
-    if (!settings) return;
+       // ==========================================
+        // 💡 設定を画面に適用する関数
+        // ==========================================
+        function applyRosterSettings(settings) {
+            if (!settings) return;
 
-    // 1. 画面上のサイトタイトル（「キャラクター管理」など）を反映
-    const titleEls = document.querySelectorAll('.site-title-target, #siteTitleText');
-    titleEls.forEach(el => {
-        if (settings.title) el.textContent = settings.title;
-    });
+            // 1. 画面上のサイトタイトル（「キャラクター管理」など）を反映
+            const titleEls = document.querySelectorAll('.site-title-target, #siteTitleText');
+            titleEls.forEach(el => {
+                if (settings.title) el.textContent = settings.title;
+            });
 
-    // 2. ファビコンやロゴの反映
-    if (settings.favicon) {
-        const faviconEl = document.getElementById('faviconIcon') || document.querySelector("link[rel*='icon']");
-        if (faviconEl) faviconEl.href = settings.favicon;
+            // 2. ファビコンやロゴの反映
+            if (settings.favicon) {
+                const faviconEl = document.getElementById('faviconIcon') || document.getElementById('dynamicFavicon') || document.querySelector("link[rel*='icon']");
+                if (faviconEl) faviconEl.href = settings.favicon;
 
-        const appleIconEl = document.getElementById('appleTouchIcon');
-        if (appleIconEl) appleIconEl.href = settings.favicon;
-    }
-}
-window.applyRosterSettings = applyRosterSettings;
-
-        // 💡 ヘッダーのタイトルやアイコンを最新の設定に更新する関数
-function updateHeaderBranding() {
-    const titleTextEl = document.getElementById('headerTitleText');
-    const faviconImgEl = document.getElementById('headerFaviconImg');
-    const defaultIconEl = document.getElementById('headerDefaultIcon');
-
-    // window.rosterSettings からタイトルを反映
-    const currentTitle = window.rosterSettings?.title;
-    if (titleTextEl && currentTitle) {
-        titleTextEl.textContent = currentTitle;
-    }
-
-    // window.rosterSettings からアイコン（favicon）を反映
-    const currentFavicon = window.rosterSettings?.favicon;
-    if (faviconImgEl && defaultIconEl) {
-        if (currentFavicon && currentFavicon.trim() !== '') {
-            faviconImgEl.src = currentFavicon;
-            faviconImgEl.classList.remove('hidden'); // 画像を表示
-            defaultIconEl.classList.add('hidden');    // デフォルトアイコンを隠す
-        } else {
-            faviconImgEl.classList.add('hidden');    // 画像を隠す
-            defaultIconEl.classList.remove('hidden'); // デフォルトアイコンを表示
+                const appleIconEl = document.getElementById('appleTouchIcon');
+                if (appleIconEl) appleIconEl.href = settings.favicon;
+            }
         }
-    }
-}
-window.updateHeaderBranding = updateHeaderBranding;
+        window.applyRosterSettings = applyRosterSettings;
+
+        // ==========================================
+        // 💡 ヘッダーのタイトルやアイコンを最新の設定に更新する関数
+        // ==========================================
+        function updateHeaderBranding() {
+            const titleTextEl = document.getElementById('headerTitleText');
+            const faviconImgEl = document.getElementById('headerFaviconImg');
+            const defaultIconEl = document.getElementById('headerDefaultIcon');
+
+            // window.rosterSettings からタイトルを反映
+            const currentTitle = window.rosterSettings?.title;
+            if (titleTextEl && currentTitle) {
+                titleTextEl.textContent = currentTitle;
+            }
+
+            // window.rosterSettings からアイコン（favicon）を反映
+            const currentFavicon = window.rosterSettings?.favicon;
+            if (faviconImgEl && defaultIconEl) {
+                if (currentFavicon && currentFavicon.trim() !== '') {
+                    faviconImgEl.src = currentFavicon;
+                    faviconImgEl.classList.remove('hidden'); // 画像を表示
+                    defaultIconEl.classList.add('hidden');    // デフォルトアイコンを隠す
+                } else {
+                    faviconImgEl.classList.add('hidden');    // 画像を隠す
+                    defaultIconEl.classList.remove('hidden'); // デフォルトアイコンを表示
+                }
+            }
+        }
+        window.updateHeaderBranding = updateHeaderBranding;
     </script>
 </head>
     
