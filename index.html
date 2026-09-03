@@ -716,8 +716,9 @@ window.parseSpoilers = parseSpoilers;
 
         // 文書全体のクリックを監視して、ネタバレテキストの開閉を確実に制御
 document.addEventListener('click', (e) => {
-    if (e.target && e.target.classList.contains('spoiler-text')) {
-        e.target.classList.toggle('revealed');
+    const spoiler = e.target.closest('.spoiler-text');
+    if (spoiler) {
+        spoiler.classList.toggle('revealed');
     }
 });
 
@@ -2145,6 +2146,7 @@ window.handleSaveConfig = handleSaveConfig;
         window.deleteCurrentEntry = deleteCurrentEntry;
         
         // 📝 詳細画面から編集モードでモーダルを開く関数（IDの揺れを完全自動吸収版）
+// 🛠️ 【完全版】画像プレビュー表示関数
 function openEditModalFromDetail() {
     if (!window.isAdmin) {
         showToast('権限がありません。ログインしてください。', 'warning');
@@ -2156,7 +2158,6 @@ function openEditModalFromDetail() {
         return;
     }
 
-    // 🌟 型やID/日付の違いを吸収して安全に記事データを見つける
     const entry = window.entries.find(e => 
         String(e.id) === String(window.selectedEntryId) || e.date === window.selectedEntryId
     );
@@ -2166,24 +2167,15 @@ function openEditModalFromDetail() {
         return;
     }
 
-    // 🌟 編集IDを確実に保持
     window.editingEntryId = entry.id;
 
-    // フォームのタイトルを変更（あれば）
-    const modalTitleEl = document.getElementById('postModalTitle');
-    if (modalTitleEl) modalTitleEl.textContent = '日記を編集';
-
-    // フォームの各入力欄に既存のデータを流し込む
+    // フォームの各入力欄にデータを流し込む
     const dateInput = document.getElementById('inputDate');
     const timeSlotInput = document.getElementById('inputTimeSlot');
     const scenarioTitleInput = document.getElementById('inputScenarioTitle');
     const weatherInput = document.getElementById('inputWeather');
     const contentInput = document.getElementById('inputContent');
     const secretContentInput = document.getElementById('inputSecretContent');
-
-    // 🌟 プレビュー要素のIDの揺れ（imagePreview, editImagePreview, previewなど）をすべて網羅して取得
-    const preview = document.getElementById('imagePreview') || document.getElementById('editImagePreview') || document.getElementById('preview');
-    const placeholder = document.getElementById('uploadPlaceholder') || document.getElementById('editUploadPlaceholder') || document.getElementById('placeholder');
 
     if (dateInput) dateInput.value = entry.date || '';
     if (timeSlotInput) timeSlotInput.value = entry.timeSlot || 'afternoon';
@@ -2192,22 +2184,34 @@ function openEditModalFromDetail() {
     if (contentInput) contentInput.value = entry.content || '';
     if (secretContentInput) secretContentInput.value = entry.secretContent || '';
 
-    // 🌟 画像の復元とプレビューの強制表示
-    if (entry.imageUrl && entry.imageUrl.trim() !== '') {
-        window.tempBase64Image = entry.imageUrl;
+    // 🌟 画像データの取得（imageUrl や image などの揺れに対応）
+    const imgSrc = entry.imageUrl || entry.image || entry.photo || '';
+    const preview = document.getElementById('imagePreview') || document.getElementById('editImagePreview');
+    const placeholder = document.getElementById('uploadPlaceholder') || document.getElementById('editUploadPlaceholder');
+
+    if (imgSrc && imgSrc.trim() !== '') {
+        window.tempBase64Image = imgSrc;
         if (preview) {
-            preview.src = entry.imageUrl;
+            // 要素が <img> タグか <div> タグかによって処理を自動切り替え
+            if (preview.tagName === 'IMG') {
+                preview.src = imgSrc;
+            } else {
+                preview.style.backgroundImage = `url(${imgSrc})`;
+                preview.style.backgroundSize = 'cover';
+                preview.style.backgroundPosition = 'center';
+            }
             preview.classList.remove('hidden');
-            preview.style.display = 'block'; // 確実に表示させる
+            preview.style.display = 'block';
         }
         if (placeholder) {
             placeholder.classList.add('hidden');
-            placeholder.style.display = 'none'; // 確実に非表示にする
+            placeholder.style.display = 'none';
         }
     } else {
         window.tempBase64Image = null;
         if (preview) {
-            preview.src = '';
+            if (preview.tagName === 'IMG') preview.src = '';
+            else preview.style.backgroundImage = '';
             preview.classList.add('hidden');
             preview.style.display = 'none';
         }
@@ -2217,12 +2221,8 @@ function openEditModalFromDetail() {
         }
     }
 
-    // 詳細モーダルを閉じる
-    if (typeof closeDetailModal === 'function') {
-        closeDetailModal();
-    }
+    if (typeof closeDetailModal === 'function') closeDetailModal();
 
-    // 投稿モーダルを表示する
     const modal = document.getElementById('postModal');
     if (modal) {
         modal.classList.remove('opacity-0', 'pointer-events-none');
@@ -2232,7 +2232,6 @@ function openEditModalFromDetail() {
             modalBox.classList.add('scale-100');
         }
     }
-
     showToast('編集モードで開きました', 'info');
 }
 window.openEditModalFromDetail = openEditModalFromDetail;
