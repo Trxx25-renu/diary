@@ -1953,50 +1953,71 @@ window.handleSaveConfig = handleSaveConfig;
         } 
         window.closePostModal = closePostModal;
 
-       // 💡 画像が1MBを超えている場合に自動で縮小・圧縮するヘルパー関数
-async function compressImageIfNeeded(base64Str) {
-    if (!base64Str || !base64Str.startsWith('data:image')) return base64Str;
-    if (base64Str.length < 1000000) return base64Str;
+      // 💡 画像が1MBを超えている場合に、画質を保ちつつ自動で制限内に収めるヘルパー関数
+if (typeof window.compressImageIfNeeded !== 'function') {
+    async function compressImageIfNeeded(base64Str) {
+        if (!base64Str || !base64Str.startsWith('data:image')) return base64Str;
+        // すでに1MB未満ならそのまま返す
+        if (base64Str.length < 1000000) return base64Str;
 
-    console.log("⚠️ 画像サイズが大きいため、自動圧縮します...");
+        console.log("⚠️ 画像サイズが1MBを超えているため、Firestore制限内に向けて最適化します...", Math.round(base64Str.length / 1024), "KB");
 
-    return new Promise((resolve) => {
-        const img = new Image();
-        img.onload = function() {
-            const canvas = document.createElement('canvas');
-            let width = img.width;
-            let height = img.height;
-            
-            const maxWidth = 800;
-            if (width > maxWidth) {
-                height = Math.round((height * maxWidth) / width);
-                width = maxWidth;
-            }
-            
-            canvas.width = width;
-            canvas.height = height;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0, width, height);
-            
-            const compressed = canvas.toDataURL('image/jpeg', 0.6);
-            console.log("✅ 圧縮完了:", Math.round(compressed.length / 1024), "KB");
-            resolve(compressed);
-        };
-        img.src = base64Str;
-    });
+        return new Promise((resolve) => {
+            const img = new Image();
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                let width = img.width;
+                let height = img.height;
+                
+                // 🌟 大きすぎる解像度だけをスマートに制限し、過剰な縮小を避けます
+                const maxDimension = 1200; 
+                if (width > maxDimension || height > maxDimension) {
+                    if (width > height) {
+                        height = Math.round((height * maxDimension) / width);
+                        width = maxDimension;
+                    } else {
+                        width = Math.round((width * maxDimension) / height);
+                        height = maxDimension;
+                    }
+                }
+                
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+                
+                // 🌟 画質（quality）を高めの 0.8 からスタート
+                let quality = 0.8;
+                let compressed = canvas.toDataURL('image/jpeg', quality);
+                
+                // 万が一まだ1MBを超える場合は、綺麗さを保てる限界ギリギリまで品質を微調整
+                while (compressed.length > 1000000 && quality > 0.4) {
+                    quality -= 0.1;
+                    compressed = canvas.toDataURL('image/jpeg', quality);
+                }
+
+                console.log("✅ 最適化完了:", Math.round(compressed.length / 1024), "KB (画質:", quality.toFixed(1), ")");
+                resolve(compressed);
+            };
+            img.src = base64Str;
+        });
+    }
+    window.compressImageIfNeeded = compressImageIfNeeded;
 }
 
-// 📝 改行を含むネタバレ（||...||）も完全に処理できる変換関数
-function parseSpoilers(text) {
-    if (!text) return '';
-    return text
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/\|\|([\s\S]*?)\|\|/g, '<span class="spoiler-text">$1</span>');
+// 📝 改行を含むネタバレ（||...||）も完全に処理できる変換関数（重複防止ガード付き）
+if (typeof window.parseSpoilers !== 'function') {
+    function parseSpoilers(text) {
+        if (!text) return '';
+        return text
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/\|\|([\s\S]*?)\|\|/g, '<span class="spoiler-text">$1</span>');
+    }
+    window.parseSpoilers = parseSpoilers;
 }
-window.parseSpoilers = parseSpoilers;
-
+        
 // 🔓 文書全体のクリックを監視してネタバレを開閉
 document.addEventListener('click', (e) => {
     const spoiler = e.target.closest('.spoiler-text');
