@@ -394,6 +394,9 @@ function navigateTo(target, param) {
 }
 window.navigateTo = navigateTo;
 
+        // 画面を切り替えた直後などにこれを呼ぶ
+        renderBreadcrumbAndActions(currentViewType, currentParam);
+        
 // ==========================================
 // 💡 openEditCharacterModal 関数の定義
 // ==========================================
@@ -973,35 +976,94 @@ window.updateHeaderBranding = updateHeaderBranding;
         </div>
     </header>
 
-    <!-- メインコンテンツ -->
-    <main class="max-w-4xl mx-auto w-full p-4 flex-1">
-        
-       // パンくずとヘッダーアクションをまとめたHTMLのイメージ
-const breadcrumbHtml = `
-    <div class="flex items-center justify-between flex-wrap gap-4 mb-6 pb-4 border-b border-stone-200">
-        <!-- パンくずリスト -->
-        <div class="flex items-center gap-2 text-xs text-stone-500">
-            <span class="hover:text-stone-800 cursor-pointer" onclick="navigateTo('home')"><i class="fa-solid fa-book-open text-xs mr-1"></i>システム一覧</span>
-            <i class="fa-solid fa-chevron-right text-[10px] text-stone-300"></i>
-            <span class="hover:text-stone-800 cursor-pointer" onclick="navigateTo('characterList', '${ch.systemId}')">${sys ? sys.name : 'システム'}</span>
-            <i class="fa-solid fa-chevron-right text-[10px] text-stone-300"></i>
-            <span class="text-stone-800 font-bold">${ch.name}</span>
-        </div>
-        
-        <!-- 右側に配置する「編集」「削除」「一覧へ戻る」ボタン -->
-        <div class="flex items-center gap-2">
-            <button onclick="openEditCharacterModal('${ch.id}')" class="flex items-center gap-1.5 text-xs text-stone-600 hover:text-stone-900 bg-white border border-stone-200 hover:bg-stone-50 px-3.5 py-1.5 rounded-xl transition-all shadow-sm">
-                <i class="fa-solid fa-pen text-[10px]"></i><span>編集</span>
-            </button>
-            <button onclick="deleteCharacter('${ch.id}')" class="flex items-center gap-1.5 text-xs text-rose-600 hover:text-rose-900 bg-white border border-rose-200 hover:bg-rose-50 px-3.5 py-1.5 rounded-xl transition-all shadow-sm">
-                <i class="fa-solid fa-trash text-[10px]"></i><span>削除</span>
-            </button>
-            <button onclick="navigateTo('characterList', '${ch.systemId}')" class="flex items-center gap-1.5 text-xs text-stone-600 hover:text-stone-900 bg-stone-100 hover:bg-stone-200 px-3.5 py-1.5 rounded-xl transition-all">
-                <i class="fa-solid fa-arrow-left text-[10px]"></i><span>一覧へ戻る</span>
-            </button>
-        </div>
-    </div>
-`;
+   <!-- メインコンテンツ -->
+<main class="max-w-4xl mx-auto w-full p-4 flex-1">
+    
+    <!-- 💡 階層に応じて自動で切り替わるパンくず＆ヘッダーアクションのプレースホルダー -->
+    <div id="headerBreadcrumbArea"></div>
+
+    <script>
+        // 🌟 階層ごとに安全にHTMLを生成・切り替える関数
+        function renderBreadcrumbAndActions(viewType, param) {
+            const container = document.getElementById('headerBreadcrumbArea');
+            if (!container) return;
+
+            // 1. 【1階層目】システム一覧（ホーム）の場合
+            if (viewType === 'home' || viewType === 'systemList' || !viewType) {
+                container.innerHTML = `
+                    <div class="flex items-center justify-between flex-wrap gap-4 mb-6 pb-4 border-b border-stone-200">
+                        <div class="flex items-center gap-2 text-xs text-stone-500 font-medium">
+                            <span class="text-stone-800 font-bold flex items-center gap-1.5">
+                                <i class="fa-solid fa-book-open text-xs"></i> システム一覧
+                            </span>
+                        </div>
+                        <div></div>
+                    </div>
+                `;
+                return;
+            }
+
+            // 2. 【2階層目】キャラクター一覧の場合（param は systemId）
+            if (viewType === 'characterList') {
+                const sys = window.systems ? window.systems.find(s => String(s.id) === String(param)) : null;
+                container.innerHTML = `
+                    <div class="flex items-center justify-between flex-wrap gap-4 mb-6 pb-4 border-b border-stone-200">
+                        <div class="flex items-center gap-2 text-xs text-stone-500">
+                            <span class="hover:text-stone-800 cursor-pointer flex items-center gap-1" onclick="navigateTo('home')">
+                                <i class="fa-solid fa-book-open text-xs"></i> システム一覧
+                            </span>
+                            <i class="fa-solid fa-chevron-right text-[10px] text-stone-300"></i>
+                            <span class="text-stone-800 font-bold">${sys ? sys.name : 'システム'}</span>
+                        </div>
+                        <div></div>
+                    </div>
+                `;
+                return;
+            }
+
+            // 3. 【3階層目】キャラクター詳細の場合（param は characterId）
+            if (viewType === 'detail') {
+                const ch = window.characters ? window.characters.find(c => String(c.id) === String(param)) : null;
+                const sys = ch && window.systems ? window.systems.find(s => String(s.id) === String(ch.systemId)) : null;
+
+                if (!ch) {
+                    container.innerHTML = '';
+                    return;
+                }
+
+                container.innerHTML = `
+                    <div class="flex items-center justify-between flex-wrap gap-4 mb-6 pb-4 border-b border-stone-200">
+                        <!-- パンくずリスト -->
+                        <div class="flex items-center gap-2 text-xs text-stone-500">
+                            <span class="hover:text-stone-800 cursor-pointer" onclick="navigateTo('home')">
+                                <i class="fa-solid fa-book-open text-xs mr-1"></i>システム一覧
+                            </span>
+                            <i class="fa-solid fa-chevron-right text-[10px] text-stone-300"></i>
+                            <span class="hover:text-stone-800 cursor-pointer" onclick="navigateTo('characterList', '${ch.systemId}')">${sys ? sys.name : 'システム'}</span>
+                            <i class="fa-solid fa-chevron-right text-[10px] text-stone-300"></i>
+                            <span class="text-stone-800 font-bold">${ch.name}</span>
+                        </div>
+                        
+                        <!-- 右側に配置する「編集」「削除」「一覧へ戻る」ボタン -->
+                        <div class="flex items-center gap-2">
+                            <button onclick="openEditCharacterModal('${ch.id}')" class="flex items-center gap-1.5 text-xs text-stone-600 hover:text-stone-900 bg-white border border-stone-200 hover:bg-stone-50 px-3.5 py-1.5 rounded-xl transition-all shadow-sm">
+                                <i class="fa-solid fa-pen text-[10px]"></i><span>編集</span>
+                            </button>
+                            <button onclick="deleteCharacter('${ch.id}')" class="flex items-center gap-1.5 text-xs text-rose-600 hover:text-rose-900 bg-white border border-rose-200 hover:bg-rose-50 px-3.5 py-1.5 rounded-xl transition-all shadow-sm">
+                                <i class="fa-solid fa-trash text-[10px]"></i><span>削除</span>
+                            </button>
+                            <button onclick="navigateTo('characterList', '${ch.systemId}')" class="flex items-center gap-1.5 text-xs text-stone-600 hover:text-stone-900 bg-stone-100 hover:bg-stone-200 px-3.5 py-1.5 rounded-xl transition-all">
+                                <i class="fa-solid fa-arrow-left text-[10px]"></i><span>一覧へ戻る</span>
+                            </button>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+        }
+        window.renderBreadcrumbAndActions = renderBreadcrumbAndActions;
+    </script>
+</main>
 
         <!-- 📂 システム別フォルダビュー -->
         <div id="view-folders">
