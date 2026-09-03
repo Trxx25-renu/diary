@@ -103,28 +103,27 @@
         }
 
         /* ネタバレ隠し（伏せ字）スタイル */
-        .spoiler-text {
-            background-color: #292524;
-            color: transparent;
-            border-radius: 0.25rem;
-            padding: 0 0.35rem;
-            margin: 0 0.1rem;
-            cursor: pointer;
-            user-select: none;
-            transition: all 0.2s ease;
-            display: inline-block;
-            vertical-align: baseline;
-        }
-        .spoiler-text:hover {
-            background-color: #44403c;
-        }
-        .spoiler-text.revealed {
-            background-color: #f3f4f6;
-            color: #292524;
-            user-select: text;
-            border: 1px solid #e7e5e4;
-        }
-
+.spoiler-text {
+    background-color: #292524 !important;
+    color: transparent !important;
+    border-radius: 0.25rem;
+    padding: 0 0.35rem;
+    margin: 0 0.1rem;
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.2s ease;
+    display: inline-block;
+    vertical-align: baseline;
+}
+.spoiler-text:hover {
+    background-color: #44403c !important;
+}
+.spoiler-text.revealed {
+    background-color: #f3f4f6 !important;
+    color: #292524 !important;
+    user-select: text;
+    border: 1px solid #e7e5e4;
+}
         /* 目隠しメモカードのスタイル */
         .secret-card-blur {
             filter: blur(5px);
