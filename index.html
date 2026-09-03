@@ -1937,7 +1937,6 @@ window.handleSaveConfig = handleSaveConfig;
        // 💡 画像が1MBを超えている場合に自動で縮小・圧縮するヘルパー関数
 async function compressImageIfNeeded(base64Str) {
     if (!base64Str || !base64Str.startsWith('data:image')) return base64Str;
-    // 1MB未満ならそのまま返す
     if (base64Str.length < 1000000) return base64Str;
 
     console.log("⚠️ 画像サイズが大きいため、自動圧縮します...");
@@ -1949,7 +1948,6 @@ async function compressImageIfNeeded(base64Str) {
             let width = img.width;
             let height = img.height;
             
-            // 最大幅を 800px に制限
             const maxWidth = 800;
             if (width > maxWidth) {
                 height = Math.round((height * maxWidth) / width);
@@ -1961,7 +1959,6 @@ async function compressImageIfNeeded(base64Str) {
             const ctx = canvas.getContext('2d');
             ctx.drawImage(img, 0, 0, width, height);
             
-            // 画質 0.6 でJPEG圧縮して1MB以内に収める
             const compressed = canvas.toDataURL('image/jpeg', 0.6);
             console.log("✅ 圧縮完了:", Math.round(compressed.length / 1024), "KB");
             resolve(compressed);
@@ -1970,6 +1967,26 @@ async function compressImageIfNeeded(base64Str) {
     });
 }
 
+// 📝 改行を含むネタバレ（||...||）も完全に処理できる変換関数
+function parseSpoilers(text) {
+    if (!text) return '';
+    return text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/\|\|([\s\S]*?)\|\|/g, '<span class="spoiler-text">$1</span>');
+}
+window.parseSpoilers = parseSpoilers;
+
+// 🔓 文書全体のクリックを監視してネタバレを開閉
+document.addEventListener('click', (e) => {
+    const spoiler = e.target.closest('.spoiler-text');
+    if (spoiler) {
+        spoiler.classList.toggle('revealed');
+    }
+});
+
+// 💾 日記の保存・更新関数
 async function handleSaveEntry(event) {
     event.preventDefault();
 
@@ -1984,7 +2001,6 @@ async function handleSaveEntry(event) {
     const content = document.getElementById('inputContent').value;
     const secretContent = document.getElementById('inputSecretContent')?.value || '';
 
-    // 🌟 画像が選択されているかチェック
     if (!window.tempImageUrls || window.tempImageUrls.length === 0) {
         if (!window.tempBase64Image) {
             showToast('写真を選択してください。', 'warning');
@@ -1994,13 +2010,13 @@ async function handleSaveEntry(event) {
         }
     }
 
-    // 🌟【ここを追加】保存するすべての画像に対して、1MB超過なら自動圧縮を適用
+    // 🌟 保存するすべての画像に対して、1MB超過なら自動圧縮を適用
     window.tempImageUrls = await Promise.all(
         window.tempImageUrls.map(async (imgStr) => {
             return await compressImageIfNeeded(imgStr);
         })
     );
-    window.tempBase64Image = window.tempImageUrls[0]; // 互換用も更新
+    window.tempBase64Image = window.tempImageUrls[0];
 
     const saveBtn = document.getElementById('saveSubmitBtn');
     if (saveBtn) {
@@ -2025,8 +2041,8 @@ async function handleSaveEntry(event) {
                 weather: weather,
                 content: content,
                 secretContent: secretContent.trim(),
-                imageUrls: window.tempImageUrls, // 🌟 複数画像配列を保存
-                imageUrl: window.tempImageUrls[0], // 互換用1枚目
+                imageUrls: window.tempImageUrls,
+                imageUrl: window.tempImageUrls[0],
                 updatedAt: new Date().toISOString()
             };
             entryData = window.entries[index];
@@ -2043,8 +2059,8 @@ async function handleSaveEntry(event) {
             weather: weather,
             content: content,
             secretContent: secretContent.trim(),
-            imageUrls: window.tempImageUrls, // 🌟 複数画像配列を保存
-            imageUrl: window.tempImageUrls[0], // 互換用1枚目
+            imageUrls: window.tempImageUrls,
+            imageUrl: window.tempImageUrls[0],
             updatedAt: new Date().toISOString()
         };
         if (!window.entries) window.entries = [];
@@ -2054,29 +2070,21 @@ async function handleSaveEntry(event) {
     const timeSlotOrder = { 'morning': 1, 'afternoon': 2, 'night': 3 };
     window.entries.sort((a, b) => {
         const dateCompare = b.date.localeCompare(a.date);
-        if (dateCompare !== 0) {
-            return dateCompare;
-        }
+        if (dateCompare !== 0) return dateCompare;
         
         const slotA = timeSlotOrder[a.timeSlot || 'afternoon'] || 2;
         const slotB = timeSlotOrder[b.timeSlot || 'afternoon'] || 2;
-        if (slotA !== slotB) {
-            return slotA - slotB;
-        }
+        if (slotA !== slotB) return slotA - slotB;
 
         return (a.id || '').localeCompare(b.id || '');
     });
     
     try {
-        console.log("🔍 保存直前チェック -> db:", window.db, "appId:", window.appId, "targetId:", targetId);
-
         if (window.db && window.appId) {
             const { doc, setDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
             const docRef = doc(window.db, 'artifacts', window.appId, 'public', 'data', 'entries', targetId);
             await setDoc(docRef, entryData);
             console.log("🔥 Firestoreへの保存に成功しました:", targetId);
-        } else {
-            console.error("❌ window.db または window.appId が不足しています！", { db: window.db, appId: window.appId });
         }
 
         closePostModal();
@@ -2099,183 +2107,44 @@ async function handleSaveEntry(event) {
 }
 window.handleSaveEntry = handleSaveEntry;
 
+// 🗑️ 日記削除関数
+async function deleteCurrentEntry() {
+    if (!window.selectedEntryId) {
+        showToast('削除する記事が選択されていません。', 'warning');
+        return;
+    }
     if (!window.isAdmin) {
-        showToast('編集権限がありません。ログインしてください。', 'warning');
+        showToast('権限がありません。ログインしてください。', 'warning');
         return;
     }
 
-    const date = document.getElementById('inputDate').value;
-    const scenarioTitle = document.getElementById('inputScenarioTitle')?.value || '';
-    const weather = document.getElementById('inputWeather').value;
-    const content = document.getElementById('inputContent').value;
-    const secretContent = document.getElementById('inputSecretContent')?.value || '';
-
-    // 🌟 画像が選択されているかチェック
-    if (!window.tempImageUrls || window.tempImageUrls.length === 0) {
-        if (!window.tempBase64Image) {
-            showToast('写真を選択してください。', 'warning');
-            return;
-        } else {
-            window.tempImageUrls = [window.tempBase64Image];
-        }
+    if (!confirm("本当にこの日記を削除しますか？")) {
+        return;
     }
 
-    // 🌟【ここを追加】保存するすべての画像に対して、1MB超過なら自動圧縮を適用
-    window.tempImageUrls = await Promise.all(
-        window.tempImageUrls.map(async (imgStr) => {
-            return await compressImageIfNeeded(imgStr);
-        })
-    );
-    window.tempBase64Image = window.tempImageUrls[0]; // 互換用も更新
-
-    const saveBtn = document.getElementById('saveSubmitBtn');
-    if (saveBtn) {
-        saveBtn.disabled = true;
-        saveBtn.textContent = '保存中...';
-    }
-
-    const timeSlotInput = document.getElementById('inputTimeSlot');
-    const timeSlot = timeSlotInput ? timeSlotInput.value : 'afternoon';
-
-    let targetId = window.editingEntryId ? window.editingEntryId : null;
-    let entryData;
-
-    if (targetId) {
-        const index = (window.entries || []).findIndex(e => e.id === targetId);
-        if (index !== -1) {
-            window.entries[index] = {
-                ...window.entries[index],
-                date: date,
-                timeSlot: timeSlot,
-                scenarioTitle: scenarioTitle.trim(),
-                weather: weather,
-                content: content,
-                secretContent: secretContent.trim(),
-                imageUrls: window.tempImageUrls, // 🌟 複数画像配列を保存
-                imageUrl: window.tempImageUrls[0], // 互換用1枚目
-                updatedAt: new Date().toISOString()
-            };
-            entryData = window.entries[index];
-        }
-    }
-
-    if (!entryData) {
-        targetId = `${date}_${Date.now()}`;
-        entryData = {
-            id: targetId,
-            date: date,
-            timeSlot: timeSlot,
-            scenarioTitle: scenarioTitle.trim(),
-            weather: weather,
-            content: content,
-            secretContent: secretContent.trim(),
-            imageUrls: window.tempImageUrls, // 🌟 複数画像配列を保存
-            imageUrl: window.tempImageUrls[0], // 互換用1枚目
-            updatedAt: new Date().toISOString()
-        };
-        if (!window.entries) window.entries = [];
-        window.entries.unshift(entryData);
-    }
-
-    const timeSlotOrder = { 'morning': 1, 'afternoon': 2, 'night': 3 };
-    window.entries.sort((a, b) => {
-        const dateCompare = b.date.localeCompare(a.date);
-        if (dateCompare !== 0) {
-            return dateCompare;
-        }
-        
-        const slotA = timeSlotOrder[a.timeSlot || 'afternoon'] || 2;
-        const slotB = timeSlotOrder[b.timeSlot || 'afternoon'] || 2;
-        if (slotA !== slotB) {
-            return slotA - slotB;
-        }
-
-        return (a.id || '').localeCompare(b.id || '');
-    });
-    
     try {
-        console.log("🔍 保存直前チェック -> db:", window.db, "appId:", window.appId, "targetId:", targetId);
-
         if (window.db && window.appId) {
-            const { doc, setDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
-            const docRef = doc(window.db, 'artifacts', window.appId, 'public', 'data', 'entries', targetId);
-            await setDoc(docRef, entryData);
-            console.log("🔥 Firestoreへの保存に成功しました:", targetId);
-        } else {
-            console.error("❌ window.db または window.appId が不足しています！", { db: window.db, appId: window.appId });
+            const { doc, deleteDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
+            const docRef = doc(window.db, 'artifacts', window.appId, 'public', 'data', 'entries', window.selectedEntryId);
+            await deleteDoc(docRef);
         }
 
-        closePostModal();
-        const ym = date.substring(0, 7);
-        navigateTo('gallery', ym);
+        window.entries = (window.entries || []).filter(e => e.id !== window.selectedEntryId);
 
-        const successMsg = window.editingEntryId ? '日記を更新しました！' : '日記を保存しました！';
-        showToast(successMsg, 'success');
-
-        window.editingEntryId = null;
-    } catch (error) {
-        console.error("❌ 保存エラー:", error);
-        showToast('保存に失敗しました。', 'error');
-    } finally {
-        if (saveBtn) {
-            saveBtn.disabled = false;
-            saveBtn.textContent = '保存する';
+        if (typeof closeDetailModal === 'function') {
+            closeDetailModal();
         }
+
+        navigateTo('gallery');
+        showToast('日記を削除しました', 'success');
+    } catch (err) {
+        console.error("💥 Delete error 詳細:", err);
+        showToast('削除に失敗しました。', 'error');
     }
 }
-window.handleSaveEntry = handleSaveEntry;
+window.deleteCurrentEntry = deleteCurrentEntry;
 
-    async function deleteCurrentEntry() {
-        console.log("🔍 削除処理開始 -> selectedEntryId:", window.selectedEntryId);
-
-        if (!window.selectedEntryId) {
-            showToast('削除する記事が選択されていません。', 'warning');
-            return;
-        }
-        if (!window.isAdmin) {
-            showToast('権限がありません。ログインしてください。', 'warning');
-            return;
-        }
-
-        // ブラウザ標準の確認ダイアログを使用（確実な動作のため）
-        if (!confirm("本当にこの日記を削除しますか？")) {
-            return;
-        }
-
-            try {
-                console.log("🗑️ Firestore削除処理を実行中...");
-
-                if (window.db && window.appId) {
-                    const { doc, deleteDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
-                    const docRef = doc(window.db, 'artifacts', window.appId, 'public', 'data', 'entries', window.selectedEntryId);
-                    await deleteDoc(docRef);
-                    console.log("🔥 Firestoreからの削除成功");
-                } else {
-                    console.warn("⚠️ window.db または window.appId がないためローカルのみ削除します");
-                }
-
-                // ローカル配列から除外
-                window.entries = (window.entries || []).filter(e => e.id !== window.selectedEntryId);
-
-                // 詳細モーダルを確実に閉じる
-                if (typeof closeDetailModal === 'function') {
-                    closeDetailModal();
-                }
-
-                // ギャラリー画面へ遷移
-                navigateTo('gallery');
-
-                showToast('日記を削除しました', 'success');
-
-            } catch (err) {
-                console.error("💥 Delete error 詳細:", err);
-                showToast('削除に失敗しました（コンソールを確認）。', 'error');
-            }
-        }
-        window.deleteCurrentEntry = deleteCurrentEntry;
-        
-        // 📝 詳細画面から編集モードでモーダルを開く関数（IDの揺れを完全自動吸収版）
-// 🛠️ 【完全版】画像プレビュー表示関数
+// 📝 編集モーダルを開く関数
 function openEditModalFromDetail() {
     if (!window.isAdmin) {
         showToast('権限がありません。ログインしてください。', 'warning');
@@ -2298,7 +2167,6 @@ function openEditModalFromDetail() {
 
     window.editingEntryId = entry.id;
 
-    // フォームの各入力欄にデータを流し込む
     const dateInput = document.getElementById('inputDate');
     const timeSlotInput = document.getElementById('inputTimeSlot');
     const scenarioTitleInput = document.getElementById('inputScenarioTitle');
@@ -2313,7 +2181,6 @@ function openEditModalFromDetail() {
     if (contentInput) contentInput.value = entry.content || '';
     if (secretContentInput) secretContentInput.value = entry.secretContent || '';
 
-    // 🌟 画像データの取得（imageUrl や image などの揺れに対応）
     const imgSrc = entry.imageUrl || entry.image || entry.photo || '';
     const preview = document.getElementById('imagePreview') || document.getElementById('editImagePreview');
     const placeholder = document.getElementById('uploadPlaceholder') || document.getElementById('editUploadPlaceholder');
@@ -2321,7 +2188,6 @@ function openEditModalFromDetail() {
     if (imgSrc && imgSrc.trim() !== '') {
         window.tempBase64Image = imgSrc;
         if (preview) {
-            // 要素が <img> タグか <div> タグかによって処理を自動切り替え
             if (preview.tagName === 'IMG') {
                 preview.src = imgSrc;
             } else {
@@ -2351,6 +2217,8 @@ function openEditModalFromDetail() {
     }
 
     if (typeof closeDetailModal === 'function') closeDetailModal();
+}
+window.openEditModalFromDetail = openEditModalFromDetail;
 
     const modal = document.getElementById('postModal');
     if (modal) {
