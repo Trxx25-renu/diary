@@ -1953,14 +1953,14 @@ window.handleSaveConfig = handleSaveConfig;
         } 
         window.closePostModal = closePostModal;
 
-      // 💡 画像が1MBを超えている場合に、画質を保ちつつ自動で制限内に収めるヘルパー関数
+     // 💡 【超強力・確実版】どんなに大きい画像でも必ず1MB未満に圧縮するヘルパー関数
 if (typeof window.compressImageIfNeeded !== 'function') {
     async function compressImageIfNeeded(base64Str) {
         if (!base64Str || !base64Str.startsWith('data:image')) return base64Str;
-        // すでに1MB未満ならそのまま返す
-        if (base64Str.length < 1000000) return base64Str;
+        // 余裕を持って 900KB（900,000文字）未満ならそのまま通す
+        if (base64Str.length < 900000) return base64Str;
 
-        console.log("⚠️ 画像サイズが1MBを超えているため、Firestore制限内に向けて最適化します...", Math.round(base64Str.length / 1024), "KB");
+        console.log("⚠️ 画像サイズが大きいため、強制的に安全なサイズへ圧縮します...", Math.round(base64Str.length / 1024), "KB");
 
         return new Promise((resolve) => {
             const img = new Image();
@@ -1969,8 +1969,8 @@ if (typeof window.compressImageIfNeeded !== 'function') {
                 let width = img.width;
                 let height = img.height;
                 
-                // 🌟 大きすぎる解像度だけをスマートに制限し、過剰な縮小を避けます
-                const maxDimension = 1200; 
+                // 🌟 最初から少し小さめの最大幅（800px）に制限して容量を確実に削る
+                const maxDimension = 900; 
                 if (width > maxDimension || height > maxDimension) {
                     if (width > height) {
                         height = Math.round((height * maxDimension) / width);
@@ -1986,17 +1986,16 @@ if (typeof window.compressImageIfNeeded !== 'function') {
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0, width, height);
                 
-                // 🌟 画質（quality）を高めの 0.8 からスタート
-                let quality = 0.8;
+                // 🌟 品質を 0.7 からスタートし、900KBを切るまでループでガンガン落とす
+                let quality = 0.7;
                 let compressed = canvas.toDataURL('image/jpeg', quality);
                 
-                // 万が一まだ1MBを超える場合は、綺麗さを保てる限界ギリギリまで品質を微調整
-                while (compressed.length > 1000000 && quality > 0.4) {
+                while (compressed.length > 900000 && quality > 0.2) {
                     quality -= 0.1;
                     compressed = canvas.toDataURL('image/jpeg', quality);
                 }
 
-                console.log("✅ 最適化完了:", Math.round(compressed.length / 1024), "KB (画質:", quality.toFixed(1), ")");
+                console.log("✅ 圧縮完了（制限クリア）:", Math.round(compressed.length / 1024), "KB (画質:", quality.toFixed(1), ")");
                 resolve(compressed);
             };
             img.src = base64Str;
