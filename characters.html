@@ -353,24 +353,43 @@ const epithetHtml = ch.epithet
         }
         window.renderCharacterList = renderCharacterList;
 
-        // 💡 システムや一覧へ画面を切り替える関数
-function navigateTo(target, systemId) {
-    if (target === 'characterList') {
-        // window.selectedSystemId にクリックされたシステムのIDを保存
-        window.selectedSystemId = systemId;
+        // ==========================================
+// 💡 画面やビューを切り替えるルーター関数（完全版）
+// ==========================================
+function navigateTo(target, param) {
+    console.log("navigateTo called -> target:", target, "param:", param);
 
-        // もしシステムごとのキャラクター一覧を表示する関数があればここで呼び出す
+    // 1. システムごとの「キャラクター一覧画面」へ移動する場合
+    if (target === 'characterList') {
+        window.selectedSystemId = param;
+
         if (typeof renderCharacterList === 'function') {
-            renderCharacterList(systemId);
+            renderCharacterList(param);
         }
 
-        // フォルダ一覧ビューを隠して、キャラクター一覧ビューを表示する切り替え処理など
-        // （もしHTMLの表示切り替えが必要な場合はここに記述します）
-        const folderView = document.getElementById('systemFolderView'); // フォルダ一覧のコンテナ
-        const listView = document.getElementById('characterListView');     // キャラ一覧のコンテナ
-        
+        // 画面コンテナの切り替え（フォルダビューを隠し、リストビューを表示）
+        const folderView = document.getElementById('systemFolderView') || document.getElementById('view-folders');
+        const listView = document.getElementById('characterListView') || document.getElementById('view-list') || document.getElementById('characterListContainer');
+        const detailView = document.getElementById('view-detail');
+
         if (folderView) folderView.classList.add('hidden');
         if (listView) listView.classList.remove('hidden');
+        if (detailView) detailView.classList.add('hidden');
+    } 
+    // 2. 個別の「キャラクター詳細画面」へ移動する場合
+    else if (target === 'detail') {
+        if (typeof renderCharacterDetail === 'function') {
+            renderCharacterDetail(param);
+        }
+
+        // 画面コンテナの切り替え（リストビュー等を隠し、詳細ビューを表示）
+        const folderView = document.getElementById('systemFolderView') || document.getElementById('view-folders');
+        const listView = document.getElementById('characterListView') || document.getElementById('view-list') || document.getElementById('characterListContainer');
+        const detailView = document.getElementById('view-detail');
+
+        if (folderView) folderView.classList.add('hidden');
+        if (listView) listView.classList.add('hidden');
+        if (detailView) detailView.classList.remove('hidden');
     }
 }
 window.navigateTo = navigateTo;
