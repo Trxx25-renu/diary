@@ -2934,83 +2934,85 @@ window.applyCurrentThemeToUI = applyCurrentThemeToUI;
             }
         };
 
-    // 🌟 記事の詳細データを確実に探し出して画面に反映する関数
-function renderEntryDetail(targetId) {
-    if (!window.entries || window.entries.length === 0) {
-        console.error("エラー: window.entries が空です。データが読み込まれていません。");
-        return;
-    }
-
-    // IDが一致するか、または日付(date)が一致するデータを柔軟に探す（型違い対策も含む）
-    const entry = window.entries.find(e => 
-        String(e.id) === String(targetId) || e.date === targetId
-    );
-
-    if (!entry) {
-        console.error("エラー: 該当する日記データが見つかりませんでした。探したID:", targetId);
-        return;
-    }
-
-    // 選択中のIDを保存
-    window.selectedEntryId = entry.id;
-
-    // 詳細画面の各HTML要素を取得
-    const imgEl = document.getElementById('detailImage');
-    const dateEl = document.getElementById('detailDate');
-    const weatherEl = document.getElementById('detailWeather');
-    const contentEl = document.getElementById('detailContent');
-    const secretContainer = document.getElementById('detailSecretContainer');
-    const secretContentEl = document.getElementById('detailSecretContent');
-    const secretOverlay = document.getElementById('secretOverlay');
-
-    // 1. 写真の反映
-    if (imgEl) {
-        imgEl.src = entry.imageUrl || '';
-    }
-
-    // 2. 日付の反映 (2026-03-27 → 2026.03.27)
-    if (dateEl && entry.date) {
-        dateEl.textContent = entry.date.replace(/-/g, '.');
-    }
-
-    // 3. 天気・タグの反映
-    if (weatherEl) {
-        if (entry.weather) {
-            weatherEl.textContent = entry.weather;
-            weatherEl.style.display = 'inline-block';
-        } else {
-            weatherEl.style.display = 'none';
+   // 🌟 記事の詳細データを確実に探し出して画面に反映する関数
+    function renderEntryDetail(targetId) {
+        if (!window.entries || window.entries.length === 0) {
+            console.error("エラー: window.entries が空です。データが読み込まれていません。");
+            return;
         }
-    }
 
-    // 4. 本文の反映（ネタバレタグ対応）
-    if (contentEl) {
-        contentEl.innerHTML = typeof parseSpoilers === 'function' ? parseSpoilers(entry.content) : (entry.content || '');
-    }
+        // IDが一致するか、または日付(date)が一致するデータを柔軟に探す（型違い対策も含む）
+        const entry = window.entries.find(e => 
+            String(e.id) === String(targetId) || e.date === targetId
+        );
 
-   // 5. ネタバレ防止メモの反映
-    window.isSecretRevealed = false; // 記事を開くたびに「閉じた状態」にリセット
-    if (secretContainer) {
-        if (entry.secretContent && entry.secretContent.trim() !== '') {
-            secretContainer.classList.remove('hidden');
-            
-            // 🌟 ① textContent ではなく parseSpoilers を通して HTML として反映する
-            if (secretContentEl) {
-                secretContentEl.innerHTML = typeof parseSpoilers === 'function' ? parseSpoilers(entry.secretContent) : (entry.secretContent || '');
-            }
-            
-            // 🌟 ② 確実に「閉じた状態（オーバーレイ表示・ぼかし有効）」にする
-            if (secretOverlay) {
-                secretOverlay.classList.remove('hidden');
-            }
-            if (secretContentEl) {
-                secretContentEl.classList.add('secret-card-blur');
-            }
-        } else {
-            secretContainer.classList.add('hidden');
+        if (!entry) {
+            console.error("エラー: 該当する日記データが見つかりませんでした。探したID:", targetId);
+            return;
         }
-    }
-window.renderEntryDetail = renderEntryDetail;
+
+        // 選択中のIDを保存
+        window.selectedEntryId = entry.id;
+
+        // 詳細画面の各HTML要素を取得
+        const imgEl = document.getElementById('detailImage');
+        const dateEl = document.getElementById('detailDate');
+        const weatherEl = document.getElementById('detailWeather');
+        const contentEl = document.getElementById('detailContent');
+        const secretContainer = document.getElementById('detailSecretContainer');
+        const secretContentEl = document.getElementById('detailSecretContent');
+        const secretOverlay = document.getElementById('secretOverlay');
+
+        // 1. 写真の反映
+        if (imgEl) {
+            imgEl.src = entry.imageUrl || '';
+        }
+
+        // 2. 日付の反映 (2026-03-27 → 2026.03.27)
+        if (dateEl && entry.date) {
+            dateEl.textContent = entry.date.replace(/-/g, '.');
+        }
+
+        // 3. 天気・タグの反映
+        if (weatherEl) {
+            if (entry.weather) {
+                weatherEl.textContent = entry.weather;
+                weatherEl.style.display = 'inline-block';
+            } else {
+                weatherEl.style.display = 'none';
+            }
+        }
+
+        // 4. 本文の反映（ネタバレタグ対応）
+        if (contentEl) {
+            contentEl.innerHTML = typeof parseSpoilers === 'function' ? parseSpoilers(entry.content) : (entry.content || '');
+        }
+
+        // 5. ネタバレ防止メモの反映
+        window.isSecretRevealed = false; // 記事を開くたびに「閉じた状態」にリセット
+        if (secretContainer) {
+            if (entry.secretContent && entry.secretContent.trim() !== '') {
+                secretContainer.classList.remove('hidden');
+                
+                // ① parseSpoilers を通して HTML として反映する
+                if (secretContentEl) {
+                    secretContentEl.innerHTML = typeof parseSpoilers === 'function' ? parseSpoilers(entry.secretContent) : (entry.secretContent || '');
+                }
+                
+                // ② 確実に「閉じた状態（オーバーレイ表示・ぼかし有効）」にする
+                if (secretOverlay) {
+                    secretOverlay.classList.remove('hidden');
+                }
+                if (secretContentEl) {
+                    secretContentEl.classList.add('secret-card-blur');
+                }
+            } else {
+                secretContainer.classList.add('hidden');
+            }
+        }
+    } // 🌟 ← ここに関数を閉じる `}` が必要でした！
+    
+    window.renderEntryDetail = renderEntryDetail;
     
     // 1. ここでJavaScriptのscriptタグをしっかりと閉じます
     </script>
