@@ -353,6 +353,73 @@ const epithetHtml = ch.epithet
         }
         window.renderCharacterList = renderCharacterList;
 
+// ==========================================
+// 1. 共通の便利関数（画像圧縮やカラープレビューなど）
+// ==========================================
+
+// 💡 カラーコードプレビュー用関数
+function updateColorPreview(colorCode) {
+    const previewBox = document.getElementById('characterColorPreview');
+    if (!previewBox) return;
+
+    const code = colorCode ? colorCode.trim() : '';
+    let validColor = code;
+    if (validColor.length === 3 || validColor.length === 6) {
+        if (!validColor.startsWith('#')) validColor = '#' + validColor;
+    }
+
+    previewBox.style.backgroundColor = '';
+    previewBox.style.backgroundColor = validColor;
+}
+window.updateColorPreview = updateColorPreview;
+
+
+// 💡 画像自動圧縮関数（エラー防止用セーフティ付き）
+if (typeof window.compressImageIfNeeded !== 'function') {
+    async function compressImageIfNeeded(base64Str) {
+        if (!base64Str || !base64Str.startsWith('data:image')) return base64Str;
+        if (base64Str.length < 900000) return base64Str;
+
+        return new Promise((resolve) => {
+            const img = new Image();
+            img.onerror = () => resolve(base64Str);
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                let width = img.width;
+                let height = img.height;
+                
+                const maxDimension = 900; 
+                if (width > maxDimension || height > maxDimension) {
+                    if (width > height) {
+                        height = Math.round((height * maxDimension) / width);
+                        width = maxDimension;
+                    } else {
+                        width = Math.round((width * maxDimension) / height);
+                        height = maxDimension;
+                    }
+                }
+                
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+                
+                let quality = 0.7;
+                let compressed = canvas.toDataURL('image/jpeg', quality);
+                
+                while (compressed.length > 900000 && quality > 0.2) {
+                    quality -= 0.1;
+                    compressed = canvas.toDataURL('image/jpeg', quality);
+                }
+
+                resolve(compressed);
+            };
+            img.src = base64Str;
+        });
+    }
+    window.compressImageIfNeeded = compressImageIfNeeded;
+}
+        
         function openEditCharacterModal(characterId) {
     // 文字列・数値を揃えてキャラクターを検索
     const ch = window.characters.find(c => String(c.id) === String(characterId));
@@ -1251,7 +1318,7 @@ window.closeCharacterModal = closeCharacterModal;
 </head>
 <body class="min-h-screen flex flex-col justify-between">
 
-    <!-- ヘッダー -->
+  <!-- ヘッダー -->
     <header class="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-stone-200/80 px-4 py-3.5">
         <div class="max-w-4xl mx-auto flex items-center justify-between">
             <div class="flex items-center gap-3">
@@ -1308,7 +1375,6 @@ window.closeCharacterModal = closeCharacterModal;
                     <input type="text" id="folderSearchInput" oninput="handleFolderSearchInput(event)" placeholder="システムやキャラ名で検索..." class="w-full bg-white border border-stone-200 rounded-2xl pl-9 pr-4 py-2 text-xs text-stone-800 focus:outline-none focus:border-stone-400 shadow-sm">
                 </div>
             </div>
-            <!-- ★ フォルダ側のコンテナ（生成されるカード側で hover:shadow-md transition-all が効くようになります） -->
             <div id="systemFoldersContainer" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4"></div>
         </div>
 
@@ -1328,7 +1394,6 @@ window.closeCharacterModal = closeCharacterModal;
                     </div>
                 </div>
             </div>
-            <!-- ★ キャラクター一覧のグリッド -->
             <div id="characterGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4"></div>
         </div>
 
@@ -1379,7 +1444,7 @@ window.closeCharacterModal = closeCharacterModal;
                     </div>
                 </div>
 
-                <!-- 【修正】年齢・性別・誕生日・カラーコードの入力欄 -->
+                <!-- 年齢・性別・誕生日・テーマカラー -->
                 <div class="grid grid-cols-2 gap-3 mt-3">
                     <div>
                         <label class="block text-xs font-bold text-stone-600 mb-1">年齢</label>
@@ -1394,17 +1459,17 @@ window.closeCharacterModal = closeCharacterModal;
                         <input type="text" id="charBirthdate" placeholder="例: 4月1日" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-800 focus:outline-none focus:border-stone-400">
                     </div>
                     <div>
-    <label class="block text-xs font-bold text-stone-600 mb-1">テーマカラー（カラーコード）</label>
-    <div class="flex items-center gap-2">
-        <!-- 色を確認・選択できるピッカー -->
-        <input type="color" id="charThemeColorPicker" value="#292524" onchange="document.getElementById('charThemeColor').value=this.value" class="w-8 h-8 rounded cursor-pointer border border-stone-200 bg-transparent p-0 shrink-0">
-        <!-- カラーコードを直接入力できるテキストボックス -->
-        <input type="text" id="charThemeColor" placeholder="#292524" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-800 focus:outline-none focus:border-stone-400 font-mono">
-    </div>
-</div>
+                        <label class="block text-xs font-bold text-stone-600 mb-1">テーマカラー</label>
+                        <div class="flex items-center gap-2">
+                            <!-- カラーコード入力欄（連動プレビュー付き） -->
+                            <input type="text" id="charThemeColor" placeholder="#292524" oninput="updateColorPreview(this.value)" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-800 focus:outline-none focus:border-stone-400 font-mono">
+                            <!-- 🌟 リアルタイム色見本プレビューボックス -->
+                            <div id="characterColorPreview" class="w-9 h-9 rounded-xl border border-stone-300 shadow-inner bg-stone-100 shrink-0 transition-colors"></div>
+                        </div>
+                    </div>
                 </div>
                 
-                <!-- キャラクターシートURL入力欄（必須） -->
+                <!-- キャラクターシートURL入力欄 -->
                 <div class="mt-3">
                     <label class="block text-xs font-bold text-stone-600 mb-1">
                         キャラクターシートURL <span class="text-rose-500">*</span>
@@ -1412,7 +1477,6 @@ window.closeCharacterModal = closeCharacterModal;
                     <input type="url" id="charSheetUrl" placeholder="https://iachara.com/... など" required class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-800 focus:outline-none focus:border-stone-400">
                 </div>
 
-                <!-- 重複していたコンテナを1つに整理 -->
                 <div id="dynamicCustomFieldsContainer" class="space-y-3 pt-2 border-t border-stone-100"></div>
 
                 <div class="pt-2 border-t border-stone-100">
@@ -1512,7 +1576,7 @@ window.closeCharacterModal = closeCharacterModal;
         </div>
     </div>
 
-    <!-- ❓ 確認モーダル (ログアウト用) -->
+    <!-- ❓ 確認モーダル -->
     <div id="confirmModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/40 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-200">
         <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-xl border border-stone-200 scale-95 transition-transform duration-200 flex flex-col gap-4 text-center">
             <div class="w-12 h-12 rounded-2xl bg-amber-50 text-amber-700 flex items-center justify-center mx-auto text-xl mb-1">
