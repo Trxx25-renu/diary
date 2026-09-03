@@ -376,7 +376,7 @@ function navigateTo(target, systemId) {
 window.navigateTo = navigateTo;
 
 // ==========================================
-// 💡 openEditCharacterModal 関数の定義を追加
+// 💡 openEditCharacterModal 関数の定義
 // ==========================================
 function openEditCharacterModal(characterId) {
     // 文字列・数値を揃えてキャラクターを検索
@@ -384,7 +384,7 @@ function openEditCharacterModal(characterId) {
     if (!ch) {
         showToast('キャラクターが見つかりませんでした', 'error');
         console.error("見つかったキャラクター一覧:", window.characters, "探しているID:", characterId);
-        return; // ← 見つからない場合はここで処理を止めるようにすると安全です
+        return; 
     }
 
     // フォーム要素へ値をセット
@@ -414,19 +414,20 @@ function openEditCharacterModal(characterId) {
         updateColorPreview(ch.themeColor || '#292524');
     }
 
-    // 【追加】システムをセットして、編集時は変更できないようにロックする
+    // システムをセットして、編集時は変更できないようにロックする
     if (systemInput) {
         systemInput.value = ch.systemId;
         systemInput.disabled = true; 
     }
 
+    // 🌟 ここ（関数の"中"）に書く！
     window.editingCharacterId = characterId;
 
-    // モーダルのタイトルを「編集」用に書き換える（あれば）
+    // モーダルのタイトルを「編集」用に書き換える
     const modalTitle = document.querySelector('#characterModal h3 span');
     if (modalTitle) modalTitle.textContent = 'キャラクター編集';
 
-    // 💡 hiddenクラスを外してモーダルを表示
+    // hiddenクラスを外してモーダルを表示
     const modal = document.getElementById('characterModal');
     if (modal) {
         modal.classList.remove('hidden');
