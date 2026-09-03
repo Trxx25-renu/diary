@@ -662,128 +662,147 @@ window.navigateTo = navigateTo;
         }
         window.updateBackButtonVisibility = updateBackButtonVisibility;
 
-       function parseSpoilers(text) {
-    if (!text) return '';
-    // ||...|| をスポンサータグに変換（改行も許容するように [\s\S]*? に変更）
-    return text
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/\|\|([\s\S]*?)\|\|/g, '<span class="spoiler-text">$1</span>');
+       // 📝 改行を含むネタバレ（||...||）の変換関数（重複防止ガード付き）
+if (typeof window.parseSpoilers !== 'function') {
+    function parseSpoilers(text) {
+        if (!text) return '';
+        // ||...|| をスポンサータグに変換（改行も許容するように [\s\S]*? に変更）
+        return text
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/\|\|([\s\S]*?)\|\|/g, '<span class="spoiler-text">$1</span>');
+    }
+    window.parseSpoilers = parseSpoilers;
 }
-window.parseSpoilers = parseSpoilers;
 
-        // 文書全体のクリックを監視して、ネタバレテキストの開閉を確実に制御
-document.addEventListener('click', (e) => {
-    const spoiler = e.target.closest('.spoiler-text');
-    if (spoiler) {
-        spoiler.classList.toggle('revealed');
-    }
-});
-
-        function formatPreviewText(text) {
-            if (!text) return '';
-            const hidden = text.replace(/\|\|.*?\|\|/g, '【ネタバレ】');
-            return escapeHtml(hidden);
+// 🔓 文書全体のクリックを監視して、ネタバレテキストの開閉を確実に制御（二重登録防止）
+if (!window._spoilerListenerInitialized) {
+    window._spoilerListenerInitialized = true;
+    document.addEventListener('click', (e) => {
+        const spoiler = e.target.closest('.spoiler-text');
+        if (spoiler) {
+            spoiler.classList.toggle('revealed');
         }
-        window.formatPreviewText = formatPreviewText;
-
-function getCircledNumber(num) {
-            if (num <= 1) return '';
-
-            // 現在設定されているテーマカラーを取得（デフォルトは amber）
-            const theme = (window.siteConfig && window.siteConfig.themeColor) || 'amber';
-
-            // カレンダーの写真の上でもくっきり見えつつ、優しく馴染むパステルカラー
-            const themeClasses = {
-                amber: 'bg-amber-100/90 text-amber-800 border border-amber-300/60',
-                pink: 'bg-pink-100/90 text-pink-800 border border-pink-300/60',
-                emerald: 'bg-emerald-100/90 text-emerald-800 border border-emerald-300/60',
-                indigo: 'bg-indigo-100/90 text-indigo-800 border border-indigo-300/60',
-                blue: 'bg-blue-100/90 text-blue-800 border border-blue-300/60',
-                purple: 'bg-purple-100/90 text-purple-800 border border-purple-300/60',
-                rose: 'bg-rose-100/90 text-rose-800 border border-rose-300/60',
-                teal: 'bg-teal-100/90 text-teal-800 border border-teal-300/60'
-            };
-
-            const colorClass = themeClasses[theme] || themeClasses['amber'];
-
-            return `<span class="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] sm:text-xs font-bold ${colorClass} rounded-full ml-1">${num}</span>`;
-        }
-        window.getCircledNumber = getCircledNumber;
-
-        function insertSpoilerTag() {
-            const textarea = document.getElementById('inputContent');
-            if (!textarea) return;
-            const start = textarea.selectionStart;
-            const end = textarea.selectionEnd;
-            const val = textarea.value;
-            const selected = val.substring(start, end) || '隠したい内容';
-            const replacement = `||${selected}||`;
-            textarea.value = val.substring(0, start) + replacement + val.substring(end);
-            textarea.focus();
-            textarea.setSelectionRange(start + 2, start + 2 + selected.length);
-        }
-        window.insertSpoilerTag = insertSpoilerTag;
-
-        function renderMonthFolders() {
-    const container = document.getElementById('monthFolderGrid');
-    if (!container) return;
-    container.innerHTML = '';
-
-    const monthMap = {};
-    (window.entries || []).forEach(entry => {
-        if (!entry.date) return;
-        const ym = entry.date.substring(0, 7);
-        if (!monthMap[ym]) {
-            monthMap[ym] = [];
-        }
-        monthMap[ym].push(entry);
     });
+}
 
-    const months = Object.keys(monthMap).sort().reverse();
-
-    if (months.length === 0) {
-        container.innerHTML = `<div class="col-span-full text-center py-12 text-stone-400 text-xs">まだ日記はありません。新しい日記を書いてみましょう！</div>`;
-        return;
+// 👁️ プレビュー用テキスト変換関数（重複防止ガード付き）
+if (typeof window.formatPreviewText !== 'function') {
+    function formatPreviewText(text) {
+        if (!text) return '';
+        const hidden = text.replace(/\|\|.*?\|\|/g, '【ネタバレ】');
+        return typeof escapeHtml === 'function' ? escapeHtml(hidden) : hidden;
     }
+    window.formatPreviewText = formatPreviewText;
+}
 
-    months.forEach(ym => {
-        const entries = monthMap[ym];
-        const [year, month] = ym.split('-');
-        
-        // 写真のある記事からランダムに1枚選ぶ
-        const entriesWithPhoto = entries.filter(e => e.imageUrl);
-        const randomPhoto = entriesWithPhoto.length > 0 
-            ? entriesWithPhoto[Math.floor(Math.random() * entriesWithPhoto.length)].imageUrl 
-            : '';
+// 🔢 複数記事がある場合の番号バッジ生成関数（重複防止ガード付き）
+if (typeof window.getCircledNumber !== 'function') {
+    function getCircledNumber(num) {
+        if (num <= 1) return '';
 
-        const card = document.createElement('div');
-        card.className = 'group bg-white rounded-2xl border border-stone-200/80 p-4 cursor-pointer shadow-sm hover:shadow-md transition-all flex items-center gap-4 hover:border-stone-300';
-        
-        card.dataset.ym = ym;
-        card.onclick = (e) => {
-            const targetYm = e.currentTarget.dataset.ym;
-            navigateTo('gallery', targetYm);
+        // 現在設定されているテーマカラーを取得（デフォルトは amber）
+        const theme = (window.siteConfig && window.siteConfig.themeColor) || 'amber';
+
+        // カレンダーの写真の上でもくっきり見えつつ、優しく馴染むパステルカラー
+        const themeClasses = {
+            amber: 'bg-amber-100/90 text-amber-800 border border-amber-300/60',
+            pink: 'bg-pink-100/90 text-pink-800 border border-pink-300/60',
+            emerald: 'bg-emerald-100/90 text-emerald-800 border border-emerald-300/60',
+            indigo: 'bg-indigo-100/90 text-indigo-800 border border-indigo-300/60',
+            blue: 'bg-blue-100/90 text-blue-800 border border-blue-300/60',
+            purple: 'bg-purple-100/90 text-purple-800 border border-purple-300/60',
+            rose: 'bg-rose-100/90 text-rose-800 border border-rose-300/60',
+            teal: 'bg-teal-100/90 text-teal-800 border border-teal-300/60'
         };
 
-        card.innerHTML = `
-            <div class="w-20 h-20 rounded-xl bg-stone-100 overflow-hidden shrink-0 border border-stone-200/60 relative">
-                ${randomPhoto ? `<img src="${randomPhoto}" alt="${ym}" draggable="false" oncontextmenu="return false;" class="protect-image w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">` : `<div class="w-full h-full flex items-center justify-center text-stone-300"><i class="fa-regular fa-image text-xl"></i></div>`}
-            </div>
-            <div class="flex flex-col justify-center flex-1 min-w-0">
-                <div class="flex items-center justify-between">
-                    <h3 class="text-base font-serif-title font-bold text-stone-800 group-hover:text-stone-700 transition-colors">${year}年 ${parseInt(month, 10)}月</h3>
-                    <i class="fa-solid fa-chevron-right text-xs text-stone-300 group-hover:text-stone-600 transition-colors"></i>
-                </div>
-                <p class="text-xs text-stone-400 mt-1">${entries.length} 件の思い出</p>
-            </div>
-        `;
-        container.appendChild(card);
-    });
-}
-window.renderMonthFolders = renderMonthFolders;
+        const colorClass = themeClasses[theme] || themeClasses['amber'];
 
+        return `<span class="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] sm:text-xs font-bold ${colorClass} rounded-full ml-1">${num}</span>`;
+    }
+    window.getCircledNumber = getCircledNumber;
+}
+
+// 🪄 ネタバレタグ自動挿入ボタン用関数（重複防止ガード付き）
+if (typeof window.insertSpoilerTag !== 'function') {
+    function insertSpoilerTag() {
+        const textarea = document.getElementById('inputContent');
+        if (!textarea) return;
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const val = textarea.value;
+        const selected = val.substring(start, end) || '隠したい内容';
+        const replacement = `||${selected}||`;
+        textarea.value = val.substring(0, start) + replacement + val.substring(end);
+        textarea.focus();
+        textarea.setSelectionRange(start + 2, start + 2 + selected.length);
+    }
+    window.insertSpoilerTag = insertSpoilerTag;
+}
+
+// 📂 月別フォルダー一覧を描画する関数（重複防止ガード付き）
+if (typeof window.renderMonthFolders !== 'function') {
+    function renderMonthFolders() {
+        const container = document.getElementById('monthFolderGrid');
+        if (!container) return;
+        container.innerHTML = '';
+
+        const monthMap = {};
+        (window.entries || []).forEach(entry => {
+            if (!entry.date) return;
+            const ym = entry.date.substring(0, 7);
+            if (!monthMap[ym]) {
+                monthMap[ym] = [];
+            }
+            monthMap[ym].push(entry);
+        });
+
+        const months = Object.keys(monthMap).sort().reverse();
+
+        if (months.length === 0) {
+            container.innerHTML = `<div class="col-span-full text-center py-12 text-stone-400 text-xs">まだ日記はありません。新しい日記を書いてみましょう！</div>`;
+            return;
+        }
+
+        months.forEach(ym => {
+            const entries = monthMap[ym];
+            const [year, month] = ym.split('-');
+            
+            // 写真のある記事からランダムに1枚選ぶ
+            const entriesWithPhoto = entries.filter(e => e.imageUrl);
+            const randomPhoto = entriesWithPhoto.length > 0 
+                ? entriesWithPhoto[Math.floor(Math.random() * entriesWithPhoto.length)].imageUrl 
+                : '';
+
+            const card = document.createElement('div');
+            card.className = 'group bg-white rounded-2xl border border-stone-200/80 p-4 cursor-pointer shadow-sm hover:shadow-md transition-all flex items-center gap-4 hover:border-stone-300';
+            
+            card.dataset.ym = ym;
+            card.onclick = (e) => {
+                const targetYm = e.currentTarget.dataset.ym;
+                if (typeof navigateTo === 'function') {
+                    navigateTo('gallery', targetYm);
+                }
+            };
+
+            card.innerHTML = `
+                <div class="w-20 h-20 rounded-xl bg-stone-100 overflow-hidden shrink-0 border border-stone-200/60 relative">
+                    ${randomPhoto ? `<img src="${randomPhoto}" alt="${ym}" draggable="false" oncontextmenu="return false;" class="protect-image w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">` : `<div class="w-full h-full flex items-center justify-center text-stone-300"><i class="fa-regular fa-image text-xl"></i></div>`}
+                </div>
+                <div class="flex flex-col justify-center flex-1 min-w-0">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-base font-serif-title font-bold text-stone-800 group-hover:text-stone-700 transition-colors">${year}年 ${parseInt(month, 10)}月</h3>
+                        <i class="fa-solid fa-chevron-right text-xs text-stone-300 group-hover:text-stone-600 transition-colors"></i>
+                    </div>
+                    <p class="text-xs text-stone-400 mt-1">${entries.length} 件の思い出</p>
+                </div>
+            `;
+            container.appendChild(card);
+        });
+    }
+    window.renderMonthFolders = renderMonthFolders;
+}
 function renderBreadcrumbs() {
     const nav = document.getElementById('breadcrumbs');
     if (!nav) return;
