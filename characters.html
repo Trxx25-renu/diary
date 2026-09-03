@@ -232,57 +232,57 @@
         }
 
         function renderSystemFolders(filterKeyword = "") {
-            const container = document.getElementById('systemFoldersContainer');
-            if (!container) return;
+    const container = document.getElementById('systemFoldersContainer');
+    if (!container) return;
 
-            container.innerHTML = '';
-            const keyword = filterKeyword.toLowerCase().trim();
+    container.innerHTML = '';
+    const keyword = filterKeyword.toLowerCase().trim();
 
-            window.systems.forEach(sys => {
-                const sysChars = window.characters.filter(c => c.systemId === sys.id);
-                const matchesSystem = sys.name.toLowerCase().includes(keyword) || sys.desc.toLowerCase().includes(keyword);
-                const matchedChars = sysChars.filter(c => 
-                    (c.name && c.name.toLowerCase().includes(keyword)) ||
-                    (c.epithet && c.epithet.toLowerCase().includes(keyword)) ||
-                    (c.occupation && c.occupation.toLowerCase().includes(keyword))
-                );
+    window.systems.forEach(sys => {
+        const sysChars = window.characters.filter(c => c.systemId === sys.id);
+        const matchesSystem = sys.name.toLowerCase().includes(keyword) || sys.desc.toLowerCase().includes(keyword);
+        const matchedChars = sysChars.filter(c => 
+            (c.name && c.name.toLowerCase().includes(keyword)) ||
+            (c.epithet && c.epithet.toLowerCase().includes(keyword)) ||
+            (c.occupation && c.occupation.toLowerCase().includes(keyword))
+        );
 
-                if (keyword && !matchesSystem && matchedChars.length === 0) {
-                    return;
-                }
-
-                const card = document.createElement('div');
-                card.className = 'bg-white rounded-2xl p-5 border border-stone-200/80 shadow-sm hover:border-stone-400 transition-all cursor-pointer flex flex-col justify-between gap-4 group';
-                card.onclick = () => navigateTo('characterList', sys.id);
-
-                card.innerHTML = `
-                    <div>
-                        <div class="flex items-center justify-between mb-3">
-                            <span class="text-[10px] font-medium text-white px-2.5 py-1 rounded-lg ${sys.badgeColor || 'bg-stone-700'}">${sys.desc}</span>
-                            <i class="fa-solid fa-folder-open text-stone-300 group-hover:text-stone-600 transition-colors"></i>
-                        </div>
-                        <h3 class="font-bold text-base text-stone-800 group-hover:text-stone-900">${sys.name}</h3>
-                        <p class="text-xs text-stone-400 mt-1">登録キャラクター: <span class="font-bold text-stone-600">${sysChars.length}</span> 名</p>
-                        ${keyword && matchedChars.length > 0 ? `<p class="text-[11px] text-amber-700 bg-amber-50 px-2 py-1 rounded-md mt-2">一致キャラ: ${matchedChars.map(c => c.name).join(', ')}</p>` : ''}
-                    </div>
-                    <div class="flex items-center justify-between pt-3 border-t border-stone-100 text-xs text-stone-500 font-medium">
-                        <span>一覧を見る</span>
-                        <i class="fa-solid fa-arrow-right text-[10px] group-hover:translate-x-1 transition-transform"></i>
-                    </div>
-                `;
-                container.appendChild(card);
-            });
-
-            if (container.children.length === 0) {
-                container.innerHTML = `
-                    <div class="col-span-full text-center py-12 text-stone-400 text-xs">
-                        <i class="fa-solid fa-search text-2xl mb-2"></i>
-                        <p>一致するシステム・キャラクターが見つかりませんでした。</p>
-                    </div>
-                `;
-            }
+        if (keyword && !matchesSystem && matchedChars.length === 0) {
+            return;
         }
-        window.renderSystemFolders = renderSystemFolders;
+
+        const card = document.createElement('div');
+        card.className = 'bg-white rounded-2xl p-5 border border-stone-200/80 shadow-sm hover:border-stone-400 transition-all cursor-pointer flex flex-col justify-between gap-4 group';
+        card.onclick = () => navigateTo('characterList', sys.id);
+
+        card.innerHTML = `
+            <div>
+                <div class="flex items-center justify-between mb-3">
+                    <span class="text-[10px] font-medium text-white px-2.5 py-1 rounded-lg ${sys.badgeColor || 'bg-stone-700'}">${sys.desc}</span>
+                    <i class="fa-solid fa-folder-open text-stone-300 group-hover:text-stone-600 transition-colors"></i>
+                </div>
+                <h3 class="font-bold text-base text-stone-800 group-hover:text-stone-900">${sys.name}</h3>
+                <p class="text-xs text-stone-400 mt-1">登録キャラクター: <span class="font-bold text-stone-600">${sysChars.length}</span> 名</p>
+                ${keyword && matchedChars.length > 0 ? `<p class="text-[11px] text-amber-700 bg-amber-50 px-2 py-1 rounded-md mt-2">一致キャラ: ${matchedChars.map(c => c.name).join(', ')}</p>` : ''}
+            </div>
+            <div class="flex items-center justify-between pt-3 border-t border-stone-100 text-xs text-stone-500 font-medium">
+                <span>一覧を見る</span>
+                <i class="fa-solid fa-arrow-right text-[10px] group-hover:translate-x-1 transition-transform"></i>
+            </div>
+        `;
+        container.appendChild(card);
+    });
+
+    if (container.children.length === 0) {
+        container.innerHTML = `
+            <div class="col-span-full text-center py-12 text-stone-400 text-xs">
+                <i class="fa-solid fa-search text-2xl mb-2"></i>
+                <p>一致するシステム・キャラクターが見つかりませんでした。</p>
+            </div>
+        `;
+    }
+}
+window.renderSystemFolders = renderSystemFolders;
 
         function handleFolderSearchInput(e) {
             renderSystemFolders(e.target.value);
@@ -378,9 +378,7 @@ window.updateColorPreview = updateColorPreview;
 if (typeof window.compressImageIfNeeded !== 'function') {
     async function compressImageIfNeeded(base64Str) {
         if (!base64Str || !base64Str.startsWith('data:image')) return base64Str;
-        
-        // 🌟 変更①: 許容するサイズを 900KB から 750KB に引き下げて、テキスト分の余裕を持たせる
-        if (base64Str.length < 750000) return base64Str;
+        if (base64Str.length < 900000) return base64Str;
 
         return new Promise((resolve) => {
             const img = new Image();
@@ -390,8 +388,7 @@ if (typeof window.compressImageIfNeeded !== 'function') {
                 let width = img.width;
                 let height = img.height;
                 
-                // 🌟 変更②: 最大サイズも少し小さくして画素数を抑える (900 -> 800)
-                const maxDimension = 800; 
+                const maxDimension = 900; 
                 if (width > maxDimension || height > maxDimension) {
                     if (width > height) {
                         height = Math.round((height * maxDimension) / width);
@@ -410,8 +407,7 @@ if (typeof window.compressImageIfNeeded !== 'function') {
                 let quality = 0.7;
                 let compressed = canvas.toDataURL('image/jpeg', quality);
                 
-                // 🌟 変更③: ループの終了条件も 750KB 以下に合わせる
-                while (compressed.length > 750000 && quality > 0.2) {
+                while (compressed.length > 900000 && quality > 0.2) {
                     quality -= 0.1;
                     compressed = canvas.toDataURL('image/jpeg', quality);
                 }
@@ -446,13 +442,10 @@ if (typeof window.compressImageIfNeeded !== 'function') {
 window.populateSystemSelect = populateSystemSelect;
 
     // 文字列・数値を揃えてキャラクターを検索
-    // 💡 window.characters が undefined の場合を考慮して ( ... || [] ) で保護する
-    const ch = (window.characters || []).find(c => String(c.id) === String(characterId));
-    
+    const ch = window.characters.find(c => String(c.id) === String(characterId));
     if (!ch) {
         showToast('キャラクターが見つかりませんでした', 'error');
         console.error("見つかったキャラクター一覧:", window.characters, "探しているID:", characterId);
-        return; // もし見つからない場合の処理があればここに
     }
 
    // フォーム要素へ値をセット
@@ -1352,25 +1345,26 @@ window.closeCharacterModal = closeCharacterModal;
         }
         window.saveRosterSettings = saveRosterSettings;
 
-      // 💡 ヘッダーのタイトルやアイコンを最新の設定に更新する関数
+        // 💡 ヘッダーのタイトルやアイコンを最新の設定に更新する関数
 function updateHeaderBranding() {
     const titleTextEl = document.getElementById('headerTitleText');
     const faviconImgEl = document.getElementById('headerFaviconImg');
+    const defaultIconEl = document.getElementById('headerDefaultIcon');
 
-    // タイトルの反映
+    // タイトルの反映（window.siteTitle などに保存されている場合）
     if (titleTextEl && window.siteTitle) {
         titleTextEl.textContent = window.siteTitle;
     }
 
-    // 設定アイコンの反映
-    if (faviconImgEl) {
+    // アイコンの反映（window.siteFavicon などにBase64やURLが入っている場合）
+    if (faviconImgEl && defaultIconEl) {
         if (window.siteFavicon && window.siteFavicon.trim() !== '') {
-            // ユーザーが設定した画像がある場合
             faviconImgEl.src = window.siteFavicon;
+            faviconImgEl.classList.remove('hidden'); // 画像を表示
+            defaultIconEl.classList.add('hidden');    // デフォルトアイコンを隠す
         } else {
-            // 未設定の場合のデフォルト画像（必要であればここにデフォルト画像のパスやBase64を指定）
-            // 何も表示したくない場合は faviconImgEl.style.display = 'none'; などにします
-            faviconImgEl.src = 'path/to/default-icon.png'; 
+            faviconImgEl.classList.add('hidden');    // 画像を隠す
+            defaultIconEl.classList.remove('hidden'); // デフォルトアイコンを表示
         }
     }
 }
@@ -1385,13 +1379,14 @@ window.updateHeaderBranding = updateHeaderBranding;
         <div class="max-w-4xl mx-auto flex items-center justify-between">
             <div class="flex items-center gap-3">
                 <h1 class="text-base font-bold font-serif-title text-stone-800 flex items-center gap-2">
-                    <!-- 🌟 サイト設定で保存されたアイコン画像を表示する -->
-                    <img id="headerFaviconImg" class="w-5 h-5 rounded-md object-cover border border-stone-200" alt="Icon" src="">
+                    <!-- 🌟 サイトアイコン画像（設定時のみ表示） -->
+                    <img id="headerFaviconImg" class="w-5 h-5 rounded-md object-cover border border-stone-200 hidden" alt="Icon">
+                    <!-- 🌟 デフォルトの人型アイコン（未設定時に表示） -->
+                    <i id="headerDefaultIcon" class="fa-solid fa-users text-stone-600 text-xs"></i>
                     
                     <span id="headerTitleText">Character Roster</span>
                 </h1>
             </div>
-            
             <div class="flex items-center gap-2 sm:gap-3">
                 <button onclick="handleOpenSettingsModal()" class="bg-white hover:bg-stone-50 text-stone-700 text-xs font-bold px-3.5 py-2 rounded-full border border-stone-200 shadow-sm transition-all flex items-center gap-1.5">
                     <i class="fa-solid fa-gear text-stone-500"></i>
