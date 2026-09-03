@@ -2236,9 +2236,8 @@ function openEditModalFromDetail() {
     }
 
     if (typeof closeDetailModal === 'function') closeDetailModal();
-}
-window.openEditModalFromDetail = openEditModalFromDetail;
 
+    // 🌟 モーダルを開く処理は必ず関数の中に含める
     const modal = document.getElementById('postModal');
     if (modal) {
         modal.classList.remove('opacity-0', 'pointer-events-none');
@@ -2249,6 +2248,7 @@ window.openEditModalFromDetail = openEditModalFromDetail;
         }
     }
     showToast('編集モードで開きました', 'info');
+}
 window.openEditModalFromDetail = openEditModalFromDetail;
         
         function sharePublicUrl() {
