@@ -353,6 +353,28 @@ const epithetHtml = ch.epithet
         }
         window.renderCharacterList = renderCharacterList;
 
+        // 💡 システムや一覧へ画面を切り替える関数
+function navigateTo(target, systemId) {
+    if (target === 'characterList') {
+        // window.selectedSystemId にクリックされたシステムのIDを保存
+        window.selectedSystemId = systemId;
+
+        // もしシステムごとのキャラクター一覧を表示する関数があればここで呼び出す
+        if (typeof renderCharacterList === 'function') {
+            renderCharacterList(systemId);
+        }
+
+        // フォルダ一覧ビューを隠して、キャラクター一覧ビューを表示する切り替え処理など
+        // （もしHTMLの表示切り替えが必要な場合はここに記述します）
+        const folderView = document.getElementById('systemFolderView'); // フォルダ一覧のコンテナ
+        const listView = document.getElementById('characterListView');     // キャラ一覧のコンテナ
+        
+        if (folderView) folderView.classList.add('hidden');
+        if (listView) listView.classList.remove('hidden');
+    }
+}
+window.navigateTo = navigateTo;
+
 // ==========================================
 // 💡 openEditCharacterModal 関数の定義を追加
 // ==========================================
@@ -397,7 +419,7 @@ function openEditCharacterModal(characterId) {
         systemInput.value = ch.systemId;
         systemInput.disabled = true; 
     }
-
+}
     window.editingCharacterId = characterId;
 
     // モーダルのタイトルを「編集」用に書き換える（あれば）
