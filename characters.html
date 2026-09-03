@@ -442,10 +442,13 @@ if (typeof window.compressImageIfNeeded !== 'function') {
 window.populateSystemSelect = populateSystemSelect;
 
     // 文字列・数値を揃えてキャラクターを検索
-    const ch = window.characters.find(c => String(c.id) === String(characterId));
+    // 💡 window.characters が undefined の場合を考慮して ( ... || [] ) で保護する
+    const ch = (window.characters || []).find(c => String(c.id) === String(characterId));
+    
     if (!ch) {
         showToast('キャラクターが見つかりませんでした', 'error');
         console.error("見つかったキャラクター一覧:", window.characters, "探しているID:", characterId);
+        return; // もし見つからない場合の処理があればここに
     }
 
    // フォーム要素へ値をセット
@@ -1345,26 +1348,25 @@ window.closeCharacterModal = closeCharacterModal;
         }
         window.saveRosterSettings = saveRosterSettings;
 
-        // 💡 ヘッダーのタイトルやアイコンを最新の設定に更新する関数
+       // 💡 ヘッダーのタイトルやアイコンを最新の設定に更新する関数
 function updateHeaderBranding() {
     const titleTextEl = document.getElementById('headerTitleText');
     const faviconImgEl = document.getElementById('headerFaviconImg');
-    const defaultIconEl = document.getElementById('headerDefaultIcon');
 
-    // タイトルの反映（window.siteTitle などに保存されている場合）
+    // タイトルの反映
     if (titleTextEl && window.siteTitle) {
         titleTextEl.textContent = window.siteTitle;
     }
 
-    // アイコンの反映（window.siteFavicon などにBase64やURLが入っている場合）
-    if (faviconImgEl && defaultIconEl) {
+    // 設定アイコンの反映
+    if (faviconImgEl) {
         if (window.siteFavicon && window.siteFavicon.trim() !== '') {
+            // ユーザーが設定した画像がある場合
             faviconImgEl.src = window.siteFavicon;
-            faviconImgEl.classList.remove('hidden'); // 画像を表示
-            defaultIconEl.classList.add('hidden');    // デフォルトアイコンを隠す
         } else {
-            faviconImgEl.classList.add('hidden');    // 画像を隠す
-            defaultIconEl.classList.remove('hidden'); // デフォルトアイコンを表示
+            // 未設定の場合のデフォルト画像（必要であればここにデフォルト画像のパスやBase64を指定）
+            // 何も表示したくない場合は faviconImgEl.style.display = 'none'; などにします
+            faviconImgEl.src = 'path/to/default-icon.png'; 
         }
     }
 }
@@ -1379,14 +1381,13 @@ window.updateHeaderBranding = updateHeaderBranding;
         <div class="max-w-4xl mx-auto flex items-center justify-between">
             <div class="flex items-center gap-3">
                 <h1 class="text-base font-bold font-serif-title text-stone-800 flex items-center gap-2">
-                    <!-- 🌟 サイトアイコン画像（設定時のみ表示） -->
-                    <img id="headerFaviconImg" class="w-5 h-5 rounded-md object-cover border border-stone-200 hidden" alt="Icon">
-                    <!-- 🌟 デフォルトの人型アイコン（未設定時に表示） -->
-                    <i id="headerDefaultIcon" class="fa-solid fa-users text-stone-600 text-xs"></i>
+                    <!-- 🌟 サイト設定で保存されたアイコン画像を表示する -->
+                    <img id="headerFaviconImg" class="w-5 h-5 rounded-md object-cover border border-stone-200" alt="Icon" src="">
                     
                     <span id="headerTitleText">Character Roster</span>
                 </h1>
             </div>
+            
             <div class="flex items-center gap-2 sm:gap-3">
                 <button onclick="handleOpenSettingsModal()" class="bg-white hover:bg-stone-50 text-stone-700 text-xs font-bold px-3.5 py-2 rounded-full border border-stone-200 shadow-sm transition-all flex items-center gap-1.5">
                     <i class="fa-solid fa-gear text-stone-500"></i>
