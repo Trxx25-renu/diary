@@ -2136,80 +2136,95 @@ window.handleSaveConfig = handleSaveConfig;
         window.deleteCurrentEntry = deleteCurrentEntry;
         
         // 📝 詳細画面から編集モードでモーダルを開く関数
-        function openEditModalFromDetail() {
-            if (!window.isAdmin) {
-                showToast('権限がありません。ログインしてください。', 'warning');
-                return;
-            }
+function openEditModalFromDetail() {
+    if (!window.isAdmin) {
+        showToast('権限がありません。ログインしてください。', 'warning');
+        return;
+    }
 
-            if (!window.selectedEntryId || !window.entries) {
-                showToast('編集する記事データが見つかりません。', 'warning');
-                return;
-            }
+    if (!window.selectedEntryId || !window.entries) {
+        showToast('編集する記事データが見つかりません。', 'warning');
+        return;
+    }
 
-            const entry = window.entries.find(e => e.id === window.selectedEntryId);
-            if (!entry) {
-                showToast('対象の記事が見つかりませんでした。', 'error');
-                return;
-            }
+    // 🌟 型やID/日付の違いを吸収して安全に記事データを見つける
+    const entry = window.entries.find(e => 
+        String(e.id) === String(window.selectedEntryId) || e.date === window.selectedEntryId
+    );
 
-            // 🌟 編集IDを確実に保持（新規に書き換えない！）
-            window.editingEntryId = entry.id;
+    if (!entry) {
+        showToast('対象の記事が見つかりませんでした。', 'error');
+        return;
+    }
 
-            // フォームのタイトルを変更（あれば）
-            const modalTitleEl = document.getElementById('postModalTitle');
-            if (modalTitleEl) modalTitleEl.textContent = '日記を編集';
+    // 🌟 編集IDを確実に保持
+    window.editingEntryId = entry.id;
 
-            // フォームの各入力欄に既存のデータを流し込む
-            const dateInput = document.getElementById('inputDate');
-            const timeSlotInput = document.getElementById('inputTimeSlot'); // 🌟 時間帯のinput要素を取得
-            const scenarioTitleInput = document.getElementById('inputScenarioTitle');
-            const weatherInput = document.getElementById('inputWeather');
-            const contentInput = document.getElementById('inputContent');
-            const secretContentInput = document.getElementById('inputSecretContent');
-            const preview = document.getElementById('imagePreview');
-            const placeholder = document.getElementById('uploadPlaceholder');
+    // フォームのタイトルを変更（あれば）
+    const modalTitleEl = document.getElementById('postModalTitle');
+    if (modalTitleEl) modalTitleEl.textContent = '日記を編集';
 
-            if (dateInput) dateInput.value = entry.date || '';
-            if (timeSlotInput) timeSlotInput.value = entry.timeSlot || 'afternoon'; // 🌟 時間帯を復元（未設定なら昼）
-            if (scenarioTitleInput) scenarioTitleInput.value = entry.scenarioTitle || '';
-            if (weatherInput) weatherInput.value = entry.weather || '';
-            if (contentInput) contentInput.value = entry.content || '';
-            if (secretContentInput) secretContentInput.value = entry.secretContent || '';
+    // フォームの各入力欄に既存のデータを流し込む
+    const dateInput = document.getElementById('inputDate');
+    const timeSlotInput = document.getElementById('inputTimeSlot');
+    const scenarioTitleInput = document.getElementById('inputScenarioTitle');
+    const weatherInput = document.getElementById('inputWeather');
+    const contentInput = document.getElementById('inputContent');
+    const secretContentInput = document.getElementById('inputSecretContent');
+    const preview = document.getElementById('imagePreview');
+    const placeholder = document.getElementById('uploadPlaceholder');
 
-            // 画像の復元
-            if (entry.imageUrl) {
-                window.tempBase64Image = entry.imageUrl;
-                if (preview) {
-                    preview.src = entry.imageUrl;
-                    preview.classList.remove('hidden');
-                }
-                if (placeholder) placeholder.classList.add('hidden');
-            } else {
-                window.tempBase64Image = null;
-                if (preview) preview.classList.add('hidden');
-                if (placeholder) placeholder.classList.remove('hidden');
-            }
+    if (dateInput) dateInput.value = entry.date || '';
+    if (timeSlotInput) timeSlotInput.value = entry.timeSlot || 'afternoon';
+    if (scenarioTitleInput) scenarioTitleInput.value = entry.scenarioTitle || '';
+    if (weatherInput) weatherInput.value = entry.weather || '';
+    if (contentInput) contentInput.value = entry.content || '';
+    if (secretContentInput) secretContentInput.value = entry.secretContent || '';
 
-            // 詳細モーダルを閉じる
-            if (typeof closeDetailModal === 'function') {
-                closeDetailModal();
-            }
-
-            // 🌟 openPostModalを使わず、直接投稿モーダルを表示する（editingEntryIdを保持したままにするため）
-            const modal = document.getElementById('postModal');
-            if (modal) {
-                modal.classList.remove('opacity-0', 'pointer-events-none');
-                const modalBox = modal.querySelector('div');
-                if (modalBox) {
-                    modalBox.classList.remove('scale-95');
-                    modalBox.classList.add('scale-100');
-                }
-            }
-
-            showToast('編集モードで開きました', 'info');
+    // 🌟 画像の復元とプレビューの強制表示
+    if (entry.imageUrl && entry.imageUrl.trim() !== '') {
+        window.tempBase64Image = entry.imageUrl;
+        if (preview) {
+            preview.src = entry.imageUrl;
+            preview.classList.remove('hidden');
+            preview.style.display = 'block'; // 確実に表示させる
         }
-        window.openEditModalFromDetail = openEditModalFromDetail;
+        if (placeholder) {
+            placeholder.classList.add('hidden');
+            placeholder.style.display = 'none'; // 確実に非表示にする
+        }
+    } else {
+        window.tempBase64Image = null;
+        if (preview) {
+            preview.src = '';
+            preview.classList.add('hidden');
+            preview.style.display = 'none';
+        }
+        if (placeholder) {
+            placeholder.classList.remove('hidden');
+            placeholder.style.display = 'flex'; // または block
+        }
+    }
+
+    // 詳細モーダルを閉じる
+    if (typeof closeDetailModal === 'function') {
+        closeDetailModal();
+    }
+
+    // 投稿モーダルを表示する
+    const modal = document.getElementById('postModal');
+    if (modal) {
+        modal.classList.remove('opacity-0', 'pointer-events-none');
+        const modalBox = modal.querySelector('div');
+        if (modalBox) {
+            modalBox.classList.remove('scale-95');
+            modalBox.classList.add('scale-100');
+        }
+    }
+
+    showToast('編集モードで開きました', 'info');
+}
+window.openEditModalFromDetail = openEditModalFromDetail;
         
         function sharePublicUrl() {
             const cleanUrl = window.location.origin + window.location.pathname;
