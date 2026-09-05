@@ -1067,18 +1067,20 @@ window.closeCharacterModal = closeCharacterModal;
     
 <body class="min-h-screen flex flex-col justify-between">
 
-  <!-- ヘッダー -->
+<!-- ヘッダー -->
     <header class="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-stone-200/80 px-4 py-3.5">
         <div class="max-w-4xl mx-auto flex items-center justify-between">
+            <!-- 左側：アイコン ＆ タイトル・サブタイトル -->
             <div class="flex items-center gap-3">
-                <h1 id="siteHeaderTitle" class="text-base font-bold tracking-tight text-stone-800 group-hover:text-stone-600 transition-colors">キャラクター一覧</h1>
-                        <p id="siteHeaderSubtitle" class="text-[10px] text-stone-400 font-serif-title tracking-wider uppercase">Character Log</p>
-                    <!-- 🌟 サイトアイコン画像（設定時のみ表示） -->
-                    <img id="headerFaviconImg" class="w-5 h-5 rounded-md object-cover border border-stone-200 hidden" alt="Icon">
-                    
-                    <span id="siteHeaderTitle" class="text-base font-bold tracking-tight text-stone-800 group-hover:text-stone-600 transition-colors">キャラクター一覧</h1>
-                        <p id="siteHeaderSubtitle" class="text-[10px] text-stone-400 font-serif-title tracking-wider uppercase">Character Log</p>
-                        </div>
+                <img id="headerFaviconImg" class="w-5 h-5 rounded-md object-cover border border-stone-200 hidden" alt="Icon">
+                <div>
+                    <h1 id="siteHeaderTitle" class="text-base font-bold tracking-tight text-stone-800 transition-colors">キャラクター一覧</h1>
+                    <p id="siteHeaderSubtitle" class="text-[10px] text-stone-400 font-serif-title tracking-wider uppercase">Character Log</p>
+                </div>
+            </div>
+
+            <!-- 右側：各種ボタン群 -->
+            <div class="flex items-center gap-2">
                 <button onclick="handleOpenSettingsModal()" class="bg-white hover:bg-stone-50 text-stone-700 text-xs font-bold px-3.5 py-2 rounded-full border border-stone-200 shadow-sm transition-all flex items-center gap-1.5">
                     <i class="fa-solid fa-gear text-stone-500"></i>
                     <span>サイト設定</span>
