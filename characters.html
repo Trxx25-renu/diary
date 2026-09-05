@@ -790,69 +790,77 @@ function renderCharacterDetail(characterId) {
     }
     window.closeSettingsModal = closeSettingsModal;
         async function saveCharacter(event) {
-            event.preventDefault();
-            const systemId = document.getElementById('charSystemSelect').value;
-            const name = document.getElementById('charName').value.trim();
-            const epithet = document.getElementById('charEpithet').value.trim();
-            const age = document.getElementById('charAge').value;
-            const occupation = document.getElementById('charOccupation').value.trim();
-            const themeColor = document.getElementById('charThemeColor').value;
-            
-            const thumbnail = window.currentThumbnailBase64 || "";
-            const avatar = window.currentAvatarBase64 || "";
+    event.preventDefault();
+    const systemId = document.getElementById('charSystemSelect').value;
+    const name = document.getElementById('charName').value.trim();
+    const epithet = document.getElementById('charEpithet').value.trim();
+    const age = document.getElementById('charAge').value;
+    const occupation = document.getElementById('charOccupation').value.trim();
+    const themeColor = document.getElementById('charThemeColor').value;
+    
+    const thumbnail = window.currentThumbnailBase64 || "";
+    const avatar = window.currentAvatarBase64 || "";
 
-            const customValues = {};
-            const sysConfig = window.systemCustomFields[systemId] || { status: [], text: [] };
-            
-            [...(sysConfig.text || []), ...(sysConfig.status || [])].forEach(f => {
-                const inputEl = document.querySelector(`[name="custom_${f.id}"]`);
-                if (inputEl) {
-                    const isStatus = (sysConfig.status || []).some(s => s.id === f.id);
-                    customValues[f.id] = isStatus ? (inputEl.value ? Number(inputEl.value) : '') : inputEl.value;
-                }
-            });
+    // 💡 カスタム項目の値を正しく収集するように書き換え
+    const customValues = {};
 
-            if (!name) { alert("キャラクター名は必須です。"); return; }
-
-            const charData = {
-                systemId, name, epithet,
-                age: age ? Number(age) : '',
-                occupation, themeColor, thumbnail, avatar,
-                customValues,
-                updatedAt: new Date().toISOString()
-            };
-
-            try {
-                const charsRef = collection(db, 'artifacts', window.appId, 'public', 'data', 'characters');
-
-                if (window.editingCharacterId) {
-                    // 📝 編集（更新）の場合
-                    const docRef = doc(db, 'artifacts', window.appId, 'public', 'data', 'characters', window.editingCharacterId);
-                    await updateDoc(docRef, charData);
-
-                    // ローカルの配列も更新
-                    const index = window.characters.findIndex(c => c.id === window.editingCharacterId);
-                    if (index !== -1) {
-                        window.characters[index] = { id: window.editingCharacterId, ...window.characters[index], ...charData };
-                    }
-                    showToast("キャラクターを更新しました！", "info");
-                } else {
-                    // 🆕 新規作成の場合
-                    charData.createdAt = new Date().toISOString();
-                    const docRef = await addDoc(charsRef, charData);
-                    window.characters.push({ id: docRef.id, ...charData });
-                    showToast("キャラクターを登録しました！", "info");
-                }
-
-                closeCharacterModal();
-                renderCharacterList(systemId);
-                renderSystemFolders();
-            } catch (e) {
-                console.error("Save error:", e);
-                alert("保存に失敗しました。画像サイズが大きすぎないか確認してください。");
-            }
+    // ステータス入力値の取得
+    document.querySelectorAll('.char-custom-status-input').forEach(inputEl => {
+        const id = inputEl.getAttribute('data-custom-status-id');
+        if (id) {
+            customValues[id] = inputEl.value ? Number(inputEl.value) : '';
         }
-        window.saveCharacter = saveCharacter;
+    });
+
+    // テキスト入力値の取得
+    document.querySelectorAll('.char-custom-text-input').forEach(inputEl => {
+        const id = inputEl.getAttribute('data-custom-text-id');
+        if (id) {
+            customValues[id] = inputEl.value;
+        }
+    });
+
+    if (!name) { alert("キャラクター名は必須です。"); return; }
+
+    const charData = {
+        systemId, name, epithet,
+        age: age ? Number(age) : '',
+        occupation, themeColor, thumbnail, avatar,
+        customValues,
+        updatedAt: new Date().toISOString()
+    };
+
+    try {
+        const charsRef = collection(db, 'artifacts', window.appId, 'public', 'data', 'characters');
+
+        if (window.editingCharacterId) {
+            // 📝 編集（更新）の場合
+            const docRef = doc(db, 'artifacts', window.appId, 'public', 'data', 'characters', window.editingCharacterId);
+            await updateDoc(docRef, charData);
+
+            // ローカルの配列も更新
+            const index = window.characters.findIndex(c => c.id === window.editingCharacterId);
+            if (index !== -1) {
+                window.characters[index] = { id: window.editingCharacterId, ...window.characters[index], ...charData };
+            }
+            showToast("キャラクターを更新しました！", "info");
+        } else {
+            // 🆕 新規作成の場合
+            charData.createdAt = new Date().toISOString();
+            const docRef = await addDoc(charsRef, charData);
+            window.characters.push({ id: docRef.id, ...charData });
+            showToast("キャラクターを登録しました！", "info");
+        }
+
+        closeCharacterModal();
+        renderCharacterList(systemId);
+        renderSystemFolders();
+    } catch (e) {
+        console.error("Save error:", e);
+        alert("保存に失敗しました。画像サイズが大きすぎないか確認してください。");
+    }
+}
+window.saveCharacter = saveCharacter;
         
         async function saveRosterSettings(event) {
             event.preventDefault();
@@ -1062,10 +1070,27 @@ window.closeCharacterModal = closeCharacterModal;
             }
         }
         window.updateHeaderBranding = updateHeaderBranding;
+        
+        // これらをまとめてJSの空いているところ（一番下など）に追加
+function renderCharacterModalSystemSelect() { ... }
+window.renderCharacterModalSystemSelect = renderCharacterModalSystemSelect;
+
+function handleSystemChangeInModal() { ... }
+window.handleSystemChangeInModal = handleSystemChangeInModal;
+
+function updateColorPreview(colorCode) { ... }
+window.updateColorPreview = updateColorPreview;
+
+function openCharacterModal() { ... }
+window.openCharacterModal = openCharacterModal;
+
+function closeCharacterModal() { ... }
+window.closeCharacterModal = closeCharacterModal;
+
     </script>
 </head>
     
-<body class="min-h-screen flex flex-col justify-between">
+<body class="min-h-screen flex flex-col bg-stone-50 text-stone-800">
 
 <!-- ヘッダー -->
     <header class="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-stone-200/80 px-4 py-3.5">
