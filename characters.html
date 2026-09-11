@@ -332,36 +332,38 @@ function renderCharacterList(systemId, filterKeyword = "") {
             thumbHtml = `<img src="${ch.avatar}" class="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500">`;
         }
 
-        // 💡 二つ名と読み仮名を崩れないよう上下にスッキリ配置
-        let epithetHtml = '';
-        if (ch.epithet && ch.epithet.trim() !== '') {
-            const kana = ch.epithetKana ? `<span class="text-[8px] font-normal text-stone-400 block">${ch.epithetKana}</span>` : '';
-            epithetHtml = `
-                <div class="mb-0.5 truncate">
-                    ${kana}
-                    <span class="text-[11px] font-bold tracking-wider" style="color: ${themeColor}">${ch.epithet}</span>
-                </div>
-            `;
-        }
+// ==========================================
+// 💡 二つ名と読み仮名を崩れないよう上下にスッキリ配置
+// ==========================================
+let epithetHtml = '';
+if (ch.epithet && ch.epithet.trim() !== '') {
+    const kana = ch.epithetKana ? `<span class="text-[8px] font-normal text-stone-400 block">${ch.epithetKana}</span>` : '';
+    epithetHtml = `
+        <div class="mb-[-2px] truncate"> <!-- 💡 ここを mb-0.5 から mb-[-2px] などにして隙間を詰める -->
+            ${kana}
+            <span class="text-[11px] font-bold tracking-wider" style="color: ${themeColor}">${ch.epithet}</span>
+        </div>
+    `;
+}
 
-        // 年齢と誕生日のテキスト組み立て（太字にはせず通常の太さ）
-        let ageAndBirthText = '';
-        if (ch.age) ageAndBirthText += `${ch.age}歳`;
-        if (ch.birthdate) {
-            ageAndBirthText += ageAndBirthText ? ` <span class="text-stone-300 font-normal">/</span> ${ch.birthdate}` : ch.birthdate;
-        }
-        const subInfoText = ageAndBirthText || ch.occupation || '';
+// 年齢と誕生日のテキスト組み立て（太字にはせず通常の太さ）
+let ageAndBirthText = '';
+if (ch.age) ageAndBirthText += `${ch.age}歳`;
+if (ch.birthdate) {
+    ageAndBirthText += ageAndBirthText ? ` <span class="text-stone-300 font-normal">/</span> ${ch.birthdate}` : ch.birthdate;
+}
+const subInfoText = ageAndBirthText || ch.occupation || '';
 
-        card.innerHTML = `
-            <div class="aspect-square w-full rounded-2xl overflow-hidden relative border-2 border-stone-200 shadow-inner flex items-center justify-center" style="background-color: ${themeColor};">
-                ${thumbHtml}
-            </div>
-            <div class="px-1.5 pb-1">
-                ${epithetHtml}
-                <h4 class="font-bold text-xl text-stone-900 truncate tracking-wide group-hover:opacity-80 transition-opacity">${ch.name}</h4>
-                <p class="text-xs text-stone-700 font-normal mt-1 truncate">${subInfoText}</p>
-            </div>
-        `;
+card.innerHTML = `
+    <div class="aspect-square w-full rounded-2xl overflow-hidden relative border-2 border-stone-200 shadow-inner flex items-center justify-center" style="background-color: ${themeColor};">
+        ${thumbHtml}
+    </div>
+    <div class="px-1.5 pb-1 pt-1"> <!-- 💡 全体の padding-top を微調整またはスッキリさせる -->
+        ${epithetHtml}
+        <h4 class="font-bold text-lg text-stone-900 truncate tracking-wide group-hover:opacity-80 transition-opacity">${ch.name}</h4> <!-- 💡 text-xl だと大きすぎる場合は text-lg にするとバランスが取りやすいです -->
+        <p class="text-xs text-stone-700 font-normal mt-0.5 truncate">${subInfoText}</p> <!-- 💡 mt-1 を mt-0.5 にして下の隙間も調整 -->
+    </div>
+`;
         grid.appendChild(card);
     });
 }
@@ -424,7 +426,7 @@ function navigateTo(target, param) {
 window.navigateTo = navigateTo;
         
 // ==========================================
-// 💡 編集モーダルを開く関数（修正版）
+// 💡 編集モーダルを開く関数（設定・秘匿メモ対応版）
 // ==========================================
 function openEditCharacterModal(characterId) {
     const ch = window.characters.find(c => String(c.id) === String(characterId));
@@ -450,6 +452,10 @@ function openEditCharacterModal(characterId) {
     const sheetUrlInput = document.getElementById('charSheetUrl');
     const systemInput = document.getElementById('charSystemSelect');
 
+    // 💡 設定／メモ と 秘匿メモの入力欄を取得
+    const memoInput = document.getElementById('charMemo');
+    const secretInput = document.getElementById('charSecret');
+
     if (nameInput) nameInput.value = ch.name || '';
     if (nameKanaInput) nameKanaInput.value = ch.nameKana || '';
     if (epithetInput) epithetInput.value = ch.epithet || '';
@@ -459,6 +465,10 @@ function openEditCharacterModal(characterId) {
     if (birthdateInput) birthdateInput.value = ch.birthdate || '';
     if (colorInput) colorInput.value = ch.themeColor || '#292524';
     if (sheetUrlInput) sheetUrlInput.value = ch.sheetUrl || '';
+
+    // 💡 設定／メモ・秘匿メモの値をフォームにセット
+    if (memoInput) memoInput.value = ch.memo || '';
+    if (secretInput) secretInput.value = ch.secret || '';
 
     if (systemInput) {
         systemInput.disabled = false;
@@ -593,24 +603,24 @@ function renderCharacterDetail(characterId) {
         avatarHtml = `<div class="bg-stone-50/50 p-2 rounded-2xl border border-stone-200/80 shadow-md flex items-center justify-center"><img src="${ch.avatar}" class="w-full h-auto max-h-[500px] object-contain rounded-xl"></div>`;
     }
 
-    // 二つ名（上下にスッキリ配置）
+    // 💡 ① 二つ名と名前の間の無駄な改行・隙間をスッキリ圧縮
     let epithetHtml = '';
     if (ch.epithet && ch.epithet.trim() !== '') {
-        const kana = ch.epithetKana ? `<span class="text-[10px] font-medium text-stone-400 block">${ch.epithetKana}</span>` : '';
+        const kana = ch.epithetKana ? `<span class="text-[9px] font-medium text-stone-400 block">${ch.epithetKana}</span>` : '';
         epithetHtml = `
-            <div class="mb-1">
+            <div class="mb-0.5">
                 ${kana}
-                <span class="text-sm font-bold tracking-widest uppercase" style="color: ${themeColor}">${ch.epithet}</span>
+                <span class="text-xs font-bold tracking-widest uppercase" style="color: ${themeColor}">${ch.epithet}</span>
             </div>
         `;
     }
 
     // 名前とルビ
-    const nameKanaHtml = ch.nameKana ? `<span class="text-xs font-normal text-stone-400 block mb-0.5">${ch.nameKana}</span>` : '';
+    const nameKanaHtml = ch.nameKana ? `<span class="text-xs font-normal text-stone-400 block mb-0">${ch.nameKana}</span>` : '';
     const nameRuby = `
         <div>
             ${nameKanaHtml}
-            <h2 class="text-2xl font-bold text-stone-800 mb-2">${ch.name || ''}</h2>
+            <h2 class="text-2xl font-bold text-stone-800 leading-tight">${ch.name || ''}</h2>
         </div>
     `;
 
@@ -676,6 +686,35 @@ function renderCharacterDetail(characterId) {
         customFieldsHtml += `</div>`;
     }
 
+    // 💡 ② 通過シナリオの直上に配置する「設定／メモ」＆「秘匿メモ」エリア
+    const memo = ch.memo || '';
+    const secret = ch.secret || '';
+    let settingsMemoHtml = '';
+    
+    if (memo || secret) {
+        settingsMemoHtml = `
+            <div class="mt-6 pt-6 border-t border-stone-100 space-y-4">
+                ${memo ? `
+                    <div>
+                        <h4 class="text-xs font-bold text-stone-500 mb-1.5 flex items-center gap-1.5">
+                            <i class="fa-solid fa-note-sticky text-stone-400"></i> 設定 / メモ
+                        </h4>
+                        <div class="bg-stone-50 rounded-2xl p-4 text-xs text-stone-700 whitespace-pre-wrap border border-stone-100 leading-relaxed">${memo}</div>
+                    </div>
+                ` : ''}
+
+                ${secret ? `
+                    <div>
+                        <h4 class="text-xs font-bold text-rose-500 mb-1.5 flex items-center gap-1.5">
+                            <i class="fa-solid fa-user-secret text-rose-400"></i> 秘匿メモ（ネタバレ）
+                        </h4>
+                        <div class="bg-rose-50/50 rounded-2xl p-4 text-xs text-stone-700 whitespace-pre-wrap border border-rose-100/60 leading-relaxed">${parseSpoilers(secret)}</div>
+                    </div>
+                ` : ''}
+            </div>
+        `;
+    }
+
     // 通過シナリオ一覧（仮）
     const scenariosHtml = `
         <div class="mt-6 pt-6 border-t border-stone-100">
@@ -701,7 +740,6 @@ function renderCharacterDetail(characterId) {
                 <div class="w-full md:w-1/2 flex flex-col justify-between">
                     <div>
                         <div class="flex items-center justify-between mb-2">
-                            <!-- 💡 ここで文字色もテーマカラーに合わせて自動切り替え -->
                             <span class="text-[10px] font-bold px-2.5 py-1 rounded-lg shadow-xs inline-block" style="background-color: ${themeColor}; color: ${badgeTextColor};">
                                 ${window.systems.find(s => s.id === ch.systemId)?.name || 'システム'}
                             </span>
@@ -722,6 +760,7 @@ function renderCharacterDetail(characterId) {
                 </div>
             </div>
 
+            ${settingsMemoHtml}
             ${scenariosHtml}
 
             <div class="pt-6 mt-6 border-t border-stone-100 flex items-center justify-between flex-wrap gap-3">
@@ -1600,7 +1639,7 @@ window.handleAuthSubmit = handleAuthSubmit;
         <div id="view-detail" class="hidden"></div>
     </main>
 
-   <!-- 📝 キャラクター登録モーダル -->
+  <!-- 📝 キャラクター登録モーダル -->
 <div id="characterModal" class="hidden fixed inset-0 z-50 bg-stone-900/40 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-xl border border-stone-200 max-h-[90vh] overflow-y-auto">
         <div class="flex items-center justify-between mb-4 pb-2 border-b border-stone-100">
@@ -1643,34 +1682,33 @@ window.handleAuthSubmit = handleAuthSubmit;
                 </div>
             </div>
 
-           <!-- 年齢・性別・誕生日・テーマカラー -->
-<div class="grid grid-cols-2 gap-3 mt-3">
-    <div>
-        <label class="block text-xs font-bold text-stone-600 mb-1">年齢</label>
-        <input type="text" id="charAge" placeholder="例: 20" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-800 focus:outline-none focus:border-stone-400">
-    </div>
-    <div>
-        <label class="block text-xs font-bold text-stone-600 mb-1">性別</label>
-        <select id="charGender" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-800 focus:outline-none focus:border-stone-400">
-            <option value="">未選択</option>
-            <option value="女性">女性</option>
-            <option value="男性">男性</option>
-            <option value="不明">不明</option>
-        </select>
-    </div>
-    <div>
-        <label class="block text-xs font-bold text-stone-600 mb-1">誕生日</label>
-        <input type="text" id="charBirthdate" placeholder="例: 4月1日" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-800 focus:outline-none focus:border-stone-400">
-    </div>
-    <div>
-        <label class="block text-xs font-bold text-stone-600 mb-1">テーマカラー</label>
-        <div class="flex items-center gap-2">
-            <!-- 💡 `#` がなくても反応するように修正した関数を呼び出す -->
-            <input type="text" id="charThemeColor" placeholder="292524 または #292524" oninput="handleThemeColorInput(this.value)" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-800 focus:outline-none focus:border-stone-400 font-mono">
-            <div id="characterColorPreview" class="w-9 h-9 rounded-xl border border-stone-300 shadow-inner bg-stone-100 shrink-0 transition-colors"></div>
-        </div>
-    </div>
-</div>
+            <!-- 年齢・性別・誕生日・テーマカラー -->
+            <div class="grid grid-cols-2 gap-3 mt-3">
+                <div>
+                    <label class="block text-xs font-bold text-stone-600 mb-1">年齢</label>
+                    <input type="text" id="charAge" placeholder="例: 20" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-800 focus:outline-none focus:border-stone-400">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-stone-600 mb-1">性別</label>
+                    <select id="charGender" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-800 focus:outline-none focus:border-stone-400">
+                        <option value="">未選択</option>
+                        <option value="女性">女性</option>
+                        <option value="男性">男性</option>
+                        <option value="不明">不明</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-stone-600 mb-1">誕生日</label>
+                    <input type="text" id="charBirthdate" placeholder="例: 4月1日" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-800 focus:outline-none focus:border-stone-400">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-stone-600 mb-1">テーマカラー</label>
+                    <div class="flex items-center gap-2">
+                        <input type="text" id="charThemeColor" placeholder="292524 または #292524" oninput="handleThemeColorInput(this.value)" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-800 focus:outline-none focus:border-stone-400 font-mono">
+                        <div id="characterColorPreview" class="w-9 h-9 rounded-xl border border-stone-300 shadow-inner bg-stone-100 shrink-0 transition-colors"></div>
+                    </div>
+                </div>
+            </div>
             
             <!-- キャラクターシートURL入力欄 -->
             <div class="mt-3">
@@ -1680,26 +1718,38 @@ window.handleAuthSubmit = handleAuthSubmit;
                 <input type="url" id="charSheetUrl" placeholder="https://iachara.com/... など" required class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-800 focus:outline-none focus:border-stone-400">
             </div>
 
+            <!-- 💡 追加：設定／メモ ＆ 秘匿メモ入力欄 -->
+            <div class="mt-3 space-y-3 pt-3 border-t border-stone-100">
+                <div>
+                    <label class="block text-xs font-bold text-stone-600 mb-1">設定 / メモ</label>
+                    <textarea id="charMemo" rows="3" class="w-full bg-stone-50 border border-stone-200 rounded-xl p-2.5 text-xs text-stone-800 focus:outline-none focus:border-stone-400" placeholder="キャラクターの設定や自由なメモを記入..."></textarea>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-rose-600 mb-1">秘匿メモ（ネタバレ）</label>
+                    <textarea id="charSecret" rows="3" class="w-full bg-rose-50/40 border border-rose-200/70 rounded-xl p-2.5 text-xs text-stone-800 focus:outline-none focus:border-rose-400" placeholder="||ネタバレを含む秘匿テキストはこう書けます||"></textarea>
+                </div>
+            </div>
+
             <div id="dynamicCustomFieldsContainer" class="space-y-3 pt-2 border-t border-stone-100"></div>
 
-           <div class="pt-2 border-t border-stone-100">
-    <label for="thumbFile" class="block text-xs font-bold text-stone-600 mb-1">一覧用アイコン画像（自動圧縮）</label>
-    <input type="file" id="thumbFile" accept="image/*" onchange="handleThumbnailFileSelect(event)" class="w-full text-xs text-stone-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-stone-100 file:text-stone-700 hover:file:bg-stone-200 cursor-pointer">
-    <div class="mt-2 flex items-center gap-2">
-        <span class="text-[10px] text-stone-400">プレビュー:</span>
-        <img id="thumbPreview" class="w-10 h-10 rounded-lg object-cover border border-stone-200 hidden">
-    </div>
-</div>
+            <div class="pt-2 border-t border-stone-100">
+                <label for="thumbFile" class="block text-xs font-bold text-stone-600 mb-1">一覧用アイコン画像（自動圧縮）</label>
+                <input type="file" id="thumbFile" accept="image/*" onchange="handleThumbnailFileSelect(event)" class="w-full text-xs text-stone-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-stone-100 file:text-stone-700 hover:file:bg-stone-200 cursor-pointer">
+                <div class="mt-2 flex items-center gap-2">
+                    <span class="text-[10px] text-stone-400">プレビュー:</span>
+                    <img id="thumbPreview" class="w-10 h-10 rounded-lg object-cover border border-stone-200 hidden">
+                </div>
+            </div>
 
-<div>
-    <label for="avatarFile" class="block text-xs font-bold text-stone-600 mb-1">立ち絵画像（大サイズPNG対応）</label>
-    <input type="file" id="avatarFile" accept="image/*" onchange="handleAvatarFileSelect(event)" class="w-full text-xs text-stone-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-stone-100 file:text-stone-700 hover:file:bg-stone-200 cursor-pointer">
-    <div class="mt-2 flex items-center gap-2">
-        <span class="text-[10px] text-stone-400">プレビュー:</span>
-        <!-- 💡 bg-stone-900/5 を削除してスッキリ！ -->
-        <img id="avatarPreview" class="w-12 h-16 rounded-lg object-contain border border-stone-200 hidden">
-    </div>
-</div>
+            <div>
+                <label for="avatarFile" class="block text-xs font-bold text-stone-600 mb-1">立ち絵画像（大サイズPNG対応）</label>
+                <input type="file" id="avatarFile" accept="image/*" onchange="handleAvatarFileSelect(event)" class="w-full text-xs text-stone-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-stone-100 file:text-stone-700 hover:file:bg-stone-200 cursor-pointer">
+                <div class="mt-2 flex items-center gap-2">
+                    <span class="text-[10px] text-stone-400">プレビュー:</span>
+                    <img id="avatarPreview" class="w-12 h-16 rounded-lg object-contain border border-stone-200 hidden">
+                </div>
+            </div>
+
             <div class="pt-3 flex items-center justify-end gap-2">
                 <button type="button" onclick="closeCharacterModal()" class="px-4 py-2 rounded-xl text-xs font-medium text-stone-600 hover:bg-stone-100 transition-all">キャンセル</button>
                 <button type="submit" class="bg-stone-800 text-white px-5 py-2 rounded-xl text-xs font-medium shadow-sm hover:bg-stone-700 transition-all">登録する</button>
@@ -1707,57 +1757,6 @@ window.handleAuthSubmit = handleAuthSubmit;
         </form>
     </div>
 </div>
-
-    <!-- ⚙️ サイト設定モーダル -->
-    <div id="settingsModal" class="hidden fixed inset-0 z-50 bg-stone-900/40 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-xl border border-stone-200 max-h-[90vh] overflow-y-auto">
-            <div class="flex items-center justify-between mb-4 pb-2 border-b border-stone-100">
-                <h3 class="font-bold text-stone-800 text-sm flex items-center gap-2">
-                    <i class="fa-solid fa-gear text-stone-600"></i>
-                    <span>サイト設定 ＆ システム順序変更</span>
-                </h3>
-                <button onclick="closeSettingsModal()" class="text-stone-400 hover:text-stone-700 p-1">
-                    <i class="fa-solid fa-xmark text-lg"></i>
-                </button>
-            </div>
-
-            <form onsubmit="saveRosterSettings(event)" class="space-y-4">
-                <div>
-                    <label class="block text-xs font-bold text-stone-600 mb-1">ページタイトル</label>
-                    <input type="text" id="siteHeaderSubtitle" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-sm text-stone-800 focus:outline-none focus:border-stone-400">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-stone-600 mb-1">サブタイトル</label>
-                    <input type="text" id="settingTitleInput" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-sm text-stone-800 focus:outline-none focus:border-stone-400">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-stone-600 mb-1">ファビコン画像</label>
-                    <input type="file" id="settingFaviconFile" accept="image/*" onchange="handleFaviconFileSelect(event)" class="w-full text-xs text-stone-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-stone-100 file:text-stone-700 hover:file:bg-stone-200 cursor-pointer">
-                    <div class="mt-2 flex items-center gap-2">
-                        <span class="text-[10px] text-stone-400">プレビュー:</span>
-                        <img id="settingFaviconPreview" class="w-8 h-8 rounded-lg object-cover border border-stone-200 hidden">
-                    </div>
-                </div>
-
-                <div class="pt-2 border-t border-stone-100">
-                    <h4 class="text-xs font-bold text-stone-700 mb-1">システムの表示順・名前変更</h4>
-                    <p class="text-[11px] text-stone-400 mb-3">矢印ボタンでトップページに表示されるシステムの並び順を変更できます</p>
-                    <div id="settingsSystemsEditorContainer" class="space-y-2"></div>
-                </div>
-
-                <div class="pt-2 border-t border-stone-100">
-                    <h4 class="text-xs font-bold text-stone-700 mb-1">システム別 カスタム項目設定</h4>
-                    <p class="text-[11px] text-stone-400 mb-3">「テキスト（ネタバレ可）」と「ステータス」をそれぞれシステムごとに自由に追加・編集できます</p>
-                    <div id="settingsFieldsEditorContainer" class="space-y-3"></div>
-                </div>
-
-                <div class="pt-3 flex items-center justify-end gap-2 border-t border-stone-100">
-                    <button type="button" onclick="closeSettingsModal()" class="px-4 py-2 rounded-xl text-xs font-medium text-stone-600 hover:bg-stone-100 transition-all">キャンセル</button>
-                    <button type="submit" class="bg-stone-800 text-white px-5 py-2 rounded-xl text-xs font-medium shadow-sm hover:bg-stone-700 transition-all">設定を保存</button>
-                </div>
-            </form>
-        </div>
-    </div>
 
     <!-- 🔑 パスコード入力モーダル -->
     <div id="authModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/40 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-200">
