@@ -299,7 +299,8 @@ window.renderSystemFolders = renderSystemFolders;
         const epithetMatch = c.epithet && c.epithet.toLowerCase().includes(keyword);
         const occMatch = c.occupation && c.occupation.toLowerCase().includes(keyword);
         const ageMatch = c.age && String(c.age).includes(keyword);
-        return nameMatch || epithetMatch || occMatch || ageMatch;
+        const birthdateMatch = c.birthdate && String(c.birthdate).toLowerCase().includes(keyword); // 💡 検索に誕生日も対応させると便利
+        return nameMatch || epithetMatch || occMatch || ageMatch || birthdateMatch;
     });
 
     if (filteredChars.length === 0) {
@@ -314,36 +315,43 @@ window.renderSystemFolders = renderSystemFolders;
 
     filteredChars.forEach(ch => {
         const card = document.createElement('div');
-        card.className = 'bg-white rounded-2xl p-4 border border-stone-200/60 shadow-sm hover:shadow-md transition-all cursor-pointer flex flex-col gap-3 relative overflow-hidden';
+        // 💡 カード全体の角丸を rounded-3xl にして今風のリッチな見た目にブラッシュアップ
+        card.className = 'bg-white rounded-3xl p-4 border border-stone-200/60 shadow-sm hover:shadow-md transition-all cursor-pointer flex flex-col gap-3 relative overflow-hidden';
         card.onclick = () => navigateTo('detail', ch.id);
 
-        // 各カードごとのテーマカラーを取得（未設定ならデフォルトのグレー系）
         const themeColor = ch.themeColor || '#78716c';
 
-        // サムネイルがあればそれを使う。なければ立ち絵(avatar)の上部を使う。どちらもなければプレアイコン。
         let thumbHtml = `<div class="w-full h-full flex items-center justify-center text-stone-300 bg-stone-50"><i class="fa-solid fa-user text-3xl"></i></div>`;
         
         if (ch.thumbnail && ch.thumbnail.trim() !== "") {
-            // アイコン用画像がある場合
             thumbHtml = `<img src="${ch.thumbnail}" class="w-full h-full object-cover">`;
         } else if (ch.avatar && ch.avatar.trim() !== "") {
-            // アイコンがなく、立ち絵がある場合（object-topで上部を切り抜き表示）
             thumbHtml = `<img src="${ch.avatar}" class="w-full h-full object-cover object-top">`;
         }
 
-        // 読み仮名がある場合はルビ付き、ない場合はそのまま二つ名を表示
         const epithetHtml = ch.epithet 
-            ? `<p class="text-[10px] font-bold truncate" style="color: ${themeColor}"><ruby><rt class="font-normal text-[8px] text-stone-400">${ch.epithetKana || ''}</rt>${ch.epithet}</ruby></p>` 
+            ? `<p class="text-[10px] font-bold truncate mb-0.5" style="color: ${themeColor}"><ruby><rt class="font-normal text-[8px] text-stone-400">${ch.epithetKana || ''}</rt>${ch.epithet}</ruby></p>` 
             : '';
 
+        // 💡 年齢と誕生日の表示を組み立て（両方あるときはスラッシュで綺麗に繋ぐ）
+        let ageAndBirthText = '';
+        if (ch.age) ageAndBirthText += `${ch.age}歳`;
+        if (ch.birthdate) {
+            ageAndBirthText += ageAndBirthText ? ` <span class="text-stone-300">/</span> ${ch.birthdate}` : ch.birthdate;
+        }
+        const subInfoText = ageAndBirthText || ch.occupation || '';
+
         card.innerHTML = `
-            <div class="aspect-square w-full rounded-xl overflow-hidden relative border border-stone-100" style="background-color: ${themeColor};">
+            <!-- 💡 3. 立ち絵と背景の境目に「上品な枠線(border)」と「内側の影(shadow-inner)」を追加して絵を強調 -->
+            <div class="aspect-square w-full rounded-2xl overflow-hidden relative border border-stone-300/80 shadow-inner" style="background-color: ${themeColor};">
                 ${thumbHtml}
             </div>
-            <div>
+            <div class="px-1">
                 ${epithetHtml}
-                <h4 class="font-bold text-sm text-stone-800 truncate">${ch.name}</h4>
-                <p class="text-xs text-stone-400 mt-0.5 truncate">${ch.age ? ch.age + '歳' : ''} ${ch.occupation || ''}</p>
+                <!-- 💡 1. 名前を大きくする (text-xl に拡大して存在感をアップ) -->
+                <h4 class="font-bold text-xl text-stone-800 truncate tracking-wide">${ch.name}</h4>
+                <!-- 💡 2. 年齢・誕生日（または職業）をスッキリ表示 -->
+                <p class="text-xs text-stone-400 mt-1 truncate">${subInfoText}</p>
             </div>
         `;
         grid.appendChild(card);
