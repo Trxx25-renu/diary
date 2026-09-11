@@ -1044,7 +1044,7 @@ function closeCharacterModal() {
 }
 window.closeCharacterModal = closeCharacterModal;
 
-       // 1. 一覧用アイコン画像のファイル選択時＆自動圧縮処理（小さく軽量化）
+       // 1. 一覧用アイコン画像のファイル選択時＆自動圧縮処理（透過維持・PNG形式）
 function handleThumbnailFileSelect(event) {
     const file = event.target.files[0];
     if (!file) return;
@@ -1074,10 +1074,13 @@ function handleThumbnailFileSelect(event) {
             canvas.width = width;
             canvas.height = height;
             const ctx = canvas.getContext('2d');
+            
+            // 💡 透過情報をクリアして保持
+            ctx.clearRect(0, 0, width, height);
             ctx.drawImage(img, 0, 0, width, height);
 
-            // JPEG形式、品質 0.7 で圧縮
-            const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
+            // 💡 PNG形式で出力（背景が黒くならない）
+            const compressedBase64 = canvas.toDataURL('image/png');
             window.currentThumbnailBase64 = compressedBase64;
 
             // プレビュー表示
@@ -1094,7 +1097,7 @@ function handleThumbnailFileSelect(event) {
 window.handleThumbnailFileSelect = handleThumbnailFileSelect;
 
 
-// 2. 立ち絵画像のファイル選択時＆自動圧縮処理（5MBの巨大画像を安全なサイズへ）
+// 2. 立ち絵画像のファイル選択時＆自動圧縮処理（透過維持・PNG形式）
 function handleAvatarFileSelect(event) {
     const file = event.target.files[0];
     if (!file) return;
@@ -1124,10 +1127,13 @@ function handleAvatarFileSelect(event) {
             canvas.width = width;
             canvas.height = height;
             const ctx = canvas.getContext('2d');
+            
+            // 💡 透過情報をクリアして保持
+            ctx.clearRect(0, 0, width, height);
             ctx.drawImage(img, 0, 0, width, height);
 
-            // JPEG形式、品質 0.75 で圧縮（5MB -> 数十〜数百度KBに軽量化）
-            const compressedBase64 = canvas.toDataURL('image/jpeg', 0.75);
+            // 💡 PNG形式で出力（背景が黒くならない）
+            const compressedBase64 = canvas.toDataURL('image/png');
             window.currentAvatarBase64 = compressedBase64;
 
             // プレビュー表示
@@ -1137,7 +1143,7 @@ function handleAvatarFileSelect(event) {
                 preview.classList.remove('hidden');
             }
             
-            console.log("立ち絵圧縮完了:", Math.round(compressedBase64.length / 1024), "KB");
+            console.log("立ち絵圧縮完了(透過維持・PNG):", Math.round(compressedBase64.length / 1024), "KB");
         };
         img.src = e.target.result;
     };
