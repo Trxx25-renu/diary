@@ -424,6 +424,11 @@ function navigateTo(target, param) {
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 window.navigateTo = navigateTo;
+
+  function goToTopPage() {
+    navigateTo('home');
+}
+window.goToTopPage = goToTopPage;     
         
 // ==========================================
 // 💡 編集モーダルを開く関数（設定・秘匿メモ対応版）
