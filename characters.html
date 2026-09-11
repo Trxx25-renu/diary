@@ -571,128 +571,7 @@ window.getAdaptiveTextColor = getAdaptiveTextColor;
 
 
 // ==========================================
-// 💡 キャラクター詳細描画関数
-// ==========================================
-function renderCharacterDetail(characterId) {
-    const detailContainer = document.getElementById('view-detail');
-    if (!detailContainer) return;
-
-    const ch = window.characters.find(c => String(c.id) === String(characterId));
-    if (!ch) {
-        detailContainer.innerHTML = `<p class="text-xs text-stone-400 py-12 text-center">キャラクターが見つかりませんでした。</p>`;
-        return;
-    }
-
-    const rawThemeColor = ch.themeColor || '#292524';
-    const themeColor = getAdjustedColor(rawThemeColor);
-    const badgeTextColor = getAdaptiveTextColor(themeColor);
-
-    // アバター画像のHTML生成
-    let avatarHtml = `<div class="w-full h-64 sm:h-96 flex items-center justify-center text-stone-300 bg-stone-100 rounded-2xl border border-stone-200"><i class="fa-solid fa-user text-5xl"></i></div>`;
-    if (ch.avatar) {
-        avatarHtml = `<div class="bg-stone-50/50 p-2 rounded-2xl border border-stone-200/80 shadow-md flex items-center justify-center"><img src="${ch.avatar}" class="w-full h-auto max-h-[500px] object-contain rounded-xl"></div>`;
-    }
-
-    // 二つ名（上下にスッキリ配置）
-    let epithetHtml = '';
-    if (ch.epithet && ch.epithet.trim() !== '') {
-        const kana = ch.epithetKana ? `<span class="text-[10px] font-medium text-stone-400 block">${ch.epithetKana}</span>` : '';
-        epithetHtml = `
-            <div class="mb-1">
-                ${kana}
-                <span class="text-sm font-bold tracking-widest uppercase" style="color: ${themeColor}">${ch.epithet}</span>
-            </div>
-        `;
-    }
-
-    // 名前とルビ（ここで確実に定義します）
-    const nameKanaHtml = ch.nameKana ? `<span class="text-xs font-normal text-stone-400 block mb-0.5">${ch.nameKana}</span>` : '';
-    const nameRuby = `
-        <div>
-            ${nameKanaHtml}
-            <h2 class="text-2xl font-bold text-stone-800 mb-2">${ch.name || ''}</h2>
-        </div>
-    `;
-
-    // キャラクターシートURLリンクボタン
-    let sheetLinkHtml = '';
-    if (ch.sheetUrl) {
-        sheetLinkHtml = `
-            <div class="mt-4 pt-4 border-t border-stone-100">
-                <a href="${ch.sheetUrl}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 text-xs font-bold text-white px-4 py-2 rounded-xl shadow-sm hover:opacity-95 transition-all" style="background-color: ${themeColor}; color: ${badgeTextColor};">
-                    <i class="fa-solid fa-external-link-alt text-[10px]"></i>
-                    <span>キャラクターシートを開く</span>
-                </a>
-            </div>
-        `;
-    }
-
-    // カスタムフィールド（テキスト）
-    const sysFields = window.systemCustomFields[ch.systemId] || { status: [], text: [] };
-    let customFieldsHtml = '';
-
-    const textFields = sysFields.text || [];
-    if (textFields.length > 0) {
-        customFieldsHtml += `<div class="space-y-2.5 mt-4 pt-4 border-t border-stone-100"><h4 class="text-xs font-bold text-stone-500">カスタム情報（ネタバレはクリックで表示）</h4>`;
-        textFields.forEach(f => {
-            const rawVal = ch.customValues && ch.customValues[f.id] !== undefined ? String(ch.customValues[f.id]) : '-';
-            const parsedVal = parseSpoilers(rawVal);
-            customFieldsHtml += `
-                <div class="flex flex-col sm:flex-row sm:justify-between text-xs gap-1">
-                    <span class="font-medium text-stone-400 w-32 shrink-0">${f.label}:</span>
-                    <span class="text-stone-800 font-bold break-all">${parsedVal}</span>
-                </div>
-            `;
-        });
-        customFieldsHtml += `</div>`;
-    }
-
-    // カスタムフィールド（ステータス / ゲージ）
-    const statusFields = sysFields.status || [];
-    if (statusFields.length > 0) {
-        customFieldsHtml += `<div class="space-y-3 mt-4 pt-4 border-t border-stone-100"><h4 class="text-xs font-bold text-stone-500">ステータス / ゲージ</h4>`;
-        statusFields.forEach(f => {
-            const val = ch.customValues && ch.customValues[f.id] !== undefined ? ch.customValues[f.id] : '-';
-            const numVal = Number(val) || 0;
-            const maxVal = Number(f.max) || 100;
-            const percentage = Math.min(Math.round((numVal / maxVal) * 100), 100);
-            const isExceeded = numVal > maxVal;
-            
-            const barColor = isExceeded ? '#9333ea' : themeColor;
-            const badgeText = isExceeded ? `<span class="text-[10px] text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded font-bold ml-1">上限突破!</span>` : '';
-
-            customFieldsHtml += `
-                <div>
-                    <div class="flex justify-between text-xs mb-1">
-                        <span class="font-medium text-stone-600">${f.label}</span>
-                        <span><strong class="text-stone-800">${val}</strong> ${badgeText}</span>
-                    </div>
-                    <div class="w-full h-2.5 bg-stone-100 rounded-full overflow-hidden">
-                        <div class="h-full rounded-full transition-all duration-500" style="width: ${percentage}%; background-color: ${barColor};"></div>
-                    </div>
-                </div>
-            `;
-        });
-        customFieldsHtml += `</div>`;
-    }
-
-    // 通過シナリオ一覧（仮）
-    const scenariosHtml = `
-        <div class="mt-6 pt-6 border-t border-stone-100">
-            <div class="flex items-center justify-between mb-3">
-                <h4 class="text-xs font-bold text-stone-500 flex items-center gap-1.5">
-                    <i class="fa-solid fa-book-bookmark text-stone-400"></i> 通過シナリオ一覧
-                </h4>
-                <span class="text-[10px] text-stone-400 bg-stone-100 px-2 py-0.5 rounded-full">0件</span>
-            </div>
-            <div class="bg-stone-50 rounded-2xl p-4 text-center text-xs text-stone-400 border border-stone-100">
-                <p>まだ通過シナリオが登録されていません。</p>
-            </div>
-        </div>
-    `;
-
-    // ==========================================
-// 💡 キャラクター詳細描画関数（システムタグの文字色連携・完全版）
+// 💡 キャラクター詳細描画関数（完全版）
 // ==========================================
 function renderCharacterDetail(characterId) {
     const detailContainer = document.getElementById('view-detail');
@@ -867,66 +746,65 @@ function renderCharacterDetail(characterId) {
 }
 window.renderCharacterDetail = renderCharacterDetail;
        
-        // 🍞 トースト通知・確認モーダルヘルパー
-        function showToast(message, type = 'info') {
-            const container = document.getElementById('toastContainer');
-            if (!container) return;
-            const toast = document.createElement('div');
-            const bgClass = type === 'error' ? 'bg-rose-800 text-white' : 'bg-stone-800 text-white';
-            toast.className = `${bgClass} px-4 py-2.5 rounded-2xl text-xs shadow-lg flex items-center gap-2 animate-bounce transition-all`;
-            toast.innerHTML = `<i class="fa-solid fa-circle-info"></i><span>${message}</span>`;
-            container.appendChild(toast);
-            setTimeout(() => {
-                toast.style.opacity = '0';
-                setTimeout(() => toast.remove(), 300);
-            }, 3000);
-        }
+// 🍞 トースト通知・確認モーダルヘルパー
+function showToast(message, type = 'info') {
+    const container = document.getElementById('toastContainer');
+    if (!container) return;
+    const toast = document.createElement('div');
+    const bgClass = type === 'error' ? 'bg-rose-800 text-white' : 'bg-stone-800 text-white';
+    toast.className = `${bgClass} px-4 py-2.5 rounded-2xl text-xs shadow-lg flex items-center gap-2 animate-bounce transition-all`;
+    toast.innerHTML = `<i class="fa-solid fa-circle-info"></i><span>${message}</span>`;
+    container.appendChild(toast);
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
 
-        function showConfirm(title, message, onYes) {
-            const modal = document.getElementById('confirmModal');
-            const titleEl = document.getElementById('confirmTitle');
-            const descEl = document.getElementById('confirmDesc');
-            const yesBtn = document.getElementById('confirmYesBtn');
-            if (titleEl) titleEl.textContent = title;
-            if (descEl) descEl.textContent = message;
-            
-            const newYesBtn = yesBtn.cloneNode(true);
-            yesBtn.parentNode.replaceChild(newYesBtn, yesBtn);
-            newYesBtn.onclick = () => {
-                closeConfirmModal();
-                onYes();
-            };
-            if (modal) {
-                modal.classList.remove('opacity-0', 'pointer-events-none');
-                modal.querySelector('div').classList.remove('scale-95');
-                modal.querySelector('div').classList.add('scale-100');
-            }
-        }
-        window.closeConfirmModal = function() {
-            const modal = document.getElementById('confirmModal');
-            if (modal) {
-                modal.classList.add('opacity-0', 'pointer-events-none');
-                modal.querySelector('div').classList.remove('scale-100');
-                modal.querySelector('div').classList.add('scale-95');
-            }
-        };
-
-       // 🛡️ 権限チェック＆パスコード・ログアウト制御ロジック
-    let pendingAction = null;
-
-    function checkAdminPermission(callback) {
-        if (window.isAdmin) {
-            callback();
-        } else {
-            pendingAction = callback;
-            openAuthModal();
-        }
+function showConfirm(title, message, onYes) {
+    const modal = document.getElementById('confirmModal');
+    const titleEl = document.getElementById('confirmTitle');
+    const descEl = document.getElementById('confirmDesc');
+    const yesBtn = document.getElementById('confirmYesBtn');
+    if (titleEl) titleEl.textContent = title;
+    if (descEl) descEl.textContent = message;
+    
+    const newYesBtn = yesBtn.cloneNode(true);
+    yesBtn.parentNode.replaceChild(newYesBtn, yesBtn);
+    newYesBtn.onclick = () => {
+        closeConfirmModal();
+        onYes();
+    };
+    if (modal) {
+        modal.classList.remove('opacity-0', 'pointer-events-none');
+        modal.querySelector('div').classList.remove('scale-95');
+        modal.querySelector('div').classList.add('scale-100');
     }
-    window.checkAdminPermission = checkAdminPermission;
+}
+window.closeConfirmModal = function() {
+    const modal = document.getElementById('confirmModal');
+    if (modal) {
+        modal.classList.add('opacity-0', 'pointer-events-none');
+        modal.querySelector('div').classList.remove('scale-100');
+        modal.querySelector('div').classList.add('scale-95');
+    }
+};
 
-  // 管理者ステータスに応じてヘッダーの鍵アイコンや追加ボタンを切り替える関数
+// 🛡️ 権限チェック＆パスコード・ログアウト制御ロジック
+let pendingAction = null;
+
+function checkAdminPermission(callback) {
+    if (window.isAdmin) {
+        callback();
+    } else {
+        pendingAction = callback;
+        openAuthModal();
+    }
+}
+window.checkAdminPermission = checkAdminPermission;
+
+// 管理者ステータスに応じてヘッダーの鍵アイコンや追加ボタンを切り替える関数
 function updateAdminUI() {
-    // 1. 鍵アイコンの切り替え
     const keyBtn = document.getElementById('headerKeyBtn');
     if (keyBtn) {
         if (window.isAdmin) {
@@ -940,77 +818,75 @@ function updateAdminUI() {
         }
     }
 
-    // 2. PC追加ボタンの表示・非表示の切り替え
     const addBtn = document.getElementById('headerAddBtn');
     if (addBtn) {
         if (window.isAdmin) {
-            addBtn.classList.remove('hidden'); // ログイン中は表示
+            addBtn.classList.remove('hidden');
         } else {
-            addBtn.classList.add('hidden');    // ログアウト時は非表示
+            addBtn.classList.add('hidden');
         }
     }
 }
 window.updateAdminUI = updateAdminUI;
 
-    function handleHeaderKeyClick() {
-        openAuthModal();
+function handleHeaderKeyClick() {
+    openAuthModal();
+}
+window.handleHeaderKeyClick = handleHeaderKeyClick;
+
+function openAuthModal() {
+    const modal = document.getElementById('authModal');
+    const title = document.getElementById('authModalTitle');
+    const desc = document.getElementById('authModalDesc');
+    const err = document.getElementById('authErrorMsg');
+
+    if (err) err.classList.add('hidden');
+    const passInput = document.getElementById('inputPasscode');
+    if (passInput) passInput.value = '';
+
+    if (window.isAdmin) {
+        showConfirm('ログアウト', '管理者モードからログアウトしますか？', () => {
+            window.isAdmin = false;
+            sessionStorage.removeItem('isAdminSession');
+            updateAdminUI();
+            showToast('ログアウトしました', 'info');
+        });
+        return;
     }
-    window.handleHeaderKeyClick = handleHeaderKeyClick;
 
-    function openAuthModal() {
-        const modal = document.getElementById('authModal');
-        const title = document.getElementById('authModalTitle');
-        const desc = document.getElementById('authModalDesc');
-        const err = document.getElementById('authErrorMsg');
+    if (!window.storedPasscode) {
+        if (title) title.textContent = '初期パスコード設定';
+        if (desc) desc.textContent = '管理者用のお好きなパスコードを設定してください。';
+    } else {
+        if (title) title.textContent = '管理者ログイン';
+        if (desc) desc.textContent = 'キャラクターの追加や設定変更をするにはパスコードが必要です。';
+    }
 
-        if (err) err.classList.add('hidden');
-        const passInput = document.getElementById('inputPasscode');
-        if (passInput) passInput.value = '';
-
-        if (window.isAdmin) {
-            showConfirm('ログアウト', '管理者モードからログアウトしますか？', () => {
-                window.isAdmin = false;
-                sessionStorage.removeItem('isAdminSession');
-                updateAdminUI();
-                showToast('ログアウトしました', 'info');
-            });
-            return;
+    if (modal) {
+        modal.classList.remove('opacity-0', 'pointer-events-none');
+        const innerDiv = modal.querySelector('div');
+        if (innerDiv) {
+            innerDiv.classList.remove('scale-95');
+            innerDiv.classList.add('scale-100');
         }
+        if (passInput) passInput.focus();
+    }
+}
+window.openAuthModal = openAuthModal;
 
-        if (!window.storedPasscode) {
-            if (title) title.textContent = '初期パスコード設定';
-            if (desc) desc.textContent = '管理者用のお好きなパスコードを設定してください。';
-        } else {
-            if (title) title.textContent = '管理者ログイン';
-            if (desc) desc.textContent = 'キャラクターの追加や設定変更をするにはパスコードが必要です。';
-        }
-
-        if (modal) {
-            modal.classList.remove('opacity-0', 'pointer-events-none');
-            const innerDiv = modal.querySelector('div');
-            if (innerDiv) {
-                innerDiv.classList.remove('scale-95');
-                innerDiv.classList.add('scale-100');
-            }
-            if (passInput) passInput.focus();
+function closeAuthModal() {
+    const modal = document.getElementById('authModal');
+    if (modal) {
+        modal.classList.add('opacity-0', 'pointer-events-none');
+        const innerDiv = modal.querySelector('div');
+        if (innerDiv) {
+            innerDiv.classList.remove('scale-100');
+            innerDiv.classList.add('scale-95');
         }
     }
-    window.openAuthModal = openAuthModal;
-
-    function closeAuthModal() {
-        const modal = document.getElementById('authModal');
-        if (modal) {
-            modal.classList.add('opacity-0', 'pointer-events-none');
-            const innerDiv = modal.querySelector('div');
-            if (innerDiv) {
-                innerDiv.classList.remove('scale-100');
-                innerDiv.classList.add('scale-95');
-            }
-        }
-        pendingAction = null;
-    }
-    window.closeAuthModal = closeAuthModal;
-
+    pendingAction = null;
+}
+window.closeAuthModal = closeAuthModal;
     // 💡 サイト設定モーダルを開く（権限チェックを挟む安全設計）
     function handleOpenSettingsModal() {
         checkAdminPermission(() => {
