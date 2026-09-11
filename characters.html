@@ -808,6 +808,9 @@ window.updateAdminUI = updateAdminUI;
     const occupation = document.getElementById('charOccupation')?.value?.trim() || '';
     const themeColor = document.getElementById('charThemeColor').value;
     
+    // ➕ 【追加】キャラクターシートURLの取得（※HTMLのIDに合わせて調整してください。例：'charSheetUrl'）
+    const sheetUrl = document.getElementById('charSheetUrl')?.value?.trim() || '';
+    
     const thumbnail = window.currentThumbnailBase64 || "";
     const avatar = window.currentAvatarBase64 || "";
 
@@ -835,7 +838,9 @@ window.updateAdminUI = updateAdminUI;
     const charData = {
         systemId, name, epithet,
         age: age ? Number(age) : '',
-        occupation, themeColor, thumbnail, avatar,
+        occupation, themeColor, 
+        sheetUrl, // 👈 ここに追加！
+        thumbnail, avatar,
         customValues,
         updatedAt: new Date().toISOString()
     };
