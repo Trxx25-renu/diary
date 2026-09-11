@@ -393,7 +393,7 @@ function navigateTo(target, param) {
 window.navigateTo = navigateTo;
         
 // ==========================================
-// 💡 完全修正版: openEditCharacterModal 関数の定義
+// 💡 完全修正版: openEditCharacterModal 関数の定義（画像復元付き）
 // ==========================================
 function openEditCharacterModal(characterId) {
     // 文字列・数値を揃えてキャラクターを検索
@@ -437,6 +437,38 @@ function openEditCharacterModal(characterId) {
         systemInput.value = ch.systemId || ch.system || ''; // システムをセット
         systemInput.classList.add('opacity-60', 'pointer-events-none', 'bg-stone-100'); // 触れないように見た目をロック
     }
+
+    // ==========================================
+    // 🖼️【超重要】編集時に既存の画像をプレビューと一時変数に復元する処理
+    // ==========================================
+    // 1. アイコン画像（サムネイル）の復元
+    const thumbPreview = document.getElementById('thumbPreview');
+    if (thumbPreview) {
+        if (ch.thumbnail) {
+            thumbPreview.src = ch.thumbnail;
+            thumbPreview.classList.remove('hidden');
+            window.currentThumbnailBase64 = ch.thumbnail; // 一時変数にも持たせる
+        } else {
+            thumbPreview.src = '';
+            thumbPreview.classList.add('hidden');
+            window.currentThumbnailBase64 = '';
+        }
+    }
+
+    // 2. 立ち絵画像の復元（もし立ち絵プレビュー要素があれば）
+    const avatarPreview = document.getElementById('avatarPreview');
+    if (avatarPreview) {
+        if (ch.avatar) {
+            avatarPreview.src = ch.avatar;
+            avatarPreview.classList.remove('hidden');
+            window.currentAvatarBase64 = ch.avatar; // 一時変数にも持たせる
+        } else {
+            avatarPreview.src = '';
+            avatarPreview.classList.add('hidden');
+            window.currentAvatarBase64 = '';
+        }
+    }
+    // ==========================================
 
     // 💡 システムに応じたカスタム項目（ステータス等）を生成・表示する
     if (typeof handleSystemChangeInModal === 'function') {
@@ -489,24 +521,30 @@ function getAdjustedColor(hexColor) {
     }
     return hexColor;
 }
-       // 💡 「#」が入力されていなくても自動で補ってプレビューを連動させる関数
+      // ==========================================
+// 💡 完全版: 「#」なしでも自動補完し、画像に一切干渉せず安全にプレビューを連動させる関数
+// ==========================================
 function handleThemeColorInput(value) {
+    if (!value) return;
+
+    const colorInput = document.getElementById('charThemeColor');
     let color = value.trim();
     
-    // 値が空でなければ、先頭に「#」がついていない場合に自動で補う
+    // 1. 先頭に「#」がなくて、かつ1文字以上入力されている場合
     if (color !== "" && !color.startsWith('#')) {
         color = '#' + color;
+        
+        // 入力欄自体の値にも「#」を自動で補う（無限ループを防ぐため、値が違う時だけセット）
+        if (colorInput && colorInput.value !== color) {
+            colorInput.value = color;
+        }
     }
 
-    // 既存のプレビュー更新関数を呼び出す（もしなければ直接プレビュー要素の色を変える）
-    if (typeof updateColorPreview === 'function') {
-        updateColorPreview(color);
-    } else {
-        const previewEl = document.getElementById('characterColorPreview');
-        if (previewEl) {
-            // 有効なカラーコードっぽければ色を反映
-            previewEl.style.backgroundColor = color;
-        }
+    // 2. 外部の updateColorPreview は使わず、ピンポイントで色の四角だけを変更する
+    // （※これにより、画面の他の部分や画像プレビューが再描画されて消えるのを完全に防ぎます）
+    const previewEl = document.getElementById('characterColorPreview');
+    if (previewEl) {
+        previewEl.style.backgroundColor = color;
     }
 }
 window.handleThemeColorInput = handleThemeColorInput;
