@@ -281,68 +281,75 @@ window.renderSystemFolders = renderSystemFolders;
         window.handleFolderSearchInput = handleFolderSearchInput;
 
         function renderCharacterList(systemId, filterKeyword = "") {
-            window.selectedSystemId = systemId;
-            const sys = window.systems.find(s => s.id === systemId);
-            const titleEl = document.getElementById('currentSystemTitle');
-            if (titleEl && sys) titleEl.textContent = sys.name;
+    window.selectedSystemId = systemId;
+    const sys = window.systems.find(s => s.id === systemId);
+    const titleEl = document.getElementById('currentSystemTitle');
+    if (titleEl && sys) titleEl.textContent = sys.name;
 
-            const grid = document.getElementById('characterGrid');
-            if (!grid) return;
+    const grid = document.getElementById('characterGrid');
+    if (!grid) return;
 
-            grid.innerHTML = '';
-            const keyword = filterKeyword.toLowerCase().trim();
-            const systemChars = window.characters.filter(c => c.systemId === systemId);
-            
-            const filteredChars = systemChars.filter(c => {
-                if (!keyword) return true;
-                const nameMatch = c.name && c.name.toLowerCase().includes(keyword);
-                const epithetMatch = c.epithet && c.epithet.toLowerCase().includes(keyword);
-                const occMatch = c.occupation && c.occupation.toLowerCase().includes(keyword);
-                const ageMatch = c.age && String(c.age).includes(keyword);
-                return nameMatch || epithetMatch || occMatch || ageMatch;
-            });
+    grid.innerHTML = '';
+    const keyword = filterKeyword.toLowerCase().trim();
+    const systemChars = window.characters.filter(c => c.systemId === systemId);
+    
+    const filteredChars = systemChars.filter(c => {
+        if (!keyword) return true;
+        const nameMatch = c.name && c.name.toLowerCase().includes(keyword);
+        const epithetMatch = c.epithet && c.epithet.toLowerCase().includes(keyword);
+        const occMatch = c.occupation && c.occupation.toLowerCase().includes(keyword);
+        const ageMatch = c.age && String(c.age).includes(keyword);
+        return nameMatch || epithetMatch || occMatch || ageMatch;
+    });
 
-            if (filteredChars.length === 0) {
-                grid.innerHTML = `
-                    <div class="col-span-full text-center py-12 text-stone-400 text-xs">
-                        <i class="fa-solid fa-user-slash text-2xl mb-2"></i>
-                        <p>${systemChars.length === 0 ? 'このシステムに登録されているキャラクターはまだいません。' : '条件に一致するキャラクターがいません。'}</p>
-                    </div>
-                `;
-                return;
-            }
+    if (filteredChars.length === 0) {
+        grid.innerHTML = `
+            <div class="col-span-full text-center py-12 text-stone-400 text-xs">
+                <i class="fa-solid fa-user-slash text-2xl mb-2"></i>
+                <p>${systemChars.length === 0 ? 'このシステムに登録されているキャラクターはまだいません。' : '条件に一致するキャラクターがいません。'}</p>
+            </div>
+        `;
+        return;
+    }
 
-            filteredChars.forEach(ch => {
-                const card = document.createElement('div');
-                card.className = 'bg-white rounded-2xl p-4 border border-stone-200/60 shadow-sm hover:shadow-md transition-all cursor-pointer flex flex-col gap-3 relative overflow-hidden';
-                card.onclick = () => navigateTo('detail', ch.id);
+    filteredChars.forEach(ch => {
+        const card = document.createElement('div');
+        card.className = 'bg-white rounded-2xl p-4 border border-stone-200/60 shadow-sm hover:shadow-md transition-all cursor-pointer flex flex-col gap-3 relative overflow-hidden';
+        card.onclick = () => navigateTo('detail', ch.id);
 
-                // 各カードごとのテーマカラーを取得（未設定ならデフォルトのグレー系）
-                const themeColor = ch.themeColor || '#78716c';
+        // 各カードごとのテーマカラーを取得（未設定ならデフォルトのグレー系）
+        const themeColor = ch.themeColor || '#78716c';
 
-                let thumbHtml = `<div class="w-full h-full flex items-center justify-center text-stone-300 bg-stone-50"><i class="fa-solid fa-user text-3xl"></i></div>`;
-                if (ch.thumbnail) {
-                    thumbHtml = `<img src="${ch.thumbnail}" class="w-full h-full object-cover">`;
-                }
-
-                // 読み仮名がある場合はルビ付き、ない場合はそのまま二つ名を表示
-const epithetHtml = ch.epithet 
-    ? `<p class="text-[10px] font-bold truncate" style="color: ${themeColor}"><ruby><rt class="font-normal text-[8px] text-stone-400">${ch.epithetKana || ''}</rt>${ch.epithet}</ruby></p>` 
-    : '';
-                card.innerHTML = `
-                    <div class="aspect-square w-full rounded-xl overflow-hidden relative border border-stone-100">
-                        ${thumbHtml}
-                    </div>
-                    <div>
-                        ${epithetHtml}
-                        <h4 class="font-bold text-sm text-stone-800 truncate">${ch.name}</h4>
-                        <p class="text-xs text-stone-400 mt-0.5 truncate">${ch.age ? ch.age + '歳' : ''} ${ch.occupation || ''}</p>
-                    </div>
-                `;
-                grid.appendChild(card);
-            });
+        // 💡【変更】サムネイルがあればそれを使う。なければ立ち絵(avatar)の上部を使う。どちらもなければプレアイコン。
+        let thumbHtml = `<div class="w-full h-full flex items-center justify-center text-stone-300 bg-stone-50"><i class="fa-solid fa-user text-3xl"></i></div>`;
+        
+        if (ch.thumbnail && ch.thumbnail.trim() !== "") {
+            // アイコン用画像がある場合
+            thumbHtml = `<img src="${ch.thumbnail}" class="w-full h-full object-cover">`;
+        } else if (ch.avatar && ch.avatar.trim() !== "") {
+            // アイコンがなく、立ち絵がある場合（object-topで上部を切り抜き表示）
+            thumbHtml = `<img src="${ch.avatar}" class="w-full h-full object-cover object-top">`;
         }
-        window.renderCharacterList = renderCharacterList;
+
+        // 読み仮名がある場合はルビ付き、ない場合はそのまま二つ名を表示
+        const epithetHtml = ch.epithet 
+            ? `<p class="text-[10px] font-bold truncate" style="color: ${themeColor}"><ruby><rt class="font-normal text-[8px] text-stone-400">${ch.epithetKana || ''}</rt>${ch.epithet}</ruby></p>` 
+            : '';
+
+        card.innerHTML = `
+            <div class="aspect-square w-full rounded-xl overflow-hidden relative border border-stone-100">
+                ${thumbHtml}
+            </div>
+            <div>
+                ${epithetHtml}
+                <h4 class="font-bold text-sm text-stone-800 truncate">${ch.name}</h4>
+                <p class="text-xs text-stone-400 mt-0.5 truncate">${ch.age ? ch.age + '歳' : ''} ${ch.occupation || ''}</p>
+            </div>
+        `;
+        grid.appendChild(card);
+    });
+}
+window.renderCharacterList = renderCharacterList;
 
         // ==========================================
 // 💡 画面やビューを切り替えるルーター関数（完全版）
