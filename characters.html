@@ -320,7 +320,7 @@ window.renderSystemFolders = renderSystemFolders;
         // 各カードごとのテーマカラーを取得（未設定ならデフォルトのグレー系）
         const themeColor = ch.themeColor || '#78716c';
 
-        // 💡【変更】サムネイルがあればそれを使う。なければ立ち絵(avatar)の上部を使う。どちらもなければプレアイコン。
+        // サムネイルがあればそれを使う。なければ立ち絵(avatar)の上部を使う。どちらもなければプレアイコン。
         let thumbHtml = `<div class="w-full h-full flex items-center justify-center text-stone-300 bg-stone-50"><i class="fa-solid fa-user text-3xl"></i></div>`;
         
         if (ch.thumbnail && ch.thumbnail.trim() !== "") {
@@ -337,7 +337,7 @@ window.renderSystemFolders = renderSystemFolders;
             : '';
 
         card.innerHTML = `
-            <div class="aspect-square w-full rounded-xl overflow-hidden relative border border-stone-100">
+            <div class="aspect-square w-full rounded-xl overflow-hidden relative border border-stone-100" style="background-color: ${themeColor};">
                 ${thumbHtml}
             </div>
             <div>
