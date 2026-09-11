@@ -755,17 +755,6 @@ function renderCharacterDetail(characterId) {
     }
     window.closeAuthModal = closeAuthModal;
 
-    // 💡 キャラクター作成・編集モーダルを閉じる関数
-    function closeCharacterModal() {
-        const modal = document.getElementById('characterModal');
-        if (modal) {
-            modal.classList.add('hidden');
-        }
-        // 編集中のIDもリセットしておく
-        window.editingCharacterId = null;
-    }
-    window.closeCharacterModal = closeCharacterModal;
-
     // 💡 サイト設定モーダルを開く（権限チェックを挟む安全設計）
     function handleOpenSettingsModal() {
         checkAdminPermission(() => {
@@ -1011,11 +1000,14 @@ function openCharacterModal() {
 }
 window.openCharacterModal = openCharacterModal;
 
+// 💡 キャラクター作成・編集モーダルを閉じる関数（これだけを残す）
 function closeCharacterModal() {
     const modal = document.getElementById('characterModal');
     if (modal) {
         modal.classList.add('hidden');
     }
+    // 編集中のIDもリセットしておく
+    window.editingCharacterId = null;
 }
 window.closeCharacterModal = closeCharacterModal;
 
@@ -1083,9 +1075,6 @@ window.updateColorPreview = updateColorPreview;
 
 function openCharacterModal() { ... }
 window.openCharacterModal = openCharacterModal;
-
-function closeCharacterModal() { ... }
-window.closeCharacterModal = closeCharacterModal;
 
     </script>
 </head>
