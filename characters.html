@@ -1016,14 +1016,26 @@ window.closeCharacterModal = closeCharacterModal;
         // ==========================================
         function applyRosterSettings(settings) {
             if (!settings) return;
+            window.rosterSettings = settings; // データを保持
 
-            // 1. 画面上のサイトタイトル（「キャラクター管理」など）を反映
-            const titleEls = document.querySelectorAll('.site-title-target, #siteTitleText');
-            titleEls.forEach(el => {
-                if (settings.title) el.textContent = settings.title;
-            });
+            // 1. 画面上のサイトタイトルを反映
+            const siteHeaderTitle = document.getElementById('siteHeaderTitle');
+            if (siteHeaderTitle && settings.title) {
+                siteHeaderTitle.textContent = settings.title;
+            }
 
-            // 2. ファビコンやロゴの反映
+            // 2. ヘッダー左側のアイコン画像を反映
+            const faviconImgEl = document.getElementById('headerFaviconImg');
+            if (faviconImgEl) {
+                if (settings.favicon && settings.favicon.trim() !== '') {
+                    faviconImgEl.src = settings.favicon;
+                    faviconImgEl.classList.remove('hidden'); // 画像を表示
+                } else {
+                    faviconImgEl.classList.add('hidden');    // 画像を隠す
+                }
+            }
+
+            // 3. ブラウザ自体のタブアイコン（ファビコン）の反映
             if (settings.favicon) {
                 const faviconEl = document.getElementById('faviconIcon') || document.getElementById('dynamicFavicon') || document.querySelector("link[rel*='icon']");
                 if (faviconEl) faviconEl.href = settings.favicon;
@@ -1038,27 +1050,8 @@ window.closeCharacterModal = closeCharacterModal;
         // 💡 ヘッダーのタイトルやアイコンを最新の設定に更新する関数
         // ==========================================
         function updateHeaderBranding() {
-            const titleTextEl = document.getElementById('headerTitleText');
-            const faviconImgEl = document.getElementById('headerFaviconImg');
-            const defaultIconEl = document.getElementById('headerDefaultIcon');
-
-            // window.rosterSettings からタイトルを反映
-            const currentTitle = window.rosterSettings?.title;
-            if (titleTextEl && currentTitle) {
-                titleTextEl.textContent = currentTitle;
-            }
-
-            // window.rosterSettings からアイコン（favicon）を反映
-            const currentFavicon = window.rosterSettings?.favicon;
-            if (faviconImgEl && defaultIconEl) {
-                if (currentFavicon && currentFavicon.trim() !== '') {
-                    faviconImgEl.src = currentFavicon;
-                    faviconImgEl.classList.remove('hidden'); // 画像を表示
-                    defaultIconEl.classList.add('hidden');    // デフォルトアイコンを隠す
-                } else {
-                    faviconImgEl.classList.add('hidden');    // 画像を隠す
-                    defaultIconEl.classList.remove('hidden'); // デフォルトアイコンを表示
-                }
+            if (window.rosterSettings) {
+                applyRosterSettings(window.rosterSettings);
             }
         }
         window.updateHeaderBranding = updateHeaderBranding;
