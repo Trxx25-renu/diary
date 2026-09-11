@@ -280,8 +280,8 @@ window.renderSystemFolders = renderSystemFolders;
         }
         window.handleFolderSearchInput = handleFolderSearchInput;
 
-       // ==========================================
-// 💡 修正版: キャラクター一覧描画関数（立ち絵の位置・表示設定を復旧）
+      // ==========================================
+// 💡 完成版: キャラクター一覧描画関数（スマート二つ名＆自動コントラスト対応）
 // ==========================================
 function renderCharacterList(systemId, filterKeyword = "") {
     window.selectedSystemId = systemId;
@@ -325,18 +325,26 @@ function renderCharacterList(systemId, filterKeyword = "") {
 
         let thumbHtml = `<div class="w-full h-full flex items-center justify-center text-stone-300 bg-stone-50"><i class="fa-solid fa-user text-3xl"></i></div>`;
         
-        // 💡 立ち絵の上部がしっかり映るよう `object-cover object-top` に戻しつつ、ホバー時の演出を維持
+        // 💡 立ち絵の上部がしっかり映る設定 ＆ ホバー演出
         if (ch.thumbnail && ch.thumbnail.trim() !== "") {
             thumbHtml = `<img src="${ch.thumbnail}" class="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500">`;
         } else if (ch.avatar && ch.avatar.trim() !== "") {
             thumbHtml = `<img src="${ch.avatar}" class="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500">`;
         }
 
-        const epithetHtml = ch.epithet 
-            ? `<p class="text-[10px] font-bold truncate mb-0.5 tracking-wider" style="color: ${themeColor}"><ruby><rt class="font-normal text-[8px] text-stone-500">${ch.epithetKana || ''}</rt>${ch.epithet}</ruby></p>` 
-            : '';
+        // 💡 二つ名と読み仮名を崩れないよう上下にスッキリ配置
+        let epithetHtml = '';
+        if (ch.epithet && ch.epithet.trim() !== '') {
+            const kana = ch.epithetKana ? `<span class="text-[8px] font-normal text-stone-400 block">${ch.epithetKana}</span>` : '';
+            epithetHtml = `
+                <div class="mb-0.5 truncate">
+                    ${kana}
+                    <span class="text-[11px] font-bold tracking-wider" style="color: ${themeColor}">${ch.epithet}</span>
+                </div>
+            `;
+        }
 
-        // 年齢と誕生日のテキスト組み立て
+        // 年齢と誕生日のテキスト組み立て（太字にはせず通常の太さ）
         let ageAndBirthText = '';
         if (ch.age) ageAndBirthText += `${ch.age}歳`;
         if (ch.birthdate) {
@@ -351,7 +359,6 @@ function renderCharacterList(systemId, filterKeyword = "") {
             <div class="px-1.5 pb-1">
                 ${epithetHtml}
                 <h4 class="font-bold text-xl text-stone-900 truncate tracking-wide group-hover:opacity-80 transition-opacity">${ch.name}</h4>
-                <!-- 💡 文字色は濃く(text-stone-700)しつつ、太字にはせず通常の太さ(font-normal)に調整 -->
                 <p class="text-xs text-stone-700 font-normal mt-1 truncate">${subInfoText}</p>
             </div>
         `;
@@ -359,6 +366,7 @@ function renderCharacterList(systemId, filterKeyword = "") {
     });
 }
 window.renderCharacterList = renderCharacterList;
+       
         // ==========================================
 // 💡 画面やビューを切り替えるルーター関数（一本化・整理版）
 // ==========================================
@@ -522,7 +530,7 @@ function getAdjustedColor(hexColor) {
     return hexColor;
 }
       // ==========================================
-// 💡 完全版: 「#」なしでも自動補完し、画像に一切干渉せず安全にプレビューを連動させる関数
+// 💡 テーマカラー入力プレビュー用関数
 // ==========================================
 function handleThemeColorInput(value) {
     if (!value) return;
@@ -534,14 +542,13 @@ function handleThemeColorInput(value) {
     if (color !== "" && !color.startsWith('#')) {
         color = '#' + color;
         
-        // 入力欄自体の値にも「#」を自動で補う（無限ループを防ぐため、値が違う時だけセット）
+        // 入力欄自体の値にも「#」を自動で補う
         if (colorInput && colorInput.value !== color) {
             colorInput.value = color;
         }
     }
 
-    // 2. 外部の updateColorPreview は使わず、ピンポイントで色の四角だけを変更する
-    // （※これにより、画面の他の部分や画像プレビューが再描画されて消えるのを完全に防ぎます）
+    // 2. ピンポイントで色の四角だけを変更する
     const previewEl = document.getElementById('characterColorPreview');
     if (previewEl) {
         previewEl.style.backgroundColor = color;
@@ -549,6 +556,30 @@ function handleThemeColorInput(value) {
 }
 window.handleThemeColorInput = handleThemeColorInput;
 
+
+// ==========================================
+// 💡 背景色の明るさを判定して最適な文字色を返す関数
+// ==========================================
+function getAdaptiveTextColor(hexColor) {
+    if (!hexColor || !hexColor.startsWith('#')) return '#1c1917';
+    let hex = hexColor.replace('#', '');
+    if (hex.length === 3) {
+        hex = hex.split('').map(char => char + char).join('');
+    }
+    const r = parseInt(hex.substr(0, 2), 16);
+    const g = parseInt(hex.substr(2, 2), 16);
+    const b = parseInt(hex.substr(4, 2), 16);
+    const yiq = (r * 299 + g * 587 + b * 114) / 1000;
+    
+    // 薄い背景（150以上）なら濃い茶黒、濃い背景なら白文字を返す
+    return yiq >= 150 ? '#292524' : '#ffffff';
+}
+window.getAdaptiveTextColor = getAdaptiveTextColor;
+
+
+// ==========================================
+// 💡 キャラクター詳細描画関数
+// ==========================================
 function renderCharacterDetail(characterId) {
     const detailContainer = document.getElementById('view-detail');
     if (!detailContainer) return;
@@ -561,33 +592,41 @@ function renderCharacterDetail(characterId) {
 
     const rawThemeColor = ch.themeColor || '#292524';
     const themeColor = getAdjustedColor(rawThemeColor);
+    const badgeTextColor = getAdaptiveTextColor(themeColor);
 
-  let avatarHtml = `<div class="w-full h-64 sm:h-96 flex items-center justify-center text-stone-300 bg-stone-100 rounded-2xl border border-stone-200"><i class="fa-solid fa-user text-5xl"></i></div>`;
-if (ch.avatar) {
-    // 💡 影（shadow-md）とわずかな枠線をつけて画像を立体的に強調
-    avatarHtml = `<div class="bg-stone-50/50 p-2 rounded-2xl border border-stone-200/80 shadow-md flex items-center justify-center"><img src="${ch.avatar}" class="w-full h-auto max-h-[500px] object-contain rounded-xl"></div>`;
-}
-
-    // 二つ名にルビ（読み仮名）を反映
-    let epithetHtml = '';
-    if (ch.epithet && ch.epithet.trim() !== '') {
-        const epithetRuby = ch.epithetKana 
-            ? `<ruby>${ch.epithet}<rt class="text-[8px] font-normal text-stone-400 opacity-80">${ch.epithetKana}</rt></ruby>` 
-            : ch.epithet;
-        epithetHtml = `<p class="text-xs font-bold tracking-wider mb-1" style="color: ${themeColor}">${epithetRuby}</p>`;
+    // アバター画像のHTML生成
+    let avatarHtml = `<div class="w-full h-64 sm:h-96 flex items-center justify-center text-stone-300 bg-stone-100 rounded-2xl border border-stone-200"><i class="fa-solid fa-user text-5xl"></i></div>`;
+    if (ch.avatar) {
+        avatarHtml = `<div class="bg-stone-50/50 p-2 rounded-2xl border border-stone-200/80 shadow-md flex items-center justify-center"><img src="${ch.avatar}" class="w-full h-auto max-h-[500px] object-contain rounded-xl"></div>`;
     }
 
-    // 名前にもルビ（読み仮名）を反映
-    const nameRuby = ch.nameKana 
-        ? `<ruby>${ch.name || ''}<rt class="text-[10px] font-normal text-stone-400 opacity-80">${ch.nameKana}</rt></ruby>` 
-        : (ch.name || '');
+    // 二つ名（上下にスッキリ配置）
+    let epithetHtml = '';
+    if (ch.epithet && ch.epithet.trim() !== '') {
+        const kana = ch.epithetKana ? `<span class="text-[10px] font-medium text-stone-400 block">${ch.epithetKana}</span>` : '';
+        epithetHtml = `
+            <div class="mb-1">
+                ${kana}
+                <span class="text-sm font-bold tracking-widest uppercase" style="color: ${themeColor}">${ch.epithet}</span>
+            </div>
+        `;
+    }
 
-    // キャラクターシートURLへのリンクボタン
+    // 名前とルビ
+    const nameKanaHtml = ch.nameKana ? `<span class="text-xs font-normal text-stone-400 block mb-0.5">${ch.nameKana}</span>` : '';
+    const nameHtml = `
+        <div>
+            ${nameKanaHtml}
+            <h2 class="text-3xl font-extrabold text-stone-900 tracking-wide">${ch.name || ''}</h2>
+        </div>
+    `;
+
+    // キャラクターシートURLリンクボタン
     let sheetLinkHtml = '';
     if (ch.sheetUrl) {
         sheetLinkHtml = `
             <div class="mt-4 pt-4 border-t border-stone-100">
-                <a href="${ch.sheetUrl}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 text-xs font-bold text-white px-4 py-2 rounded-xl shadow-sm hover:opacity-95 transition-all" style="background-color: ${themeColor}">
+                <a href="${ch.sheetUrl}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 text-xs font-bold text-white px-4 py-2 rounded-xl shadow-sm hover:opacity-95 transition-all" style="background-color: ${themeColor}; color: ${badgeTextColor};">
                     <i class="fa-solid fa-external-link-alt text-[10px]"></i>
                     <span>キャラクターシートを開く</span>
                 </a>
@@ -595,123 +634,124 @@ if (ch.avatar) {
         `;
     }
 
-            const sysFields = window.systemCustomFields[ch.systemId] || { status: [], text: [] };
-            let customFieldsHtml = '';
+    // カスタムフィールド（テキスト）
+    const sysFields = window.systemCustomFields[ch.systemId] || { status: [], text: [] };
+    let customFieldsHtml = '';
 
-            const textFields = sysFields.text || [];
-            if (textFields.length > 0) {
-                customFieldsHtml += `<div class="space-y-2.5 mt-4 pt-4 border-t border-stone-100"><h4 class="text-xs font-bold text-stone-500">カスタム情報（ネタバレはクリックで表示）</h4>`;
-                textFields.forEach(f => {
-                    const rawVal = ch.customValues && ch.customValues[f.id] !== undefined ? String(ch.customValues[f.id]) : '-';
-                    const parsedVal = parseSpoilers(rawVal);
-                    customFieldsHtml += `
-                        <div class="flex flex-col sm:flex-row sm:justify-between text-xs gap-1">
-                            <span class="font-medium text-stone-400 w-32 shrink-0">${f.label}:</span>
-                            <span class="text-stone-800 font-bold break-all">${parsedVal}</span>
-                        </div>
-                    `;
-                });
-                customFieldsHtml += `</div>`;
-            }
+    const textFields = sysFields.text || [];
+    if (textFields.length > 0) {
+        customFieldsHtml += `<div class="space-y-2.5 mt-4 pt-4 border-t border-stone-100"><h4 class="text-xs font-bold text-stone-500">カスタム情報（ネタバレはクリックで表示）</h4>`;
+        textFields.forEach(f => {
+            const rawVal = ch.customValues && ch.customValues[f.id] !== undefined ? String(ch.customValues[f.id]) : '-';
+            const parsedVal = parseSpoilers(rawVal);
+            customFieldsHtml += `
+                <div class="flex flex-col sm:flex-row sm:justify-between text-xs gap-1">
+                    <span class="font-medium text-stone-400 w-32 shrink-0">${f.label}:</span>
+                    <span class="text-stone-800 font-bold break-all">${parsedVal}</span>
+                </div>
+            `;
+        });
+        customFieldsHtml += `</div>`;
+    }
 
-            const statusFields = sysFields.status || [];
-            if (statusFields.length > 0) {
-                customFieldsHtml += `<div class="space-y-3 mt-4 pt-4 border-t border-stone-100"><h4 class="text-xs font-bold text-stone-500">ステータス / ゲージ</h4>`;
-                statusFields.forEach(f => {
-                    const val = ch.customValues && ch.customValues[f.id] !== undefined ? ch.customValues[f.id] : '-';
-                    const numVal = Number(val) || 0;
-                    const maxVal = Number(f.max) || 100;
-                    const percentage = Math.min(Math.round((numVal / maxVal) * 100), 100);
-                    const isExceeded = numVal > maxVal;
-                    
-                    const barColor = isExceeded ? '#9333ea' : themeColor;
-                    const badgeText = isExceeded ? `<span class="text-[10px] text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded font-bold ml-1">上限突破!</span>` : '';
+    // カスタムフィールド（ステータス / ゲージ）
+    const statusFields = sysFields.status || [];
+    if (statusFields.length > 0) {
+        customFieldsHtml += `<div class="space-y-3 mt-4 pt-4 border-t border-stone-100"><h4 class="text-xs font-bold text-stone-500">ステータス / ゲージ</h4>`;
+        statusFields.forEach(f => {
+            const val = ch.customValues && ch.customValues[f.id] !== undefined ? ch.customValues[f.id] : '-';
+            const numVal = Number(val) || 0;
+            const maxVal = Number(f.max) || 100;
+            const percentage = Math.min(Math.round((numVal / maxVal) * 100), 100);
+            const isExceeded = numVal > maxVal;
+            
+            const barColor = isExceeded ? '#9333ea' : themeColor;
+            const badgeText = isExceeded ? `<span class="text-[10px] text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded font-bold ml-1">上限突破!</span>` : '';
 
-                    customFieldsHtml += `
-                        <div>
-                            <div class="flex justify-between text-xs mb-1">
-                                <span class="font-medium text-stone-600">${f.label}</span>
-                                <span><strong class="text-stone-800">${val}</strong> ${badgeText}</span>
-                            </div>
-                            <div class="w-full h-2.5 bg-stone-100 rounded-full overflow-hidden">
-                                <div class="h-full rounded-full transition-all duration-500" style="width: ${percentage}%; background-color: ${barColor};"></div>
-                            </div>
-                        </div>
-                    `;
-                });
-                customFieldsHtml += `</div>`;
-            }
-
-            const scenariosHtml = `
-                <div class="mt-6 pt-6 border-t border-stone-100">
-                    <div class="flex items-center justify-between mb-3">
-                        <h4 class="text-xs font-bold text-stone-500 flex items-center gap-1.5">
-                            <i class="fa-solid fa-book-bookmark text-stone-400"></i> 通過シナリオ一覧
-                        </h4>
-                        <span class="text-[10px] text-stone-400 bg-stone-100 px-2 py-0.5 rounded-full">0件</span>
+            customFieldsHtml += `
+                <div>
+                    <div class="flex justify-between text-xs mb-1">
+                        <span class="font-medium text-stone-600">${f.label}</span>
+                        <span><strong class="text-stone-800">${val}</strong> ${badgeText}</span>
                     </div>
-                    <div class="bg-stone-50 rounded-2xl p-4 text-center text-xs text-stone-400 border border-stone-100">
-                        <p>まだ通過シナリオが登録されていません。</p>
+                    <div class="w-full h-2.5 bg-stone-100 rounded-full overflow-hidden">
+                        <div class="h-full rounded-full transition-all duration-500" style="width: ${percentage}%; background-color: ${barColor};"></div>
                     </div>
                 </div>
             `;
+        });
+        customFieldsHtml += `</div>`;
+    }
 
-            detailContainer.innerHTML = `
-                <div class="bg-white rounded-3xl p-6 border border-stone-200/80 shadow-sm space-y-6 relative overflow-hidden">
-                    <div class="flex flex-col md:flex-row gap-6">
-                        <div class="w-full md:w-1/2">
-                            ${avatarHtml}
-                        </div>
-                        <div class="w-full md:w-1/2 flex flex-col justify-between">
-                            <div>
-                                <div class="flex items-center justify-between mb-2">
-                                    <span class="text-[10px] font-medium px-2.5 py-1 rounded-lg text-white" style="background-color: ${themeColor}">
-                                        ${window.systems.find(s => s.id === ch.systemId)?.name || 'システム'}
-                                    </span>
-                                </div>
-                                ${epithetHtml}
-                                <h2 class="text-2xl font-bold text-stone-800 mb-2">${nameRuby}</h2>
-                                
-                                <!-- 💡 ここで2列2行のグリッド配置を確実に適用 -->
-                                <div class="grid grid-cols-2 gap-x-4 gap-y-2 text-xs text-stone-600 border-t border-stone-100 pt-3">
-                                    <p><strong class="text-stone-400 inline-block mr-1">年齢:</strong> ${ch.age ? ch.age + '歳' : '未設定'}</p>
-                                    <p><strong class="text-stone-400 inline-block mr-1">性別:</strong> ${ch.gender || '未設定'}</p>
-                                    <p><strong class="text-stone-400 inline-block mr-1">誕生日:</strong> ${ch.birthdate || '未設定'}</p>
-                                    <p class="flex items-center gap-1.5"><strong class="text-stone-400 inline-block mr-1">カラー:</strong> <span class="w-3 h-3 rounded-full inline-block border border-stone-200" style="background-color: ${themeColor}"></span><span class="font-mono">${rawThemeColor}</span></p>
-                                </div>
+    // 通過シナリオ一覧（仮）
+    const scenariosHtml = `
+        <div class="mt-6 pt-6 border-t border-stone-100">
+            <div class="flex items-center justify-between mb-3">
+                <h4 class="text-xs font-bold text-stone-500 flex items-center gap-1.5">
+                    <i class="fa-solid fa-book-bookmark text-stone-400"></i> 通過シナリオ一覧
+                </h4>
+                <span class="text-[10px] text-stone-400 bg-stone-100 px-2 py-0.5 rounded-full">0件</span>
+            </div>
+            <div class="bg-stone-50 rounded-2xl p-4 text-center text-xs text-stone-400 border border-stone-100">
+                <p>まだ通過シナリオが登録されていません。</p>
+            </div>
+        </div>
+    `;
 
-                               ${sheetLinkHtml}
-                                ${customFieldsHtml}
-                            </div>
+    // 詳細画面全体のHTML構築
+    detailContainer.innerHTML = `
+        <div class="bg-white rounded-3xl p-6 border border-stone-200/80 shadow-sm space-y-6 relative overflow-hidden">
+            <div class="flex flex-col md:flex-row gap-6">
+                <div class="w-full md:w-1/2">
+                    ${avatarHtml}
+                </div>
+                <div class="w-full md:w-1/2 flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-[10px] font-medium px-2.5 py-1 rounded-lg text-white" style="background-color: ${themeColor}">
+                                ${window.systems.find(s => s.id === ch.systemId)?.name || 'システム'}
+                            </span>
                         </div>
+                        ${epithetHtml}
+                        <h2 class="text-2xl font-bold text-stone-800 mb-2">${nameRuby}</h2>
+                        
+                        <div class="grid grid-cols-2 gap-x-4 gap-y-2 text-xs text-stone-600 border-t border-stone-100 pt-3">
+                            <p><strong class="text-stone-400 inline-block mr-1">年齢:</strong> ${ch.age ? ch.age + '歳' : '未設定'}</p>
+                            <p><strong class="text-stone-400 inline-block mr-1">性別:</strong> ${ch.gender || '未設定'}</p>
+                            <p><strong class="text-stone-400 inline-block mr-1">誕生日:</strong> ${ch.birthdate || '未設定'}</p>
+                            <p class="flex items-center gap-1.5"><strong class="text-stone-400 inline-block mr-1">カラー:</strong> <span class="w-3 h-3 rounded-full inline-block border border-stone-200" style="background-color: ${themeColor}"></span><span class="font-mono">${rawThemeColor}</span></p>
+                        </div>
+
+                        ${sheetLinkHtml}
+                        ${customFieldsHtml}
                     </div>
+                </div>
+            </div>
 
-                    ${scenariosHtml}
+            ${scenariosHtml}
 
-                    <div class="pt-6 mt-6 border-t border-stone-100 flex items-center justify-between flex-wrap gap-3">
-    <!-- 左側は空にするか、別の情報を置く -->
-    <div></div>
-
-    <!-- 💡 右側に「編集」「削除」「一覧へ戻る」をまとめる、または編集・削除を右寄せにする -->
-    <div class="flex items-center gap-2 ml-auto">
-        <button onclick="openEditCharacterModal('${characterId}')" class="flex items-center gap-1.5 text-xs text-stone-600 hover:text-stone-900 bg-stone-100 hover:bg-stone-200/70 px-4 py-2 rounded-xl transition-all">
-            <i class="fa-solid fa-pen text-[10px]"></i>
-            <span>編集</span>
-        </button>
-        <button onclick="deleteCharacter('${characterId}')" class="flex items-center gap-1.5 text-xs text-rose-600 hover:text-rose-900 bg-rose-50 hover:bg-rose-100 px-4 py-2 rounded-xl transition-all">
-            <i class="fa-solid fa-trash text-[10px]"></i>
-            <span>削除</span>
-        </button>
-        <button onclick="navigateTo('characterList', '${ch.systemId}')" class="text-xs font-medium text-stone-600 hover:text-stone-900 bg-stone-100 hover:bg-stone-200 px-4 py-2 rounded-xl transition-all flex items-center gap-1.5">
-            <i class="fa-solid fa-arrow-left text-[10px]"></i>
-            <span>一覧に戻る</span>
-        </button>
-    </div>
-</div>
-            `;
-        }
-        window.renderCharacterDetail = renderCharacterDetail;
-
+            <div class="pt-6 mt-6 border-t border-stone-100 flex items-center justify-between flex-wrap gap-3">
+                <div></div>
+                <div class="flex items-center gap-2 ml-auto">
+                    <button onclick="openEditCharacterModal('${characterId}')" class="flex items-center gap-1.5 text-xs text-stone-600 hover:text-stone-900 bg-stone-100 hover:bg-stone-200/70 px-4 py-2 rounded-xl transition-all">
+                        <i class="fa-solid fa-pen text-[10px]"></i>
+                        <span>編集</span>
+                    </button>
+                    <button onclick="deleteCharacter('${characterId}')" class="flex items-center gap-1.5 text-xs text-rose-600 hover:text-rose-900 bg-rose-50 hover:bg-rose-100 px-4 py-2 rounded-xl transition-all">
+                        <i class="fa-solid fa-trash text-[10px]"></i>
+                        <span>削除</span>
+                    </button>
+                    <button onclick="navigateTo('characterList', '${ch.systemId}')" class="text-xs font-medium text-stone-600 hover:text-stone-900 bg-stone-100 hover:bg-stone-200 px-4 py-2 rounded-xl transition-all flex items-center gap-1.5">
+                        <i class="fa-solid fa-arrow-left text-[10px]"></i>
+                        <span>一覧に戻る</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+}
+window.renderCharacterDetail = renderCharacterDetail;
+       
         // 🍞 トースト通知・確認モーダルヘルパー
         function showToast(message, type = 'info') {
             const container = document.getElementById('toastContainer');
