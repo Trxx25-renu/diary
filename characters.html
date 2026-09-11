@@ -1037,6 +1037,107 @@ function closeCharacterModal() {
 }
 window.closeCharacterModal = closeCharacterModal;
 
+       // 1. 一覧用アイコン画像のファイル選択時＆自動圧縮処理（小さく軽量化）
+function handleThumbnailFileSelect(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const img = new Image();
+        img.onload = function() {
+            const canvas = document.createElement('canvas');
+            let width = img.width;
+            let height = img.height;
+
+            // アイコン用は最大 200px に制限
+            const MAX_SIZE = 200;
+            if (width > height) {
+                if (width > MAX_SIZE) {
+                    height *= MAX_SIZE / width;
+                    width = MAX_SIZE;
+                }
+            } else {
+                if (height > MAX_SIZE) {
+                    width *= MAX_SIZE / height;
+                    height = MAX_SIZE;
+                }
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+
+            // JPEG形式、品質 0.7 で圧縮
+            const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
+            window.currentThumbnailBase64 = compressedBase64;
+
+            // プレビュー表示
+            const preview = document.getElementById('thumbPreview');
+            if (preview) {
+                preview.src = compressedBase64;
+                preview.classList.remove('hidden');
+            }
+        };
+        img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+}
+window.handleThumbnailFileSelect = handleThumbnailFileSelect;
+
+
+// 2. 立ち絵画像のファイル選択時＆自動圧縮処理（5MBの巨大画像を安全なサイズへ）
+function handleAvatarFileSelect(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const img = new Image();
+        img.onload = function() {
+            const canvas = document.createElement('canvas');
+            let width = img.width;
+            let height = img.height;
+
+            // 立ち絵は最大 800px に制限（Firestoreの1MB制限をクリアするため）
+            const MAX_SIZE = 800;
+            if (width > height) {
+                if (width > MAX_SIZE) {
+                    height *= MAX_SIZE / width;
+                    width = MAX_SIZE;
+                }
+            } else {
+                if (height > MAX_SIZE) {
+                    width *= MAX_SIZE / height;
+                    height = MAX_SIZE;
+                }
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+
+            // JPEG形式、品質 0.75 で圧縮（5MB -> 数十〜数百度KBに軽量化）
+            const compressedBase64 = canvas.toDataURL('image/jpeg', 0.75);
+            window.currentAvatarBase64 = compressedBase64;
+
+            // プレビュー表示
+            const preview = document.getElementById('avatarPreview');
+            if (preview) {
+                preview.src = compressedBase64;
+                preview.classList.remove('hidden');
+            }
+            
+            console.log("立ち絵圧縮完了:", Math.round(compressedBase64.length / 1024), "KB");
+        };
+        img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+}
+window.handleAvatarFileSelect = handleAvatarFileSelect;
+
        // ==========================================
         // 💡 設定を画面に適用する関数
         // ==========================================
