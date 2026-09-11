@@ -586,7 +586,7 @@ window.getAdaptiveTextColor = getAdaptiveTextColor;
 
 
 // ==========================================
-// 💡 キャラクター詳細描画関数（完全版）
+// 💡 キャラクター詳細描画関数（完全版・修正済）
 // ==========================================
 function renderCharacterDetail(characterId) {
     const detailContainer = document.getElementById('view-detail');
@@ -608,7 +608,7 @@ function renderCharacterDetail(characterId) {
         avatarHtml = `<div class="bg-stone-50/50 p-2 rounded-2xl border border-stone-200/80 shadow-md flex items-center justify-center"><img src="${ch.avatar}" class="w-full h-auto max-h-[500px] object-contain rounded-xl"></div>`;
     }
 
-    // 💡 ① 二つ名と名前の間の無駄な改行・隙間をスッキリ圧縮
+    // 二つ名と名前の間の無駄な改行・隙間をスッキリ圧縮
     let epithetHtml = '';
     if (ch.epithet && ch.epithet.trim() !== '') {
         const kana = ch.epithetKana ? `<span class="text-[9px] font-medium text-stone-400 block">${ch.epithetKana}</span>` : '';
@@ -691,7 +691,7 @@ function renderCharacterDetail(characterId) {
         customFieldsHtml += `</div>`;
     }
 
-    // 💡 ② 通過シナリオの直上に配置する「設定／メモ」＆「秘匿メモ」エリア
+    // 💡 「設定／メモ」＆「秘匿メモ」エリア
     const memo = ch.memo || '';
     const secret = ch.secret || '';
     let settingsMemoHtml = '';
@@ -720,7 +720,7 @@ function renderCharacterDetail(characterId) {
         `;
     }
 
-    // 通過シナリオ一覧（仮）
+    // 通過シナリオ一覧
     const scenariosHtml = `
         <div class="mt-6 pt-6 border-t border-stone-100">
             <div class="flex items-center justify-between mb-3">
@@ -765,20 +765,24 @@ function renderCharacterDetail(characterId) {
                 </div>
             </div>
 
+            <!-- 💡 ステータス欄の下（通過シナリオの直上）に綺麗に配置 -->
             ${settingsMemoHtml}
             ${scenariosHtml}
 
+            <!-- アクションボタン（編集・削除は管理者のみ、一覧に戻るは常時表示） -->
             <div class="pt-6 mt-6 border-t border-stone-100 flex items-center justify-between flex-wrap gap-3">
                 <div></div>
                 <div class="flex items-center gap-2 ml-auto">
-                    <button onclick="openEditCharacterModal('${characterId}')" class="flex items-center gap-1.5 text-xs text-stone-600 hover:text-stone-900 bg-stone-100 hover:bg-stone-200/70 px-4 py-2 rounded-xl transition-all">
-                        <i class="fa-solid fa-pen text-[10px]"></i>
-                        <span>編集</span>
-                    </button>
-                    <button onclick="deleteCharacter('${characterId}')" class="flex items-center gap-1.5 text-xs text-rose-600 hover:text-rose-900 bg-rose-50 hover:bg-rose-100 px-4 py-2 rounded-xl transition-all">
-                        <i class="fa-solid fa-trash text-[10px]"></i>
-                        <span>削除</span>
-                    </button>
+                    ${window.isAdmin ? `
+                        <button onclick="openEditCharacterModal('${characterId}')" class="flex items-center gap-1.5 text-xs text-stone-600 hover:text-stone-900 bg-stone-100 hover:bg-stone-200/70 px-4 py-2 rounded-xl transition-all">
+                            <i class="fa-solid fa-pen text-[10px]"></i>
+                            <span>編集</span>
+                        </button>
+                        <button onclick="deleteCharacter('${characterId}')" class="flex items-center gap-1.5 text-xs text-rose-600 hover:text-rose-900 bg-rose-50 hover:bg-rose-100 px-4 py-2 rounded-xl transition-all">
+                            <i class="fa-solid fa-trash text-[10px]"></i>
+                            <span>削除</span>
+                        </button>
+                    ` : ''}
                     <button onclick="navigateTo('characterList', '${ch.systemId}')" class="text-xs font-medium text-stone-600 hover:text-stone-900 bg-stone-100 hover:bg-stone-200 px-4 py-2 rounded-xl transition-all flex items-center gap-1.5">
                         <i class="fa-solid fa-arrow-left text-[10px]"></i>
                         <span>一覧に戻る</span>
