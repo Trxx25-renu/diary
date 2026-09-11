@@ -528,8 +528,7 @@ function getAdjustedColor(hexColor) {
         return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
     }
     return hexColor;
-}
-      // ==========================================
+}// ==========================================
 // 💡 テーマカラー入力プレビュー用関数
 // ==========================================
 function handleThemeColorInput(value) {
@@ -538,17 +537,13 @@ function handleThemeColorInput(value) {
     const colorInput = document.getElementById('charThemeColor');
     let color = value.trim();
     
-    // 1. 先頭に「#」がなくて、かつ1文字以上入力されている場合
     if (color !== "" && !color.startsWith('#')) {
         color = '#' + color;
-        
-        // 入力欄自体の値にも「#」を自動で補う
         if (colorInput && colorInput.value !== color) {
             colorInput.value = color;
         }
     }
 
-    // 2. ピンポイントで色の四角だけを変更する
     const previewEl = document.getElementById('characterColorPreview');
     if (previewEl) {
         previewEl.style.backgroundColor = color;
@@ -570,8 +565,6 @@ function getAdaptiveTextColor(hexColor) {
     const g = parseInt(hex.substr(2, 2), 16);
     const b = parseInt(hex.substr(4, 2), 16);
     const yiq = (r * 299 + g * 587 + b * 114) / 1000;
-    
-    // 薄い背景（150以上）なら濃い茶黒、濃い背景なら白文字を返す
     return yiq >= 150 ? '#292524' : '#ffffff';
 }
 window.getAdaptiveTextColor = getAdaptiveTextColor;
@@ -612,12 +605,12 @@ function renderCharacterDetail(characterId) {
         `;
     }
 
-    // 名前とルビ
+    // 名前とルビ（ここで確実に定義します）
     const nameKanaHtml = ch.nameKana ? `<span class="text-xs font-normal text-stone-400 block mb-0.5">${ch.nameKana}</span>` : '';
-    const nameHtml = `
+    const nameRuby = `
         <div>
             ${nameKanaHtml}
-            <h2 class="text-3xl font-extrabold text-stone-900 tracking-wide">${ch.name || ''}</h2>
+            <h2 class="text-2xl font-bold text-stone-800 mb-2">${ch.name || ''}</h2>
         </div>
     `;
 
@@ -713,7 +706,7 @@ function renderCharacterDetail(characterId) {
                             </span>
                         </div>
                         ${epithetHtml}
-                        <h2 class="text-2xl font-bold text-stone-800 mb-2">${nameRuby}</h2>
+                        ${nameRuby}
                         
                         <div class="grid grid-cols-2 gap-x-4 gap-y-2 text-xs text-stone-600 border-t border-stone-100 pt-3">
                             <p><strong class="text-stone-400 inline-block mr-1">年齢:</strong> ${ch.age ? ch.age + '歳' : '未設定'}</p>
