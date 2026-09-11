@@ -680,10 +680,11 @@ function renderCharacterDetail(characterId) {
     }
     window.checkAdminPermission = checkAdminPermission;
 
-    // 管理者ステータスに応じてヘッダーの鍵アイコンを切り替える関数
-    function updateAdminUI() {
-        const keyBtn = document.getElementById('headerKeyBtn');
-        if (!keyBtn) return;
+  // 管理者ステータスに応じてヘッダーの鍵アイコンや追加ボタンを切り替える関数
+function updateAdminUI() {
+    // 1. 鍵アイコンの切り替え
+    const keyBtn = document.getElementById('headerKeyBtn');
+    if (keyBtn) {
         if (window.isAdmin) {
             keyBtn.className = "text-stone-600 hover:text-stone-800 transition-colors p-2 text-base";
             keyBtn.innerHTML = '<i class="fa-solid fa-unlock"></i>';
@@ -694,7 +695,18 @@ function renderCharacterDetail(characterId) {
             keyBtn.title = "管理者ログイン";
         }
     }
-    window.updateAdminUI = updateAdminUI;
+
+    // 2. PC追加ボタンの表示・非表示の切り替え
+    const addBtn = document.getElementById('headerAddBtn');
+    if (addBtn) {
+        if (window.isAdmin) {
+            addBtn.classList.remove('hidden'); // ログイン中は表示
+        } else {
+            addBtn.classList.add('hidden');    // ログアウト時は非表示
+        }
+    }
+}
+window.updateAdminUI = updateAdminUI;
 
     function handleHeaderKeyClick() {
         openAuthModal();
@@ -1061,27 +1073,28 @@ window.closeCharacterModal = closeCharacterModal;
 <body class="min-h-screen flex flex-col bg-stone-50 text-stone-800">
 
     <!-- ヘッダー -->
-    <header class="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-stone-200/80 px-4 py-3.5">
+    <header class="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-stone-200/80 px-4 py-3">
         <div class="max-w-4xl mx-auto flex items-center justify-between">
             <!-- 左側：アイコン ＆ タイトル・サブタイトル -->
             <div class="flex items-center gap-3">
-                <img id="headerFaviconImg" class="w-5 h-5 rounded-md object-cover border border-stone-200 hidden" alt="Icon">
+                <img id="headerFaviconImg" class="w-8 h-8 rounded-lg object-cover border border-stone-200 shadow-sm hidden" alt="Icon">
                 <div>
-                    <h1 id="siteHeaderTitle" class="text-base font-bold tracking-tight text-stone-800 transition-colors">キャラクター一覧</h1>
-                    <p id="siteHeaderSubtitle" class="text-[10px] text-stone-400 font-serif-title tracking-wider uppercase">Character Log</p>
+                    <h1 id="siteHeaderTitle" class="text-base font-bold tracking-tight text-stone-800 transition-colors">キャラクター管理</h1>
+                    <p id="siteHeaderSubtitle" class="text-[10px] text-stone-400 font-serif-title tracking-wider uppercase">CHARACTER LOG</p>
                 </div>
             </div>
 
             <!-- 右側：各種ボタン群 -->
             <div class="flex items-center gap-2">
-                <button onclick="handleOpenSettingsModal()" class="bg-white hover:bg-stone-50 text-stone-700 text-xs font-bold px-3.5 py-2 rounded-full border border-stone-200 shadow-sm transition-all flex items-center gap-1.5">
+                <button onclick="handleOpenSettingsModal()" class="bg-white hover:bg-stone-50 text-stone-700 text-xs font-bold px-3.5 py-1.5 rounded-full border border-stone-200 shadow-sm transition-all flex items-center gap-1.5">
                     <i class="fa-solid fa-gear text-stone-500"></i>
                     <span>サイト設定</span>
                 </button>
                 <button id="headerKeyBtn" onclick="handleHeaderKeyClick()" class="text-stone-600 hover:text-stone-800 transition-colors p-2 text-base" title="管理者ログイン">
                     <i class="fa-solid fa-lock"></i>
                 </button>
-                <button onclick="handleOpenAddModal()" class="bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold px-4 py-2 rounded-full shadow-sm transition-all flex items-center gap-1.5">
+                <!-- 💡 管理者ログイン時のみ表示されるPC追加ボタン -->
+                <button id="headerAddBtn" onclick="handleOpenAddModal()" class="bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold px-3.5 py-1.5 rounded-full shadow-sm transition-all flex items-center gap-1.5 hidden">
                     <i class="fa-solid fa-plus"></i>
                     <span>PC追加</span>
                 </button>
@@ -1180,14 +1193,14 @@ window.closeCharacterModal = closeCharacterModal;
         <div id="view-folders">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
                 <div>
-                    <h2 class="text-lg font-bold text-stone-800">システム選択</h2>
-                    <p class="text-xs text-stone-400">管理したいTRPGシステムを選んでください</p>
+                    <h2 class="text-base font-bold text-stone-800">システム選択</h2>
+                    <p class="text-[11px] text-stone-400">管理したいTRPGシステムを選んでください</p>
                 </div>
                 <div class="relative w-full sm:w-64">
                     <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-stone-400 text-xs">
                         <i class="fa-solid fa-search"></i>
                     </span>
-                    <input type="text" id="folderSearchInput" oninput="handleFolderSearchInput(event)" placeholder="システムやキャラ名で検索..." class="w-full bg-white border border-stone-200 rounded-2xl pl-9 pr-4 py-2 text-xs text-stone-800 focus:outline-none focus:border-stone-400 shadow-sm">
+                    <input type="text" id="folderSearchInput" oninput="handleFolderSearchInput(event)" placeholder="システムやキャラ名で検索..." class="w-full bg-white border border-stone-200 rounded-full pl-9 pr-4 py-1.5 text-xs text-stone-800 focus:outline-none focus:border-stone-400 shadow-sm">
                 </div>
             </div>
             <div id="systemFoldersContainer" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4"></div>
@@ -1197,15 +1210,15 @@ window.closeCharacterModal = closeCharacterModal;
         <div id="view-list" class="hidden">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
                 <div>
-                    <h2 id="currentSystemTitle" class="text-lg font-bold text-stone-800">キャラクター一覧</h2>
-                    <p class="text-xs text-stone-400">登録されている探索者・NPC</p>
+                    <h2 id="currentSystemTitle" class="text-base font-bold text-stone-800">キャラクター一覧</h2>
+                    <p class="text-[11px] text-stone-400">登録されている探索者・NPC</p>
                 </div>
                 <div class="flex items-center gap-2">
                     <div class="relative w-full sm:w-56">
                         <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-stone-400 text-xs">
                             <i class="fa-solid fa-search"></i>
                         </span>
-                        <input type="text" id="characterSearchInput" oninput="handleCharacterSearchInput(event)" placeholder="このシステム内を検索..." class="w-full bg-white border border-stone-200 rounded-2xl pl-9 pr-4 py-2 text-xs text-stone-800 focus:outline-none focus:border-stone-400 shadow-sm">
+                        <input type="text" id="characterSearchInput" oninput="handleCharacterSearchInput(event)" placeholder="このシステム内を検索..." class="w-full bg-white border border-stone-200 rounded-full pl-9 pr-4 py-1.5 text-xs text-stone-800 focus:outline-none focus:border-stone-400 shadow-sm">
                     </div>
                 </div>
             </div>
@@ -1276,9 +1289,7 @@ window.closeCharacterModal = closeCharacterModal;
                     <div>
                         <label class="block text-xs font-bold text-stone-600 mb-1">テーマカラー</label>
                         <div class="flex items-center gap-2">
-                            <!-- カラーコード入力欄（連動プレビュー付き） -->
                             <input type="text" id="charThemeColor" placeholder="#292524" oninput="updateColorPreview(this.value)" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-800 focus:outline-none focus:border-stone-400 font-mono">
-                            <!-- 🌟 リアルタイム色見本プレビューボックス -->
                             <div id="characterColorPreview" class="w-9 h-9 rounded-xl border border-stone-300 shadow-inner bg-stone-100 shrink-0 transition-colors"></div>
                         </div>
                     </div>
@@ -1419,6 +1430,5 @@ window.closeCharacterModal = closeCharacterModal;
     <footer class="text-center py-6 text-[11px] text-stone-400 border-t border-stone-100 mt-12">
         <p>© Character log</p>
     </footer>
-
 </body>
 </html>
