@@ -1058,6 +1058,58 @@ window.closeCharacterModal = closeCharacterModal;
         }
         window.applyRosterSettings = applyRosterSettings;
 
+        // 🔑 パスコード送信（認証・新規設定）の処理
+function handleAuthSubmit(e) {
+    e.preventDefault(); // フォームのデフォルト送信を防ぐ
+    const passInput = document.getElementById('inputPasscode');
+    const err = document.getElementById('authErrorMsg');
+    const enteredPass = passInput ? passInput.value : '';
+
+    // 1. 【初回】パスコードがまだ設定されていない場合（初期設定）
+    if (!window.storedPasscode) {
+        if (!enteredPass) return;
+        window.storedPasscode = enteredPass;
+        // 必要であればローカルストレージ等に保存する処理をここに記述
+        // localStorage.setItem('appStoredPasscode', enteredPass);
+
+        // 管理者状態にする
+        window.isAdmin = true;
+        sessionStorage.setItem('isAdminSession', 'true');
+
+        closeAuthModal();
+        updateAdminUI(); // 💡 これにより鍵アイコンと「PC追加」ボタンが一発で切り替わる！
+        
+        if (typeof showToast === 'function') {
+            showToast('パスコードを設定し、ログインしました', 'success');
+        }
+        return;
+    }
+
+    // 2. 【通常】すでに設定されているパスコードと照合する場合
+    if (enteredPass === window.storedPasscode) {
+        if (err) err.classList.add('hidden');
+        
+        // 管理者状態にする
+        window.isAdmin = true;
+        sessionStorage.setItem('isAdminSession', 'true');
+
+        closeAuthModal();
+        updateAdminUI(); // 💡 ログイン成功時に鍵とPC追加ボタンを反映！
+
+        if (typeof showToast === 'function') {
+            showToast('管理者としてログインしました', 'success');
+        }
+    } else {
+        // パスコードが間違っている場合
+        if (err) err.classList.remove('hidden');
+        if (passInput) {
+            passInput.value = '';
+            passInput.focus();
+        }
+    }
+}
+window.handleAuthSubmit = handleAuthSubmit;
+        
         // ==========================================
         // 💡 ヘッダーのタイトルやアイコンを最新の設定に更新する関数
         // ==========================================
