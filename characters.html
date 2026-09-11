@@ -795,13 +795,16 @@ window.updateAdminUI = updateAdminUI;
         }
     }
     window.closeSettingsModal = closeSettingsModal;
-        async function saveCharacter(event) {
+        
+       async function saveCharacter(event) {
     event.preventDefault();
     const systemId = document.getElementById('charSystemSelect').value;
     const name = document.getElementById('charName').value.trim();
     const epithet = document.getElementById('charEpithet').value.trim();
     const age = document.getElementById('charAge').value;
-    const occupation = document.getElementById('charOccupation').value.trim();
+    
+    // 💡 存在しないかもしれない要素は ?.value で安全に取得し、なければ空文字にする
+    const occupation = document.getElementById('charOccupation')?.value?.trim() || '';
     const themeColor = document.getElementById('charThemeColor').value;
     
     const thumbnail = window.currentThumbnailBase64 || "";
