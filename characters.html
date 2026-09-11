@@ -393,7 +393,7 @@ function navigateTo(target, param) {
 window.navigateTo = navigateTo;
         
 // ==========================================
-// 💡 openEditCharacterModal 関数の定義
+// 💡 修正版: openEditCharacterModal 関数の定義
 // ==========================================
 function openEditCharacterModal(characterId) {
     // 文字列・数値を揃えてキャラクターを検索
@@ -426,20 +426,21 @@ function openEditCharacterModal(characterId) {
     if (colorInput) colorInput.value = ch.themeColor || '#292524';
     if (sheetUrlInput) sheetUrlInput.value = ch.sheetUrl || '';
 
-    // 💡 編集モーダルを開いたときにカラープレビューの色も連動させる
-    if (typeof updateColorPreview === 'function') {
-        updateColorPreview(ch.themeColor || '#292524');
-    }
-
-    // システムをセットして、編集時は変更できないようにロックする
+    // 💡 システムをセットして、編集時は変更できないようにロックする
     if (systemInput) {
-        systemInput.value = ch.systemId;
-        systemInput.disabled = true; 
+        systemInput.disabled = false; // いったん解除してから値をセット
+        systemInput.value = ch.systemId; // 正しいシステムIDをセット
+        systemInput.disabled = true;  // 編集時は変更不可にするためロック
     }
 
-    // 💡【追加】システムに応じたカスタム項目（ステータス等）を生成・表示する
+    // 💡 システムに応じたカスタム項目（ステータス等）を生成・表示する
     if (typeof handleSystemChangeInModal === 'function') {
         handleSystemChangeInModal();
+    }
+
+    // 💡 カラープレビューを確実に連動させる（handleThemeColorInputを利用）
+    if (typeof handleThemeColorInput === 'function') {
+        handleThemeColorInput(ch.themeColor || '#292524');
     }
 
     // 🌟 編集中のキャラクターIDを保存
@@ -456,7 +457,7 @@ function openEditCharacterModal(characterId) {
     } else {
         showToast('編集モーダルが見つかりません', 'error');
     }
-} 
+}
 window.openEditCharacterModal = openEditCharacterModal;
         
 function getAdjustedColor(hexColor) {
@@ -1057,10 +1058,13 @@ window.openCharacterModal = openCharacterModal;
 // 💡 キャラクター作成・編集モーダルを閉じる関数（これだけを残す）
 function closeCharacterModal() {
     const modal = document.getElementById('characterModal');
-    if (modal) {
-        modal.classList.add('hidden');
-    }
-    // 編集中のIDもリセットしておく
+    if (modal) modal.classList.add('hidden');
+    
+    // 💡 モーダルを閉じるときにシステム選択のロックを解除しておく
+    const systemInput = document.getElementById('charSystemSelect');
+    if (systemInput) systemInput.disabled = false;
+
+    // 編集IDもクリア
     window.editingCharacterId = null;
 }
 window.closeCharacterModal = closeCharacterModal;
