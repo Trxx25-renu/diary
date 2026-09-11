@@ -509,10 +509,11 @@ function renderCharacterDetail(characterId) {
     const rawThemeColor = ch.themeColor || '#292524';
     const themeColor = getAdjustedColor(rawThemeColor);
 
-    let avatarHtml = `<div class="w-full h-64 sm:h-96 flex items-center justify-center text-stone-300 bg-stone-100 rounded-2xl"><i class="fa-solid fa-user text-5xl"></i></div>`;
-    if (ch.avatar) {
-        avatarHtml = `<img src="${ch.avatar}" class="w-full h-auto max-h-[500px] object-contain rounded-2xl bg-stone-900/5">`;
-    }
+  let avatarHtml = `<div class="w-full h-64 sm:h-96 flex items-center justify-center text-stone-300 bg-stone-100 rounded-2xl"><i class="fa-solid fa-user text-5xl"></i></div>`;
+if (ch.avatar) {
+    // 💡 bg-stone-900/5 を削除して透過PNGの背景をクリアに
+    avatarHtml = `<img src="${ch.avatar}" class="w-full h-auto max-h-[500px] object-contain rounded-2xl">`;
+}
 
     // 二つ名にルビ（読み仮名）を反映
     let epithetHtml = '';
@@ -1516,24 +1517,24 @@ window.handleAuthSubmit = handleAuthSubmit;
 
             <div id="dynamicCustomFieldsContainer" class="space-y-3 pt-2 border-t border-stone-100"></div>
 
-            <div class="pt-2 border-t border-stone-100">
-                <label class="block text-xs font-bold text-stone-600 mb-1">一覧用アイコン画像（自動圧縮）</label>
-                <input type="file" id="thumbFile" accept="image/*" onchange="handleThumbnailFileSelect(event)" class="w-full text-xs text-stone-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-stone-100 file:text-stone-700 hover:file:bg-stone-200 cursor-pointer">
-                <div class="mt-2 flex items-center gap-2">
-                    <span class="text-[10px] text-stone-400">プレビュー:</span>
-                    <img id="thumbPreview" class="w-10 h-10 rounded-lg object-cover border border-stone-200 hidden">
-                </div>
-            </div>
+           <div class="pt-2 border-t border-stone-100">
+    <label for="thumbFile" class="block text-xs font-bold text-stone-600 mb-1">一覧用アイコン画像（自動圧縮）</label>
+    <input type="file" id="thumbFile" accept="image/*" onchange="handleThumbnailFileSelect(event)" class="w-full text-xs text-stone-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-stone-100 file:text-stone-700 hover:file:bg-stone-200 cursor-pointer">
+    <div class="mt-2 flex items-center gap-2">
+        <span class="text-[10px] text-stone-400">プレビュー:</span>
+        <img id="thumbPreview" class="w-10 h-10 rounded-lg object-cover border border-stone-200 hidden">
+    </div>
+</div>
 
-            <div>
-                <label class="block text-xs font-bold text-stone-600 mb-1">立ち絵画像（大サイズPNG対応）</label>
-                <input type="file" id="avatarFile" accept="image/*" onchange="handleAvatarFileSelect(event)" class="w-full text-xs text-stone-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-stone-100 file:text-stone-700 hover:file:bg-stone-200 cursor-pointer">
-                <div class="mt-2 flex items-center gap-2">
-                    <span class="text-[10px] text-stone-400">プレビュー:</span>
-                    <img id="avatarPreview" class="w-12 h-16 rounded-lg object-contain bg-stone-900/5 border border-stone-200 hidden">
-                </div>
-            </div>
-
+<div>
+    <label for="avatarFile" class="block text-xs font-bold text-stone-600 mb-1">立ち絵画像（大サイズPNG対応）</label>
+    <input type="file" id="avatarFile" accept="image/*" onchange="handleAvatarFileSelect(event)" class="w-full text-xs text-stone-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-stone-100 file:text-stone-700 hover:file:bg-stone-200 cursor-pointer">
+    <div class="mt-2 flex items-center gap-2">
+        <span class="text-[10px] text-stone-400">プレビュー:</span>
+        <!-- 💡 bg-stone-900/5 を削除してスッキリ！ -->
+        <img id="avatarPreview" class="w-12 h-16 rounded-lg object-contain border border-stone-200 hidden">
+    </div>
+</div>
             <div class="pt-3 flex items-center justify-end gap-2">
                 <button type="button" onclick="closeCharacterModal()" class="px-4 py-2 rounded-xl text-xs font-medium text-stone-600 hover:bg-stone-100 transition-all">キャンセル</button>
                 <button type="submit" class="bg-stone-800 text-white px-5 py-2 rounded-xl text-xs font-medium shadow-sm hover:bg-stone-700 transition-all">登録する</button>
