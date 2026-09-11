@@ -401,23 +401,21 @@ function navigateTo(target, param) {
 window.navigateTo = navigateTo;
         
 // ==========================================
-// 💡 完全修正版: openEditCharacterModal 関数の定義（画像復元付き）
+// 💡 編集モーダルを開く関数（修正版）
 // ==========================================
 function openEditCharacterModal(characterId) {
-    // 文字列・数値を揃えてキャラクターを検索
     const ch = window.characters.find(c => String(c.id) === String(characterId));
     if (!ch) {
         showToast('キャラクターが見つかりませんでした', 'error');
-        console.error("見つかったキャラクター一覧:", window.characters, "探しているID:", characterId);
         return; 
     }
 
-    // 🌟【最重要】まずはシステムの選択肢（<option>たち）を必ず先に画面に生成する！
+    // システムの選択肢を先に生成
     if (typeof renderCharacterModalSystemSelect === 'function') {
         renderCharacterModalSystemSelect();
     }
 
-    // フォーム要素へ値をセット
+    // 基本フォーム要素へ値をセット
     const nameInput = document.getElementById('charName');
     const nameKanaInput = document.getElementById('charNameKana');
     const epithetInput = document.getElementById('charEpithet');
@@ -439,23 +437,19 @@ function openEditCharacterModal(characterId) {
     if (colorInput) colorInput.value = ch.themeColor || '#292524';
     if (sheetUrlInput) sheetUrlInput.value = ch.sheetUrl || '';
 
-    // 💡 選択肢が生成されたあとなので、ここで確実にシステムがセットできる
     if (systemInput) {
-        systemInput.disabled = false; // いったん解除
-        systemInput.value = ch.systemId || ch.system || ''; // システムをセット
-        systemInput.classList.add('opacity-60', 'pointer-events-none', 'bg-stone-100'); // 触れないように見た目をロック
+        systemInput.disabled = false;
+        systemInput.value = ch.systemId || ch.system || '';
+        systemInput.classList.add('opacity-60', 'pointer-events-none', 'bg-stone-100');
     }
 
-    // ==========================================
-    // 🖼️【超重要】編集時に既存の画像をプレビューと一時変数に復元する処理
-    // ==========================================
-    // 1. アイコン画像（サムネイル）の復元
+    // 画像の復元
     const thumbPreview = document.getElementById('thumbPreview');
     if (thumbPreview) {
         if (ch.thumbnail) {
             thumbPreview.src = ch.thumbnail;
             thumbPreview.classList.remove('hidden');
-            window.currentThumbnailBase64 = ch.thumbnail; // 一時変数にも持たせる
+            window.currentThumbnailBase64 = ch.thumbnail;
         } else {
             thumbPreview.src = '';
             thumbPreview.classList.add('hidden');
@@ -463,54 +457,37 @@ function openEditCharacterModal(characterId) {
         }
     }
 
-    // 2. 立ち絵画像の復元（もし立ち絵プレビュー要素があれば）
     const avatarPreview = document.getElementById('avatarPreview');
     if (avatarPreview) {
         if (ch.avatar) {
             avatarPreview.src = ch.avatar;
             avatarPreview.classList.remove('hidden');
-            window.currentAvatarBase64 = ch.avatar; // 一時変数にも持たせる
+            window.currentAvatarBase64 = ch.avatar;
         } else {
             avatarPreview.src = '';
             avatarPreview.classList.add('hidden');
             window.currentAvatarBase64 = '';
         }
     }
-    // ==========================================
 
-    // 💡 システムに応じたカスタム項目（ステータス等）を生成・表示する
+    // 💡 システムに応じたカスタム項目を生成しつつ、保存されていた `ch.customValues` を同時に流し込む！
     if (typeof handleSystemChangeInModal === 'function') {
-        handleSystemChangeInModal();
+        handleSystemChangeInModal(ch.customValues || {});
     }
 
-    // 💡 生成されたカスタム項目の入力欄に、キャラクターが保存していた過去の値を流し込む！
-    if (ch.customValues && typeof ch.customValues === 'object') {
-        Object.keys(ch.customValues).forEach(fieldId => {
-            const fieldInput = document.getElementById(`custom_field_${fieldId}`);
-            if (fieldInput) {
-                fieldInput.value = ch.customValues[fieldId];
-            }
-        });
-    }
-
-    // 💡 カラープレビューを確実に連動させる
+    // カラープレビュー連動
     if (typeof handleThemeColorInput === 'function') {
         handleThemeColorInput(ch.themeColor || '#292524');
     }
 
-    // 🌟 編集中のキャラクターIDを保存
     window.editingCharacterId = characterId;
 
-    // モーダルのタイトルを「編集」用に書き換える
     const modalTitle = document.querySelector('#characterModal h3 span');
     if (modalTitle) modalTitle.textContent = 'キャラクター編集';
 
-    // hiddenクラスを外してモーダルを表示
     const modal = document.getElementById('characterModal');
     if (modal) {
         modal.classList.remove('hidden');
-    } else {
-        showToast('編集モーダルが見つかりません', 'error');
     }
 }
 window.openEditCharacterModal = openEditCharacterModal;
@@ -1064,7 +1041,7 @@ window.renderCharacterModalSystemSelect = renderCharacterModalSystemSelect;
 // ==========================================
 // 💡 2. モーダル内でシステムが変更された時に動的項目を描画する関数
 // ==========================================
-function handleSystemChangeInModal() {
+function handleSystemChangeInModal(existingCustomValues = {}) {
     const select = document.getElementById('charSystemSelect');
     const container = document.getElementById('dynamicCustomFieldsContainer');
     if (!select || !container) return;
@@ -1072,7 +1049,6 @@ function handleSystemChangeInModal() {
     const systemId = select.value;
     container.innerHTML = '';
 
-    // window.systemCustomFields から該当システムのフィールドを取得
     const fields = window.systemCustomFields?.[systemId];
     if (!fields) return;
 
@@ -1087,9 +1063,18 @@ function handleSystemChangeInModal() {
 
         fields.status.forEach(st => {
             const div = document.createElement('div');
+            // 💡 警告対策: 固有のIDを付与し、labelのfor属性と紐付ける
+            const inputId = `custom_status_${st.id}`;
+            const savedVal = existingCustomValues[st.id] !== undefined ? existingCustomValues[st.id] : '';
+
             div.innerHTML = `
-                <label class="block text-[10px] font-medium text-stone-400 mb-0.5">${st.label} (max: ${st.max || '-'})</label>
-                <input type="number" data-custom-status-id="${st.id}" placeholder="0" class="char-custom-status-input w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-1.5 text-xs text-stone-800 focus:outline-none focus:border-stone-400">
+                <label for="${inputId}" class="block text-[10px] font-medium text-stone-400 mb-0.5">${st.label} (max: ${st.max || '-'})</label>
+                <input type="number" 
+                       id="${inputId}" 
+                       name="${inputId}" 
+                       value="${savedVal}" 
+                       placeholder="0" 
+                       class="char-custom-status-input w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-1.5 text-xs text-stone-800 focus:outline-none focus:border-stone-400">
             `;
             grid.appendChild(div);
         });
@@ -1105,9 +1090,17 @@ function handleSystemChangeInModal() {
 
         fields.text.forEach(tx => {
             const div = document.createElement('div');
+            // 💡 警告対策: 固有のIDを付与し、labelのfor属性と紐付ける
+            const inputId = `custom_text_${tx.id}`;
+            const savedVal = existingCustomValues[tx.id] !== undefined ? existingCustomValues[tx.id] : '';
+
             div.innerHTML = `
-                <label class="block text-[10px] font-medium text-stone-400 mb-0.5">${tx.label}</label>
-                <textarea data-custom-text-id="${tx.id}" placeholder="入力してください" rows="2" class="char-custom-text-input w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-1.5 text-xs text-stone-800 focus:outline-none focus:border-stone-400"></textarea>
+                <label for="${inputId}" class="block text-[10px] font-medium text-stone-400 mb-0.5">${tx.label}</label>
+                <textarea id="${inputId}" 
+                          name="${inputId}" 
+                          placeholder="入力してください" 
+                          rows="2" 
+                          class="char-custom-text-input w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-1.5 text-xs text-stone-800 focus:outline-none focus:border-stone-400">${savedVal}</textarea>
             `;
             textWrapper.appendChild(div);
         });
