@@ -880,50 +880,73 @@ window.updateAdminUI = updateAdminUI;
     }
     window.closeSettingsModal = closeSettingsModal;
         
-       async function saveCharacter(event) {
+       // ==========================================
+// 💡 完全修正版: キャラクター保存関数
+// ==========================================
+async function saveCharacter(event) {
     event.preventDefault();
     const systemId = document.getElementById('charSystemSelect').value;
-    const name = document.getElementById('charName').value.trim();
-    const epithet = document.getElementById('charEpithet').value.trim();
-    const age = document.getElementById('charAge').value;
     
-    // 💡 存在しないかもしれない要素は ?.value で安全に取得し、なければ空文字にする
+    // 基本情報の取得
+    const name = document.getElementById('charName')?.value?.trim() || '';
+    const nameKana = document.getElementById('charNameKana')?.value?.trim() || '';
+    const epithet = document.getElementById('charEpithet')?.value?.trim() || '';
+    const epithetKana = document.getElementById('charEpithetKana')?.value?.trim() || '';
+    const age = document.getElementById('charAge')?.value;
+    
+    // 💡 抜け落ちていた「性別」と「誕生日」を確実に取得！
+    const gender = document.getElementById('charGender')?.value?.trim() || '';
+    const birthdate = document.getElementById('charBirthdate')?.value?.trim() || '';
+    
     const occupation = document.getElementById('charOccupation')?.value?.trim() || '';
-    const themeColor = document.getElementById('charThemeColor').value;
-    
-    // ➕ 【追加】キャラクターシートURLの取得（※HTMLのIDに合わせて調整してください。例：'charSheetUrl'）
+    const themeColor = document.getElementById('charThemeColor')?.value || '#292524';
     const sheetUrl = document.getElementById('charSheetUrl')?.value?.trim() || '';
     
     const thumbnail = window.currentThumbnailBase64 || "";
     const avatar = window.currentAvatarBase64 || "";
 
-    // 💡 カスタム項目の値を正しく収集するように書き換え
+    // 💡 カスタム項目の値（ステータス・テキスト）を正しく収集
     const customValues = {};
 
-    // ステータス入力値の取得
+    // ステータス入力値の取得（修正後のid形式に対応）
     document.querySelectorAll('.char-custom-status-input').forEach(inputEl => {
-        const id = inputEl.getAttribute('data-custom-status-id');
-        if (id) {
-            customValues[id] = inputEl.value ? Number(inputEl.value) : '';
+        // idから末尾のフィールドIDを抽出するか、dataset等から安全に取る
+        const inputId = inputEl.id; // 例: custom_status_abc123
+        if (inputId && inputId.startsWith('custom_status_')) {
+            const fieldId = inputId.replace('custom_status_', '');
+            customValues[fieldId] = inputEl.value ? Number(inputEl.value) : '';
         }
     });
 
-    // テキスト入力値の取得
+    // テキスト入力値の取得（修正後のid形式に対応）
     document.querySelectorAll('.char-custom-text-input').forEach(inputEl => {
-        const id = inputEl.getAttribute('data-custom-text-id');
-        if (id) {
-            customValues[id] = inputEl.value;
+        const inputId = inputEl.id; // 例: custom_text_xyz789
+        if (inputId && inputId.startsWith('custom_text_')) {
+            const fieldId = inputId.replace('custom_text_', '');
+            customValues[fieldId] = inputEl.value;
         }
     });
 
-    if (!name) { alert("キャラクター名は必須です。"); return; }
+    if (!name) { 
+        alert("キャラクター名は必須です。"); 
+        return; 
+    }
 
+    // 💡 保存するデータオブジェクトにすべての項目を網羅！
     const charData = {
-        systemId, name, epithet,
+        systemId, 
+        name, 
+        nameKana, 
+        epithet, 
+        epithetKana,
         age: age ? Number(age) : '',
-        occupation, themeColor, 
-        sheetUrl, // 👈 ここに追加！
-        thumbnail, avatar,
+        gender,      // 👈 追加
+        birthdate,   // 👈 追加
+        occupation, 
+        themeColor,  
+        sheetUrl, 
+        thumbnail, 
+        avatar,
         customValues,
         updatedAt: new Date().toISOString()
     };
@@ -952,7 +975,7 @@ window.updateAdminUI = updateAdminUI;
 
         closeCharacterModal();
         renderCharacterList(systemId);
-        renderSystemFolders();
+        if (typeof renderSystemFolders === 'function') renderSystemFolders();
     } catch (e) {
         console.error("Save error:", e);
         alert("保存に失敗しました。画像サイズが大きすぎないか確認してください。");
