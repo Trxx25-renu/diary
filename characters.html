@@ -506,6 +506,32 @@ function handleThemeColorInput(value) {
 }
 window.handleThemeColorInput = handleThemeColorInput;
 
+       // ==========================================
+// 💡 トップページ（一覧）に戻る関数
+// ==========================================
+function goToTopPage() {
+    // 1. 編集・登録モーダルが開いていれば閉じる
+    const editModal = document.getElementById('characterModal');
+    if (editModal) editModal.classList.add('hidden');
+
+    // 2. 検索窓やフィルターをクリアして初期状態にする場合
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        searchInput.value = '';
+    }
+
+    // 3. 一覧を再描画する関数があれば呼ぶ
+    if (typeof renderCharacterList === 'function') {
+        renderCharacterList();
+    }
+
+    // 4. スクロールを一番上に戻す
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// 🌟【超重要】HTMLの onclick から呼べるように window に登録する！
+window.goToTopPage = goToTopPage;
+
 function renderCharacterDetail(characterId) {
     const detailContainer = document.getElementById('view-detail');
     if (!detailContainer) return;
