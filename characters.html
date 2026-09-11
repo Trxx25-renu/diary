@@ -473,6 +473,27 @@ function getAdjustedColor(hexColor) {
     }
     return hexColor;
 }
+       // 💡 「#」が入力されていなくても自動で補ってプレビューを連動させる関数
+function handleThemeColorInput(value) {
+    let color = value.trim();
+    
+    // 値が空でなければ、先頭に「#」がついていない場合に自動で補う
+    if (color !== "" && !color.startsWith('#')) {
+        color = '#' + color;
+    }
+
+    // 既存のプレビュー更新関数を呼び出す（もしなければ直接プレビュー要素の色を変える）
+    if (typeof updateColorPreview === 'function') {
+        updateColorPreview(color);
+    } else {
+        const previewEl = document.getElementById('characterColorPreview');
+        if (previewEl) {
+            // 有効なカラーコードっぽければ色を反映
+            previewEl.style.backgroundColor = color;
+        }
+    }
+}
+window.handleThemeColorInput = handleThemeColorInput;
 
 function renderCharacterDetail(characterId) {
     const detailContainer = document.getElementById('view-detail');
@@ -1452,28 +1473,34 @@ window.handleAuthSubmit = handleAuthSubmit;
                 </div>
             </div>
 
-            <!-- 年齢・性別・誕生日・テーマカラー -->
-            <div class="grid grid-cols-2 gap-3 mt-3">
-                <div>
-                    <label class="block text-xs font-bold text-stone-600 mb-1">年齢</label>
-                    <input type="text" id="charAge" placeholder="例: 20" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-800 focus:outline-none focus:border-stone-400">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-stone-600 mb-1">性別</label>
-                    <input type="text" id="charGender" placeholder="例: 女性" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-800 focus:outline-none focus:border-stone-400">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-stone-600 mb-1">誕生日</label>
-                    <input type="text" id="charBirthdate" placeholder="例: 4月1日" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-800 focus:outline-none focus:border-stone-400">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-stone-600 mb-1">テーマカラー</label>
-                    <div class="flex items-center gap-2">
-                        <input type="text" id="charThemeColor" placeholder="#292524" oninput="updateColorPreview(this.value)" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-800 focus:outline-none focus:border-stone-400 font-mono">
-                        <div id="characterColorPreview" class="w-9 h-9 rounded-xl border border-stone-300 shadow-inner bg-stone-100 shrink-0 transition-colors"></div>
-                    </div>
-                </div>
-            </div>
+           <!-- 年齢・性別・誕生日・テーマカラー -->
+<div class="grid grid-cols-2 gap-3 mt-3">
+    <div>
+        <label class="block text-xs font-bold text-stone-600 mb-1">年齢</label>
+        <input type="text" id="charAge" placeholder="例: 20" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-800 focus:outline-none focus:border-stone-400">
+    </div>
+    <div>
+        <label class="block text-xs font-bold text-stone-600 mb-1">性別</label>
+        <select id="charGender" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-800 focus:outline-none focus:border-stone-400">
+            <option value="">未選択</option>
+            <option value="女性">女性</option>
+            <option value="男性">男性</option>
+            <option value="不明">不明</option>
+        </select>
+    </div>
+    <div>
+        <label class="block text-xs font-bold text-stone-600 mb-1">誕生日</label>
+        <input type="text" id="charBirthdate" placeholder="例: 4月1日" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-800 focus:outline-none focus:border-stone-400">
+    </div>
+    <div>
+        <label class="block text-xs font-bold text-stone-600 mb-1">テーマカラー</label>
+        <div class="flex items-center gap-2">
+            <!-- 💡 `#` がなくても反応するように修正した関数を呼び出す -->
+            <input type="text" id="charThemeColor" placeholder="292524 または #292524" oninput="handleThemeColorInput(this.value)" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-800 focus:outline-none focus:border-stone-400 font-mono">
+            <div id="characterColorPreview" class="w-9 h-9 rounded-xl border border-stone-300 shadow-inner bg-stone-100 shrink-0 transition-colors"></div>
+        </div>
+    </div>
+</div>
             
             <!-- キャラクターシートURL入力欄 -->
             <div class="mt-3">
