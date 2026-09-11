@@ -404,6 +404,11 @@ function openEditCharacterModal(characterId) {
         return; 
     }
 
+    // 🌟【最重要】まずはシステムの選択肢（<option>たち）を必ず先に画面に生成する！
+    if (typeof renderCharacterModalSystemSelect === 'function') {
+        renderCharacterModalSystemSelect();
+    }
+
     // フォーム要素へ値をセット
     const nameInput = document.getElementById('charName');
     const nameKanaInput = document.getElementById('charNameKana');
@@ -426,10 +431,10 @@ function openEditCharacterModal(characterId) {
     if (colorInput) colorInput.value = ch.themeColor || '#292524';
     if (sheetUrlInput) sheetUrlInput.value = ch.sheetUrl || '';
 
-    // 💡【重要】disabledを使わず、見た目と操作だけをロックして値は確実に保存できるようにする
+    // 💡 選択肢が生成されたあとなので、ここで確実にシステムがセットできる
     if (systemInput) {
         systemInput.disabled = false; // いったん解除
-        systemInput.value = ch.systemId || ch.system; // システムをセット
+        systemInput.value = ch.systemId || ch.system || ''; // システムをセット
         systemInput.classList.add('opacity-60', 'pointer-events-none', 'bg-stone-100'); // 触れないように見た目をロック
     }
 
@@ -438,7 +443,7 @@ function openEditCharacterModal(characterId) {
         handleSystemChangeInModal();
     }
 
-    // 💡【追加】生成されたカスタム項目の入力欄に、キャラクターが保存していた過去の値を流し込む！
+    // 💡 生成されたカスタム項目の入力欄に、キャラクターが保存していた過去の値を流し込む！
     if (ch.customValues && typeof ch.customValues === 'object') {
         Object.keys(ch.customValues).forEach(fieldId => {
             const fieldInput = document.getElementById(`custom_field_${fieldId}`);
