@@ -550,29 +550,41 @@ function handleThemeColorInput(value) {
 window.handleThemeColorInput = handleThemeColorInput;
 
        // ==========================================
-// 💡 トップページ（一覧）に戻る関数
+// 💡 修正版: 正しくキャラクター一覧（トップページ）に戻る関数
 // ==========================================
 function goToTopPage() {
-    // 1. 編集・登録モーダルが開いていれば閉じる
+    // 1. 開いているモーダルがあればすべて閉じる
     const editModal = document.getElementById('characterModal');
     if (editModal) editModal.classList.add('hidden');
 
-    // 2. 検索窓やフィルターをクリアして初期状態にする場合
+    const detailModal = document.getElementById('characterDetailModal');
+    if (detailModal) detailModal.classList.add('hidden');
+
+    // 2. 検索窓などをクリアする
     const searchInput = document.getElementById('searchInput');
     if (searchInput) {
         searchInput.value = '';
     }
 
-    // 3. 一覧を再描画する関数があれば呼ぶ
+    // ==========================================
+    // 💡【最重要】システム選択画面ではなく、キャラクター一覧画面を表示・描画する！
+    // ==========================================
+    // もし画面の切り替えに特定のクラスや非表示切り替えを使っている場合（例: systemSelectView を隠して characterListView を出すなど）
+    const systemSelectView = document.getElementById('systemSelectView'); // システム選択のエリア
+    const characterListView = document.getElementById('characterListView'); // キャラクター一覧のエリア
+    
+    if (systemSelectView) systemSelectView.classList.add('hidden');
+    if (characterListView) characterListView.classList.remove('hidden');
+
+    // キャラクター一覧を再描画する関数を呼ぶ
     if (typeof renderCharacterList === 'function') {
         renderCharacterList();
     }
+    // ==========================================
 
-    // 4. スクロールを一番上に戻す
+    // 5. ページの一番上にスクロールを戻す
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
-
-// 🌟【超重要】HTMLの onclick から呼べるように window に登録する！
 window.goToTopPage = goToTopPage;
 
 function renderCharacterDetail(characterId) {
