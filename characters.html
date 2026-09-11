@@ -393,7 +393,7 @@ function navigateTo(target, param) {
 window.navigateTo = navigateTo;
         
 // ==========================================
-// 💡 修正版: openEditCharacterModal 関数の定義
+// 💡 完全修正版: openEditCharacterModal 関数の定義
 // ==========================================
 function openEditCharacterModal(characterId) {
     // 文字列・数値を揃えてキャラクターを検索
@@ -426,11 +426,11 @@ function openEditCharacterModal(characterId) {
     if (colorInput) colorInput.value = ch.themeColor || '#292524';
     if (sheetUrlInput) sheetUrlInput.value = ch.sheetUrl || '';
 
-    // 💡 システムをセットして、編集時は変更できないようにロックする
+    // 💡【重要】disabledを使わず、見た目と操作だけをロックして値は確実に保存できるようにする
     if (systemInput) {
-        systemInput.disabled = false; // いったん解除してから値をセット
-        systemInput.value = ch.systemId; // 正しいシステムIDをセット
-        systemInput.disabled = true;  // 編集時は変更不可にするためロック
+        systemInput.disabled = false; // いったん解除
+        systemInput.value = ch.systemId || ch.system; // システムをセット
+        systemInput.classList.add('opacity-60', 'pointer-events-none', 'bg-stone-100'); // 触れないように見た目をロック
     }
 
     // 💡 システムに応じたカスタム項目（ステータス等）を生成・表示する
@@ -438,7 +438,17 @@ function openEditCharacterModal(characterId) {
         handleSystemChangeInModal();
     }
 
-    // 💡 カラープレビューを確実に連動させる（handleThemeColorInputを利用）
+    // 💡【追加】生成されたカスタム項目の入力欄に、キャラクターが保存していた過去の値を流し込む！
+    if (ch.customValues && typeof ch.customValues === 'object') {
+        Object.keys(ch.customValues).forEach(fieldId => {
+            const fieldInput = document.getElementById(`custom_field_${fieldId}`);
+            if (fieldInput) {
+                fieldInput.value = ch.customValues[fieldId];
+            }
+        });
+    }
+
+    // 💡 カラープレビューを確実に連動させる
     if (typeof handleThemeColorInput === 'function') {
         handleThemeColorInput(ch.themeColor || '#292524');
     }
@@ -1278,14 +1288,15 @@ window.handleAuthSubmit = handleAuthSubmit;
     
 <body class="min-h-screen flex flex-col bg-stone-50 text-stone-800">
 
-    <!-- ヘッダー -->
+  <!-- ヘッダー -->
     <header class="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-stone-200/80 px-4 py-3">
         <div class="max-w-4xl mx-auto flex items-center justify-between">
             <!-- 左側：アイコン ＆ タイトル・サブタイトル -->
             <div class="flex items-center gap-3">
                 <img id="headerFaviconImg" class="w-8 h-8 rounded-lg object-cover border border-stone-200 shadow-sm hidden" alt="Icon">
                 <div>
-                    <h1 id="siteHeaderTitle" class="text-base font-bold tracking-tight text-stone-800 transition-colors">キャラクター管理</h1>
+                    <!-- 💡 onclick と cursor-pointer を追加しました -->
+                    <h1 id="siteHeaderTitle" onclick="goToTopPage()" class="text-base font-bold tracking-tight text-stone-800 transition-colors cursor-pointer hover:text-stone-600">キャラクター管理</h1>
                     <p id="siteHeaderSubtitle" class="text-[10px] text-stone-400 font-serif-title tracking-wider uppercase">CHARACTER LOG</p>
                 </div>
             </div>
