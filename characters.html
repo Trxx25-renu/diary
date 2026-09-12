@@ -360,8 +360,8 @@ function renderCharacterList(systemId, filterKeyword = "") {
             thumbHtml = `<img src="${ch.images.base[0].url}" class="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500">`;
         }
 
-        // ==========================================
-// 💡 キャラクター画像（ギャラリー）管理まわりの処理
+// ==========================================
+// 💡 キャラクター画像（ギャラリー）管理まわりの処理（透過維持・WebP圧縮対応版）
 // ==========================================
 
 // 現在選択されている画像カテゴリ（初期値: base）
@@ -395,7 +395,7 @@ function switchImageCategory(categoryKey) {
 }
 window.switchImageCategory = switchImageCategory;
 
-// 2. 画像ファイルが選択されたときの処理（複数対応・Base64変換）
+// 2. 画像ファイルが選択されたときの処理（複数対応・透過維持＆WebP自動圧縮）
 function handleCharacterImagesSelect(event) {
     const files = event.target.files;
     if (!files || files.length === 0) return;
@@ -403,18 +403,50 @@ function handleCharacterImagesSelect(event) {
     Array.from(files).forEach(file => {
         const reader = new FileReader();
         reader.onload = function(e) {
-            const base64 = e.target.result;
-            if (!window.editingCharacterImages[window.currentImageCategory]) {
-                window.editingCharacterImages[window.currentImageCategory] = [];
-            }
-            window.editingCharacterImages[window.currentImageCategory].push({
-                url: base64,
-                name: file.name,
-                uploadedAt: Date.now()
-            });
+            const img = new Image();
+            img.onload = function() {
+                // Canvasを使って画像を縮小（最大幅・高さ 800px に収める）
+                const canvas = document.createElement('canvas');
+                const MAX_SIZE = 800;
+                let width = img.width;
+                let height = img.height;
 
-            // プレビューを更新
-            renderCharacterImagesPreview();
+                if (width > height) {
+                    if (width > MAX_SIZE) {
+                        height *= MAX_SIZE / width;
+                        width = MAX_SIZE;
+                    }
+                } else {
+                    if (height > MAX_SIZE) {
+                        width *= MAX_SIZE / height;
+                        height = MAX_SIZE;
+                    }
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                
+                // 💡 透過背景が黒くならないようにクリアしてから描画
+                ctx.clearRect(0, 0, width, height);
+                ctx.drawImage(img, 0, 0, width, height);
+
+                // 💡 透過を維持したままWebP形式（品質0.75）で圧縮してBase64化
+                const compressedBase64 = canvas.toDataURL('image/webp', 0.75);
+
+                if (!window.editingCharacterImages[window.currentImageCategory]) {
+                    window.editingCharacterImages[window.currentImageCategory] = [];
+                }
+                window.editingCharacterImages[window.currentImageCategory].push({
+                    url: compressedBase64,
+                    name: file.name,
+                    uploadedAt: Date.now()
+                });
+
+                // プレビューを更新
+                renderCharacterImagesPreview();
+            };
+            img.src = e.target.result;
         };
         reader.readAsDataURL(file);
     });
