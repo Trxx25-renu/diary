@@ -52,10 +52,9 @@
 }
     </style>
 
-   <script type="module">
+<script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        // 💡 ここに updateDoc を追加しました！
         import { getFirestore, collection, getDocs, doc, getDoc, setDoc, addDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // HTMLエスケープ処理
@@ -84,128 +83,98 @@
         }
         window.parseSpoilers = parseSpoilers;
 
+        // デフォルトのシステムリスト（ご指定のひな型順）
+        window.systems = [
+            { id: 'coc', name: 'クトゥルフ神話TRPG (6版)', desc: 'CoC 6版', badgeColor: 'bg-amber-900/80' },
+            { id: 'dx3', name: 'ダブルクロス The 3rd Edition', desc: 'DX3rd', badgeColor: 'bg-rose-900/80' },
+            { id: 'shinobigami', name: 'シノビガミ', desc: '現代忍法アクション', badgeColor: 'bg-cyan-900/80' },
+            { id: 'insane', name: 'インセイン', desc: 'マルチジャンルホラー', badgeColor: 'bg-purple-900/80' },
+            { id: 'magica', name: 'マギカロギア', desc: '魔法使いRPG', badgeColor: 'bg-indigo-900/80' },
+            { id: 'sw25', name: 'ソード・ワールド2.5', desc: 'SW2.5', badgeColor: 'bg-emerald-800/80' }
+        ];
+
+        // デフォルトのシステム別カスタムフィールド
+        window.systemCustomFields = {
+            coc: {
+                status: [
+                    { id: 'san', label: 'SAN (正気度)', max: 99 },
+                    { id: 'hp', label: 'HP', max: 12 }
+                ],
+                text: [
+                    { id: 'mythos', label: 'クトゥルフ神話技能' },
+                    { id: 'artifact', label: '所持アーティファクト / 呪文' }
+                ]
+            },
+            dx3: {
+                status: [
+                    { id: 'hp', label: 'HP', max: 35 },
+                    { id: '侵蝕率', label: '侵蝕率', max: 150 }
+                ],
+                text: [
+                    { id: 'syndrome', label: 'シンドローム' },
+                    { id: 'ror', label: 'ロイス' }
+                ]
+            },
+            shinobigami: {
+                status: [
+                    { id: 'hp', label: '生命力', max: 6 }
+                ],
+                text: [
+                    { id: 'ryuha', label: '流派 / 階級' },
+                    { id: 'secret', label: '秘密 / 使命' }
+                ]
+            },
+            insane: {
+                status: [
+                    { id: 'hp', label: '狂気点', max: 6 }
+                ],
+                text: [
+                    { id: 'secret', label: '秘密 / 使命' },
+                    { id: 'horror', label: 'ホラー / ゾンビなど' }
+                ]
+            },
+            magica: {
+                status: [
+                    { id: 'hp', label: '生命力', max: 5 }
+                ],
+                text: [
+                    { id: 'kanei', label: '経緯 / 位階' },
+                    { id: 'mahou', label: '魔法 / 使命' }
+                ]
+            },
+            sw25: {
+                status: [
+                    { id: 'hp', label: 'HP', max: 30 },
+                    { id: 'mp', label: 'MP', max: 30 }
+                ],
+                text: [
+                    { id: 'race', label: '種族 / レベル' }
+                ]
+            }
+        };
+
         // ⭐ 設定を安全に読み込む専用の関数
-async function loadSiteConfigFromFirestore() {
-    if (!window.db) {
-        console.error("window.db is not ready yet!");
-        return;
-    }
-
-    try {
-        const configRef = doc(window.db, 'artifacts', window.appId, 'public', 'data', 'config', 'settings');
-        const configSnap = await getDoc(configRef);
-        if (configSnap.exists()) {
-            window.storedPasscode = configSnap.data().passcode;
-        }
-
-        const rosterConfigRef = doc(window.db, 'artifacts', window.appId, 'public', 'data', 'config', 'characterRosterSettings');
-        const rosterSnap = await getDoc(rosterConfigRef);
-        if (rosterSnap.exists()) {
-            const data = rosterSnap.data();
-            window.rosterSettings = data;
-            if (typeof applyRosterSettings === 'function') {
-                applyRosterSettings(data);
+        async function loadSiteConfigFromFirestore() {
+            if (!window.db || !window.appId) {
+                console.error("window.db or window.appId is not ready yet!");
+                return;
             }
-            if (data.systems) {
-                window.systems = data.systems; // 保存された並び順を反映
-            }
-            if (data.customFields) {
-                window.systemCustomFields = data.customFields;
-            }
-        } else {
-            window.rosterSettings = { title: "", favicon: "" };
-        }
-    } catch (e) { 
-        console.error("Config load error:", e); 
-    }
-}
-window.loadSiteConfigFromFirestore = loadSiteConfigFromFirestore;
-
-            // デフォルトのシステムリスト（ご指定のひな型順）
-            window.systems = [
-                { id: 'coc', name: 'クトゥルフ神話TRPG (6版)', desc: 'CoC 6版', badgeColor: 'bg-amber-900/80' },
-                { id: 'dx3', name: 'ダブルクロス The 3rd Edition', desc: 'DX3rd', badgeColor: 'bg-rose-900/80' },
-                { id: 'shinobigami', name: 'シノビガミ', desc: '現代忍法アクション', badgeColor: 'bg-cyan-900/80' },
-                { id: 'insane', name: 'インセイン', desc: 'マルチジャンルホラー', badgeColor: 'bg-purple-900/80' },
-                { id: 'magica', name: 'マギカロギア', desc: '魔法使いRPG', badgeColor: 'bg-indigo-900/80' },
-                { id: 'sw25', name: 'ソード・ワールド2.5', desc: 'SW2.5', badgeColor: 'bg-emerald-800/80' }
-            ];
-
-            // デフォルトのシステム別カスタムフィールド
-            window.systemCustomFields = {
-                coc: {
-                    status: [
-                        { id: 'san', label: 'SAN (正気度)', max: 99 },
-                        { id: 'hp', label: 'HP', max: 12 }
-                    ],
-                    text: [
-                        { id: 'mythos', label: 'クトゥルフ神話技能' },
-                        { id: 'artifact', label: '所持アーティファクト / 呪文' }
-                    ]
-                },
-                dx3: {
-                    status: [
-                        { id: 'hp', label: 'HP', max: 35 },
-                        { id: '侵蝕率', label: '侵蝕率', max: 150 }
-                    ],
-                    text: [
-                        { id: 'syndrome', label: 'シンドローム' },
-                        { id: 'ror', label: 'ロイス' }
-                    ]
-                },
-                shinobigami: {
-                    status: [
-                        { id: 'hp', label: '生命力', max: 6 }
-                    ],
-                    text: [
-                        { id: 'ryuha', label: '流派 / 階級' },
-                        { id: 'secret', label: '秘密 / 使命' }
-                    ]
-                },
-                insane: {
-                    status: [
-                        { id: 'hp', label: '狂気点', max: 6 }
-                    ],
-                    text: [
-                        { id: 'secret', label: '秘密 / 使命' },
-                        { id: 'horror', label: 'ホラー / ゾンビなど' }
-                    ]
-                },
-                magica: {
-                    status: [
-                        { id: 'hp', label: '生命力', max: 5 }
-                    ],
-                    text: [
-                        { id: 'kanei', label: '経緯 / 位階' },
-                        { id: 'mahou', label: '魔法 / 使命' }
-                    ]
-                },
-                sw25: {
-                    status: [
-                        { id: 'hp', label: 'HP', max: 30 },
-                        { id: 'mp', label: 'MP', max: 30 }
-                    ],
-                    text: [
-                        { id: 'race', label: '種族 / レベル' }
-                    ]
-                }
-            };
 
             try {
-                // ⭐ db を window.db に変更
                 const configRef = doc(window.db, 'artifacts', window.appId, 'public', 'data', 'config', 'settings');
                 const configSnap = await getDoc(configRef);
                 if (configSnap.exists()) {
                     window.storedPasscode = configSnap.data().passcode;
                 }
 
-                // ⭐ こちらも db を window.db に変更
                 const rosterConfigRef = doc(window.db, 'artifacts', window.appId, 'public', 'data', 'config', 'characterRosterSettings');
                 const rosterSnap = await getDoc(rosterConfigRef);
                 if (rosterSnap.exists()) {
                     const data = rosterSnap.data();
                     window.rosterSettings = data;
-                    applyRosterSettings(data);
+                    if (typeof applyRosterSettings === 'function') {
+                        applyRosterSettings(data);
+                    }
                     if (data.systems) {
                         window.systems = data.systems; // 保存された並び順を反映
                     }
@@ -215,15 +184,16 @@ window.loadSiteConfigFromFirestore = loadSiteConfigFromFirestore;
                 } else {
                     window.rosterSettings = { title: "", favicon: "" };
                 }
-            } catch (e) { console.error("Config load error:", e); }
+            } catch (e) { 
+                console.error("Config load error:", e); 
+            }
+        }
+        window.loadSiteConfigFromFirestore = loadSiteConfigFromFirestore;
 
-            await loadCharactersFromFirestore();
-            renderSystemFolders();
-            updateAdminUI();
-
+        // ⭐ キャラクター読み込み関数
         async function loadCharactersFromFirestore() {
+            if (!window.db || !window.appId) return;
             try {
-                // 💡 db を window.db に変更
                 const charsRef = collection(window.db, 'artifacts', window.appId, 'public', 'data', 'characters');
                 const querySnap = await getDocs(charsRef);
                 const loaded = [];
@@ -236,90 +206,114 @@ window.loadSiteConfigFromFirestore = loadSiteConfigFromFirestore;
                 window.characters = [];
             }
         }
+        window.loadCharactersFromFirestore = loadCharactersFromFirestore;
 
+        // フォルダ描画関数
         function renderSystemFolders(filterKeyword = "") {
-    const container = document.getElementById('systemFoldersContainer');
-    if (!container) return;
+            const container = document.getElementById('systemFoldersContainer');
+            if (!container) return;
 
-    container.innerHTML = '';
-    const keyword = filterKeyword.toLowerCase().trim();
-    
-    // 💡 window.characters が未定義（undefined）の場合に備えて空配列をデフォルトにする
-    const allChars = window.characters || [];
+            container.innerHTML = '';
+            const keyword = filterKeyword.toLowerCase().trim();
+            
+            // 💡 window.characters が未定義の場合に備えて空配列にする
+            const allChars = window.characters || [];
 
-    window.systems.forEach(sys => {
-        const sysChars = allChars.filter(c => c.systemId === sys.id);
-        const matchesSystem = sys.name.toLowerCase().includes(keyword) || sys.desc.toLowerCase().includes(keyword);
-        const matchedChars = sysChars.filter(c => 
-            (c.name && c.name.toLowerCase().includes(keyword)) ||
-            (c.epithet && c.epithet.toLowerCase().includes(keyword)) ||
-            (c.occupation && c.occupation.toLowerCase().includes(keyword))
-        );
+            window.systems.forEach(sys => {
+                const sysChars = allChars.filter(c => c.systemId === sys.id);
+                const matchesSystem = sys.name.toLowerCase().includes(keyword) || sys.desc.toLowerCase().includes(keyword);
+                const matchedChars = sysChars.filter(c => 
+                    (c.name && c.name.toLowerCase().includes(keyword)) ||
+                    (c.epithet && c.epithet.toLowerCase().includes(keyword)) ||
+                    (c.occupation && c.occupation.toLowerCase().includes(keyword))
+                );
 
-        if (keyword && !matchesSystem && matchedChars.length === 0) {
-            return;
+                if (keyword && !matchesSystem && matchedChars.length === 0) {
+                    return;
+                }
+
+                const card = document.createElement('div');
+                card.className = 'bg-white rounded-2xl p-5 border border-stone-200/80 shadow-sm hover:border-stone-400 transition-all cursor-pointer flex flex-col justify-between gap-4 group';
+                card.onclick = () => navigateTo('characterList', sys.id);
+
+                card.innerHTML = `
+                    <div>
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-[10px] font-medium text-white px-2.5 py-1 rounded-lg ${sys.badgeColor || 'bg-stone-700'}">${sys.desc}</span>
+                            <i class="fa-solid fa-folder-open text-stone-300 group-hover:text-stone-600 transition-colors"></i>
+                        </div>
+                        <h3 class="font-bold text-base text-stone-800 group-hover:text-stone-900">${sys.name}</h3>
+                        <p class="text-xs text-stone-400 mt-1">登録キャラクター: <span class="font-bold text-stone-600">${sysChars.length}</span> 名</p>
+                        ${keyword && matchedChars.length > 0 ? `<p class="text-[11px] text-amber-700 bg-amber-50 px-2 py-1 rounded-md mt-2">一致キャラ: ${matchedChars.map(c => c.name).join(', ')}</p>` : ''}
+                    </div>
+                    <div class="flex items-center justify-between pt-3 border-t border-stone-100 text-xs text-stone-500 font-medium">
+                        <span>一覧を見る</span>
+                        <i class="fa-solid fa-arrow-right text-[10px] group-hover:translate-x-1 transition-transform"></i>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+
+            if (container.children.length === 0) {
+                container.innerHTML = `
+                    <div class="col-span-full text-center py-12 text-stone-400 text-xs">
+                        <i class="fa-solid fa-search text-2xl mb-2"></i>
+                        <p>一致するシステム・キャラクターが見つかりませんでした。</p>
+                    </div>
+                `;
+            }
         }
+        window.renderSystemFolders = renderSystemFolders;
 
-        const card = document.createElement('div');
-        card.className = 'bg-white rounded-2xl p-5 border border-stone-200/80 shadow-sm hover:border-stone-400 transition-all cursor-pointer flex flex-col justify-between gap-4 group';
-        card.onclick = () => navigateTo('characterList', sys.id);
-
-        card.innerHTML = `
-            <div>
-                <div class="flex items-center justify-between mb-3">
-                    <span class="text-[10px] font-medium text-white px-2.5 py-1 rounded-lg ${sys.badgeColor || 'bg-stone-700'}">${sys.desc}</span>
-                    <i class="fa-solid fa-folder-open text-stone-300 group-hover:text-stone-600 transition-colors"></i>
-                </div>
-                <h3 class="font-bold text-base text-stone-800 group-hover:text-stone-900">${sys.name}</h3>
-                <p class="text-xs text-stone-400 mt-1">登録キャラクター: <span class="font-bold text-stone-600">${sysChars.length}</span> 名</p>
-                ${keyword && matchedChars.length > 0 ? `<p class="text-[11px] text-amber-700 bg-amber-50 px-2 py-1 rounded-md mt-2">一致キャラ: ${matchedChars.map(c => c.name).join(', ')}</p>` : ''}
-            </div>
-            <div class="flex items-center justify-between pt-3 border-t border-stone-100 text-xs text-stone-500 font-medium">
-                <span>一覧を見る</span>
-                <i class="fa-solid fa-arrow-right text-[10px] group-hover:translate-x-1 transition-transform"></i>
-            </div>
-        `;
-        container.appendChild(card);
-    });
-
-    if (container.children.length === 0) {
-        container.innerHTML = `
-            <div class="col-span-full text-center py-12 text-stone-400 text-xs">
-                <i class="fa-solid fa-search text-2xl mb-2"></i>
-                <p>一致するシステム・キャラクターが見つかりませんでした。</p>
-            </div>
-        `;
-    }
-}
-window.renderSystemFolders = renderSystemFolders;
-
-function handleFolderSearchInput(e) {
-    renderSystemFolders(e.target.value);
-}
-window.handleFolderSearchInput = handleFolderSearchInput;
-
- // ==========================================
-// 💡 ファビコンファイル選択時のプレビュー＆Base64変換関数
-// ==========================================
-function handleFaviconFileSelect(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        const base64String = e.target.result;
-        window.currentFaviconBase64 = base64String;
-
-        // プレビュー画像を表示
-        const preview = document.getElementById('settingFaviconPreview');
-        if (preview) {
-            preview.src = base64String;
-            preview.classList.remove('hidden');
+        function handleFolderSearchInput(e) {
+            renderSystemFolders(e.target.value);
         }
-    };
-    reader.readAsDataURL(file);
-}
-window.handleFaviconFileSelect = handleFaviconFileSelect;
+        window.handleFolderSearchInput = handleFolderSearchInput;
+
+        // ==========================================
+        // 💡 ファビコンファイル選択時のプレビュー＆Base64変換関数
+        // ==========================================
+        function handleFaviconFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const base64String = e.target.result;
+                window.currentFaviconBase64 = base64String;
+
+                // プレビュー画像を表示
+                const preview = document.getElementById('settingFaviconPreview');
+                if (preview) {
+                    preview.src = base64String;
+                    preview.classList.remove('hidden');
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+        window.handleFaviconFileSelect = handleFaviconFileSelect;
+
+        // ==========================================
+        // 💡 データベースの準備を待ってから一連の読み込みを実行するトリガー
+        // ==========================================
+        document.addEventListener("DOMContentLoaded", async () => {
+            let checkCount = 0;
+            while ((!window.db || !window.appId) && checkCount < 30) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+                checkCount++;
+            }
+
+            if (window.db && window.appId) {
+                await loadSiteConfigFromFirestore();
+                await loadCharactersFromFirestore();
+                renderSystemFolders();
+                if (typeof updateAdminUI === 'function') {
+                    updateAdminUI();
+                }
+            } else {
+                console.error("Initialization timeout: window.db or window.appId is missing.");
+            }
+        });
 
 // ==========================================
 // 💡 完成版: キャラクター一覧描画関数（並び替え・二つ名対応版）
