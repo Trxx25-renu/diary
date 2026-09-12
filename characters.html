@@ -106,28 +106,52 @@
             };
 
             const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-        
-        // ⭐ グローバル変数に確実にセットする
-        window.db = db; 
+            const auth = getAuth(app);
+            const db = getFirestore(app);
+            
+            // ⭐ グローバル変数に確実にセットする
+            window.db = db; 
 
-        await signInAnonymously(auth);
-        console.log("🔥 匿名ログイン成功");
+            await signInAnonymously(auth);
+            console.log("🔥 匿名ログイン成功");
 
-        // ⭐ ログイン成功後に、設定やキャラクターの読み込み関数を呼び出す
-        if (typeof loadSiteConfig === 'function') {
-            await loadSiteConfig();
-        }
-        if (typeof loadCharactersFromFirestore === 'function') {
-            await loadCharactersFromFirestore();
-        }
+            try {
+                // ⭐ db を window.db に修正
+                const configRef = doc(window.db, 'artifacts', window.appId, 'public', 'data', 'config', 'settings');
+                const configSnap = await getDoc(configRef);
+                if (configSnap.exists()) {
+                    window.storedPasscode = configSnap.data().passcode;
+                }
 
-        // ホームのパンくず初期表示
-        if (typeof renderBreadcrumbAndActions === 'function') {
-            renderBreadcrumbAndActions('home');
-        }
-    });
+                // ⭐ こちらも db を window.db に修正
+                const rosterConfigRef = doc(window.db, 'artifacts', window.appId, 'public', 'data', 'config', 'characterRosterSettings');
+                const rosterSnap = await getDoc(rosterConfigRef);
+                if (rosterSnap.exists()) {
+                    const data = rosterSnap.data();
+                    window.rosterSettings = data;
+                    applyRosterSettings(data);
+                    if (data.systems) {
+                        window.systems = data.systems; // 保存された並び順を反映
+                    }
+                    if (data.customFields) {
+                        window.systemCustomFields = data.customFields;
+                    }
+                } else {
+                    window.rosterSettings = { title: "", favicon: "" };
+                }
+            } catch (e) { console.error("Config load error:", e); }
+
+            if (typeof loadCharactersFromFirestore === 'function') {
+                await loadCharactersFromFirestore();
+            }
+            renderSystemFolders();
+            updateAdminUI();
+
+            // ホームのパンくず初期表示
+            if (typeof renderBreadcrumbAndActions === 'function') {
+                renderBreadcrumbAndActions('home');
+            }
+        });
 
             // デフォルトのシステムリスト（ご指定のひな型順）
             window.systems = [
