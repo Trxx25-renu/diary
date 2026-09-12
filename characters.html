@@ -576,35 +576,40 @@ function renderCharacterDetail(characterId) {
         customFieldsHtml += `</div>`;
     }
 
-    // 💡 「設定／メモ」＆「秘匿メモ」エリア
-    const memo = ch.memo || '';
-    const secret = ch.secret || '';
-    let settingsMemoHtml = '';
-    
-    if (memo || secret) {
-        settingsMemoHtml = `
-            <div class="mt-6 pt-6 border-t border-stone-100 space-y-4">
-                ${memo ? `
-                    <div>
-                        <h4 class="text-xs font-bold text-stone-500 mb-1.5 flex items-center gap-1.5">
-                            <i class="fa-solid fa-note-sticky text-stone-400"></i> 設定 / メモ
-                        </h4>
-                        <div class="bg-stone-50 rounded-2xl p-4 text-xs text-stone-700 whitespace-pre-wrap border border-stone-100 leading-relaxed">${memo}</div>
-                    </div>
-                ` : ''}
+    // 💡 「設定／メモ」＆「秘匿メモ」エリア（秘匿メモ丸ごと隠し・トグル対応版）
+const memo = ch.memo || '';
+const secret = ch.secret || '';
+let settingsMemoHtml = '';
 
-                ${secret ? `
-                    <div>
-                        <h4 class="text-xs font-bold text-rose-500 mb-1.5 flex items-center gap-1.5">
-                            <i class="fa-solid fa-user-secret text-rose-400"></i> 秘匿メモ（ネタバレ）
-                        </h4>
-                        <div class="bg-rose-50/50 rounded-2xl p-4 text-xs text-stone-700 whitespace-pre-wrap border border-rose-100/60 leading-relaxed">${parseSpoilers(secret)}</div>
-                    </div>
-                ` : ''}
-            </div>
-        `;
-    }
+if (memo || secret) {
+    settingsMemoHtml = `
+        <div class="mt-6 pt-6 border-t border-stone-100 space-y-4">
+            ${memo ? `
+                <div>
+                    <h4 class="text-xs font-bold text-stone-500 mb-1.5 flex items-center gap-1.5">
+                        <i class="fa-solid fa-note-sticky text-stone-400"></i> 設定 / メモ
+                    </h4>
+                    <div class="bg-stone-50 rounded-2xl p-4 text-xs text-stone-700 whitespace-pre-wrap border border-stone-100 leading-relaxed">${memo}</div>
+                </div>
+            ` : ''}
 
+            ${secret ? `
+                <div>
+                    <h4 class="text-xs font-bold text-rose-500 mb-1.5 flex items-center gap-1.5">
+                        <i class="fa-solid fa-user-secret text-rose-400"></i> 秘匿メモ（ネタバレ）
+                    </h4>
+                    <!-- 💡 クラスに 'blur-sm select-none' をつけて最初からぼかし・選択不可にし、クリックでトグルする -->
+                    <div class="bg-rose-50/50 rounded-2xl p-4 text-xs text-stone-700 whitespace-pre-wrap border border-rose-100/60 leading-relaxed cursor-pointer filter blur-sm select-none transition-all hover:opacity-90 relative group" onclick="this.classList.toggle('blur-sm'); this.classList.toggle('select-none');">
+                        ${secret}
+                        <div class="text-[10px] text-rose-400 font-bold mt-2 pt-2 border-t border-rose-200/40 text-center">
+                            👆 クリックして表示 / 非表示
+                        </div>
+                    </div>
+                </div>
+            ` : ''}
+        </div>
+    `;
+}
     // 通過シナリオ一覧
     const scenariosHtml = `
         <div class="mt-6 pt-6 border-t border-stone-100">
