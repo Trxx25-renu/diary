@@ -472,7 +472,7 @@ window.getAdaptiveTextColor = getAdaptiveTextColor;
 
 
 // ==========================================
-// 💡 キャラクター詳細描画関数（背景色なし・サムネイル枠付き版）
+// 💡 キャラクター詳細描画関数（テーマカラー完全反映版）
 // ==========================================
 
 window._currentGalleryState = window._currentGalleryState || { characterId: null, category: 'base', index: 0 };
@@ -585,9 +585,13 @@ function renderCharacterDetail(characterId) {
             const tabBtn = document.getElementById(`gal-tab-${cat.key}`);
             if (tabBtn) {
                 if (cat.key === state.category) {
-                    tabBtn.className = "gallery-tab px-3 py-1.5 text-xs font-bold rounded-lg transition-all bg-stone-800 text-white shadow-xs";
+                    tabBtn.className = "gallery-tab px-3 py-1.5 text-xs font-bold rounded-lg transition-all shadow-xs";
+                    tabBtn.style.backgroundColor = themeColor;
+                    tabBtn.style.color = badgeTextColor;
                 } else {
                     tabBtn.className = "gallery-tab px-3 py-1.5 text-xs font-bold rounded-lg transition-all bg-stone-200/60 text-stone-600 hover:bg-stone-200";
+                    tabBtn.style.backgroundColor = "";
+                    tabBtn.style.color = "";
                 }
             }
         });
@@ -597,7 +601,7 @@ function renderCharacterDetail(characterId) {
         if (thumbContainer && thumbWrapper) {
             if (currentImgs.length > 1) {
                 thumbContainer.innerHTML = currentImgs.map((img, idx) => `
-                    <button onclick="selectGalleryIndex(${idx})" class="relative w-14 h-14 rounded-xl overflow-hidden border-2 transition-all shrink-0 bg-stone-100 ${idx === state.index ? 'border-stone-800 scale-105 shadow-md' : 'border-stone-200 opacity-60 hover:opacity-100'}">
+                    <button onclick="selectGalleryIndex(${idx})" class="relative w-14 h-14 rounded-xl overflow-hidden border-2 transition-all shrink-0 bg-white ${idx === state.index ? 'scale-105 shadow-md' : 'border-stone-200 opacity-60 hover:opacity-100'}" style="${idx === state.index ? `border-color: ${themeColor};` : ''}">
                         <img src="${img.url}" class="w-full h-full object-cover">
                     </button>
                 `).join('');
@@ -620,10 +624,12 @@ function renderCharacterDetail(characterId) {
                     ${galleryCategories.map(cat => {
                         const count = avatars.filter(img => img.category === cat.key).length;
                         if (count === 0) return '';
+                        const isActive = cat.key === activeCat;
                         return `
                             <button onclick="switchGalleryCategory('${cat.key}')" 
                                     id="gal-tab-${cat.key}" 
-                                    class="gallery-tab px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${cat.key === activeCat ? 'bg-stone-800 text-white shadow-xs' : 'bg-stone-200/60 text-stone-600 hover:bg-stone-200'}">
+                                    class="gallery-tab px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${isActive ? 'shadow-xs' : 'bg-stone-200/60 text-stone-600 hover:bg-stone-200'}"
+                                    style="${isActive ? `background-color: ${themeColor}; color: ${badgeTextColor};` : ''}">
                                 ${cat.name} (${count})
                             </button>
                         `;
@@ -655,7 +661,7 @@ function renderCharacterDetail(characterId) {
                     </div>
                     <div id="galleryThumbnailsContainer" class="flex gap-2 overflow-x-auto pb-1 pt-1 scrollbar-thin">
                         ${safeCatImages.map((img, idx) => `
-                            <button onclick="selectGalleryIndex(${idx})" class="relative w-14 h-14 rounded-xl overflow-hidden border-2 transition-all shrink-0 bg-white ${idx === window._currentGalleryState.index ? 'border-stone-800 scale-105 shadow-md' : 'border-stone-200 opacity-60 hover:opacity-100'}">
+                            <button onclick="selectGalleryIndex(${idx})" class="relative w-14 h-14 rounded-xl overflow-hidden border-2 transition-all shrink-0 bg-white ${idx === window._currentGalleryState.index ? 'scale-105 shadow-md' : 'border-stone-200 opacity-60 hover:opacity-100'}" style="${idx === window._currentGalleryState.index ? `border-color: ${themeColor};` : ''}">
                                 <img src="${img.url}" class="w-full h-full object-cover">
                             </button>
                         `).join('')}
@@ -688,7 +694,7 @@ function renderCharacterDetail(characterId) {
     if (ch.sheetUrl) {
         sheetLinkHtml = `
             <div class="mt-4 pt-4 border-t border-stone-100">
-                <a href="${ch.sheetUrl}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 text-xs font-bold text-white px-4 py-2 rounded-xl shadow-sm hover:opacity-95 transition-all" style="background-color: ${themeColor}; color: ${badgeTextColor};">
+                <a href="${ch.sheetUrl}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 text-xs font-bold px-4 py-2 rounded-xl shadow-sm hover:opacity-95 transition-all" style="background-color: ${themeColor}; color: ${badgeTextColor};">
                     <i class="fa-solid fa-external-link-alt text-[10px]"></i>
                     <span>キャラクターシートを開く</span>
                 </a>
