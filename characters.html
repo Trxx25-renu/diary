@@ -1204,6 +1204,16 @@ function updateColorPreview(colorCode) {
 }
 window.updateColorPreview = updateColorPreview;
 
+       // ==========================================
+// 💡 handleThemeColorInput のブリッジ関数
+// ==========================================
+function handleThemeColorInput(colorCode) {
+    if (typeof updateColorPreview === 'function') {
+        updateColorPreview(colorCode);
+    }
+}
+window.handleThemeColorInput = handleThemeColorInput;
+
 // ==========================================
 // 💡 4. 新規キャラクター登録モーダルを開く関数
 // ==========================================
@@ -1477,6 +1487,24 @@ window.handleAuthSubmit = handleAuthSubmit;
             }
         }
         window.updateHeaderBranding = updateHeaderBranding;
+
+       // ==========================================
+// 💡 秘匿メモ（ネタバレ）の表示・非表示を切り替える関数
+// ==========================================
+function toggleSecretMemo() {
+    const container = document.getElementById('detailSecretContainer');
+    if (!container) return;
+
+    // クリックされたら表示・非表示を切り替える
+    if (container.classList.contains('hidden')) {
+        container.classList.remove('hidden');
+    } else {
+        // もし再度隠す仕様にしたい場合、あるいはトグルさせたい場合
+        // ここにお好みの切り替え処理を記述できます
+    }
+}
+window.toggleSecretMemo = toggleSecretMemo;
+       
     </script>
 </head>
     
