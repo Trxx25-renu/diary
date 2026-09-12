@@ -1002,6 +1002,7 @@ function closeAuthModal() {
     pendingAction = null;
 }
 window.closeAuthModal = closeAuthModal;
+       
     // 💡 サイト設定モーダルを開く（権限チェックを挟む安全設計）
     function handleOpenSettingsModal() {
         checkAdminPermission(() => {
@@ -1717,6 +1718,7 @@ window.toggleSecretMemo = toggleSecretMemo;
                 <button id="headerKeyBtn" onclick="handleHeaderKeyClick()" class="text-stone-600 hover:text-stone-800 transition-colors p-2 text-base" title="管理者ログイン">
                     <i class="fa-solid fa-lock"></i>
                 </button>
+                
                <!-- 💡 管理者ログイン時のみ表示されるPC追加ボタン -->
 <button id="headerAddBtn" onclick="openCharacterModal()" class="bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold px-3.5 py-1.5 rounded-full shadow-sm transition-all flex items-center gap-1.5 hidden">
     <i class="fa-solid fa-plus"></i>
