@@ -470,54 +470,6 @@ function getAdaptiveTextColor(hexColor) {
 }
 window.getAdaptiveTextColor = getAdaptiveTextColor;
 
-// ==========================================
-// 💡 キャラクター詳細描画関数（ギャラリー・4カテゴリ対応版）
-// ==========================================
-
-// ギャラリーの状態を一時保持する変数
-window._currentGalleryState = window._currentGalleryState || { characterId: null, category: 'base', index: 0 };
-
-function renderCharacterDetail(characterId) {
-    const detailContainer = document.getElementById('view-detail');
-    if (!detailContainer) return;
-
-    const ch = window.characters.find(c => String(c.id) === String(characterId));
-    if (!ch) {
-        detailContainer.innerHTML = `<p class="text-xs text-stone-400 py-12 text-center">キャラクターが見つかりませんでした。</p>`;
-        return;
-    }
-
-    const rawThemeColor = ch.themeColor || '#292524';
-    const themeColor = getAdjustedColor(rawThemeColor);
-    const badgeTextColor = getAdaptiveTextColor(themeColor);
-
-    // 💡 複数枚ギャラリーデータの準備（互換性対応付き）
-    let avatars = Array.isArray(ch.avatars) ? ch.avatars : [];
-    if (avatars.length === 0 && ch.avatar) {
-        avatars.push({ url: ch.avatar, category: 'base', label: '基本' });
-    }
-
-    // ギャラリーの状態を初期化・保持
-    if (window._currentGalleryState.characterId !== String(characterId)) {
-        window._currentGalleryState = { characterId: String(characterId), category: 'base', index: 0 };
-    }
-
-    // 4つのカテゴリ定義
-    const galleryCategories = [
-        { key: 'base', name: '基本・成長' },
-        { key: 'combat', name: '戦闘・衣装' },
-        { key: 'sd', name: 'SD・その他' },
-        { key: 'doodle', name: '落書き' }
-    ];
-
-    // もし現在のカテゴリに画像が1枚もなければ、画像が存在する最初のカテゴリに切り替える
-    let activeCat = window._currentGalleryState.category;
-    if (!avatars.some(img => img.category === activeCat)) {
-        const availableCat = galleryCategories.find(cat => avatars.some(img => img.category === cat.key));
-        activeCat = availableCat ? availableCat.key : 'base';
-        window._currentGalleryState.category = activeCat;
-        window._currentGalleryState.index = 0;
-    }
 
     // ==========================================
 // 💡 キャラクター詳細描画関数（ギャラリー・4カテゴリ・サムネイル対応版）
@@ -659,9 +611,9 @@ function renderCharacterDetail(characterId) {
         }
     };
 
-    // 初期表示用のデータ準備
-    const currentCatImagesForInit = avatars.filter(img => img.category === activeCat);
-    const initialImg = currentCatImagesForInit[window._currentGalleryState.index] || currentCatImagesForInit[0];
+    // 初期表示用のデータ準備（変数名を完全に固有なものに変更）
+    const safeCatImages = avatars.filter(img => img.category === activeCat);
+    const safeCurrentImg = safeCatImages[window._currentGalleryState.index] || safeCatImages[0];
     
     let avatarHtml = `<div class="w-full h-64 sm:h-96 flex items-center justify-center text-stone-300 bg-stone-100 rounded-2xl border border-stone-200"><i class="fa-solid fa-user text-5xl"></i></div>`;
     
@@ -686,10 +638,10 @@ function renderCharacterDetail(characterId) {
                 <!-- ② メイン画像ビュー -->
                 <div class="relative flex items-center justify-center rounded-2xl overflow-hidden border border-stone-200/60 shadow-inner bg-white/60 p-2 min-h-[400px] sm:min-h-[500px]">
                     <div id="galleryImageContainer" class="w-full h-full flex items-center justify-center">
-                        <img src="${initialImg ? initialImg.url : ''}" class="w-full h-auto max-h-[600px] object-contain rounded-xl transition-all duration-300">
+                        <img src="${safeCurrentImg ? safeCurrentImg.url : ''}" class="w-full h-auto max-h-[600px] object-contain rounded-xl transition-all duration-300">
                     </div>
 
-                    ${currentCatImagesForInit.length > 1 ? `
+                    ${safeCatImages.length > 1 ? `
                         <button onclick="slideGalleryImage(-1)" class="absolute left-3 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/80 text-white w-9 h-9 rounded-full flex items-center justify-center transition-all shadow-md">
                             <i class="fa-solid fa-chevron-left text-xs"></i>
                         </button>
@@ -698,14 +650,14 @@ function renderCharacterDetail(characterId) {
                         </button>
                     ` : ''}
                     
-                    <div id="galleryImageLabel" class="absolute bottom-3 left-3 bg-black/70 backdrop-blur-xs text-white text-[10px] px-2.5 py-1 rounded-md shadow" style="${initialImg && initialImg.label ? 'display:block;' : (currentCatImagesForInit.length > 1 ? 'display:block;' : 'display:none;')}">
-                        ${initialImg && initialImg.label ? `<i class="fa-solid fa-tag text-[9px] mr-1"></i>${initialImg.label} (${window._currentGalleryState.index + 1}/${currentCatImagesForInit.length})` : `(${window._currentGalleryState.index + 1}/${currentCatImagesForInit.length})`}
+                    <div id="galleryImageLabel" class="absolute bottom-3 left-3 bg-black/70 backdrop-blur-xs text-white text-[10px] px-2.5 py-1 rounded-md shadow" style="${safeCurrentImg && safeCurrentImg.label ? 'display:block;' : (safeCatImages.length > 1 ? 'display:block;' : 'display:none;')}">
+                        ${safeCurrentImg && safeCurrentImg.label ? `<i class="fa-solid fa-tag text-[9px] mr-1"></i>${safeCurrentImg.label} (${window._currentGalleryState.index + 1}/${safeCatImages.length})` : `(${window._currentGalleryState.index + 1}/${safeCatImages.length})`}
                     </div>
                 </div>
 
                 <!-- ③ 下部サムネイル一覧 -->
-                <div id="galleryThumbnailsContainer" class="flex gap-2 overflow-x-auto pb-1 pt-1 scrollbar-thin" style="${currentCatImagesForInit.length > 1 ? 'display:flex;' : 'display:none;'}">
-                    ${currentCatImagesForInit.map((img, idx) => `
+                <div id="galleryThumbnailsContainer" class="flex gap-2 overflow-x-auto pb-1 pt-1 scrollbar-thin" style="${safeCatImages.length > 1 ? 'display:flex;' : 'display:none;'}">
+                    ${safeCatImages.map((img, idx) => `
                         <button onclick="selectGalleryIndex(${idx})" class="relative w-14 h-14 rounded-xl overflow-hidden border-2 transition-all shrink-0 bg-stone-100 ${idx === window._currentGalleryState.index ? 'border-stone-800 scale-105 shadow-md' : 'border-stone-200 opacity-60 hover:opacity-100'}">
                             <img src="${img.url}" class="w-full h-full object-cover">
                         </button>
