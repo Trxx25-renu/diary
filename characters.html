@@ -1197,7 +1197,7 @@ window.handleOpenSettingsModal = handleOpenSettingsModal;
     window.closeSettingsModal = closeSettingsModal;
         
       // ==========================================
-// 💡 完全修正版: キャラクター保存関数（設定／メモ・秘匿メモ対応版）
+// 💡 完全修正版: キャラクター保存関数（ギャラリー画像保存対応版）
 // ==========================================
 async function saveCharacter(event) {
     event.preventDefault();
@@ -1218,12 +1218,15 @@ async function saveCharacter(event) {
     const themeColor = document.getElementById('charThemeColor')?.value || '#292524';
     const sheetUrl = document.getElementById('charSheetUrl')?.value?.trim() || '';
     
-    // 💡 【追加】設定／メモ と 秘匿メモの取得
+    // 💡 設定／メモ と 秘匿メモの取得
     const memo = document.getElementById('charMemo')?.value || '';
     const secret = document.getElementById('charSecret')?.value || '';
     
     const thumbnail = window.currentThumbnailBase64 || "";
     const avatar = window.currentAvatarBase64 || "";
+
+    // 💡【追加】カテゴリ別ギャラリー画像の取得
+    const images = window.editingCharacterImages || { base: [], combat: [], sd: [], doodle: [] };
 
     // カスタム項目の値（ステータス・テキスト）を正しく収集
     const customValues = {};
@@ -1264,10 +1267,11 @@ async function saveCharacter(event) {
         occupation, 
         themeColor,  
         sheetUrl, 
-        memo,         // 💡 ここに設定／メモをセット
-        secret,       // 💡 ここに秘匿メモをセット
+        memo,         // 設定／メモ
+        secret,       // 秘匿メモ
         thumbnail, 
         avatar,
+        images,       // 💡 ここにカテゴリ別ギャラリー画像をセット！
         customValues,
         updatedAt: new Date().toISOString()
     };
@@ -1286,7 +1290,7 @@ async function saveCharacter(event) {
                 window.characters[index] = { id: window.editingCharacterId, ...window.characters[index], ...charData };
             }
 
-            // 💡 もし現在「詳細画面」を表示中なら、その場で詳細画面を再描画してパッと最新状態にする！
+            // 💡 もし現在「詳細画面」を表示中なら、その場で詳細画面を再描画！
             if (window.currentView === 'detail' && window.selectedCharacterId === window.editingCharacterId) {
                 renderCharacterDetail(window.editingCharacterId);
             }
