@@ -472,7 +472,7 @@ window.getAdaptiveTextColor = getAdaptiveTextColor;
 
 
 // ==========================================
-// 💡 キャラクター詳細描画関数（ラベル部分のテーマカラー対応版）
+// 💡 キャラクター詳細描画関数（秘匿メモのぼかし挙動修正版）
 // ==========================================
 
 window._currentGalleryState = window._currentGalleryState || { characterId: null, category: 'base', index: 0 };
@@ -573,7 +573,6 @@ function renderCharacterDetail(characterId) {
             if (currentImg && currentImg.label) {
                 labelContainer.innerHTML = `<i class="fa-solid fa-tag text-[9px] mr-1"></i>${currentImg.label} (${state.index + 1}/${currentImgs.length})`;
                 labelContainer.style.display = 'block';
-                // 🎨 ラベルにもテーマカラーを反映
                 labelContainer.style.backgroundColor = themeColor;
                 labelContainer.style.color = badgeTextColor;
             } else if (currentImgs.length > 1) {
@@ -775,9 +774,14 @@ function renderCharacterDetail(characterId) {
                         <h4 class="text-xs font-bold text-rose-500 mb-1.5 flex items-center gap-1.5">
                             <i class="fa-solid fa-user-secret text-rose-400"></i> 秘匿メモ（ネタバレ）
                         </h4>
-                        <div class="bg-rose-50/50 rounded-2xl p-4 text-xs text-stone-700 whitespace-pre-wrap border border-rose-100/60 leading-relaxed cursor-pointer filter blur-sm select-none transition-all hover:opacity-90 relative group" onclick="this.classList.toggle('blur-sm'); this.classList.toggle('select-none');">
-                            ${secret}
-                            <div class="text-[10px] text-rose-400 font-bold mt-2 pt-2 border-t border-rose-200/40 text-center">
+                        <div class="bg-rose-50/50 rounded-2xl p-4 border border-rose-100/60 relative overflow-hidden">
+                            <div class="text-xs text-stone-700 whitespace-pre-wrap leading-relaxed filter blur-sm select-none transition-all cursor-pointer hover:opacity-90" onclick="const content = this.nextElementSibling; this.classList.toggle('hidden'); content.classList.toggle('hidden');">
+                                ${secret}
+                            </div>
+                            <div class="text-xs text-stone-700 whitespace-pre-wrap leading-relaxed hidden transition-all cursor-pointer" onclick="const blurEl = this.previousElementSibling; this.classList.toggle('hidden'); blurEl.classList.toggle('hidden');">
+                                ${secret}
+                            </div>
+                            <div class="text-[10px] text-rose-400 font-bold mt-3 pt-2 border-t border-rose-200/40 text-center select-none pointer-events-none">
                                 👆 クリックして表示 / 非表示
                             </div>
                         </div>
