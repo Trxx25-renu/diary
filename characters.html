@@ -443,6 +443,18 @@ function navigateTo(target, param) {
     } 
     // 2. 個別の「キャラクター詳細画面」へ移動する場合
     else if (target === 'detail') {
+        // 各ビューの表示・非表示を切り替え
+        const folderView = document.getElementById('systemFolderView') || document.getElementById('view-folders');
+        const listView = document.getElementById('characterListView') || document.getElementById('view-list') || document.getElementById('characterListContainer');
+        const detailView = document.getElementById('view-detail') || document.getElementById('characterDetailView'); // 💡 詳細画面のIDに合わせて調整
+        const systemSelectView = document.getElementById('systemSelectView');
+
+        if (folderView) folderView.classList.add('hidden');
+        if (systemSelectView) systemSelectView.classList.add('hidden');
+        if (listView) listView.classList.add('hidden');
+        if (detailView) detailView.classList.remove('hidden'); // 💡 詳細画面を表示する！
+
+        // 詳細画面を描画
         if (typeof renderCharacterDetail === 'function') {
             renderCharacterDetail(param);
         }
