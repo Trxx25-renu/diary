@@ -106,17 +106,28 @@
             };
 
             const app = initializeApp(firebaseConfig);
-            const auth = getAuth(app);
-            const db = getFirestore(app);
-            window.db = db;
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        
+        // ⭐ グローバル変数に確実にセットする
+        window.db = db; 
 
-            await signInAnonymously(auth);
+        await signInAnonymously(auth);
+        console.log("🔥 匿名ログイン成功");
 
-            // ⭐ ここに初期表示用のパンくず呼び出しを追加！
+        // ⭐ ログイン成功後に、設定やキャラクターの読み込み関数を呼び出す
+        if (typeof loadSiteConfig === 'function') {
+            await loadSiteConfig();
+        }
+        if (typeof loadCharactersFromFirestore === 'function') {
+            await loadCharactersFromFirestore();
+        }
+
+        // ホームのパンくず初期表示
         if (typeof renderBreadcrumbAndActions === 'function') {
             renderBreadcrumbAndActions('home');
         }
-    }); // DOMContentLoaded の閉じタグ
+    });
 
             // デフォルトのシステムリスト（ご指定のひな型順）
             window.systems = [
