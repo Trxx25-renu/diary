@@ -1412,7 +1412,7 @@ function addCustomField(sysId, type) {
     if (!window.systemCustomFields[sysId]) {
         window.systemCustomFields[sysId] = { status: [], text: [] };
     }
-    const newId = 'field_' + Math.random().toString(36.substring(2, 7));
+    const newId = 'field_' + Math.random().toString(36).substring(2, 7);
     if (type === 'status') {
         window.systemCustomFields[sysId].status.push({ id: newId, label: '新しいステータス', max: 10 });
     } else {
@@ -1421,7 +1421,7 @@ function addCustomField(sysId, type) {
     renderSettingsFieldsEditor();
 }
 window.addCustomField = addCustomField;
-
+       
 function removeCustomField(sysId, type, index) {
     if (window.systemCustomFields[sysId] && window.systemCustomFields[sysId][type]) {
         window.systemCustomFields[sysId][type].splice(index, 1);
