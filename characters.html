@@ -1681,15 +1681,17 @@ function changeCharacterSort(mode) {
         }
     });
 
-    // 現在開いているシステムフォルダや一覧を再描画
-    if (typeof window.currentSelectedSystemId !== 'undefined' && typeof selectSystemFolder === 'function') {
+    // 💡 修正：現在開いているキャラクター一覧のシステムIDがあれば、その場で一覧を再描画する
+    if (window.selectedSystemId && typeof renderCharacterList === 'function') {
+        renderCharacterList(window.selectedSystemId);
+    } else if (typeof window.currentSelectedSystemId !== 'undefined' && typeof selectSystemFolder === 'function') {
         selectSystemFolder(window.currentSelectedSystemId);
     } else if (typeof renderSystemFolders === 'function') {
         renderSystemFolders();
     }
 }
 window.changeCharacterSort = changeCharacterSort;
-
+       
 // 文字のグループ（1:日本語, 2:アルファベット, 3:その他）を判定するヘルパー
 function getCharGroupOrder(str) {
     if (!str) return 3;
