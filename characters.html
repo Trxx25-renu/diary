@@ -1657,7 +1657,7 @@ async function saveCharacter(event) {
 }
 window.saveCharacter = saveCharacter;
        
-       // ==========================================
+// ==========================================
 // 💡 キャラクターの並び替え機能（日本語 → スペル → その他・記号）
 // ==========================================
 
@@ -1710,6 +1710,14 @@ function getCharGroupOrder(str) {
     return 3;
 }
 
+// 💡 誕生日の文字列（例: "7月31日" や "10/15" など）から [月, 日] の数値を取り出すヘルパー
+function parseBirthdate(birthdateStr) {
+    if (!birthdateStr) return [99, 99]; // 未設定は一番後ろにする
+    const matches = birthdateStr.match(/(\d+)/g);
+    if (!matches || matches.length < 2) return [99, 99];
+    return [parseInt(matches[0], 10), parseInt(matches[1], 10)];
+}
+
 // キャラクター配列を指定されたソート順に並び替える関数
 function sortCharacters(chars) {
     const sorted = [...chars];
@@ -1733,11 +1741,15 @@ function sortCharacters(chars) {
             return keyA.localeCompare(keyB, 'ja');
         });
     } else if (mode === 'birthdate') {
-        // 誕生日順（未設定のものは後ろ）
+        // 💡 誕生日順（月・日を数値として比較するため、10月が先頭に来るのを防ぎます。未設定は後ろ）
         sorted.sort((a, b) => {
-            if (!a.birthdate) return 1;
-            if (!b.birthdate) return -1;
-            return a.birthdate.localeCompare(b.birthdate);
+            const [monthA, dayA] = parseBirthdate(a.birthdate);
+            const [monthB, dayB] = parseBirthdate(b.birthdate);
+
+            if (monthA !== monthB) {
+                return monthA - monthB; // 月で比較
+            }
+            return dayA - dayB; // 月が同じなら日で比較
         });
     } else if (mode === 'updated') {
         // 更新順（新しい順）
@@ -1752,7 +1764,6 @@ function sortCharacters(chars) {
     return sorted;
 }
 window.sortCharacters = sortCharacters;
-
 // ==========================================
 // 💡 編集モーダルを開く関数（設定・秘匿メモ・ギャラリー画像復元対応版）
 // ==========================================
