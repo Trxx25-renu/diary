@@ -633,7 +633,7 @@ window.getAdaptiveTextColor = getAdaptiveTextColor;
 
 
 // ==========================================
-// 💡 キャラクター詳細描画関数（秘匿メモのぼかし挙動修正版）
+// 💡 キャラクター詳細描画関数（ギャラリー・秘匿メモ対応版）
 // ==========================================
 
 window._currentGalleryState = window._currentGalleryState || { characterId: null, category: 'base', index: 0 };
@@ -656,9 +656,28 @@ function renderCharacterDetail(characterId) {
     const themeColor = getAdjustedColor(rawThemeColor);
     const badgeTextColor = getAdaptiveTextColor(themeColor);
 
-    let avatars = Array.isArray(ch.avatars) ? ch.avatars : [];
-    if (avatars.length === 0 && ch.avatar) {
-        avatars.push({ url: ch.avatar, category: 'base', label: '基本' });
+    // 💡【統合処理】ch.images（カテゴリ別オブジェクト）または古い ch.avatars / ch.avatar から画像を安全に抽出してリスト化
+    let avatars = [];
+    if (ch.images && typeof ch.images === 'object') {
+        ['base', 'combat', 'sd', 'doodle'].forEach(catKey => {
+            if (Array.isArray(ch.images[catKey])) {
+                ch.images[catKey].forEach(imgObj => {
+                    avatars.push({
+                        url: imgObj.url,
+                        category: catKey,
+                        label: imgObj.name || ''
+                    });
+                });
+            }
+        });
+    }
+    // 旧形式のデータフォールバック
+    if (avatars.length === 0) {
+        if (Array.isArray(ch.avatars) && ch.avatars.length > 0) {
+            avatars = ch.avatars;
+        } else if (ch.avatar) {
+            avatars.push({ url: ch.avatar, category: 'base', label: '基本' });
+        }
     }
 
     if (window._currentGalleryState.characterId !== String(characterId)) {
@@ -713,9 +732,22 @@ function renderCharacterDetail(characterId) {
         const targetCh = window.characters.find(c => String(c.id) === String(targetId));
         if (!targetCh) return;
 
-        let targetAvatars = Array.isArray(targetCh.avatars) ? targetCh.avatars : [];
-        if (targetAvatars.length === 0 && targetCh.avatar) {
-            targetAvatars.push({ url: targetCh.avatar, category: 'base', label: '基本' });
+        let targetAvatars = [];
+        if (targetCh.images && typeof targetCh.images === 'object') {
+            ['base', 'combat', 'sd', 'doodle'].forEach(catKey => {
+                if (Array.isArray(targetCh.images[catKey])) {
+                    targetCh.images[catKey].forEach(imgObj => {
+                        targetAvatars.push({ url: imgObj.url, category: catKey, label: imgObj.name || '' });
+                    });
+                }
+            });
+        }
+        if (targetAvatars.length === 0) {
+            if (Array.isArray(targetCh.avatars) && targetCh.avatars.length > 0) {
+                targetAvatars = targetCh.avatars;
+            } else if (targetCh.avatar) {
+                targetAvatars.push({ url: targetCh.avatar, category: 'base', label: '基本' });
+            }
         }
 
         const currentImgs = targetAvatars.filter(img => img.category === state.category);
