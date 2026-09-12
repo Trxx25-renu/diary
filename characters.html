@@ -283,7 +283,7 @@ function handleFolderSearchInput(e) {
 }
 window.handleFolderSearchInput = handleFolderSearchInput;
 
-       // ==========================================
+ // ==========================================
 // 💡 ファビコンファイル選択時のプレビュー＆Base64変換関数
 // ==========================================
 function handleFaviconFileSelect(event) {
@@ -306,8 +306,8 @@ function handleFaviconFileSelect(event) {
 }
 window.handleFaviconFileSelect = handleFaviconFileSelect;
 
-      // ==========================================
-// 💡 完成版: キャラクター一覧描画関数（スマート二つ名＆自動コントラスト対応）
+// ==========================================
+// 💡 完成版: キャラクター一覧描画関数（スマート二つ名＆自動コントラスト・ギャラリー対応版）
 // ==========================================
 function renderCharacterList(systemId, filterKeyword = "") {
     window.selectedSystemId = systemId;
@@ -351,51 +351,53 @@ function renderCharacterList(systemId, filterKeyword = "") {
 
         let thumbHtml = `<div class="w-full h-full flex items-center justify-center text-stone-300 bg-stone-50"><i class="fa-solid fa-user text-3xl"></i></div>`;
         
-        // 💡 立ち絵の上部がしっかり映る設定 ＆ ホバー演出
+        // 💡 優先順位: サムネイル ＞ 立ち絵 ＞ ギャラリー（基本・成長の1枚目） ＞ デフォルトアイコン
         if (ch.thumbnail && ch.thumbnail.trim() !== "") {
             thumbHtml = `<img src="${ch.thumbnail}" class="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500">`;
         } else if (ch.avatar && ch.avatar.trim() !== "") {
             thumbHtml = `<img src="${ch.avatar}" class="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500">`;
+        } else if (ch.images && ch.images.base && ch.images.base.length > 0 && ch.images.base[0].url) {
+            thumbHtml = `<img src="${ch.images.base[0].url}" class="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500">`;
         }
 
-// ==========================================
-// 💡 二つ名と読み仮名を崩れないよう上下にスッキリ配置
-// ==========================================
-let epithetHtml = '';
-if (ch.epithet && ch.epithet.trim() !== '') {
-    const kana = ch.epithetKana ? `<span class="text-[8px] font-normal text-stone-400 block">${ch.epithetKana}</span>` : '';
-    epithetHtml = `
-        <div class="mb-[-2px] truncate"> <!-- 💡 ここを mb-0.5 から mb-[-2px] などにして隙間を詰める -->
-            ${kana}
-            <span class="text-[11px] font-bold tracking-wider" style="color: ${themeColor}">${ch.epithet}</span>
-        </div>
-    `;
-}
+        // ==========================================
+        // 💡 二つ名と読み仮名を崩れないよう上下にスッキリ配置
+        // ==========================================
+        let epithetHtml = '';
+        if (ch.epithet && ch.epithet.trim() !== '') {
+            const kana = ch.epithetKana ? `<span class="text-[8px] font-normal text-stone-400 block">${ch.epithetKana}</span>` : '';
+            epithetHtml = `
+                <div class="mb-[-2px] truncate">
+                    ${kana}
+                    <span class="text-[11px] font-bold tracking-wider" style="color: ${themeColor}">${ch.epithet}</span>
+                </div>
+            `;
+        }
 
-// 年齢と誕生日のテキスト組み立て（太字にはせず通常の太さ）
-let ageAndBirthText = '';
-if (ch.age) ageAndBirthText += `${ch.age}歳`;
-if (ch.birthdate) {
-    ageAndBirthText += ageAndBirthText ? ` <span class="text-stone-300 font-normal">/</span> ${ch.birthdate}` : ch.birthdate;
-}
-const subInfoText = ageAndBirthText || ch.occupation || '';
+        // 年齢と誕生日のテキスト組み立て（通常の太さ）
+        let ageAndBirthText = '';
+        if (ch.age) ageAndBirthText += `${ch.age}歳`;
+        if (ch.birthdate) {
+            ageAndBirthText += ageAndBirthText ? ` <span class="text-stone-300 font-normal">/</span> ${ch.birthdate}` : ch.birthdate;
+        }
+        const subInfoText = ageAndBirthText || ch.occupation || '';
 
-card.innerHTML = `
-    <div class="aspect-square w-full rounded-2xl overflow-hidden relative border-2 border-stone-200 shadow-inner flex items-center justify-center" style="background-color: ${themeColor};">
-        ${thumbHtml}
-    </div>
-    <div class="px-1.5 pb-1 pt-1"> <!-- 💡 全体の padding-top を微調整またはスッキリさせる -->
-        ${epithetHtml}
-        <h4 class="font-bold text-lg text-stone-900 truncate tracking-wide group-hover:opacity-80 transition-opacity">${ch.name}</h4> <!-- 💡 text-xl だと大きすぎる場合は text-lg にするとバランスが取りやすいです -->
-        <p class="text-xs text-stone-700 font-normal mt-0.5 truncate">${subInfoText}</p> <!-- 💡 mt-1 を mt-0.5 にして下の隙間も調整 -->
-    </div>
-`;
+        card.innerHTML = `
+            <div class="aspect-square w-full rounded-2xl overflow-hidden relative border-2 border-stone-200 shadow-inner flex items-center justify-center" style="background-color: ${themeColor};">
+                ${thumbHtml}
+            </div>
+            <div class="px-1.5 pb-1 pt-1">
+                ${epithetHtml}
+                <h4 class="font-bold text-lg text-stone-900 truncate tracking-wide group-hover:opacity-80 transition-opacity">${ch.name}</h4>
+                <p class="text-xs text-stone-700 font-normal mt-0.5 truncate">${subInfoText}</p>
+            </div>
+        `;
         grid.appendChild(card);
     });
 }
 window.renderCharacterList = renderCharacterList;
-       
-       // ==========================================
+
+// ==========================================
 // 💡 画面やビューを切り替えるルーター関数（一本化・整理版）
 // ==========================================
 function navigateTo(target, param) {
@@ -408,7 +410,7 @@ function navigateTo(target, param) {
         if (m) m.classList.add('hidden');
     });
 
-    // 💡 0.5. 【追加】トップ画面（ホーム・システム一覧）へ戻る場合
+    // 0.5. トップ画面（ホーム・システム一覧）へ戻る場合
     if (target === 'home' || !target) {
         const folderView = document.getElementById('systemFolderView') || document.getElementById('view-folders');
         const listView = document.getElementById('characterListView') || document.getElementById('view-list') || document.getElementById('characterListContainer');
@@ -422,7 +424,6 @@ function navigateTo(target, param) {
     }
     // 1. システムごとの「キャラクター一覧画面」へ移動する場合
     else if (target === 'characterList') {
-        // param（システムID）が渡されなかった場合は、現在選択中のものを維持
         const targetSystemId = param || window.selectedSystemId;
         window.selectedSystemId = targetSystemId;
 
@@ -430,7 +431,6 @@ function navigateTo(target, param) {
             renderCharacterList(targetSystemId);
         }
 
-        // 各ビューの表示・非表示を切り替え
         const folderView = document.getElementById('systemFolderView') || document.getElementById('view-folders');
         const listView = document.getElementById('characterListView') || document.getElementById('view-list') || document.getElementById('characterListContainer');
         const detailView = document.getElementById('view-detail');
@@ -446,20 +446,7 @@ function navigateTo(target, param) {
         if (typeof renderCharacterDetail === 'function') {
             renderCharacterDetail(param);
         }
-
-        const folderView = document.getElementById('systemFolderView') || document.getElementById('view-folders');
-        const listView = document.getElementById('characterListView') || document.getElementById('view-list') || document.getElementById('characterListContainer');
-        const detailView = document.getElementById('view-detail');
-        const systemSelectView = document.getElementById('systemSelectView');
-
-        if (folderView) folderView.classList.add('hidden');
-        if (systemSelectView) systemSelectView.classList.add('hidden');
-        if (listView) listView.classList.add('hidden');
-        if (detailView) detailView.classList.remove('hidden');
     }
-
-    // 3. ページの一番上にスクロールを戻す
-    window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 window.navigateTo = navigateTo;
 
@@ -2109,6 +2096,8 @@ window.renderBreadcrumbAndActions = renderBreadcrumbAndActions;
                 <input type="url" id="charSheetUrl" placeholder="https://iachara.com/... など" required class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-800 focus:outline-none focus:border-stone-400">
             </div>
 
+            <div id="dynamicCustomFieldsContainer" class="space-y-3 pt-2 border-t border-stone-100"></div>
+
             <!-- 💡 追加：設定／メモ ＆ 秘匿メモ入力欄 -->
             <div class="mt-3 space-y-3 pt-3 border-t border-stone-100">
                 <div>
@@ -2121,8 +2110,7 @@ window.renderBreadcrumbAndActions = renderBreadcrumbAndActions;
                 </div>
             </div>
 
-            <div id="dynamicCustomFieldsContainer" class="space-y-3 pt-2 border-t border-stone-100"></div>
-
+            <!-- ⚙️ 一覧用アイコン画像 -->
             <div class="pt-2 border-t border-stone-100">
                 <label for="thumbFile" class="block text-xs font-bold text-stone-600 mb-1">一覧用アイコン画像（自動圧縮）</label>
                 <input type="file" id="thumbFile" accept="image/*" onchange="handleThumbnailFileSelect(event)" class="w-full text-xs text-stone-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-stone-100 file:text-stone-700 hover:file:bg-stone-200 cursor-pointer">
@@ -2132,6 +2120,7 @@ window.renderBreadcrumbAndActions = renderBreadcrumbAndActions;
                 </div>
             </div>
 
+            <!-- ⚙️ 立ち絵画像 -->
             <div>
                 <label for="avatarFile" class="block text-xs font-bold text-stone-600 mb-1">立ち絵画像（大サイズPNG対応）</label>
                 <input type="file" id="avatarFile" accept="image/*" onchange="handleAvatarFileSelect(event)" class="w-full text-xs text-stone-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-stone-100 file:text-stone-700 hover:file:bg-stone-200 cursor-pointer">
@@ -2141,7 +2130,38 @@ window.renderBreadcrumbAndActions = renderBreadcrumbAndActions;
                 </div>
             </div>
 
-            <div class="pt-3 flex items-center justify-end gap-2">
+            <!-- 💡 新規追加：カテゴリ別ギャラリー画像管理セクション -->
+            <div class="pt-3 border-t border-stone-100">
+                <div class="flex items-center justify-between mb-2">
+                    <h4 class="text-xs font-bold text-stone-700 flex items-center gap-1.5">
+                        <i class="fa-solid fa-images text-stone-500"></i>
+                        <span>ギャラリー画像管理</span>
+                    </h4>
+                    <span class="text-[10px] text-stone-400">タブごとに複数登録できます</span>
+                </div>
+
+                <!-- カテゴリタブ切り替え -->
+                <div class="flex bg-stone-100 p-1 rounded-xl mb-3 gap-1">
+                    <button type="button" onclick="switchImageCategory('base')" id="imgTab-base" class="flex-1 py-1.5 text-[11px] font-bold rounded-lg bg-white text-stone-800 shadow-sm transition-all">基本・成長</button>
+                    <button type="button" onclick="switchImageCategory('combat')" id="imgTab-combat" class="flex-1 py-1.5 text-[11px] font-bold rounded-lg text-stone-500 hover:text-stone-800 transition-all">戦闘・衣装</button>
+                    <button type="button" onclick="switchImageCategory('sd')" id="imgTab-sd" class="flex-1 py-1.5 text-[11px] font-bold rounded-lg text-stone-500 hover:text-stone-800 transition-all">SD・その他</button>
+                    <button type="button" onclick="switchImageCategory('doodle')" id="imgTab-doodle" class="flex-1 py-1.5 text-[11px] font-bold rounded-lg text-stone-500 hover:text-stone-800 transition-all">落書き</button>
+                </div>
+
+                <!-- 画像アップロード＆プレビューエリア -->
+                <div class="bg-stone-50 p-3 rounded-2xl border border-stone-200/80 space-y-3">
+                    <input type="file" id="characterImageFile" accept="image/*" multiple onchange="handleCharacterImagesSelect(event)" class="w-full text-xs text-stone-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-white file:text-stone-700 hover:file:bg-stone-100 cursor-pointer border border-stone-200 rounded-xl bg-white">
+                    
+                    <div id="characterImagesPreviewContainer" class="grid grid-cols-3 gap-2 min-h-[80px] bg-white p-2 rounded-xl border border-stone-200">
+                        <div class="col-span-full flex items-center justify-center text-[11px] text-stone-400 py-4">
+                            画像が登録されていません
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ボタン類 -->
+            <div class="pt-3 flex items-center justify-end gap-2 border-t border-stone-100">
                 <button type="button" onclick="closeCharacterModal()" class="px-4 py-2 rounded-xl text-xs font-medium text-stone-600 hover:bg-stone-100 transition-all">キャンセル</button>
                 <button type="submit" class="bg-stone-800 text-white px-5 py-2 rounded-xl text-xs font-medium shadow-sm hover:bg-stone-700 transition-all">登録する</button>
             </div>
