@@ -200,13 +200,15 @@
             };
 
             try {
-                const configRef = doc(db, 'artifacts', window.appId, 'public', 'data', 'config', 'settings');
+                // ⭐ db を window.db に変更
+                const configRef = doc(window.db, 'artifacts', window.appId, 'public', 'data', 'config', 'settings');
                 const configSnap = await getDoc(configRef);
                 if (configSnap.exists()) {
                     window.storedPasscode = configSnap.data().passcode;
                 }
 
-                const rosterConfigRef = doc(db, 'artifacts', window.appId, 'public', 'data', 'config', 'characterRosterSettings');
+                // ⭐ こちらも db を window.db に変更
+                const rosterConfigRef = doc(window.db, 'artifacts', window.appId, 'public', 'data', 'config', 'characterRosterSettings');
                 const rosterSnap = await getDoc(rosterConfigRef);
                 if (rosterSnap.exists()) {
                     const data = rosterSnap.data();
