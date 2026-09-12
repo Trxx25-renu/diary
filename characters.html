@@ -1296,42 +1296,50 @@ function renderSettingsEditors() {
 }
 window.renderSettingsEditors = renderSettingsEditors;
 
-// 1. システムの並び順・名前・略称変更エディタの描画
+// 1. システムの並び順・名前・略称・説明(desc)変更エディタの描画
 function renderSettingsSystemsEditor() {
     const container = document.getElementById('settingsSystemsEditorContainer');
     if (!container) return;
     
     let html = '';
     window.systems.forEach((sys, index) => {
-        // sys.id がない場合のフォールバックも含めて安全なIDを生成
         const safeId = sys.id || `sys_${index}`;
         const nameId = `sysNameInput_${safeId}`;
         const shortId = `sysShortInput_${safeId}`;
+        const descId = `sysDescInput_${safeId}`;
         
         html += `
-            <div class="flex items-center gap-2 bg-stone-50 border border-stone-200 rounded-xl p-2.5">
-                <span class="text-xs font-bold text-stone-500 w-6 text-center">${index + 1}</span>
-                
-                <!-- システム名（フルネーム） -->
-                <div class="flex-1">
-                    <label for="${nameId}" class="sr-only">システム名 ${index + 1}</label>
-                    <input type="text" id="${nameId}" name="${nameId}" value="${escapeHtml(sys.name)}" onchange="updateSystemProperty('${sys.id}', 'name', this.value)" class="w-full bg-white border border-stone-200 rounded-lg px-2.5 py-1 text-xs text-stone-800" placeholder="システム名">
+            <div class="flex flex-col gap-2 bg-stone-50 border border-stone-200 rounded-xl p-3">
+                <div class="flex items-center gap-2">
+                    <span class="text-xs font-bold text-stone-500 w-6 text-center">${index + 1}</span>
+                    
+                    <!-- システム名（フルネーム） -->
+                    <div class="flex-1">
+                        <label for="${nameId}" class="sr-only">システム名 ${index + 1}</label>
+                        <input type="text" id="${nameId}" name="${nameId}" value="${escapeHtml(sys.name)}" onchange="updateSystemProperty('${sys.id}', 'name', this.value)" class="w-full bg-white border border-stone-200 rounded-lg px-2.5 py-1 text-xs text-stone-800" placeholder="システム名">
+                    </div>
+
+                    <!-- バッジ用略称（例: CoC6版）の入力ボックス -->
+                    <div class="w-28">
+                        <label for="${shortId}" class="sr-only">略称 ${index + 1}</label>
+                        <input type="text" id="${shortId}" name="${shortId}" value="${escapeHtml(sys.shortName || '')}" onchange="updateSystemProperty('${sys.id}', 'shortName', this.value)" class="w-full bg-white border border-stone-200 rounded-lg px-2.5 py-1 text-xs text-stone-800" placeholder="略称 (例: CoC6版)">
+                    </div>
+
+                    <!-- 並び替えボタン -->
+                    <div class="flex items-center gap-1">
+                        <button type="button" onclick="moveSystemOrder(${index}, -1)" class="w-7 h-7 flex items-center justify-center bg-white border border-stone-200 rounded-lg text-stone-600 hover:bg-stone-100 text-xs" ${index === 0 ? 'disabled' : ''} style="${index === 0 ? 'opacity:0.3; cursor:not-allowed;' : ''}">
+                            <i class="fa-solid fa-arrow-up"></i>
+                        </button>
+                        <button type="button" onclick="moveSystemOrder(${index}, 1)" class="w-7 h-7 flex items-center justify-center bg-white border border-stone-200 rounded-lg text-stone-600 hover:bg-stone-100 text-xs" ${index === window.systems.length - 1 ? 'disabled' : ''} style="${index === window.systems.length - 1 ? 'opacity:0.3; cursor:not-allowed;' : ''}">
+                            <i class="fa-solid fa-arrow-down"></i>
+                        </button>
+                    </div>
                 </div>
 
-                <!-- 💡 バッジ用略称（例: CoC6版）の入力ボックス -->
-                <div class="w-28">
-                    <label for="${shortId}" class="sr-only">略称 ${index + 1}</label>
-                    <input type="text" id="${shortId}" name="${shortId}" value="${escapeHtml(sys.shortName || '')}" onchange="updateSystemProperty('${sys.id}', 'shortName', this.value)" class="w-full bg-white border border-stone-200 rounded-lg px-2.5 py-1 text-xs text-stone-800" placeholder="略称 (例: CoC6版)">
-                </div>
-
-                <!-- 並び替えボタン -->
-                <div class="flex items-center gap-1">
-                    <button type="button" onclick="moveSystemOrder(${index}, -1)" class="w-7 h-7 flex items-center justify-center bg-white border border-stone-200 rounded-lg text-stone-600 hover:bg-stone-100 text-xs" ${index === 0 ? 'disabled' : ''} style="${index === 0 ? 'opacity:0.3; cursor:not-allowed;' : ''}">
-                        <i class="fa-solid fa-arrow-up"></i>
-                    </button>
-                    <button type="button" onclick="moveSystemOrder(${index}, 1)" class="w-7 h-7 flex items-center justify-center bg-white border border-stone-200 rounded-lg text-stone-600 hover:bg-stone-100 text-xs" ${index === window.systems.length - 1 ? 'disabled' : ''} style="${index === window.systems.length - 1 ? 'opacity:0.3; cursor:not-allowed;' : ''}">
-                        <i class="fa-solid fa-arrow-down"></i>
-                    </button>
+                <!-- 💡 2段目：desc（説明文・サブ情報）の入力ボックス -->
+                <div class="pl-8">
+                    <label for="${descId}" class="sr-only">説明文 (desc) ${index + 1}</label>
+                    <input type="text" id="${descId}" name="${descId}" value="${escapeHtml(sys.desc || '')}" onchange="updateSystemProperty('${sys.id}', 'desc', this.value)" class="w-full bg-white border border-stone-200 rounded-lg px-2.5 py-1 text-xs text-stone-600" placeholder="説明文・サブ情報 (例: CoC 6版)">
                 </div>
             </div>
         `;
@@ -1340,7 +1348,7 @@ function renderSettingsSystemsEditor() {
 }
 window.renderSettingsSystemsEditor = renderSettingsSystemsEditor;
 
-// システムのプロパティ（名称や略称）を更新する汎用関数
+// システムのプロパティ（名称や略称、descなど）を更新する汎用関数
 function updateSystemProperty(sysId, key, value) {
     const sys = window.systems.find(s => s.id === sysId);
     if (sys) {
@@ -1358,7 +1366,7 @@ function moveSystemOrder(index, direction) {
     window.systems[index] = window.systems[newIndex];
     window.systems[newIndex] = temp;
     
-    // 💡 順番が変わったら、上と下の両方のエディタを再描画して連動させる
+    // 順番が変わったら、上と下の両方のエディタを再描画して連動させる
     renderSettingsSystemsEditor();
     renderSettingsFieldsEditor();
 }
@@ -1374,7 +1382,6 @@ function renderSettingsFieldsEditor() {
     }
 
     let html = '';
-    // 💡 window.systems の並び順（1〜6）に合わせて上から順に描画
     window.systems.forEach((sys, index) => {
         if (!window.systemCustomFields[sys.id]) {
             window.systemCustomFields[sys.id] = { status: [], text: [] };
@@ -1386,7 +1393,7 @@ function renderSettingsFieldsEditor() {
         html += `
             <div class="bg-stone-50 border border-stone-200 rounded-2xl p-3.5 space-y-3">
                 <div class="font-bold text-xs text-stone-800 flex items-center justify-between pb-1.5 border-b border-stone-200/60">
-                    <span>${index + 1}. ${escapeHtml(sys.name)} <span class="text-stone-400 font-normal">(${escapeHtml(sys.shortName || '略称なし')})</span></span>
+                    <span>${index + 1}. ${escapeHtml(sys.name)} <span class="text-stone-400 font-normal">(${escapeHtml(sys.desc || sys.shortName || '説明なし')})</span></span>
                 </div>
                 
                 <!-- ステータス項目 -->
