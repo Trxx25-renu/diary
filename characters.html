@@ -1661,19 +1661,29 @@ function deleteCharacter(characterId) {
 window.deleteCharacter = deleteCharacter;
 
 // ==========================================
-// 💡 設定を画面に適用する関数（カテゴリ連動対応版）
+// 💡 設定を画面に適用する関数（システム・カスタム項目完全同期版）
 // ==========================================
 function applyRosterSettings(settings) {
     if (!settings) return;
     window.rosterSettings = settings; // データを保持
 
-    // 1. 画面上のサイトタイトルを反映
+    // 1. 💡 保存されているカスタムシステムがあれば、グローバル変数に反映
+    if (settings.systems && Array.isArray(settings.systems) && settings.systems.length > 0) {
+        window.systems = settings.systems;
+    }
+
+    // 2. 💡 保存されているカスタム項目があれば、グローバル変数に反映
+    if (settings.customFields) {
+        window.systemCustomFields = settings.customFields;
+    }
+
+    // 3. 画面上のサイトタイトルを反映
     const siteHeaderTitle = document.getElementById('siteHeaderTitle');
     if (siteHeaderTitle && settings.title) {
         siteHeaderTitle.textContent = settings.title;
     }
 
-    // 2. ヘッダー左側のアイコン画像を反映
+    // 4. ヘッダー左側のアイコン画像を反映
     const faviconImgEl = document.getElementById('headerFaviconImg');
     if (faviconImgEl) {
         if (settings.favicon && settings.favicon.trim() !== '') {
@@ -1684,7 +1694,7 @@ function applyRosterSettings(settings) {
         }
     }
 
-    // 3. ブラウザ自体のタブアイコン（ファビコン）の反映
+    // 5. ブラウザ自体のタブアイコン（ファビコン）の反映
     if (settings.favicon) {
         const faviconEl = document.getElementById('faviconIcon') || document.getElementById('dynamicFavicon') || document.querySelector("link[rel*='icon']");
         if (faviconEl) faviconEl.href = settings.favicon;
@@ -1693,12 +1703,12 @@ function applyRosterSettings(settings) {
         if (appleIconEl) appleIconEl.href = settings.favicon;
     }
 
-    // 4. 💡 ギャラリーカテゴリ名が設定されていれば反映・保存
+    // 6. ギャラリーカテゴリ名が設定されていれば反映
     if (settings.galleryCategories) {
         window.galleryCategories = settings.galleryCategories;
     }
 
-    // 5. システムやフォルダの表示を最新の状態で再描画（もし関数があれば実行）
+    // 7. システムやフォルダの表示を最新の状態で再描画
     if (typeof renderSystemFolders === 'function') {
         renderSystemFolders();
     }
