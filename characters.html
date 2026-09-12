@@ -229,7 +229,8 @@
 
         async function loadCharactersFromFirestore() {
             try {
-                const charsRef = collection(db, 'artifacts', window.appId, 'public', 'data', 'characters');
+                // 💡 db を window.db に変更
+                const charsRef = collection(window.db, 'artifacts', window.appId, 'public', 'data', 'characters');
                 const querySnap = await getDocs(charsRef);
                 const loaded = [];
                 querySnap.forEach(d => {
