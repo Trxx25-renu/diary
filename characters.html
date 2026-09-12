@@ -28,24 +28,28 @@
             font-size: 16px !important;
         }
 
-        /* 🔒 ネタバレ（目隠し）用のスタイル */
-        .spoiler-text {
-            background-color: #333;
-            color: #333;
-            cursor: pointer;
-            border-radius: 4px;
-            padding: 0 4px;
-            user-select: none;
-            transition: background-color 0.2s, color 0.2s;
-        }
-        .spoiler-text:hover {
-            background-color: #555;
-        }
-        .spoiler-text.revealed {
-            background-color: #f3f4f6;
-            color: #1f2937;
-            user-select: text;
-        }
+        /* 🔒 ネタバレ隠し（伏せ字）スタイル（日記サイト準拠） */
+.spoiler-text {
+    background-color: #292524 !important;
+    color: transparent !important;
+    border-radius: 0.25rem;
+    padding: 0 0.35rem;
+    margin: 0 0.1rem;
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.2s ease;
+    display: inline-block;
+    vertical-align: baseline;
+}
+.spoiler-text:hover {
+    background-color: #44403c !important;
+}
+.spoiler-text.revealed {
+    background-color: #f3f4f6 !important;
+    color: #292524 !important;
+    user-select: text;
+    border: 1px solid #e7e5e4;
+}
     </style>
 
    <script type="module">
