@@ -1372,7 +1372,9 @@ function moveSystemOrder(index, direction) {
 }
 window.moveSystemOrder = moveSystemOrder;
 
-// 2. システム別 カスタム項目エディタの描画（システム順に追従）
+// ==========================================
+// 💡 システム別 カスタム項目エディタの描画（システム順に追従 ＋ 並び替え対応）
+// ==========================================
 function renderSettingsFieldsEditor() {
     const container = document.getElementById('settingsFieldsEditorContainer');
     if (!container) return;
@@ -1414,7 +1416,17 @@ function renderSettingsFieldsEditor() {
                                     <label for="${maxId}" class="sr-only">最大値</label>
                                     <input type="number" id="${maxId}" name="${maxId}" value="${f.max || ''}" onchange="updateCustomFieldMax('${sys.id}', ${fIdx}, this.value)" class="w-16 bg-white border border-stone-200 rounded-lg px-2 py-1 text-xs" placeholder="最大値">
                                     
-                                    <button type="button" onclick="removeCustomField('${sys.id}', 'status', ${fIdx})" class="text-stone-400 hover:text-rose-500 px-1 text-xs" aria-label="削除"><i class="fa-solid fa-trash"></i></button>
+                                    <!-- 💡 ステータス項目の並び替えボタン -->
+                                    <div class="flex items-center gap-0.5">
+                                        <button type="button" onclick="moveCustomFieldOrder('${sys.id}', 'status', ${fIdx}, -1)" class="w-6 h-6 flex items-center justify-center bg-white border border-stone-200 rounded-md text-stone-600 hover:bg-stone-100 text-[10px]" ${fIdx === 0 ? 'disabled' : ''} style="${fIdx === 0 ? 'opacity:0.3; cursor:not-allowed;' : ''}">
+                                            <i class="fa-solid fa-arrow-up"></i>
+                                        </button>
+                                        <button type="button" onclick="moveCustomFieldOrder('${sys.id}', 'status', ${fIdx}, 1)" class="w-6 h-6 flex items-center justify-center bg-white border border-stone-200 rounded-md text-stone-600 hover:bg-stone-100 text-[10px]" ${fIdx === statuses.length - 1 ? 'disabled' : ''} style="${fIdx === statuses.length - 1 ? 'opacity:0.3; cursor:not-allowed;' : ''}">
+                                            <i class="fa-solid fa-arrow-down"></i>
+                                        </button>
+                                    </div>
+
+                                    <button type="button" onclick="removeCustomField('${sys.id}', 'status', ${fIdx})" class="text-stone-400 hover:text-rose-500 px-1 text-xs ml-0.5" aria-label="削除"><i class="fa-solid fa-trash"></i></button>
                                 </div>
                             `;
                         }).join('')}
@@ -1435,7 +1447,17 @@ function renderSettingsFieldsEditor() {
                                     <label for="${textId}" class="sr-only">テキスト項目名</label>
                                     <input type="text" id="${textId}" name="${textId}" value="${escapeHtml(f.label)}" onchange="updateCustomTextFieldLabel('${sys.id}', ${fIdx}, this.value)" class="flex-1 bg-white border border-stone-200 rounded-lg px-2 py-1 text-xs" placeholder="項目名 (例: シンドローム)">
                                     
-                                    <button type="button" onclick="removeCustomField('${sys.id}', 'text', ${fIdx})" class="text-stone-400 hover:text-rose-500 px-1 text-xs" aria-label="削除"><i class="fa-solid fa-trash"></i></button>
+                                    <!-- 💡 テキスト項目の並び替えボタン -->
+                                    <div class="flex items-center gap-0.5">
+                                        <button type="button" onclick="moveCustomFieldOrder('${sys.id}', 'text', ${fIdx}, -1)" class="w-6 h-6 flex items-center justify-center bg-white border border-stone-200 rounded-md text-stone-600 hover:bg-stone-100 text-[10px]" ${fIdx === 0 ? 'disabled' : ''} style="${fIdx === 0 ? 'opacity:0.3; cursor:not-allowed;' : ''}">
+                                            <i class="fa-solid fa-arrow-up"></i>
+                                        </button>
+                                        <button type="button" onclick="moveCustomFieldOrder('${sys.id}', 'text', ${fIdx}, 1)" class="w-6 h-6 flex items-center justify-center bg-white border border-stone-200 rounded-md text-stone-600 hover:bg-stone-100 text-[10px]" ${fIdx === texts.length - 1 ? 'disabled' : ''} style="${fIdx === texts.length - 1 ? 'opacity:0.3; cursor:not-allowed;' : ''}">
+                                            <i class="fa-solid fa-arrow-down"></i>
+                                        </button>
+                                    </div>
+
+                                    <button type="button" onclick="removeCustomField('${sys.id}', 'text', ${fIdx})" class="text-stone-400 hover:text-rose-500 px-1 text-xs ml-0.5" aria-label="削除"><i class="fa-solid fa-trash"></i></button>
                                 </div>
                             `;
                         }).join('')}
@@ -1470,6 +1492,22 @@ function removeCustomField(sysId, type, index) {
     }
 }
 window.removeCustomField = removeCustomField;
+
+// 💡 カスタム項目（ステータス / テキスト）の順序を入れ替える関数
+function moveCustomFieldOrder(sysId, type, index, direction) {
+    if (!window.systemCustomFields[sysId] || !window.systemCustomFields[sysId][type]) return;
+    const list = window.systemCustomFields[sysId][type];
+    const newIndex = index + direction;
+    
+    if (newIndex < 0 || newIndex >= list.length) return;
+    
+    const temp = list[index];
+    list[index] = list[newIndex];
+    list[newIndex] = temp;
+    
+    renderSettingsFieldsEditor();
+}
+window.moveCustomFieldOrder = moveCustomFieldOrder;
 
 function updateCustomFieldLabel(sysId, type, index, val) {
     if (window.systemCustomFields[sysId] && window.systemCustomFields[sysId][type][index]) {
