@@ -520,7 +520,7 @@ function renderCharacterDetail(characterId) {
     }
 
     // ------------------------------------------
-    // 🖼️ ギャラリー描画用ヘルパー関数（インライン定義）
+    // 🖼️ ギャラリー描画用ヘルパー関数（サムネイル＆縦長対応版）
     // ------------------------------------------
     window.switchGalleryCategory = function(catKey) {
         window._currentGalleryState.category = catKey;
@@ -534,11 +534,17 @@ function renderCharacterDetail(characterId) {
         
         let newIndex = window._currentGalleryState.index + direction;
         if (newIndex < 0) {
-            newIndex = currentCatImages.length - 1; // ループ
+            newIndex = currentCatImages.length - 1;
         } else if (newIndex >= currentCatImages.length) {
-            newIndex = 0; // ループ
+            newIndex = 0;
         }
         window._currentGalleryState.index = newIndex;
+        updateGalleryDisplay(characterId);
+    };
+
+    // サムネイルから直接その画像を選ぶ用
+    window.selectGalleryIndex = function(index) {
+        window._currentGalleryState.index = index;
         updateGalleryDisplay(characterId);
     };
 
@@ -556,14 +562,14 @@ function renderCharacterDetail(characterId) {
         const currentImgs = targetAvatars.filter(img => img.category === state.category);
         const currentImg = currentImgs[state.index] || currentImgs[0];
 
-        // メイン画像のコンテナ更新
+        // 1. メイン画像の更新（縦長で全身がしっかり入るように確保）
         const imgContainer = document.getElementById('galleryImageContainer');
         const labelContainer = document.getElementById('galleryImageLabel');
         if (imgContainer) {
             if (currentImg && currentImg.url) {
-                imgContainer.innerHTML = `<img src="${currentImg.url}" class="w-full h-auto max-h-[450px] object-contain rounded-xl transition-all duration-300">`;
+                imgContainer.innerHTML = `<img src="${currentImg.url}" class="w-full h-auto max-h-[600px] object-contain rounded-xl transition-all duration-300">`;
             } else {
-                imgContainer.innerHTML = `<div class="text-stone-400 text-xs"><i class="fa-solid fa-image text-3xl mb-1 block"></i>画像がありません</div>`;
+                imgContainer.innerHTML = `<div class="text-stone-400 text-xs py-20"><i class="fa-solid fa-image text-3xl mb-1 block"></i>画像がありません</div>`;
             }
         }
         if (labelContainer) {
@@ -578,18 +584,89 @@ function renderCharacterDetail(characterId) {
             }
         }
 
-        // タブのアクティブ状態更新
+        // 2. タブのアクティブ状態更新
         galleryCategories.forEach(cat => {
             const tabBtn = document.getElementById(`gal-tab-${cat.key}`);
             if (tabBtn) {
                 if (cat.key === state.category) {
-                    tabBtn.className = "gallery-tab px-3 py-1 text-xs font-bold rounded-lg transition-all bg-stone-800 text-white shadow-xs";
+                    tabBtn.className = "gallery-tab px-3 py-1.5 text-xs font-bold rounded-lg transition-all bg-stone-800 text-white shadow-xs";
                 } else {
-                    tabBtn.className = "gallery-tab px-3 py-1 text-xs font-bold rounded-lg transition-all bg-stone-200/60 text-stone-600 hover:bg-stone-200";
+                    tabBtn.className = "gallery-tab px-3 py-1.5 text-xs font-bold rounded-lg transition-all bg-stone-200/60 text-stone-600 hover:bg-stone-200";
                 }
             }
         });
+
+        // 3. サムネイル一覧の更新
+        const thumbContainer = document.getElementById('galleryThumbnailsContainer');
+        if (thumbContainer) {
+            if (currentImgs.length > 1) {
+                thumbContainer.innerHTML = currentImgs.map((img, idx) => `
+                    <button onclick="selectGalleryIndex(${idx})" class="relative w-14 h-14 rounded-xl overflow-hidden border-2 transition-all shrink-0 bg-stone-100 ${idx === state.index ? 'border-stone-800 scale-105 shadow-md' : 'border-stone-200 opacity-60 hover:opacity-100'}">
+                        <img src="${img.url}" class="w-full h-full object-cover">
+                    </button>
+                `).join('');
+                thumbContainer.style.display = 'flex';
+            } else {
+                thumbContainer.style.display = 'none';
+            }
+        }
     };
+
+    // 初期表示用のデータ準備
+    const initialCurrentImgs = avatars.filter(img => img.category === activeCat);
+    const initialImg = initialCurrentImgs[window._currentGalleryState.index] || initialCurrentImgs[0];
+    
+    let avatarHtml = `<div class="w-full h-64 sm:h-96 flex items-center justify-center text-stone-300 bg-stone-100 rounded-2xl border border-stone-200"><i class="fa-solid fa-user text-5xl"></i></div>`;
+    
+    if (avatars.length > 0) {
+        avatarHtml = `
+            <div class="bg-stone-50/70 p-4 rounded-2xl border border-stone-200/80 shadow-md space-y-4">
+                <!-- ① カテゴリタブ -->
+                <div class="flex flex-wrap gap-1.5 border-b border-stone-200 pb-3">
+                    ${galleryCategories.map(cat => {
+                        const count = avatars.filter(img => img.category === cat.key).length;
+                        if (count === 0) return '';
+                        return `
+                            <button onclick="switchGalleryCategory('${cat.key}')" 
+                                    id="gal-tab-${cat.key}" 
+                                    class="gallery-tab px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${cat.key === activeCat ? 'bg-stone-800 text-white shadow-xs' : 'bg-stone-200/60 text-stone-600 hover:bg-stone-200'}">
+                                ${cat.name} (${count})
+                            </button>
+                        `;
+                    }).join('')}
+                </div>
+
+                <!-- ② メイン画像ビュー（縦長スペースをゆったり確保・全身が見切れないように） -->
+                <div class="relative flex items-center justify-center rounded-2xl overflow-hidden border border-stone-200/60 shadow-inner bg-white/60 p-2 min-h-[400px] sm:min-h-[500px]">
+                    <div id="galleryImageContainer" class="w-full h-full flex items-center justify-center">
+                        <img src="${initialImg ? initialImg.url : ''}" class="w-full h-auto max-h-[600px] object-contain rounded-xl transition-all duration-300">
+                    </div>
+
+                    ${initialCurrentImgs.length > 1 ? `
+                        <button onclick="slideGalleryImage(-1)" class="absolute left-3 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/80 text-white w-9 h-9 rounded-full flex items-center justify-center transition-all shadow-md">
+                            <i class="fa-solid fa-chevron-left text-xs"></i>
+                        </button>
+                        <button onclick="slideGalleryImage(1)" class="absolute right-3 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/80 text-white w-9 h-9 rounded-full flex items-center justify-center transition-all shadow-md">
+                            <i class="fa-solid fa-chevron-right text-xs"></i>
+                        </button>
+                    ` : ''}
+                    
+                    <div id="galleryImageLabel" class="absolute bottom-3 left-3 bg-black/70 backdrop-blur-xs text-white text-[10px] px-2.5 py-1 rounded-md shadow" style="${initialImg && initialImg.label ? 'display:block;' : (initialCurrentImgs.length > 1 ? 'display:block;' : 'display:none;')}">
+                        ${initialImg && initialImg.label ? `<i class="fa-solid fa-tag text-[9px] mr-1"></i>${initialImg.label} (${window._currentGalleryState.index + 1}/${initialCurrentImgs.length})` : `(${window._currentGalleryState.index + 1}/${initialCurrentImgs.length})`}
+                    </div>
+                </div>
+
+                <!-- ③ 下部サムネイル一覧（タップで一発切り替え） -->
+                <div id="galleryThumbnailsContainer" class="flex gap-2 overflow-x-auto pb-1 pt-1 scrollbar-thin" style="${initialCurrentImgs.length > 1 ? 'display:flex;' : 'display:none;'}">
+                    ${initialCurrentImgs.map((img, idx) => `
+                        <button onclick="selectGalleryIndex(${idx})" class="relative w-14 h-14 rounded-xl overflow-hidden border-2 transition-all shrink-0 bg-stone-100 ${idx === window._currentGalleryState.index ? 'border-stone-800 scale-105 shadow-md' : 'border-stone-200 opacity-60 hover:opacity-100'}">
+                            <img src="${img.url}" class="w-full h-full object-cover">
+                        </button>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    }
 
     // 初期表示用の画像とラベルの作成
     const initialCurrentImgs = avatars.filter(img => img.category === activeCat);
@@ -615,8 +692,8 @@ function renderCharacterDetail(characterId) {
                     }).join('')}
                 </div>
 
-                <!-- ② メイン画像ビュー＆左右切り替えボタン -->
-                    <div class="relative flex items-center justify-center bg-stone-900 rounded-xl overflow-hidden aspect-[4/3] group shadow-inner">
+                <!-- ② メイン画像ビュー＆左右切り替えボタン（テーマカラー連動版） -->
+                    <div class="relative flex items-center justify-center rounded-xl overflow-hidden aspect-[4/3] group shadow-inner border border-stone-200/50" style="background-color: ${themeColor}15;">
                     <div id="galleryImageContainer" class="w-full h-full flex items-center justify-center p-2">
                         <img src="${initialImg ? initialImg.url : ''}" class="w-full h-auto max-h-[450px] object-contain rounded-xl transition-all duration-300">
                     </div>
