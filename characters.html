@@ -228,9 +228,12 @@
 
     container.innerHTML = '';
     const keyword = filterKeyword.toLowerCase().trim();
+    
+    // 💡 window.characters が未定義（undefined）の場合に備えて空配列をデフォルトにする
+    const allChars = window.characters || [];
 
     window.systems.forEach(sys => {
-        const sysChars = window.characters.filter(c => c.systemId === sys.id);
+        const sysChars = allChars.filter(c => c.systemId === sys.id);
         const matchesSystem = sys.name.toLowerCase().includes(keyword) || sys.desc.toLowerCase().includes(keyword);
         const matchedChars = sysChars.filter(c => 
             (c.name && c.name.toLowerCase().includes(keyword)) ||
@@ -275,10 +278,10 @@
 }
 window.renderSystemFolders = renderSystemFolders;
 
-        function handleFolderSearchInput(e) {
-            renderSystemFolders(e.target.value);
-        }
-        window.handleFolderSearchInput = handleFolderSearchInput;
+function handleFolderSearchInput(e) {
+    renderSystemFolders(e.target.value);
+}
+window.handleFolderSearchInput = handleFolderSearchInput;
 
       // ==========================================
 // 💡 完成版: キャラクター一覧描画関数（スマート二つ名＆自動コントラスト対応）
