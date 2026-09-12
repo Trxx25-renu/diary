@@ -311,7 +311,7 @@ function handleFaviconFileSelect(event) {
 window.handleFaviconFileSelect = handleFaviconFileSelect;
 
 // ==========================================
-// 💡 完成版: キャラクター一覧描画関数（スマート二つ名＆自動コントラスト・ギャラリー対応版）
+// 💡 完成版: キャラクター一覧描画関数（並び替え対応版）
 // ==========================================
 function renderCharacterList(systemId, filterKeyword = "") {
     window.selectedSystemId = systemId;
@@ -336,7 +336,10 @@ function renderCharacterList(systemId, filterKeyword = "") {
         return nameMatch || epithetMatch || occMatch || ageMatch || birthdateMatch;
     });
 
-    if (filteredChars.length === 0) {
+    // 🌟 フィルタリング後のキャラクター配列に並び替え（ソート）を適用！
+    const sortedChars = sortCharacters(filteredChars);
+
+    if (sortedChars.length === 0) {
         grid.innerHTML = `
             <div class="col-span-full text-center py-12 text-stone-400 text-xs">
                 <i class="fa-solid fa-user-slash text-2xl mb-2"></i>
@@ -346,7 +349,8 @@ function renderCharacterList(systemId, filterKeyword = "") {
         return;
     }
 
-    filteredChars.forEach(ch => {
+    // 🌟 ループを `sortedChars` に変更して、並び順通りにカードを描画
+    sortedChars.forEach(ch => {
         const card = document.createElement('div');
         card.className = 'bg-white rounded-3xl p-4 border border-stone-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer flex flex-col gap-3 relative overflow-hidden group';
         card.onclick = () => navigateTo('detail', ch.id);
@@ -363,6 +367,12 @@ function renderCharacterList(systemId, filterKeyword = "") {
         } else if (ch.images && ch.images.base && ch.images.base.length > 0 && ch.images.base[0].url) {
             thumbHtml = `<img src="${ch.images.base[0].url}" class="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500">`;
         }
+        
+        // （もしこの後にカードのHTML組み立ての続きがあればここに続きますが、お持ちのコードに合わせて調整してください）
+    });
+}
+window.renderCharacterList = renderCharacterList;
+
 
 // ==========================================
 // 💡 キャラクター画像（ギャラリー）管理まわり（タイトル入力対応版）
@@ -395,7 +405,9 @@ function switchImageCategory(categoryKey) {
     });
 
     // プレビューを再描画
-    renderCharacterImagesPreview();
+    if (typeof renderCharacterImagesPreview === 'function') {
+        renderCharacterImagesPreview();
+    }
 }
 window.switchImageCategory = switchImageCategory;
 
@@ -438,7 +450,6 @@ function handleCharacterImagesSelect(event) {
                 // 💡 透過を維持したままWebP形式（品質0.75）で圧縮してBase64化
                 const compressedBase64 = canvas.toDataURL('image/webp', 0.75);
 
-                // 初期ファイル名（拡張子抜きなど、あるいはそのまま）をキレイなデフォルト名にする
                 const defaultName = file.name.replace(/\.[^/.]+$/, "");
 
                 if (!window.editingCharacterImages[window.currentImageCategory]) {
@@ -446,19 +457,19 @@ function handleCharacterImagesSelect(event) {
                 }
                 window.editingCharacterImages[window.currentImageCategory].push({
                     url: compressedBase64,
-                    name: defaultName, // デフォルトでファイル名をセット
+                    name: defaultName,
                     uploadedAt: Date.now()
                 });
 
-                // プレビューを更新
-                renderCharacterImagesPreview();
+                if (typeof renderCharacterImagesPreview === 'function') {
+                    renderCharacterImagesPreview();
+                }
             };
             img.src = e.target.result;
         };
         reader.readAsDataURL(file);
     });
 
-    // 同じファイルを連続で選択できるようにリセット
     event.target.value = '';
 }
 window.handleCharacterImagesSelect = handleCharacterImagesSelect;
@@ -519,7 +530,7 @@ function removeCharacterImage(categoryKey, index) {
     }
 }
 window.removeCharacterImage = removeCharacterImage;
-
+       
         // ==========================================
         // 💡 二つ名と読み仮名を崩れないよう上下にスッキリ配置
         // ==========================================
@@ -1586,6 +1597,102 @@ async function saveCharacter(event) {
 }
 window.saveCharacter = saveCharacter;
 
+       // ==========================================
+// 💡 キャラクターの並び替え機能（日本語 → スペル → その他・記号）
+// ==========================================
+
+// 現在のキャラクター並び替えモード
+window.currentCharacterSortMode = window.currentCharacterSortMode || 'default';
+
+// 並び替えモードを変更して再描画する関数
+function changeCharacterSort(mode) {
+    window.currentCharacterSortMode = mode;
+
+    // ボタンの見た目（アクティブ状態）の切り替え
+    const modes = ['default', 'name', 'birthdate', 'updated'];
+    modes.forEach(m => {
+        const btn = document.getElementById(`charSortBtn_${m}`);
+        if (!btn) return;
+
+        if (m === mode) {
+            btn.className = "px-3 py-1.5 rounded-lg text-xs transition-all font-semibold bg-white text-stone-900 shadow-sm";
+        } else {
+            btn.className = "px-3 py-1.5 rounded-lg text-xs transition-all font-medium text-stone-500 hover:text-stone-800";
+        }
+    });
+
+    // 現在開いているシステムフォルダや一覧を再描画
+    if (typeof window.currentSelectedSystemId !== 'undefined' && typeof selectSystemFolder === 'function') {
+        selectSystemFolder(window.currentSelectedSystemId);
+    } else if (typeof renderSystemFolders === 'function') {
+        renderSystemFolders();
+    }
+}
+window.changeCharacterSort = changeCharacterSort;
+
+// 文字のグループ（1:日本語, 2:アルファベット, 3:その他）を判定するヘルパー
+function getCharGroupOrder(str) {
+    if (!str) return 3;
+    const trimmed = str.trim();
+    if (!trimmed) return 3;
+
+    const firstChar = trimmed.charAt(0);
+    
+    // 1. 日本語（ひらがな・カタカナ・漢字）
+    const isJapanese = /^[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/.test(firstChar);
+    if (isJapanese) return 1;
+
+    // 2. アルファベット（スペル）
+    const isAlphabet = /^[a-zA-Z]/.test(firstChar);
+    if (isAlphabet) return 2;
+
+    // 3. その他（数字、記号など）
+    return 3;
+}
+
+// キャラクター配列を指定されたソート順に並び替える関数
+function sortCharacters(chars) {
+    const sorted = [...chars];
+    const mode = window.currentCharacterSortMode || 'default';
+
+    if (mode === 'name') {
+        // あいうえお順（読み仮名優先、日本語 → スペル → その他の順）
+        sorted.sort((a, b) => {
+            const keyA = (a.nameKana || a.name || '').trim();
+            const keyB = (b.nameKana || b.name || '').trim();
+
+            const groupA = getCharGroupOrder(keyA);
+            const groupB = getCharGroupOrder(keyB);
+
+            // グループが違う場合はグループ順（日本語=1, スペル=2, その他=3）に従う
+            if (groupA !== groupB) {
+                return groupA - groupB;
+            }
+
+            // 同じグループ内なら通常の文字コード比較（あいうえお順 / アルファベット順）
+            return keyA.localeCompare(keyB, 'ja');
+        });
+    } else if (mode === 'birthdate') {
+        // 誕生日順（未設定のものは後ろ）
+        sorted.sort((a, b) => {
+            if (!a.birthdate) return 1;
+            if (!b.birthdate) return -1;
+            return a.birthdate.localeCompare(b.birthdate);
+        });
+    } else if (mode === 'updated') {
+        // 更新順（新しい順）
+        sorted.sort((a, b) => {
+            const timeA = a.updatedAt || a.createdAt || '';
+            const timeB = b.updatedAt || b.createdAt || '';
+            return timeB.localeCompare(timeA);
+        });
+    }
+    // 'default' はそのまま
+
+    return sorted;
+}
+window.sortCharacters = sortCharacters;
+
 // ==========================================
 // 💡 編集モーダルを開く関数（設定・秘匿メモ・ギャラリー画像復元対応版）
 // ==========================================
@@ -2316,6 +2423,35 @@ function renderBreadcrumbAndActions(viewType, param) {
 window.renderBreadcrumbAndActions = renderBreadcrumbAndActions;
         </script>
 
+<!-- 📂 キャラクター一覧ビュー -->
+<div id="view-list" class="hidden">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+        <div>
+            <h2 id="currentSystemTitle" class="text-base font-bold text-stone-800">PC一覧</h2>
+            <p class="text-[11px] text-stone-400">登録されているPC</p>
+        </div>
+        
+        <div class="flex flex-wrap items-center gap-2">
+            <!-- 💡 日記の切り替え挙動に合わせたソート切り替えボタン群 -->
+            <div class="p-1 rounded-xl flex items-center gap-1 bg-stone-100">
+                <button type="button" onclick="changeCharacterSort('default')" id="charSortBtn_default" class="px-3 py-1.5 rounded-lg text-xs transition-all font-semibold bg-white text-stone-900 shadow-sm">デフォルト</button>
+                <button type="button" onclick="changeCharacterSort('name')" id="charSortBtn_name" class="px-3 py-1.5 rounded-lg text-xs transition-all font-medium text-stone-500 hover:text-stone-800">あいうえお順</button>
+                <button type="button" onclick="changeCharacterSort('birthdate')" id="charSortBtn_birthdate" class="px-3 py-1.5 rounded-lg text-xs transition-all font-medium text-stone-500 hover:text-stone-800">誕生日順</button>
+                <button type="button" onclick="changeCharacterSort('updated')" id="charSortBtn_updated" class="px-3 py-1.5 rounded-lg text-xs transition-all font-medium text-stone-500 hover:text-stone-800">更新順</button>
+            </div>
+
+            <!-- 検索窓 -->
+            <div class="relative w-full sm:w-56">
+                <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-stone-400 text-xs">
+                    <i class="fa-solid fa-search"></i>
+                </span>
+                <input type="text" id="characterSearchInput" oninput="handleCharacterSearchInput(event)" placeholder="このシステム内を検索..." class="w-full bg-white border border-stone-200 rounded-full pl-9 pr-4 py-1.5 text-xs text-stone-800 focus:outline-none focus:border-stone-400 shadow-sm">
+            </div>
+        </div>
+    </div>
+    <div id="characterGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4"></div>
+</div>
+        
         <!-- 📂 システム別フォルダビュー -->
         <div id="view-folders">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
@@ -2327,7 +2463,7 @@ window.renderBreadcrumbAndActions = renderBreadcrumbAndActions;
                     <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-stone-400 text-xs">
                         <i class="fa-solid fa-search"></i>
                     </span>
-                    <input type="text" id="folderSearchInput" oninput="handleFolderSearchInput(event)" placeholder="システムやキャラ名で検索..." class="w-full bg-white border border-stone-200 rounded-full pl-9 pr-4 py-1.5 text-xs text-stone-800 focus:outline-none focus:border-stone-400 shadow-sm">
+                    <input type="text" id="folderSearchInput" oninput="handleFolderSearchInput(event)" placeholder="システムやPC名で検索" class="w-full bg-white border border-stone-200 rounded-full pl-9 pr-4 py-1.5 text-xs text-stone-800 focus:outline-none focus:border-stone-400 shadow-sm">
                 </div>
             </div>
             <div id="systemFoldersContainer" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4"></div>
