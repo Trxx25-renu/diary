@@ -1280,8 +1280,8 @@ window.handleOpenSettingsModal = handleOpenSettingsModal;
     }
     window.closeSettingsModal = closeSettingsModal;
         
-      // ==========================================
-// 💡 完全修正版: キャラクター保存関数（ギャラリー画像保存対応版）
+// ==========================================
+// 💡 完全修正版: キャラクター保存関数（詳細画面へのシームレス遷移対応版）
 // ==========================================
 async function saveCharacter(event) {
     event.preventDefault();
@@ -1309,24 +1309,22 @@ async function saveCharacter(event) {
     const thumbnail = window.currentThumbnailBase64 || "";
     const avatar = window.currentAvatarBase64 || "";
 
-    // 💡【ここを修正】ギャラリー画像を一度クリーンなJSONオブジェクトに変換して、Firestoreが嫌う不正なデータを排除する！
+    // 💡 ギャラリー画像を一度クリーンなJSONオブジェクトに変換
     const images = JSON.parse(JSON.stringify(window.editingCharacterImages || { base: [], combat: [], sd: [], doodle: [] }));
 
     // カスタム項目の値（ステータス・テキスト）を正しく収集
     const customValues = {};
 
-    // ステータス入力値の取得
     document.querySelectorAll('.char-custom-status-input').forEach(inputEl => {
-        const inputId = inputEl.id; // 例: custom_status_abc123
+        const inputId = inputEl.id;
         if (inputId && inputId.startsWith('custom_status_')) {
             const fieldId = inputId.replace('custom_status_', '');
             customValues[fieldId] = inputEl.value ? Number(inputEl.value) : '';
         }
     });
 
-    // テキスト入力値の取得
     document.querySelectorAll('.char-custom-text-input').forEach(inputEl => {
-        const inputId = inputEl.id; // 例: custom_text_xyz789
+        const inputId = inputEl.id;
         if (inputId && inputId.startsWith('custom_text_')) {
             const fieldId = inputId.replace('custom_text_', '');
             customValues[fieldId] = inputEl.value;
@@ -1351,14 +1349,16 @@ async function saveCharacter(event) {
         occupation, 
         themeColor,  
         sheetUrl, 
-        memo,         // 設定／メモ
-        secret,       // 秘匿メモ
+        memo,          // 設定／メモ
+        secret,        // 秘匿メモ
         thumbnail, 
         avatar,
-        images,       // 💡 ここにカテゴリ別ギャラリー画像をセット！
+        images,        // カテゴリ別ギャラリー画像
         customValues,
         updatedAt: new Date().toISOString()
     };
+
+    let targetCharacterId = window.editingCharacterId;
 
     try {
         const charsRef = collection(db, 'artifacts', window.appId, 'public', 'data', 'characters');
@@ -1369,14 +1369,9 @@ async function saveCharacter(event) {
             await updateDoc(docRef, charData);
 
             // ローカルの配列を更新
-            const index = window.characters.findIndex(c => c.id === window.editingCharacterId);
+            const index = window.characters.findIndex(c => String(c.id) === String(window.editingCharacterId));
             if (index !== -1) {
                 window.characters[index] = { id: window.editingCharacterId, ...window.characters[index], ...charData };
-            }
-
-            // 💡 もし現在「詳細画面」を表示中なら、その場で詳細画面を再描画！
-            if (window.currentView === 'detail' && window.selectedCharacterId === window.editingCharacterId) {
-                renderCharacterDetail(window.editingCharacterId);
             }
 
             showToast("キャラクターを更新しました！", "info");
@@ -1384,13 +1379,27 @@ async function saveCharacter(event) {
             // 🆕 新規作成の場合
             charData.createdAt = new Date().toISOString();
             const docRef = await addDoc(charsRef, charData);
-            window.characters.push({ id: docRef.id, ...charData });
+            targetCharacterId = docRef.id; // 新しく発行されたIDを保存先として保持
+            
+            window.characters.push({ id: targetCharacterId, ...charData });
             showToast("キャラクターを登録しました！", "info");
         }
 
+        // 💡 モーダルを閉じる
         closeCharacterModal();
-        renderCharacterList(systemId);
+
+        // 💡 一覧やサイドバーのデータを最新に同期
         if (typeof renderSystemFolders === 'function') renderSystemFolders();
+
+        // 💡 ✨ここがポイント：保存直後に必ずそのキャラの詳細画面を開いて描画する！
+        if (targetCharacterId) {
+            if (typeof navigateTo === 'function') {
+                navigateTo('detail', targetCharacterId);
+            } else if (typeof renderCharacterDetail === 'function') {
+                renderCharacterDetail(targetCharacterId);
+            }
+        }
+
     } catch (e) {
         console.error("Save error:", e);
         alert("保存に失敗しました。画像サイズが大きすぎないか確認してください。");
