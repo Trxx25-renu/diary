@@ -283,6 +283,29 @@ function handleFolderSearchInput(e) {
 }
 window.handleFolderSearchInput = handleFolderSearchInput;
 
+       // ==========================================
+// 💡 ファビコンファイル選択時のプレビュー＆Base64変換関数
+// ==========================================
+function handleFaviconFileSelect(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const base64String = e.target.result;
+        window.currentFaviconBase64 = base64String;
+
+        // プレビュー画像を表示
+        const preview = document.getElementById('settingFaviconPreview');
+        if (preview) {
+            preview.src = base64String;
+            preview.classList.remove('hidden');
+        }
+    };
+    reader.readAsDataURL(file);
+}
+window.handleFaviconFileSelect = handleFaviconFileSelect;
+
       // ==========================================
 // 💡 完成版: キャラクター一覧描画関数（スマート二つ名＆自動コントラスト対応）
 // ==========================================
