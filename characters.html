@@ -1658,18 +1658,18 @@ async function saveCharacter(event) {
 window.saveCharacter = saveCharacter;
        
 // ==========================================
-// 💡 キャラクターの並び替え機能（日本語 → スペル → その他・記号）
+// 💡 キャラクターの並び替え機能（更新順・五十音順・誕生日順）
 // ==========================================
 
-// 現在のキャラクター並び替えモード
-window.currentCharacterSortMode = window.currentCharacterSortMode || 'default';
+// 現在のキャラクター並び替えモード（デフォルトを 'updated' に設定）
+window.currentCharacterSortMode = window.currentCharacterSortMode || 'updated';
 
 // 並び替えモードを変更して再描画する関数
 function changeCharacterSort(mode) {
     window.currentCharacterSortMode = mode;
 
-    // ボタンの見た目（アクティブ状態）の切り替え
-    const modes = ['default', 'name', 'birthdate', 'updated'];
+    // ボタンの見た目（アクティブ状態）の切り替え（3つのIDに対応）
+    const modes = ['updated', 'name', 'birthdate'];
     modes.forEach(m => {
         const btn = document.getElementById(`charSortBtn_${m}`);
         if (!btn) return;
@@ -1710,7 +1710,7 @@ function getCharGroupOrder(str) {
     return 3;
 }
 
-// 💡 誕生日の文字列（例: "7月31日" や "10/15" など）から [月, 日] の数値を取り出すヘルパー
+// 誕生日の文字列（例: "7月31日" や "10/15" など）から [月, 日] の数値を取り出すヘルパー
 function parseBirthdate(birthdateStr) {
     if (!birthdateStr) return [99, 99]; // 未設定は一番後ろにする
     const matches = birthdateStr.match(/(\d+)/g);
@@ -1721,10 +1721,10 @@ function parseBirthdate(birthdateStr) {
 // キャラクター配列を指定されたソート順に並び替える関数
 function sortCharacters(chars) {
     const sorted = [...chars];
-    const mode = window.currentCharacterSortMode || 'default';
+    const mode = window.currentCharacterSortMode || 'updated';
 
     if (mode === 'name') {
-        // あいうえお順（読み仮名優先、日本語 → スペル → その他の順）
+        // ① 五十音順（読み仮名優先、日本語 → スペル → その他の順）
         sorted.sort((a, b) => {
             const keyA = (a.nameKana || a.name || '').trim();
             const keyB = (b.nameKana || b.name || '').trim();
@@ -1732,38 +1732,35 @@ function sortCharacters(chars) {
             const groupA = getCharGroupOrder(keyA);
             const groupB = getCharGroupOrder(keyB);
 
-            // グループが違う場合はグループ順（日本語=1, スペル=2, その他=3）に従う
             if (groupA !== groupB) {
                 return groupA - groupB;
             }
-
-            // 同じグループ内なら通常の文字コード比較（あいうえお順 / アルファベット順）
             return keyA.localeCompare(keyB, 'ja');
         });
     } else if (mode === 'birthdate') {
-        // 💡 誕生日順（月・日を数値として比較するため、10月が先頭に来るのを防ぎます。未設定は後ろ）
+        // ② 誕生日順（月・日を数値として正しく比較。未設定は後ろ）
         sorted.sort((a, b) => {
             const [monthA, dayA] = parseBirthdate(a.birthdate);
             const [monthB, dayB] = parseBirthdate(b.birthdate);
 
             if (monthA !== monthB) {
-                return monthA - monthB; // 月で比較
+                return monthA - monthB;
             }
-            return dayA - dayB; // 月が同じなら日で比較
+            return dayA - dayB;
         });
-    } else if (mode === 'updated') {
-        // 更新順（新しい順）
+    } else {
+        // ③ 更新順（デフォルト：新しい順）
         sorted.sort((a, b) => {
             const timeA = a.updatedAt || a.createdAt || '';
             const timeB = b.updatedAt || b.createdAt || '';
             return timeB.localeCompare(timeA);
         });
     }
-    // 'default' はそのまま
 
     return sorted;
 }
 window.sortCharacters = sortCharacters;
+       
 // ==========================================
 // 💡 編集モーダルを開く関数（設定・秘匿メモ・ギャラリー画像復元対応版）
 // ==========================================
@@ -2503,13 +2500,13 @@ window.renderBreadcrumbAndActions = renderBreadcrumbAndActions;
         </div>
         
         <div class="flex flex-wrap items-center gap-2">
+            
             <!-- 💡 日記の切り替え挙動に合わせたソート切り替えボタン群 -->
-            <div class="p-1 rounded-xl flex items-center gap-1 bg-stone-100">
-                <button type="button" onclick="changeCharacterSort('default')" id="charSortBtn_default" class="px-3 py-1.5 rounded-lg text-xs transition-all font-semibold bg-white text-stone-900 shadow-sm">デフォルト</button>
-                <button type="button" onclick="changeCharacterSort('name')" id="charSortBtn_name" class="px-3 py-1.5 rounded-lg text-xs transition-all font-medium text-stone-500 hover:text-stone-800">あいうえお順</button>
-                <button type="button" onclick="changeCharacterSort('birthdate')" id="charSortBtn_birthdate" class="px-3 py-1.5 rounded-lg text-xs transition-all font-medium text-stone-500 hover:text-stone-800">誕生日順</button>
-                <button type="button" onclick="changeCharacterSort('updated')" id="charSortBtn_updated" class="px-3 py-1.5 rounded-lg text-xs transition-all font-medium text-stone-500 hover:text-stone-800">更新順</button>
-            </div>
+<div class="p-1 rounded-xl flex items-center gap-1 bg-stone-100">
+    <button type="button" onclick="changeCharacterSort('updated')" id="charSortBtn_updated" class="px-3 py-1.5 rounded-lg text-xs transition-all font-semibold bg-white text-stone-900 shadow-sm">更新順</button>
+    <button type="button" onclick="changeCharacterSort('name')" id="charSortBtn_name" class="px-3 py-1.5 rounded-lg text-xs transition-all font-medium text-stone-500 hover:text-stone-800">あいうえお順</button>
+    <button type="button" onclick="changeCharacterSort('birthdate')" id="charSortBtn_birthdate" class="px-3 py-1.5 rounded-lg text-xs transition-all font-medium text-stone-500 hover:text-stone-800">誕生日順</button>
+</div>
 
             <!-- 検索窓 -->
             <div class="relative w-full sm:w-56">
