@@ -1283,6 +1283,181 @@ window.handleOpenSettingsModal = handleOpenSettingsModal;
         }
     }
     window.closeSettingsModal = closeSettingsModal;
+
+       // ==========================================
+// 💡 サイト設定モーダル内のエディタ（システム順序・カスタム項目）を描画する関数
+// ==========================================
+function renderSettingsEditors() {
+    renderSettingsSystemsEditor();
+    renderSettingsFieldsEditor();
+}
+window.renderSettingsEditors = renderSettingsEditors;
+
+// 1. システムの並び順・名前変更エディタの描画
+function renderSettingsSystemsEditor() {
+    const container = document.getElementById('settingsSystemsEditorContainer');
+    if (!container) return;
+    
+    let html = '';
+    window.systems.forEach((sys, index) => {
+        html += `
+            <div class="flex items-center gap-2 bg-stone-50 border border-stone-200 rounded-xl p-2.5">
+                <span class="text-xs font-bold text-stone-500 w-6 text-center">${index + 1}</span>
+                <input type="text" value="${escapeHtml(sys.name)}" onchange="updateSystemName('${sys.id}', this.value)" class="flex-1 bg-white border border-stone-200 rounded-lg px-2.5 py-1 text-xs text-stone-800" placeholder="システム名">
+                <div class="flex items-center gap-1">
+                    <button type="button" onclick="moveSystemOrder(${index}, -1)" class="w-7 h-7 flex items-center justify-center bg-white border border-stone-200 rounded-lg text-stone-600 hover:bg-stone-100 text-xs" ${index === 0 ? 'disabled class="opacity-30 cursor-not-allowed"' : ''}>
+                        <i class="fa-solid fa-arrow-up"></i>
+                    </button>
+                    <button type="button" onclick="moveSystemOrder(${index}, 1)" class="w-7 h-7 flex items-center justify-center bg-white border border-stone-200 rounded-lg text-stone-600 hover:bg-stone-100 text-xs" ${index === window.systems.length - 1 ? 'disabled class="opacity-30 cursor-not-allowed"' : ''}>
+                        <i class="fa-solid fa-arrow-down"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+    });
+    container.innerHTML = html;
+}
+window.renderSettingsSystemsEditor = renderSettingsSystemsEditor;
+
+// システム名の変更を一時保持
+function updateSystemName(sysId, newName) {
+    const sys = window.systems.find(s => s.id === sysId);
+    if (sys) {
+        sys.name = newName.trim();
+    }
+}
+window.updateSystemName = updateSystemName;
+
+// システムの順番を上下に入れ替える
+function moveSystemOrder(index, direction) {
+    const newIndex = index + direction;
+    if (newIndex < 0 || newIndex >= window.systems.length) return;
+    
+    const temp = window.systems[index];
+    window.systems[index] = window.systems[newIndex];
+    window.systems[newIndex] = temp;
+    
+    renderSettingsSystemsEditor();
+}
+window.moveSystemOrder = moveSystemOrder;
+
+// 2. システム別 カスタム項目エディタの描画
+function renderSettingsFieldsEditor() {
+    const container = document.getElementById('settingsFieldsEditorContainer');
+    if (!container) return;
+
+    if (!window.systemCustomFields) {
+        window.systemCustomFields = {};
+    }
+
+    let html = '';
+    window.systems.forEach(sys => {
+        if (!window.systemCustomFields[sys.id]) {
+            window.systemCustomFields[sys.id] = { status: [], text: [] };
+        }
+        const fields = window.systemCustomFields[sys.id];
+        const statuses = fields.status || [];
+        const texts = fields.text || [];
+
+        html += `
+            <div class="bg-stone-50 border border-stone-200 rounded-2xl p-3.5 space-y-3">
+                <div class="font-bold text-xs text-stone-800 flex items-center justify-between pb-1.5 border-b border-stone-200/60">
+                    <span>${escapeHtml(sys.name)}</span>
+                </div>
+                
+                <!-- ステータス項目 -->
+                <div>
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="text-[11px] font-bold text-stone-600">ステータス項目（数値）</span>
+                        <button type="button" onclick="addCustomField('${sys.id}', 'status')" class="text-[10px] bg-stone-200/70 hover:bg-stone-300 text-stone-700 px-2 py-0.5 rounded-md font-medium transition-all">+ 追加</button>
+                    </div>
+                    <div class="space-y-1.5" id="statusFields_${sys.id}">
+                        ${statuses.map((f, fIdx) => `
+                            <div class="flex items-center gap-1.5">
+                                <input type="text" value="${escapeHtml(f.label)}" onchange="updateCustomFieldLabel('${sys.id}', 'status', ${fIdx}, this.value)" class="flex-1 bg-white border border-stone-200 rounded-lg px-2 py-1 text-xs" placeholder="項目名 (例: HP)">
+                                <input type="number" value="${f.max || ''}" onchange="updateCustomFieldMax('${sys.id}', ${fIdx}, this.value)" class="w-16 bg-white border border-stone-200 rounded-lg px-2 py-1 text-xs" placeholder="最大値">
+                                <button type="button" onclick="removeCustomField('${sys.id}', 'status', ${fIdx})" class="text-stone-400 hover:text-rose-500 px-1 text-xs"><i class="fa-solid fa-trash"></i></button>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+
+                <!-- テキスト項目 -->
+                <div>
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="text-[11px] font-bold text-stone-600">テキスト項目（ネタバレ可）</span>
+                        <button type="button" onclick="addCustomField('${sys.id}', 'text')" class="text-[10px] bg-stone-200/70 hover:bg-stone-300 text-stone-700 px-2 py-0.5 rounded-md font-medium transition-all">+ 追加</button>
+                    </div>
+                    <div class="space-y-1.5" id="textFields_${sys.id}">
+                        ${texts.map((f, fIdx) => `
+                            <div class="flex items-center gap-1.5">
+                                <input type="text" value="${escapeHtml(f.label)}" onchange="updateCustomTextFieldLabel('${sys.id}', ${fIdx}, this.value)" class="flex-1 bg-white border border-stone-200 rounded-lg px-2 py-1 text-xs" placeholder="項目名 (例: シンドローム)">
+                                <button type="button" onclick="removeCustomField('${sys.id}', 'text', ${fIdx})" class="text-stone-400 hover:text-rose-500 px-1 text-xs"><i class="fa-solid fa-trash"></i></button>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    container.innerHTML = html;
+}
+window.renderSettingsFieldsEditor = renderSettingsFieldsEditor;
+
+// カスタム項目の追加・削除・編集用ヘルパー関数
+function addCustomField(sysId, type) {
+    if (!window.systemCustomFields[sysId]) {
+        window.systemCustomFields[sysId] = { status: [], text: [] };
+    }
+    const newId = 'field_' + Math.random().toString(36.substring(2, 7));
+    if (type === 'status') {
+        window.systemCustomFields[sysId].status.push({ id: newId, label: '新しいステータス', max: 10 });
+    } else {
+        window.systemCustomFields[sysId].text.push({ id: newId, label: '新しい項目' });
+    }
+    renderSettingsFieldsEditor();
+}
+window.addCustomField = addCustomField;
+
+function removeCustomField(sysId, type, index) {
+    if (window.systemCustomFields[sysId] && window.systemCustomFields[sysId][type]) {
+        window.systemCustomFields[sysId][type].splice(index, 1);
+        renderSettingsFieldsEditor();
+    }
+}
+window.removeCustomField = removeCustomField;
+
+function updateCustomFieldLabel(sysId, type, index, val) {
+    if (window.systemCustomFields[sysId] && window.systemCustomFields[sysId][type][index]) {
+        window.systemCustomFields[sysId][type][index].label = val.trim();
+    }
+}
+window.updateCustomFieldLabel = updateCustomFieldLabel;
+
+function updateCustomFieldMax(sysId, index, val) {
+    if (window.systemCustomFields[sysId] && window.systemCustomFields[sysId].status[index]) {
+        window.systemCustomFields[sysId].status[index].max = val ? Number(val) : '';
+    }
+}
+window.updateCustomFieldMax = updateCustomFieldMax;
+
+function updateCustomTextFieldLabel(sysId, index, val) {
+    if (window.systemCustomFields[sysId] && window.systemCustomFields[sysId].text[index]) {
+        window.systemCustomFields[sysId].text[index].label = val.trim();
+    }
+}
+window.updateCustomTextFieldLabel = updateCustomTextFieldLabel;
+
+// HTMLエスケープ用（安全対策）
+function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
         
 // ==========================================
 // 💡 完全修正版: キャラクター保存関数（詳細画面へのシームレス遷移対応版）
