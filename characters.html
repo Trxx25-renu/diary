@@ -1190,21 +1190,29 @@ function handleSystemChangeInModal(existingCustomValues = {}) {
 window.handleSystemChangeInModal = handleSystemChangeInModal;
 
 // ==========================================
-// 💡 3. カラーピッカー（テーマカラー）のプレビュー連動関数
+// 💡 カラープレビュー更新関数（#あり・なし両対応の完全版）
 // ==========================================
 function updateColorPreview(colorCode) {
     const previewBox = document.getElementById('characterColorPreview');
     if (!previewBox) return;
 
-    if (colorCode && colorCode.startsWith('#')) {
-        previewBox.style.backgroundColor = colorCode;
-    } else {
+    if (!colorCode) {
         previewBox.style.backgroundColor = '';
+        return;
     }
+
+    let code = colorCode.trim();
+    // # がなくて、かつ英数字のみ（3文字か6文字など）の場合は自動で # を補う
+    if (!code.startsWith('#') && /^[0-9A-Fa-f]+$/.test(code)) {
+        code = '#' + code;
+    }
+
+    // 色として適用してみる
+    previewBox.style.backgroundColor = code;
 }
 window.updateColorPreview = updateColorPreview;
 
-       // ==========================================
+// ==========================================
 // 💡 handleThemeColorInput のブリッジ関数
 // ==========================================
 function handleThemeColorInput(colorCode) {
@@ -1489,19 +1497,14 @@ window.handleAuthSubmit = handleAuthSubmit;
         window.updateHeaderBranding = updateHeaderBranding;
 
        // ==========================================
-// 💡 秘匿メモ（ネタバレ）の表示・非表示を切り替える関数
+// 💡 秘匿メモ（ネタバレ）の表示・非表示を切り替える関数（トグル対応版）
 // ==========================================
 function toggleSecretMemo() {
     const container = document.getElementById('detailSecretContainer');
     if (!container) return;
 
-    // クリックされたら表示・非表示を切り替える
-    if (container.classList.contains('hidden')) {
-        container.classList.remove('hidden');
-    } else {
-        // もし再度隠す仕様にしたい場合、あるいはトグルさせたい場合
-        // ここにお好みの切り替え処理を記述できます
-    }
+    // hidden クラスがあれば外し、なければ付ける（これで何度でもパチパチ切り替わります）
+    container.classList.toggle('hidden');
 }
 window.toggleSecretMemo = toggleSecretMemo;
        
