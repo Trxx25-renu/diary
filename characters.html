@@ -1003,20 +1003,60 @@ function closeAuthModal() {
 }
 window.closeAuthModal = closeAuthModal;
        
-    // 💡 サイト設定モーダルを開く（権限チェックを挟む安全設計）
-    function handleOpenSettingsModal() {
-        checkAdminPermission(() => {
-            const titleInput = document.getElementById('settingTitleInput');
-            if (titleInput && window.rosterSettings) {
-                titleInput.value = window.rosterSettings.title || '';
+    // ==========================================
+// 💡 サイト設定モーダルを開く関数（全設定・エディタ描画対応版）
+// ==========================================
+function handleOpenSettingsModal() {
+    checkAdminPermission(() => {
+        // 1. ページタイトルのセット
+        const titleInput = document.getElementById('settingTitleInput');
+        if (titleInput && window.rosterSettings) {
+            titleInput.value = window.rosterSettings.title || '';
+        }
+
+        // 2. ファビコンプレビューの復元
+        const faviconPreview = document.getElementById('settingFaviconPreview');
+        if (faviconPreview) {
+            if (window.rosterSettings?.favicon) {
+                faviconPreview.src = window.rosterSettings.favicon;
+                faviconPreview.classList.remove('hidden');
+                window.currentFaviconBase64 = window.rosterSettings.favicon;
+            } else {
+                faviconPreview.src = '';
+                faviconPreview.classList.add('hidden');
+                window.currentFaviconBase64 = '';
             }
-            const modal = document.getElementById('settingsModal');
-            if (modal) {
-                modal.classList.remove('hidden');
-            }
-        });
-    }
-    window.handleOpenSettingsModal = handleOpenSettingsModal;
+        }
+
+        // 3. ギャラリーカテゴリ名の復元
+        const cats = window.rosterSettings?.galleryCategories || {};
+        const catBase = document.getElementById('catNameBase');
+        const catCombat = document.getElementById('catNameCombat');
+        const catSd = document.getElementById('catNameSd');
+        const catDoodle = document.getElementById('catNameDoodle');
+
+        if (catBase) catBase.value = cats.base || '';
+        if (catCombat) catCombat.value = cats.combat || '';
+        if (catSd) catSd.value = cats.sd || '';
+        if (catDoodle) catDoodle.value = cats.doodle || '';
+
+        // 4. システムの並び順・カスタム項目エディタの描画を実行
+        // （※お持ちの環境にあるエディタ描画関数の名称に合わせて呼び出します）
+        if (typeof renderSettingsEditors === 'function') {
+            renderSettingsEditors();
+        } else if (typeof renderSettingsSystemsEditor === 'function' && typeof renderSettingsFieldsEditor === 'function') {
+            renderSettingsSystemsEditor();
+            renderSettingsFieldsEditor();
+        }
+
+        // 5. モーダルを表示
+        const modal = document.getElementById('settingsModal');
+        if (modal) {
+            modal.classList.remove('hidden');
+        }
+    });
+}
+window.handleOpenSettingsModal = handleOpenSettingsModal;
 
     // 💡 サイト設定モーダルを閉じる関数
     function closeSettingsModal() {
@@ -1594,40 +1634,50 @@ function deleteCharacter(characterId) {
 // 🌟 忘れずに window に登録する！
 window.deleteCharacter = deleteCharacter;
 
-       // ==========================================
-        // 💡 設定を画面に適用する関数
-        // ==========================================
-        function applyRosterSettings(settings) {
-            if (!settings) return;
-            window.rosterSettings = settings; // データを保持
+// ==========================================
+// 💡 設定を画面に適用する関数（カテゴリ連動対応版）
+// ==========================================
+function applyRosterSettings(settings) {
+    if (!settings) return;
+    window.rosterSettings = settings; // データを保持
 
-            // 1. 画面上のサイトタイトルを反映
-            const siteHeaderTitle = document.getElementById('siteHeaderTitle');
-            if (siteHeaderTitle && settings.title) {
-                siteHeaderTitle.textContent = settings.title;
-            }
+    // 1. 画面上のサイトタイトルを反映
+    const siteHeaderTitle = document.getElementById('siteHeaderTitle');
+    if (siteHeaderTitle && settings.title) {
+        siteHeaderTitle.textContent = settings.title;
+    }
 
-            // 2. ヘッダー左側のアイコン画像を反映
-            const faviconImgEl = document.getElementById('headerFaviconImg');
-            if (faviconImgEl) {
-                if (settings.favicon && settings.favicon.trim() !== '') {
-                    faviconImgEl.src = settings.favicon;
-                    faviconImgEl.classList.remove('hidden'); // 画像を表示
-                } else {
-                    faviconImgEl.classList.add('hidden');    // 画像を隠す
-                }
-            }
-
-            // 3. ブラウザ自体のタブアイコン（ファビコン）の反映
-            if (settings.favicon) {
-                const faviconEl = document.getElementById('faviconIcon') || document.getElementById('dynamicFavicon') || document.querySelector("link[rel*='icon']");
-                if (faviconEl) faviconEl.href = settings.favicon;
-
-                const appleIconEl = document.getElementById('appleTouchIcon');
-                if (appleIconEl) appleIconEl.href = settings.favicon;
-            }
+    // 2. ヘッダー左側のアイコン画像を反映
+    const faviconImgEl = document.getElementById('headerFaviconImg');
+    if (faviconImgEl) {
+        if (settings.favicon && settings.favicon.trim() !== '') {
+            faviconImgEl.src = settings.favicon;
+            faviconImgEl.classList.remove('hidden'); // 画像を表示
+        } else {
+            faviconImgEl.classList.add('hidden');    // 画像を隠す
         }
-        window.applyRosterSettings = applyRosterSettings;
+    }
+
+    // 3. ブラウザ自体のタブアイコン（ファビコン）の反映
+    if (settings.favicon) {
+        const faviconEl = document.getElementById('faviconIcon') || document.getElementById('dynamicFavicon') || document.querySelector("link[rel*='icon']");
+        if (faviconEl) faviconEl.href = settings.favicon;
+
+        const appleIconEl = document.getElementById('appleTouchIcon');
+        if (appleIconEl) appleIconEl.href = settings.favicon;
+    }
+
+    // 4. 💡 ギャラリーカテゴリ名が設定されていれば反映・保存
+    if (settings.galleryCategories) {
+        window.galleryCategories = settings.galleryCategories;
+    }
+
+    // 5. システムやフォルダの表示を最新の状態で再描画（もし関数があれば実行）
+    if (typeof renderSystemFolders === 'function') {
+        renderSystemFolders();
+    }
+}
+window.applyRosterSettings = applyRosterSettings;
 
         // 🔑 パスコード送信（認証・新規設定）の処理
 function handleAuthSubmit(e) {
