@@ -543,10 +543,7 @@ function renderCharacterImagesPreview() {
             </div>
             <div>
                 <label class="text-[10px] text-stone-400 block mb-0.5">画像タイトル</label>
-                <input type="text" value="${imgObj.name || ''}" 
-                    oninput="updateImageLabel('${window.currentImageCategory}', ${index}, this.value)"
-                    class="w-full text-xs bg-white border border-stone-200 rounded-lg px-2 py-1 text-stone-700 focus:outline-none focus:border-stone-400"
-                    placeholder="例: 通常, 笑顔 など">
+                <input type="text" value="${imgObj.name || ''}" oninput="updateImageLabel('${window.currentImageCategory}', ${index}, this.value)" class="w-full text-xs bg-white border border-stone-200 rounded-lg px-2 py-1 text-stone-700 focus:outline-none focus:border-stone-400" placeholder="例: 通常, 笑顔 など">
             </div>
         `;
         container.appendChild(item);
