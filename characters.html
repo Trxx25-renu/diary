@@ -471,8 +471,12 @@ function getAdaptiveTextColor(hexColor) {
 window.getAdaptiveTextColor = getAdaptiveTextColor;
 
 // ==========================================
-// 💡 キャラクター詳細描画関数（完全版・修正済）
+// 💡 キャラクター詳細描画関数（ギャラリー・4カテゴリ対応版）
 // ==========================================
+
+// ギャラリーの状態を一時保持する変数
+window._currentGalleryState = window._currentGalleryState || { characterId: null, category: 'base', index: 0 };
+
 function renderCharacterDetail(characterId) {
     const detailContainer = document.getElementById('view-detail');
     if (!detailContainer) return;
@@ -487,13 +491,156 @@ function renderCharacterDetail(characterId) {
     const themeColor = getAdjustedColor(rawThemeColor);
     const badgeTextColor = getAdaptiveTextColor(themeColor);
 
-    // アバター画像のHTML生成
-    let avatarHtml = `<div class="w-full h-64 sm:h-96 flex items-center justify-center text-stone-300 bg-stone-100 rounded-2xl border border-stone-200"><i class="fa-solid fa-user text-5xl"></i></div>`;
-    if (ch.avatar) {
-        avatarHtml = `<div class="bg-stone-50/50 p-2 rounded-2xl border border-stone-200/80 shadow-md flex items-center justify-center"><img src="${ch.avatar}" class="w-full h-auto max-h-[500px] object-contain rounded-xl"></div>`;
+    // 💡 複数枚ギャラリーデータの準備（互換性対応付き）
+    let avatars = Array.isArray(ch.avatars) ? ch.avatars : [];
+    if (avatars.length === 0 && ch.avatar) {
+        avatars.push({ url: ch.avatar, category: 'base', label: '基本' });
     }
 
-    // 二つ名と名前の間の無駄な改行・隙間をスッキリ圧縮
+    // ギャラリーの状態を初期化・保持
+    if (window._currentGalleryState.characterId !== String(characterId)) {
+        window._currentGalleryState = { characterId: String(characterId), category: 'base', index: 0 };
+    }
+
+    // 4つのカテゴリ定義
+    const galleryCategories = [
+        { key: 'base', name: '基本・成長' },
+        { key: 'combat', name: '戦闘・衣装' },
+        { key: 'sd', name: 'SD・その他' },
+        { key: 'doodle', name: '落書き' }
+    ];
+
+    // もし現在のカテゴリに画像が1枚もなければ、画像が存在する最初のカテゴリに切り替える
+    let activeCat = window._currentGalleryState.category;
+    if (!avatars.some(img => img.category === activeCat)) {
+        const availableCat = galleryCategories.find(cat => avatars.some(img => img.category === cat.key));
+        activeCat = availableCat ? availableCat.key : 'base';
+        window._currentGalleryState.category = activeCat;
+        window._currentGalleryState.index = 0;
+    }
+
+    // ------------------------------------------
+    // 🖼️ ギャラリー描画用ヘルパー関数（インライン定義）
+    // ------------------------------------------
+    window.switchGalleryCategory = function(catKey) {
+        window._currentGalleryState.category = catKey;
+        window._currentGalleryState.index = 0;
+        updateGalleryDisplay(characterId);
+    };
+
+    window.slideGalleryImage = function(direction) {
+        const currentCatImages = avatars.filter(img => img.category === window._currentGalleryState.category);
+        if (currentCatImages.length === 0) return;
+        
+        let newIndex = window._currentGalleryState.index + direction;
+        if (newIndex < 0) {
+            newIndex = currentCatImages.length - 1; // ループ
+        } else if (newIndex >= currentCatImages.length) {
+            newIndex = 0; // ループ
+        }
+        window._currentGalleryState.index = newIndex;
+        updateGalleryDisplay(characterId);
+    };
+
+    // 画面部分のHTMLを部分更新する関数
+    window.updateGalleryDisplay = function(targetId) {
+        const state = window._currentGalleryState;
+        const targetCh = window.characters.find(c => String(c.id) === String(targetId));
+        if (!targetCh) return;
+
+        let targetAvatars = Array.isArray(targetCh.avatars) ? targetCh.avatars : [];
+        if (targetAvatars.length === 0 && targetCh.avatar) {
+            targetAvatars.push({ url: targetCh.avatar, category: 'base', label: '基本' });
+        }
+
+        const currentImgs = targetAvatars.filter(img => img.category === state.category);
+        const currentImg = currentImgs[state.index] || currentImgs[0];
+
+        // メイン画像のコンテナ更新
+        const imgContainer = document.getElementById('galleryImageContainer');
+        const labelContainer = document.getElementById('galleryImageLabel');
+        if (imgContainer) {
+            if (currentImg && currentImg.url) {
+                imgContainer.innerHTML = `<img src="${currentImg.url}" class="w-full h-auto max-h-[450px] object-contain rounded-xl transition-all duration-300">`;
+            } else {
+                imgContainer.innerHTML = `<div class="text-stone-400 text-xs"><i class="fa-solid fa-image text-3xl mb-1 block"></i>画像がありません</div>`;
+            }
+        }
+        if (labelContainer) {
+            if (currentImg && currentImg.label) {
+                labelContainer.innerHTML = `<i class="fa-solid fa-tag text-[9px] mr-1"></i>${currentImg.label} (${state.index + 1}/${currentImgs.length})`;
+                labelContainer.style.display = 'block';
+            } else if (currentImgs.length > 1) {
+                labelContainer.innerHTML = `(${state.index + 1}/${currentImgs.length})`;
+                labelContainer.style.display = 'block';
+            } else {
+                labelContainer.style.display = 'none';
+            }
+        }
+
+        // タブのアクティブ状態更新
+        galleryCategories.forEach(cat => {
+            const tabBtn = document.getElementById(`gal-tab-${cat.key}`);
+            if (tabBtn) {
+                if (cat.key === state.category) {
+                    tabBtn.className = "gallery-tab px-3 py-1 text-xs font-bold rounded-lg transition-all bg-stone-800 text-white shadow-xs";
+                } else {
+                    tabBtn.className = "gallery-tab px-3 py-1 text-xs font-bold rounded-lg transition-all bg-stone-200/60 text-stone-600 hover:bg-stone-200";
+                }
+            }
+        });
+    };
+
+    // 初期表示用の画像とラベルの作成
+    const initialCurrentImgs = avatars.filter(img => img.category === activeCat);
+    const initialImg = initialCurrentImgs[window._currentGalleryState.index] || initialCurrentImgs[0];
+    
+    let avatarHtml = `<div class="w-full h-64 sm:h-96 flex items-center justify-center text-stone-300 bg-stone-100 rounded-2xl border border-stone-200"><i class="fa-solid fa-user text-5xl"></i></div>`;
+    
+    if (avatars.length > 0) {
+        avatarHtml = `
+            <div class="bg-stone-50/50 p-3 rounded-2xl border border-stone-200/80 shadow-md space-y-3">
+                <!-- ① カテゴリタブ -->
+                <div class="flex flex-wrap gap-1 border-b border-stone-200 pb-2">
+                    ${galleryCategories.map(cat => {
+                        const count = avatars.filter(img => img.category === cat.key).length;
+                        if (count === 0) return ''; // 0件のカテゴリタブは非表示
+                        return `
+                            <button onclick="switchGalleryCategory('${cat.key}')" 
+                                    id="gal-tab-${cat.key}" 
+                                    class="gallery-tab px-3 py-1 text-xs font-bold rounded-lg transition-all ${cat.key === activeCat ? 'bg-stone-800 text-white shadow-xs' : 'bg-stone-200/60 text-stone-600 hover:bg-stone-200'}">
+                                ${cat.name} (${count})
+                            </button>
+                        `;
+                    }).join('')}
+                </div>
+
+                <!-- ② メイン画像ビュー＆左右切り替えボタン -->
+                <div class="relative flex items-center justify-center bg-stone-900 rounded-xl overflow-hidden aspect-[4/3] group shadow-inner">
+                    <div id="galleryImageContainer" class="w-full h-full flex items-center justify-center p-2">
+                        <img src="${initialImg ? initialImg.url : ''}" class="w-full h-auto max-h-[450px] object-contain rounded-xl transition-all duration-300">
+                    </div>
+
+                    ${initialCurrentImgs.length > 1 ? `
+                        <button onclick="slideGalleryImage(-1)" class="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/80 text-white w-8 h-8 rounded-full flex items-center justify-center transition-all shadow-md">
+                            <i class="fa-solid fa-chevron-left text-xs"></i>
+                        </button>
+                        <button onclick="slideGalleryImage(1)" class="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/80 text-white w-8 h-8 rounded-full flex items-center justify-center transition-all shadow-md">
+                            <i class="fa-solid fa-chevron-right text-xs"></i>
+                        </button>
+                    ` : ''}
+                    
+                    <div id="galleryImageLabel" class="absolute bottom-2 left-2 bg-black/60 backdrop-blur-xs text-white text-[10px] px-2.5 py-1 rounded-md shadow" style="${initialImg && initialImg.label ? 'display:block;' : (initialCurrentImgs.length > 1 ? 'display:block;' : 'display:none;')}">
+                        ${initialImg && initialImg.label ? `<i class="fa-solid fa-tag text-[9px] mr-1"></i>${initialImg.label} (${window._currentGalleryState.index + 1}/${initialCurrentImgs.length})` : `(${window._currentGalleryState.index + 1}/${initialCurrentImgs.length})`}
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    // ------------------------------------------
+    // 📝 その他の各パーツ生成（既存のまま維持）
+    // ------------------------------------------
     let epithetHtml = '';
     if (ch.epithet && ch.epithet.trim() !== '') {
         const kana = ch.epithetKana ? `<span class="text-[9px] font-medium text-stone-400 block">${ch.epithetKana}</span>` : '';
@@ -505,7 +652,6 @@ function renderCharacterDetail(characterId) {
         `;
     }
 
-    // 名前とルビ
     const nameKanaHtml = ch.nameKana ? `<span class="text-xs font-normal text-stone-400 block mb-0">${ch.nameKana}</span>` : '';
     const nameRuby = `
         <div>
@@ -514,7 +660,6 @@ function renderCharacterDetail(characterId) {
         </div>
     `;
 
-    // キャラクターシートURLリンクボタン
     let sheetLinkHtml = '';
     if (ch.sheetUrl) {
         sheetLinkHtml = `
@@ -527,7 +672,6 @@ function renderCharacterDetail(characterId) {
         `;
     }
 
-    // カスタムフィールド（テキスト）
     const sysFields = window.systemCustomFields[ch.systemId] || { status: [], text: [] };
     let customFieldsHtml = '';
 
@@ -547,7 +691,6 @@ function renderCharacterDetail(characterId) {
         customFieldsHtml += `</div>`;
     }
 
-    // カスタムフィールド（ステータス / ゲージ）
     const statusFields = sysFields.status || [];
     if (statusFields.length > 0) {
         customFieldsHtml += `<div class="space-y-3 mt-4 pt-4 border-t border-stone-100"><h4 class="text-xs font-bold text-stone-500">ステータス / ゲージ</h4>`;
@@ -576,41 +719,39 @@ function renderCharacterDetail(characterId) {
         customFieldsHtml += `</div>`;
     }
 
-    // 💡 「設定／メモ」＆「秘匿メモ」エリア（秘匿メモ丸ごと隠し・トグル対応版）
-const memo = ch.memo || '';
-const secret = ch.secret || '';
-let settingsMemoHtml = '';
+    const memo = ch.memo || '';
+    const secret = ch.secret || '';
+    let settingsMemoHtml = '';
 
-if (memo || secret) {
-    settingsMemoHtml = `
-        <div class="mt-6 pt-6 border-t border-stone-100 space-y-4">
-            ${memo ? `
-                <div>
-                    <h4 class="text-xs font-bold text-stone-500 mb-1.5 flex items-center gap-1.5">
-                        <i class="fa-solid fa-note-sticky text-stone-400"></i> 設定 / メモ
-                    </h4>
-                    <div class="bg-stone-50 rounded-2xl p-4 text-xs text-stone-700 whitespace-pre-wrap border border-stone-100 leading-relaxed">${memo}</div>
-                </div>
-            ` : ''}
+    if (memo || secret) {
+        settingsMemoHtml = `
+            <div class="mt-6 pt-6 border-t border-stone-100 space-y-4">
+                ${memo ? `
+                    <div>
+                        <h4 class="text-xs font-bold text-stone-500 mb-1.5 flex items-center gap-1.5">
+                            <i class="fa-solid fa-note-sticky text-stone-400"></i> 設定 / メモ
+                        </h4>
+                        <div class="bg-stone-50 rounded-2xl p-4 text-xs text-stone-700 whitespace-pre-wrap border border-stone-100 leading-relaxed">${memo}</div>
+                    </div>
+                ` : ''}
 
-            ${secret ? `
-                <div>
-                    <h4 class="text-xs font-bold text-rose-500 mb-1.5 flex items-center gap-1.5">
-                        <i class="fa-solid fa-user-secret text-rose-400"></i> 秘匿メモ（ネタバレ）
-                    </h4>
-                    <!-- 💡 クラスに 'blur-sm select-none' をつけて最初からぼかし・選択不可にし、クリックでトグルする -->
-                    <div class="bg-rose-50/50 rounded-2xl p-4 text-xs text-stone-700 whitespace-pre-wrap border border-rose-100/60 leading-relaxed cursor-pointer filter blur-sm select-none transition-all hover:opacity-90 relative group" onclick="this.classList.toggle('blur-sm'); this.classList.toggle('select-none');">
-                        ${secret}
-                        <div class="text-[10px] text-rose-400 font-bold mt-2 pt-2 border-t border-rose-200/40 text-center">
-                            👆 クリックして表示 / 非表示
+                ${secret ? `
+                    <div>
+                        <h4 class="text-xs font-bold text-rose-500 mb-1.5 flex items-center gap-1.5">
+                            <i class="fa-solid fa-user-secret text-rose-400"></i> 秘匿メモ（ネタバレ）
+                        </h4>
+                        <div class="bg-rose-50/50 rounded-2xl p-4 text-xs text-stone-700 whitespace-pre-wrap border border-rose-100/60 leading-relaxed cursor-pointer filter blur-sm select-none transition-all hover:opacity-90 relative group" onclick="this.classList.toggle('blur-sm'); this.classList.toggle('select-none');">
+                            ${secret}
+                            <div class="text-[10px] text-rose-400 font-bold mt-2 pt-2 border-t border-rose-200/40 text-center">
+                                👆 クリックして表示 / 非表示
+                            </div>
                         </div>
                     </div>
-                </div>
-            ` : ''}
-        </div>
-    `;
-}
-    // 通過シナリオ一覧
+                ` : ''}
+            </div>
+        `;
+    }
+
     const scenariosHtml = `
         <div class="mt-6 pt-6 border-t border-stone-100">
             <div class="flex items-center justify-between mb-3">
@@ -625,7 +766,7 @@ if (memo || secret) {
         </div>
     `;
 
-    // 詳細画面全体のHTML構築
+    // 全体組み立て
     detailContainer.innerHTML = `
         <div class="bg-white rounded-3xl p-6 border border-stone-200/80 shadow-sm space-y-6 relative overflow-hidden">
             <div class="flex flex-col md:flex-row gap-6">
@@ -655,11 +796,9 @@ if (memo || secret) {
                 </div>
             </div>
 
-            <!-- 💡 ステータス欄の下（通過シナリオの直上）に綺麗に配置 -->
             ${settingsMemoHtml}
             ${scenariosHtml}
 
-            <!-- アクションボタン（編集・削除は管理者のみ、一覧に戻るは常時表示） -->
             <div class="pt-6 mt-6 border-t border-stone-100 flex items-center justify-between flex-wrap gap-3">
                 <div></div>
                 <div class="flex items-center gap-2 ml-auto">
