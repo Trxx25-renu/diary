@@ -472,7 +472,7 @@ window.getAdaptiveTextColor = getAdaptiveTextColor;
 
 
 // ==========================================
-// 💡 キャラクター詳細描画関数（テーマカラー完全反映版）
+// 💡 キャラクター詳細描画関数（ラベル部分のテーマカラー対応版）
 // ==========================================
 
 window._currentGalleryState = window._currentGalleryState || { characterId: null, category: 'base', index: 0 };
@@ -573,9 +573,14 @@ function renderCharacterDetail(characterId) {
             if (currentImg && currentImg.label) {
                 labelContainer.innerHTML = `<i class="fa-solid fa-tag text-[9px] mr-1"></i>${currentImg.label} (${state.index + 1}/${currentImgs.length})`;
                 labelContainer.style.display = 'block';
+                // 🎨 ラベルにもテーマカラーを反映
+                labelContainer.style.backgroundColor = themeColor;
+                labelContainer.style.color = badgeTextColor;
             } else if (currentImgs.length > 1) {
                 labelContainer.innerHTML = `(${state.index + 1}/${currentImgs.length})`;
                 labelContainer.style.display = 'block';
+                labelContainer.style.backgroundColor = themeColor;
+                labelContainer.style.color = badgeTextColor;
             } else {
                 labelContainer.style.display = 'none';
             }
@@ -650,7 +655,7 @@ function renderCharacterDetail(characterId) {
                         </button>
                     ` : ''}
                     
-                    <div id="galleryImageLabel" class="absolute bottom-3 left-3 bg-black/70 backdrop-blur-xs text-white text-[10px] px-2.5 py-1 rounded-md shadow" style="${safeCurrentImg && safeCurrentImg.label ? 'display:block;' : (safeCatImages.length > 1 ? 'display:block;' : 'display:none;')}">
+                    <div id="galleryImageLabel" class="absolute bottom-3 left-3 backdrop-blur-xs text-[10px] px-2.5 py-1 rounded-md shadow" style="background-color: ${themeColor}; color: ${badgeTextColor}; ${safeCurrentImg && safeCurrentImg.label ? 'display:block;' : (safeCatImages.length > 1 ? 'display:block;' : 'display:none;')}">
                         ${safeCurrentImg && safeCurrentImg.label ? `<i class="fa-solid fa-tag text-[9px] mr-1"></i>${safeCurrentImg.label} (${window._currentGalleryState.index + 1}/${safeCatImages.length})` : `(${window._currentGalleryState.index + 1}/${safeCatImages.length})`}
                     </div>
                 </div>
@@ -851,7 +856,6 @@ function renderCharacterDetail(characterId) {
     `;
 }
 window.renderCharacterDetail = renderCharacterDetail;
-
        
 // 🍞 トースト通知・確認モーダルヘルパー
 function showToast(message, type = 'info') {
