@@ -472,10 +472,9 @@ window.getAdaptiveTextColor = getAdaptiveTextColor;
 
 
 // ==========================================
-// 💡 キャラクター詳細描画関数（ギャラリー・4カテゴリ・サムネイル対応版）
+// 💡 キャラクター詳細描画関数（背景色なし・サムネイル枠付き版）
 // ==========================================
 
-// ギャラリーの状態を一時保持する変数
 window._currentGalleryState = window._currentGalleryState || { characterId: null, category: 'base', index: 0 };
 
 function renderCharacterDetail(characterId) {
@@ -488,7 +487,11 @@ function renderCharacterDetail(characterId) {
         return;
     }
 
-    const rawThemeColor = ch.themeColor || '#292524';
+    // 🎨 カラーコードの「#」の有無を自動判定
+    let rawThemeColor = ch.themeColor || '#292524';
+    if (rawThemeColor && !rawThemeColor.startsWith('#')) {
+        rawThemeColor = '#' + rawThemeColor;
+    }
     const themeColor = getAdjustedColor(rawThemeColor);
     const badgeTextColor = getAdaptiveTextColor(themeColor);
 
@@ -590,16 +593,17 @@ function renderCharacterDetail(characterId) {
         });
 
         const thumbContainer = document.getElementById('galleryThumbnailsContainer');
-        if (thumbContainer) {
+        const thumbWrapper = document.getElementById('galleryThumbnailsWrapper');
+        if (thumbContainer && thumbWrapper) {
             if (currentImgs.length > 1) {
                 thumbContainer.innerHTML = currentImgs.map((img, idx) => `
                     <button onclick="selectGalleryIndex(${idx})" class="relative w-14 h-14 rounded-xl overflow-hidden border-2 transition-all shrink-0 bg-stone-100 ${idx === state.index ? 'border-stone-800 scale-105 shadow-md' : 'border-stone-200 opacity-60 hover:opacity-100'}">
                         <img src="${img.url}" class="w-full h-full object-cover">
                     </button>
                 `).join('');
-                thumbContainer.style.display = 'flex';
+                thumbWrapper.style.display = 'block';
             } else {
-                thumbContainer.style.display = 'none';
+                thumbWrapper.style.display = 'none';
             }
         }
     };
@@ -611,7 +615,7 @@ function renderCharacterDetail(characterId) {
     
     if (avatars.length > 0) {
         avatarHtml = `
-            <div class="bg-stone-50/70 p-4 rounded-2xl border border-stone-200/80 shadow-md space-y-4">
+            <div class="p-2 space-y-4">
                 <div class="flex flex-wrap gap-1.5 border-b border-stone-200 pb-3">
                     ${galleryCategories.map(cat => {
                         const count = avatars.filter(img => img.category === cat.key).length;
@@ -626,7 +630,7 @@ function renderCharacterDetail(characterId) {
                     }).join('')}
                 </div>
 
-                <div class="relative flex items-center justify-center rounded-2xl overflow-hidden border border-stone-200/60 shadow-inner bg-white/60 p-2 min-h-[400px] sm:min-h-[500px]">
+                <div class="relative flex items-center justify-center rounded-2xl overflow-hidden border border-stone-200/60 shadow-inner bg-stone-50/50 p-2 min-h-[400px] sm:min-h-[500px]">
                     <div id="galleryImageContainer" class="w-full h-full flex items-center justify-center">
                         <img src="${safeCurrentImg ? safeCurrentImg.url : ''}" class="w-full h-auto max-h-[600px] object-contain rounded-xl transition-all duration-300">
                     </div>
@@ -645,12 +649,17 @@ function renderCharacterDetail(characterId) {
                     </div>
                 </div>
 
-                <div id="galleryThumbnailsContainer" class="flex gap-2 overflow-x-auto pb-1 pt-1 scrollbar-thin" style="${safeCatImages.length > 1 ? 'display:flex;' : 'display:none;'}">
-                    ${safeCatImages.map((img, idx) => `
-                        <button onclick="selectGalleryIndex(${idx})" class="relative w-14 h-14 rounded-xl overflow-hidden border-2 transition-all shrink-0 bg-stone-100 ${idx === window._currentGalleryState.index ? 'border-stone-800 scale-105 shadow-md' : 'border-stone-200 opacity-60 hover:opacity-100'}">
-                            <img src="${img.url}" class="w-full h-full object-cover">
-                        </button>
-                    `).join('')}
+                <div id="galleryThumbnailsWrapper" class="bg-stone-50/70 p-3 rounded-2xl border border-stone-200/80 shadow-xs" style="${safeCatImages.length > 1 ? 'display:block;' : 'display:none;'}">
+                    <div class="text-[11px] font-bold text-stone-500 mb-2 flex items-center gap-1.5">
+                        <i class="fa-solid fa-images text-stone-400"></i> 差分一覧
+                    </div>
+                    <div id="galleryThumbnailsContainer" class="flex gap-2 overflow-x-auto pb-1 pt-1 scrollbar-thin">
+                        ${safeCatImages.map((img, idx) => `
+                            <button onclick="selectGalleryIndex(${idx})" class="relative w-14 h-14 rounded-xl overflow-hidden border-2 transition-all shrink-0 bg-white ${idx === window._currentGalleryState.index ? 'border-stone-800 scale-105 shadow-md' : 'border-stone-200 opacity-60 hover:opacity-100'}">
+                                <img src="${img.url}" class="w-full h-full object-cover">
+                            </button>
+                        `).join('')}
+                    </div>
                 </div>
             </div>
         `;
