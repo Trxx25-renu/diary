@@ -1225,8 +1225,8 @@ async function saveCharacter(event) {
     const thumbnail = window.currentThumbnailBase64 || "";
     const avatar = window.currentAvatarBase64 || "";
 
-    // 💡【追加】カテゴリ別ギャラリー画像の取得
-    const images = window.editingCharacterImages || { base: [], combat: [], sd: [], doodle: [] };
+    // 💡【ここを修正】ギャラリー画像を一度クリーンなJSONオブジェクトに変換して、Firestoreが嫌う不正なデータを排除する！
+    const images = JSON.parse(JSON.stringify(window.editingCharacterImages || { base: [], combat: [], sd: [], doodle: [] }));
 
     // カスタム項目の値（ステータス・テキスト）を正しく収集
     const customValues = {};
