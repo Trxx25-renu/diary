@@ -361,6 +361,110 @@ function renderCharacterList(systemId, filterKeyword = "") {
         }
 
         // ==========================================
+// 💡 キャラクター画像（ギャラリー）管理まわりの処理
+// ==========================================
+
+// 現在選択されている画像カテゴリ（初期値: base）
+window.currentImageCategory = 'base';
+
+// キャラクターごとの画像をカテゴリ別に保持する一時オブジェクト
+window.editingCharacterImages = {
+    base: [],
+    combat: [],
+    sd: [],
+    doodle: []
+};
+
+// 1. 画像カテゴリタブを切り替える関数
+function switchImageCategory(categoryKey) {
+    window.currentImageCategory = categoryKey;
+
+    // タブの見た目をアクティブ・非アクティブに切り替え
+    ['base', 'combat', 'sd', 'doodle'].forEach(cat => {
+        const btn = document.getElementById(`imgTab-${cat}`);
+        if (!btn) return;
+        if (cat === categoryKey) {
+            btn.className = 'flex-1 py-1.5 text-[11px] font-bold rounded-lg bg-white text-stone-800 shadow-sm transition-all';
+        } else {
+            btn.className = 'flex-1 py-1.5 text-[11px] font-bold rounded-lg text-stone-500 hover:text-stone-800 transition-all';
+        }
+    });
+
+    // プレビューを再描画
+    renderCharacterImagesPreview();
+}
+window.switchImageCategory = switchImageCategory;
+
+// 2. 画像ファイルが選択されたときの処理（複数対応・Base64変換）
+function handleCharacterImagesSelect(event) {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+
+    Array.from(files).forEach(file => {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const base64 = e.target.result;
+            if (!window.editingCharacterImages[window.currentImageCategory]) {
+                window.editingCharacterImages[window.currentImageCategory] = [];
+            }
+            window.editingCharacterImages[window.currentImageCategory].push({
+                url: base64,
+                name: file.name,
+                uploadedAt: Date.now()
+            });
+
+            // プレビューを更新
+            renderCharacterImagesPreview();
+        };
+        reader.readAsDataURL(file);
+    });
+
+    // 同じファイルを連続で選択できるようにリセット
+    event.target.value = '';
+}
+window.handleCharacterImagesSelect = handleCharacterImagesSelect;
+
+// 3. プレビュー領域を描画する関数
+function renderCharacterImagesPreview() {
+    const container = document.getElementById('characterImagesPreviewContainer');
+    if (!container) return;
+
+    const currentList = window.editingCharacterImages[window.currentImageCategory] || [];
+
+    if (currentList.length === 0) {
+        container.innerHTML = `
+            <div class="col-span-full flex items-center justify-center text-[11px] text-stone-400 py-4">
+                このカテゴリにはまだ画像がありません
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = '';
+    currentList.forEach((imgObj, index) => {
+        const item = document.createElement('div');
+        item.className = 'relative group aspect-square bg-stone-100 rounded-lg overflow-hidden border border-stone-200';
+        item.innerHTML = `
+            <img src="${imgObj.url}" class="w-full h-full object-cover">
+            <button type="button" onclick="removeCharacterImage('${window.currentImageCategory}', ${index})" class="absolute top-1 right-1 bg-stone-900/70 hover:bg-rose-600 text-white w-5 h-5 rounded-full flex items-center justify-center text-[10px] opacity-0 group-hover:opacity-100 transition-opacity">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        `;
+        container.appendChild(item);
+    });
+}
+window.renderCharacterImagesPreview = renderCharacterImagesPreview;
+
+// 4. 登録した画像を削除する関数
+function removeCharacterImage(categoryKey, index) {
+    if (window.editingCharacterImages?.[categoryKey]) {
+        window.editingCharacterImages[categoryKey].splice(index, 1);
+        renderCharacterImagesPreview();
+    }
+}
+window.removeCharacterImage = removeCharacterImage;
+
+        // ==========================================
         // 💡 二つ名と読み仮名を崩れないよう上下にスッキリ配置
         // ==========================================
         let epithetHtml = '';
