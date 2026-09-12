@@ -112,6 +112,12 @@
 
             await signInAnonymously(auth);
 
+            // ⭐ ここに初期表示用のパンくず呼び出しを追加！
+        if (typeof renderBreadcrumbAndActions === 'function') {
+            renderBreadcrumbAndActions('home');
+        }
+    }); // DOMContentLoaded の閉じタグ
+
             // デフォルトのシステムリスト（ご指定のひな型順）
             window.systems = [
                 { id: 'coc', name: 'クトゥルフ神話TRPG (6版)', desc: 'CoC 6版', badgeColor: 'bg-amber-900/80' },
@@ -584,6 +590,11 @@ function navigateTo(target, param) {
         if (systemSelectView) systemSelectView.classList.remove('hidden');
         if (listView) listView.classList.add('hidden');
         if (detailView) detailView.classList.add('hidden');
+
+        // ⭐ 1階層目（ホーム）のパンくずを描画
+        if (typeof renderBreadcrumbAndActions === 'function') {
+            renderBreadcrumbAndActions('home');
+        }
     }
     // 1. システムごとの「キャラクター一覧画面」へ移動する場合
     else if (target === 'characterList') {
@@ -603,28 +614,38 @@ function navigateTo(target, param) {
         if (systemSelectView) systemSelectView.classList.add('hidden');
         if (listView) listView.classList.remove('hidden');
         if (detailView) detailView.classList.add('hidden');
+
+        // ⭐ 2階層目（キャラクター一覧）のパンくずを描画（システムIDを渡す）
+        if (typeof renderBreadcrumbAndActions === 'function') {
+            renderBreadcrumbAndActions('characterList', targetSystemId);
+        }
     } 
     // 2. 個別の「キャラクター詳細画面」へ移動する場合
     else if (target === 'detail') {
         // 各ビューの表示・非表示を切り替え
         const folderView = document.getElementById('systemFolderView') || document.getElementById('view-folders');
         const listView = document.getElementById('characterListView') || document.getElementById('view-list') || document.getElementById('characterListContainer');
-        const detailView = document.getElementById('view-detail') || document.getElementById('characterDetailView'); // 💡 詳細画面のIDに合わせて調整
+        const detailView = document.getElementById('view-detail') || document.getElementById('characterDetailView');
         const systemSelectView = document.getElementById('systemSelectView');
 
         if (folderView) folderView.classList.add('hidden');
         if (systemSelectView) systemSelectView.classList.add('hidden');
         if (listView) listView.classList.add('hidden');
-        if (detailView) detailView.classList.remove('hidden'); // 💡 詳細画面を表示する！
+        if (detailView) detailView.classList.remove('hidden');
 
         // 詳細画面を描画
         if (typeof renderCharacterDetail === 'function') {
             renderCharacterDetail(param);
         }
+
+        // ⭐ 3階層目（キャラクター詳細）のパンくずを描画（キャラクターIDを渡す）
+        if (typeof renderBreadcrumbAndActions === 'function') {
+            renderBreadcrumbAndActions('detail', param);
+        }
     }
 }
 window.navigateTo = navigateTo;
-
+       
        // ==========================================
 // 💡 カラー調整・文字色判定のヘルパー関数（先に追加する）
 // ==========================================
