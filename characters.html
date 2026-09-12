@@ -2388,6 +2388,28 @@ function toggleSecretMemo() {
     container.classList.toggle('hidden');
 }
 window.toggleSecretMemo = toggleSecretMemo;
+
+       // ==========================================
+    // 💡 データベースの準備を待って自動で全体を初期化するブロック
+    // ==========================================
+    document.addEventListener("DOMContentLoaded", async () => {
+        let checkCount = 0;
+        while (!window.db && checkCount < 30) {
+            await new Promise(resolve => setTimeout(resolve, 100));
+            checkCount++;
+        }
+
+        if (window.db) {
+            await loadSiteConfigFromFirestore();
+            await loadCharactersFromFirestore();
+            renderSystemFolders();
+            if (typeof updateAdminUI === 'function') {
+                updateAdminUI();
+            }
+        } else {
+            console.error("Firebase DB initialization timeout.");
+        }
+    });
        
     </script>
 </head>
