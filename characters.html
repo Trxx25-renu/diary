@@ -1450,17 +1450,6 @@ function updateCustomTextFieldLabel(sysId, index, val) {
     }
 }
 window.updateCustomTextFieldLabel = updateCustomTextFieldLabel;
-
-// HTMLエスケープ用（安全対策）
-function escapeHtml(str) {
-    if (!str) return '';
-    return String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#039;');
-}
         
 // ==========================================
 // 💡 完全修正版: キャラクター保存関数（詳細画面へのシームレス遷移対応版）
