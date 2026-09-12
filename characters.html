@@ -361,7 +361,7 @@ function renderCharacterList(systemId, filterKeyword = "") {
         }
 
 // ==========================================
-// 💡 キャラクター画像（ギャラリー）管理まわりの処理（透過維持・WebP圧縮対応版）
+// 💡 キャラクター画像（ギャラリー）管理まわり（タイトル入力対応版）
 // ==========================================
 
 // 現在選択されている画像カテゴリ（初期値: base）
@@ -434,12 +434,15 @@ function handleCharacterImagesSelect(event) {
                 // 💡 透過を維持したままWebP形式（品質0.75）で圧縮してBase64化
                 const compressedBase64 = canvas.toDataURL('image/webp', 0.75);
 
+                // 初期ファイル名（拡張子抜きなど、あるいはそのまま）をキレイなデフォルト名にする
+                const defaultName = file.name.replace(/\.[^/.]+$/, "");
+
                 if (!window.editingCharacterImages[window.currentImageCategory]) {
                     window.editingCharacterImages[window.currentImageCategory] = [];
                 }
                 window.editingCharacterImages[window.currentImageCategory].push({
                     url: compressedBase64,
-                    name: file.name,
+                    name: defaultName, // デフォルトでファイル名をセット
                     uploadedAt: Date.now()
                 });
 
@@ -456,7 +459,15 @@ function handleCharacterImagesSelect(event) {
 }
 window.handleCharacterImagesSelect = handleCharacterImagesSelect;
 
-// 3. プレビュー領域を描画する関数
+// 💡 3. 画像のタイトル（名前）をリアルタイムで更新する関数
+function updateImageLabel(categoryKey, index, newName) {
+    if (window.editingCharacterImages?.[categoryKey]?.[index]) {
+        window.editingCharacterImages[categoryKey][index].name = newName;
+    }
+}
+window.updateImageLabel = updateImageLabel;
+
+// 4. プレビュー領域を描画する関数（タイトル入力欄付き）
 function renderCharacterImagesPreview() {
     const container = document.getElementById('characterImagesPreviewContainer');
     if (!container) return;
@@ -475,19 +486,28 @@ function renderCharacterImagesPreview() {
     container.innerHTML = '';
     currentList.forEach((imgObj, index) => {
         const item = document.createElement('div');
-        item.className = 'relative group aspect-square bg-stone-100 rounded-lg overflow-hidden border border-stone-200';
+        item.className = 'bg-stone-50 rounded-xl overflow-hidden border border-stone-200 p-2.5 flex flex-col gap-2';
         item.innerHTML = `
-            <img src="${imgObj.url}" class="w-full h-full object-cover">
-            <button type="button" onclick="removeCharacterImage('${window.currentImageCategory}', ${index})" class="absolute top-1 right-1 bg-stone-900/70 hover:bg-rose-600 text-white w-5 h-5 rounded-full flex items-center justify-center text-[10px] opacity-0 group-hover:opacity-100 transition-opacity">
-                <i class="fa-solid fa-xmark"></i>
-            </button>
+            <div class="relative group aspect-square bg-white rounded-lg overflow-hidden border border-stone-200">
+                <img src="${imgObj.url}" class="w-full h-full object-cover">
+                <button type="button" onclick="removeCharacterImage('${window.currentImageCategory}', ${index})" class="absolute top-1 right-1 bg-stone-900/70 hover:bg-rose-600 text-white w-5 h-5 rounded-full flex items-center justify-center text-[10px] opacity-0 group-hover:opacity-100 transition-opacity">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div>
+                <label class="text-[10px] text-stone-400 block mb-0.5">画像タイトル</label>
+                <input type="text" value="${imgObj.name || ''}" 
+                    oninput="updateImageLabel('${window.currentImageCategory}', ${index}, this.value)"
+                    class="w-full text-xs bg-white border border-stone-200 rounded-lg px-2 py-1 text-stone-700 focus:outline-none focus:border-stone-400"
+                    placeholder="例: 通常, 笑顔 など">
+            </div>
         `;
         container.appendChild(item);
     });
 }
 window.renderCharacterImagesPreview = renderCharacterImagesPreview;
 
-// 4. 登録した画像を削除する関数
+// 5. 登録した画像を削除する関数
 function removeCharacterImage(categoryKey, index) {
     if (window.editingCharacterImages?.[categoryKey]) {
         window.editingCharacterImages[categoryKey].splice(index, 1);
