@@ -1314,8 +1314,8 @@ async function saveCharacter(event) {
 }
 window.saveCharacter = saveCharacter;
 
-       // ==========================================
-// 💡 編集モーダルを開く関数（設定・秘匿メモ対応版）
+// ==========================================
+// 💡 編集モーダルを開く関数（設定・秘匿メモ・ギャラリー画像復元対応版）
 // ==========================================
 function openEditCharacterModal(characterId) {
     const ch = window.characters.find(c => String(c.id) === String(characterId));
@@ -1366,7 +1366,7 @@ function openEditCharacterModal(characterId) {
         systemInput.classList.add('opacity-60', 'pointer-events-none', 'bg-stone-100');
     }
 
-    // 画像の復元
+    // 画像の復元（サムネイル）
     const thumbPreview = document.getElementById('thumbPreview');
     if (thumbPreview) {
         if (ch.thumbnail) {
@@ -1380,6 +1380,7 @@ function openEditCharacterModal(characterId) {
         }
     }
 
+    // 画像の復元（アバター）
     const avatarPreview = document.getElementById('avatarPreview');
     if (avatarPreview) {
         if (ch.avatar) {
@@ -1391,6 +1392,23 @@ function openEditCharacterModal(characterId) {
             avatarPreview.classList.add('hidden');
             window.currentAvatarBase64 = '';
         }
+    }
+
+    // 💡【追加】カテゴリ別ギャラリー画像の復元とプレビュー再描画
+    if (ch.images) {
+        window.editingCharacterImages = {
+            base: ch.images.base || [],
+            combat: ch.images.combat || [],
+            sd: ch.images.sd || [],
+            doodle: ch.images.doodle || []
+        };
+    } else {
+        window.editingCharacterImages = { base: [], combat: [], sd: [], doodle: [] };
+    }
+
+    // 最初のタブ（基本・成長）のプレビューを描画
+    if (typeof switchImageCategory === 'function') {
+        switchImageCategory('base');
     }
 
     // システムに応じたカスタム項目を生成しつつ、保存されていたカスタム値を流し込む
