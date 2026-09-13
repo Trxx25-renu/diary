@@ -1039,39 +1039,32 @@ function renderCharacterDetail(characterId) {
                         <h4 class="text-xs font-bold text-rose-600 mb-1.5 flex items-center gap-1.5">
                             <i class="fa-solid fa-user-secret text-rose-500"></i> 秘匿メモ（ネタバレ）
                         </h4>
-                        <!-- マスクボックス全体 -->
-                        <div class="bg-rose-50/40 rounded-2xl border border-rose-200/70 overflow-hidden shadow-xs">
-                            
-                            <!-- 🙈 【初期状態】枠全体が目隠し（ここをタップすると本文が現れる） -->
-                            <div class="js-secret-mask cursor-pointer py-10 px-4 text-center select-none hover:bg-rose-50/70 transition-colors" onclick="
-                                const box = this.parentNode;
-                                box.querySelector('.js-secret-mask').style.display = 'none';
-                                box.querySelector('.js-secret-content').style.display = 'block';
-                            ">
-                                <div class="w-12 h-12 rounded-full bg-rose-100/80 flex items-center justify-center mx-auto mb-2 text-rose-600 shadow-xs">
-                                    <i class="fa-solid fa-eye-slash text-base"></i>
-                                </div>
-                                <p class="text-xs font-bold text-rose-800">タップしてネタバレを表示</p>
+                        <!-- 日記側と同じ構造のコンテナ -->
+                        <div class="relative bg-rose-50/40 text-stone-800 rounded-2xl p-4 border border-rose-200/70 cursor-pointer overflow-hidden transition-all shadow-xs group" onclick="
+                            const container = this;
+                            const overlay = container.querySelector('.js-secret-overlay');
+                            const isHidden = overlay.style.display !== 'none';
+                            overlay.style.display = isHidden ? 'none' : 'flex';
+                        ">
+                            <!-- ヘッダー部分 -->
+                            <div class="flex items-center justify-between mb-2 pb-1.5 border-b border-rose-200/60 text-xs text-rose-800 font-bold select-none">
+                                <span class="flex items-center gap-1.5">
+                                    <i class="fa-solid fa-triangle-exclamation text-rose-500"></i> ネタバレ防止用本文
+                                </span>
+                                <span class="text-[10px] text-rose-400 font-normal">タップで切替</span>
                             </div>
 
-                            <!-- 👁️ 【展開された状態】初期は非表示 -->
-                            <div class="js-secret-content bg-white/60" style="display: none;">
-                                <!-- 上部ヘッダー（ここをタップすると、また元の目隠し状態に戻る） -->
-                                <div class="cursor-pointer px-4 py-3 flex items-center justify-between select-none bg-rose-50/60 border-b border-rose-100 hover:bg-rose-50 transition-colors" onclick="
-                                    const box = this.parentNode.parentNode;
-                                    box.querySelector('.js-secret-content').style.display = 'none';
-                                    box.querySelector('.js-secret-mask').style.display = 'block';
-                                ">
-                                    <div class="flex items-center gap-2 text-rose-800 text-xs font-bold">
-                                        <i class="fa-solid fa-triangle-exclamation text-rose-500"></i>
-                                        <span>ネタバレ防止用本文</span>
-                                    </div>
-                                    <span class="text-[11px] font-medium text-rose-400">タップして隠す</span>
+                            <!-- 本文エリア（最初から中身はあるが、オーバーレイで隠されている） -->
+                            <div class="text-xs text-stone-700 leading-relaxed whitespace-pre-wrap text-left">
+                                ${secret}
+                            </div>
+
+                            <!-- 🙈 未開封オーバーレイ（日記側準拠） -->
+                            <div class="js-secret-overlay absolute inset-0 bg-rose-50/95 backdrop-blur-xs flex flex-col items-center justify-center gap-1.5 text-stone-700 transition-all select-none">
+                                <div class="w-8 h-8 rounded-full bg-rose-100/90 flex items-center justify-center text-rose-600 text-sm shadow-xs group-hover:scale-110 transition-transform">
+                                    <i class="fa-solid fa-eye-slash"></i>
                                 </div>
-                                <!-- 本文エリア -->
-                                <div class="p-4 text-left text-xs text-stone-700 whitespace-pre-wrap leading-relaxed">
-                                    ${secret}
-                                </div>
+                                <span class="text-xs font-medium text-rose-800">タップしてネタバレを表示</span>
                             </div>
                         </div>
                     </div>
