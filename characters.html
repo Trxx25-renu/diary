@@ -650,7 +650,7 @@ function removeCharacterImage(categoryKey, index) {
 window.removeCharacterImage = removeCharacterImage;
 
 // ==========================================
-// 💡 キャラクター保存関数（完全JSONダウンロード対応版）
+// 💡 キャラクター保存関数（JSONファイルダウンロード ＆ ローカル保存対応版）
 // ==========================================
 async function saveCharacter(event) {
     event.preventDefault();
@@ -716,22 +716,7 @@ async function saveCharacter(event) {
     };
 
     try {
-        // 💡 Firestoreへの保存を廃止し、キャラクターごとの独立したJSONファイルとしてダウンロード保存
-        const jsonString = JSON.stringify(charData, null, 2);
-        const blob = new Blob([jsonString], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        
-        const a = document.createElement('a');
-        a.href = url;
-        // ファイル名にキャラクター名を安全に使用（使えない文字は置換）
-        const safeFileName = (name || 'character').replace(/[\\/:*?"<>|]/g, '_');
-        a.download = `${safeFileName}_${targetCharacterId}.json`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-
-        // 画面上のローカルデータ配列も更新（プレビューや一覧用）
+        // 1. 画面上のデータ配列（window.characters）を更新または追加
         if (!window.characters) window.characters = [];
         const index = window.characters.findIndex(c => String(c.id) === String(targetCharacterId));
         if (index !== -1) {
@@ -741,7 +726,24 @@ async function saveCharacter(event) {
             window.characters.push(charData);
         }
 
-        showToast("キャラクターのJSONファイルを保存（ダウンロード）しました！", "info");
+        // 💡 2. ブラウザのlocalStorageにも自動保存して、リロードしても一覧に残るようにする
+        localStorage.setItem('local_characters', JSON.stringify(window.characters));
+
+        // 3. キャラクターごとの独立したJSONファイルとしてPCにダウンロード保存
+        const jsonString = JSON.stringify(charData, null, 2);
+        const blob = new Blob([jsonString], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        
+        const a = document.createElement('a');
+        a.href = url;
+        const safeFileName = (name || 'character').replace(/[\\/:*?"<>|]/g, '_');
+        a.download = `${safeFileName}_${targetCharacterId}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        showToast("キャラクターを保存し、JSONファイルをダウンロードしました！", "info");
 
         closeCharacterModal();
         if (typeof renderSystemFolders === 'function') renderSystemFolders();
@@ -2379,54 +2381,50 @@ function handleAvatarFileSelect(event) {
 window.handleAvatarFileSelect = handleAvatarFileSelect;
 
        // ==========================================
-       // 💡 キャラクターを削除する関数（Firestore対応版・修正版）
-       // ==========================================
+// 💡 キャラクターを削除する関数（ローカル管理・JSON対応版）
+// ==========================================
 async function deleteCharacter(characterId) {
     // 削除の確認ダイアログ
-    if (!confirm('本当にこのキャラクターを削除しますか？')) {
+    if (!confirm('本当にこのキャラクターを削除しますか？\n（※ローカル一覧から削除されます。必要に応じて個別のJSONファイルも手動で削除してください）')) {
         return;
     }
 
     // 🌟 1. 削除するキャラクターがどのシステムに所属していたかを、削除処理の「前」に控えておく
-    const targetChar = window.characters.find(c => String(c.id) === String(characterId));
+    const targetChar = window.characters ? window.characters.find(c => String(c.id) === String(characterId)) : null;
     const systemId = targetChar ? targetChar.systemId : null;
 
     try {
-        // 2. 🔥 Firestore（データベース）上の該当ドキュメントを完全に削除
-        const docRef = doc(db, 'artifacts', window.appId, 'public', 'data', 'characters', characterId);
-        await deleteDoc(docRef);
-
-        // 3. 文字列・数値を揃えて該当キャラクターを配列から除外
-        window.characters = window.characters.filter(c => String(c.id) !== String(characterId));
-
-        // 4. ローカルストレージ等に保存する関数があればここで呼ぶ
-        if (typeof saveCharactersToStorage === 'function') {
-            saveCharactersToStorage();
+        // 2. 🔥 Firestoreへのアクセスを廃止し、配列から該当キャラクターを除外
+        if (window.characters) {
+            window.characters = window.characters.filter(c => String(c.id) !== String(characterId));
         }
 
-        // 5. サイドバーやフォルダの表示を更新
+        // 3. 💡 変更後のキャラクター配列をローカルストレージへ即座に上書き保存
+        localStorage.setItem('local_characters', JSON.stringify(window.characters || []));
+
+        // 4. サイドバーやフォルダの表示を更新
         if (typeof renderSystemFolders === 'function') {
             renderSystemFolders();
         }
 
-        // 6. 🌟 控えておいた systemId を使って、削除されたシステムの「キャラクター一覧画面」に確実に戻る
+        // 5. 🌟 控えておいた systemId を使って、削除されたシステムの「キャラクター一覧画面」に確実に戻る
         if (systemId && typeof navigateTo === 'function') {
             navigateTo('characterList', systemId);
         } else if (typeof goToTopPage === 'function') {
             goToTopPage();
         }
 
-        // 7. 削除成功のトースト通知
+        // 6. 削除成功のトースト通知
         if (typeof showToast === 'function') {
             showToast('キャラクターを削除しました', 'success');
         }
 
     } catch (e) {
         console.error("Delete error:", e);
-        alert("削除に失敗しました。ネットワーク状況を確認してください。");
+        alert("削除処理に失敗しました。コンソールを確認してください。");
     }
 }
-// 🌟 忘れずに window に登録する！
+// 🌟 window に登録
 window.deleteCharacter = deleteCharacter;
 
 // ==========================================
