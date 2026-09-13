@@ -1033,31 +1033,33 @@ function renderCharacterDetail(characterId) {
                         <div class="bg-stone-50 rounded-2xl p-4 text-xs text-stone-700 whitespace-pre-wrap border border-stone-100 leading-relaxed">${memo}</div>
                     </div>
                 ` : ''}
-
+                
                 ${secret ? `
                     <div>
-                        <h4 class="text-xs font-bold text-rose-500 mb-1.5 flex items-center gap-1.5">
-                            <i class="fa-solid fa-user-secret text-rose-400"></i> 秘匿メモ（ネタバレ）
+                        <h4 class="text-xs font-bold text-rose-600 mb-1.5 flex items-center gap-1.5">
+                            <i class="fa-solid fa-user-secret text-rose-500"></i> 秘匿メモ（ネタバレ）
                         </h4>
-                        <div class="bg-stone-100/70 rounded-2xl p-6 border border-stone-200/80 relative overflow-hidden text-center">
-                            <!-- 🙈 マスク状態（初期） -->
-                            <div class="secret-masked cursor-pointer py-4" onclick="
+                        <!-- 上品な背景とローズ系の枠線で少し色濃さを残したコンテナ -->
+                        <div class="bg-rose-50/40 rounded-2xl border border-rose-200/70 relative overflow-hidden transition-all shadow-xs">
+                            <!-- 🙈 閉じた状態（トグルヘッダー） -->
+                            <div class="secret-masked cursor-pointer px-4 py-3 flex items-center justify-between select-none hover:bg-rose-50/60 transition-colors" onclick="
                                 this.style.display = 'none';
                                 this.nextElementSibling.style.display = 'block';
                             ">
-                                <div class="w-12 h-12 rounded-full bg-stone-200/80 flex items-center justify-center mx-auto mb-2 text-stone-500 shadow-xs">
-                                    <i class="fa-solid fa-eye-slash text-base"></i>
+                                <div class="flex items-center gap-2 text-rose-800 text-xs font-bold">
+                                    <i class="fa-solid fa-triangle-exclamation text-rose-500"></i>
+                                    <span>ネタバレ防止用本文</span>
                                 </div>
-                                <p class="text-xs font-bold text-stone-600">タップしてネタバレを表示</p>
+                                <span class="text-[11px] font-medium text-rose-400">タップで切替</span>
                             </div>
 
-                            <!-- 👁️ 閲覧状態（クリック後） -->
-                            <div class="secret-revealed hidden text-left text-xs text-stone-700 whitespace-pre-wrap leading-relaxed cursor-pointer" onclick="
+                            <!-- 👁️ 展開状態（クリック後） -->
+                            <div class="secret-revealed hidden p-4 text-left text-xs text-stone-700 whitespace-pre-wrap leading-relaxed cursor-pointer border-t border-rose-100 bg-white/60" onclick="
                                 this.style.display = 'none';
-                                this.previousElementSibling.style.display = 'block';
+                                this.previousElementSibling.style.display = 'flex';
                             ">
                                 ${secret}
-                                <div class="text-[10px] text-stone-400 font-bold mt-4 pt-2 border-t border-stone-200/60 text-center">
+                                <div class="text-[10px] text-rose-400 font-bold mt-4 pt-2 border-t border-rose-100 text-center">
                                     👆 タップして非表示に戻す
                                 </div>
                             </div>
