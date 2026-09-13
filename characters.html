@@ -1039,29 +1039,8 @@ function renderCharacterDetail(characterId) {
                         <h4 class="text-xs font-bold text-rose-600 mb-1.5 flex items-center gap-1.5">
                             <i class="fa-solid fa-user-secret text-rose-500"></i> 秘匿メモ（ネタバレ）
                         </h4>
-                        <div class="bg-rose-50/40 rounded-2xl border border-rose-200/70 relative overflow-hidden transition-all shadow-xs">
-                            <!-- 🙈 閉じた状態 -->
-                            <div class="secret-masked cursor-pointer px-4 py-3 flex items-center justify-between select-none hover:bg-rose-50/60 transition-colors" onclick="
-                                this.style.display = 'none';
-                                this.nextElementSibling.style.display = 'block';
-                            ">
-                                <div class="flex items-center gap-2 text-rose-800 text-xs font-bold">
-                                    <i class="fa-solid fa-triangle-exclamation text-rose-500"></i>
-                                    <span>ネタバレ防止用本文</span>
-                                </div>
-                                <span class="text-[11px] font-medium text-rose-400">タップで切替</span>
-                            </div>
-
-                            <!-- 👁️ 展開状態（余白を詰めて左端にきれいに収める修正版） -->
-                            <div class="secret-revealed hidden p-4 text-xs text-stone-700 whitespace-pre-wrap leading-relaxed cursor-pointer border-t border-rose-100 bg-white/60" onclick="
-                                this.style.display = 'none';
-                                this.previousElementSibling.style.display = 'flex';
-                            ">
-                                <div class="text-left">${secret}</div>
-                                <div class="text-[10px] text-rose-400 font-bold mt-3 pt-2 border-t border-rose-100/60 text-center">
-                                    👆 タップして非表示に戻す
-                                </div>
-                            </div>
+                        <div class="bg-stone-50 rounded-2xl p-4 border border-stone-200/80 text-xs text-stone-700 leading-relaxed text-left whitespace-pre-wrap">
+                            ${secret}
                         </div>
                     </div>
                 ` : ''}
