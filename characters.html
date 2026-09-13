@@ -682,7 +682,7 @@ function navigateTo(target, param) {
         if (target === 'home' || !target) {
             searchInput.placeholder = 'システムやPC名で検索';
         } else if (target === 'characterList') {
-            searchInput.placeholder = 'このシステム内を検索...';
+            searchInput.placeholder = 'このシステム内を検索…';
         }
     }
 
@@ -1482,28 +1482,21 @@ function renderSettingsSystemsEditor() {
     window.systems.forEach((sys, index) => {
         const safeId = sys.id || `sys_${index}`;
         const nameId = `sysNameInput_${safeId}`;
-        const shortId = `sysShortInput_${safeId}`;
         const descId = `sysDescInput_${safeId}`;
         
         html += `
             <div class="flex flex-col gap-2 bg-stone-50 border border-stone-200 rounded-xl p-3">
                 <div class="flex items-center gap-2">
-                    <span class="text-xs font-bold text-stone-500 w-6 text-center">${index + 1}</span>
+                    <span class="text-xs font-bold text-stone-500 w-6 text-center shrink-0">${index + 1}</span>
                     
-                    <!-- システム名（フルネーム） -->
-                    <div class="flex-1">
+                    <!-- ① システム名（正式名称）：大きく取る -->
+                    <div class="flex-1 min-w-0">
                         <label for="${nameId}" class="sr-only">システム名 ${index + 1}</label>
-                        <input type="text" id="${nameId}" name="${nameId}" value="${escapeHtml(sys.name)}" onchange="updateSystemProperty('${sys.id}', 'name', this.value)" class="w-full bg-white border border-stone-200 rounded-lg px-2.5 py-1 text-xs text-stone-800" placeholder="システム名">
-                    </div>
-
-                    <!-- バッジ用略称（例: CoC6版）の入力ボックス -->
-                    <div class="w-28">
-                        <label for="${shortId}" class="sr-only">略称 ${index + 1}</label>
-                        <input type="text" id="${shortId}" name="${shortId}" value="${escapeHtml(sys.shortName || '')}" onchange="updateSystemProperty('${sys.id}', 'shortName', this.value)" class="w-full bg-white border border-stone-200 rounded-lg px-2.5 py-1 text-xs text-stone-800" placeholder="略称 (例: CoC6版)">
+                        <input type="text" id="${nameId}" name="${nameId}" value="${escapeHtml(sys.name)}" onchange="updateSystemProperty('${sys.id}', 'name', this.value)" class="w-full bg-white border border-stone-200 rounded-lg px-3 py-1.5 text-xs font-bold text-stone-800" placeholder="システム名（正式名称）">
                     </div>
 
                     <!-- 並び替えボタン -->
-                    <div class="flex items-center gap-1">
+                    <div class="flex items-center gap-1 shrink-0">
                         <button type="button" onclick="moveSystemOrder(${index}, -1)" class="w-7 h-7 flex items-center justify-center bg-white border border-stone-200 rounded-lg text-stone-600 hover:bg-stone-100 text-xs" ${index === 0 ? 'disabled' : ''} style="${index === 0 ? 'opacity:0.3; cursor:not-allowed;' : ''}">
                             <i class="fa-solid fa-arrow-up"></i>
                         </button>
@@ -1513,10 +1506,10 @@ function renderSettingsSystemsEditor() {
                     </div>
                 </div>
 
-                <!-- 💡 2段目：desc（説明文・サブ情報）の入力ボックス -->
+                <!-- ② 2段目：説明文・サブ情報（タグや略称的に表示される部分） -->
                 <div class="pl-8">
-                    <label for="${descId}" class="sr-only">説明文 (desc) ${index + 1}</label>
-                    <input type="text" id="${descId}" name="${descId}" value="${escapeHtml(sys.desc || '')}" onchange="updateSystemProperty('${sys.id}', 'desc', this.value)" class="w-full bg-white border border-stone-200 rounded-lg px-2.5 py-1 text-xs text-stone-600" placeholder="説明文・サブ情報 (例: CoC 6版)">
+                    <label for="${descId}" class="sr-only">説明文・タグ表記 ${index + 1}</label>
+                    <input type="text" id="${descId}" name="${descId}" value="${escapeHtml(sys.desc || '')}" onchange="updateSystemProperty('${sys.id}', 'desc', this.value)" class="w-full bg-white border border-stone-200 rounded-lg px-2.5 py-1 text-xs text-stone-600" placeholder="説明文・タグ表記 (例: CoC / DX3rd など)">
                 </div>
             </div>
         `;
@@ -1550,7 +1543,7 @@ function moveSystemOrder(index, direction) {
 window.moveSystemOrder = moveSystemOrder;
 
 // ==========================================
-// 💡 システム別 カスタム項目エディタの描画（システム順に追従 ＋ 並び替え対応）
+// 💡 システム別 カスタム項目エディタの描画（スマホでもはみ出さないレスポンシブ最適化版）
 // ==========================================
 function renderSettingsFieldsEditor() {
     const container = document.getElementById('settingsFieldsEditorContainer');
@@ -1572,7 +1565,7 @@ function renderSettingsFieldsEditor() {
         html += `
             <div class="bg-stone-50 border border-stone-200 rounded-2xl p-3.5 space-y-3">
                 <div class="font-bold text-xs text-stone-800 flex items-center justify-between pb-1.5 border-b border-stone-200/60">
-                    <span>${index + 1}. ${escapeHtml(sys.name)} <span class="text-stone-400 font-normal">(${escapeHtml(sys.desc || sys.shortName || '説明なし')})</span></span>
+                    <span>${index + 1}. ${escapeHtml(sys.name)} <span class="text-stone-400 font-normal">(${escapeHtml(sys.desc || '説明なし')})</span></span>
                 </div>
                 
                 <!-- ステータス項目 -->
@@ -1581,29 +1574,40 @@ function renderSettingsFieldsEditor() {
                         <span class="text-[11px] font-bold text-stone-600">ステータス項目（数値）</span>
                         <button type="button" onclick="addCustomField('${sys.id}', 'status')" class="text-[10px] bg-stone-200/70 hover:bg-stone-300 text-stone-700 px-2 py-0.5 rounded-md font-medium transition-all">+ 追加</button>
                     </div>
-                    <div class="space-y-1.5" id="statusFields_${sys.id}">
+                    <div class="space-y-2" id="statusFields_${sys.id}">
                         ${statuses.map((f, fIdx) => {
                             const labelId = `statusLabel_${sys.id}_${fIdx}`;
                             const maxId = `statusMax_${sys.id}_${fIdx}`;
                             return `
-                                <div class="flex items-center gap-1.5">
-                                    <label for="${labelId}" class="sr-only">ステータス項目名</label>
-                                    <input type="text" id="${labelId}" name="${labelId}" value="${escapeHtml(f.label)}" onchange="updateCustomFieldLabel('${sys.id}', 'status', ${fIdx}, this.value)" class="flex-1 bg-white border border-stone-200 rounded-lg px-2 py-1 text-xs" placeholder="項目名 (例: HP)">
-                                    
-                                    <label for="${maxId}" class="sr-only">最大値</label>
-                                    <input type="number" id="${maxId}" name="${maxId}" value="${f.max || ''}" onchange="updateCustomFieldMax('${sys.id}', ${fIdx}, this.value)" class="w-16 bg-white border border-stone-200 rounded-lg px-2 py-1 text-xs" placeholder="最大値">
-                                    
-                                    <!-- 💡 ステータス項目の並び替えボタン -->
-                                    <div class="flex items-center gap-0.5">
-                                        <button type="button" onclick="moveCustomFieldOrder('${sys.id}', 'status', ${fIdx}, -1)" class="w-6 h-6 flex items-center justify-center bg-white border border-stone-200 rounded-md text-stone-600 hover:bg-stone-100 text-[10px]" ${fIdx === 0 ? 'disabled' : ''} style="${fIdx === 0 ? 'opacity:0.3; cursor:not-allowed;' : ''}">
-                                            <i class="fa-solid fa-arrow-up"></i>
-                                        </button>
-                                        <button type="button" onclick="moveCustomFieldOrder('${sys.id}', 'status', ${fIdx}, 1)" class="w-6 h-6 flex items-center justify-center bg-white border border-stone-200 rounded-md text-stone-600 hover:bg-stone-100 text-[10px]" ${fIdx === statuses.length - 1 ? 'disabled' : ''} style="${fIdx === statuses.length - 1 ? 'opacity:0.3; cursor:not-allowed;' : ''}">
-                                            <i class="fa-solid fa-arrow-down"></i>
-                                        </button>
+                                <div class="bg-white border border-stone-200 rounded-xl p-2.5 flex flex-col gap-2">
+                                    <!-- 1段目：項目名入力 -->
+                                    <div>
+                                        <label for="${labelId}" class="sr-only">ステータス項目名</label>
+                                        <input type="text" id="${labelId}" name="${labelId}" value="${escapeHtml(f.label)}" onchange="updateCustomFieldLabel('${sys.id}', 'status', ${fIdx}, this.value)" class="w-full bg-stone-50 border border-stone-200 rounded-lg px-2 py-1 text-xs text-stone-800" placeholder="項目名 (例: HP)">
                                     </div>
+                                    
+                                    <!-- 2段目：最大値 ＋ 並び替え ＋ 削除ボタンをコンパクトに配置 -->
+                                    <div class="flex items-center justify-between gap-2 pt-1 border-t border-stone-100">
+                                        <div class="flex items-center gap-1.5">
+                                            <span class="text-[10px] text-stone-400">最大値:</span>
+                                            <label for="${maxId}" class="sr-only">最大値</label>
+                                            <input type="number" id="${maxId}" name="${maxId}" value="${f.max || ''}" onchange="updateCustomFieldMax('${sys.id}', ${fIdx}, this.value)" class="w-20 bg-stone-50 border border-stone-200 rounded-lg px-2 py-1 text-xs text-stone-800 text-center" placeholder="なし可">
+                                        </div>
 
-                                    <button type="button" onclick="removeCustomField('${sys.id}', 'status', ${fIdx})" class="text-stone-400 hover:text-rose-500 px-1 text-xs ml-0.5" aria-label="削除"><i class="fa-solid fa-trash"></i></button>
+                                        <div class="flex items-center gap-1">
+                                            <!-- 並び替えボタン -->
+                                            <div class="flex items-center gap-0.5">
+                                                <button type="button" onclick="moveCustomFieldOrder('${sys.id}', 'status', ${fIdx}, -1)" class="w-6 h-6 flex items-center justify-center bg-stone-50 border border-stone-200 rounded-md text-stone-600 hover:bg-stone-100 text-[10px]" ${fIdx === 0 ? 'disabled' : ''} style="${fIdx === 0 ? 'opacity:0.3; cursor:not-allowed;' : ''}">
+                                                    <i class="fa-solid fa-arrow-up"></i>
+                                                </button>
+                                                <button type="button" onclick="moveCustomFieldOrder('${sys.id}', 'status', ${fIdx}, 1)" class="w-6 h-6 flex items-center justify-center bg-stone-50 border border-stone-200 rounded-md text-stone-600 hover:bg-stone-100 text-[10px]" ${fIdx === statuses.length - 1 ? 'disabled' : ''} style="${fIdx === statuses.length - 1 ? 'opacity:0.3; cursor:not-allowed;' : ''}">
+                                                    <i class="fa-solid fa-arrow-down"></i>
+                                                </button>
+                                            </div>
+                                            <!-- 削除ボタン -->
+                                            <button type="button" onclick="removeCustomField('${sys.id}', 'status', ${fIdx})" class="w-6 h-6 flex items-center justify-center text-stone-400 hover:text-rose-500 hover:bg-rose-50 rounded-md text-xs transition-all" aria-label="削除"><i class="fa-solid fa-trash"></i></button>
+                                        </div>
+                                    </div>
                                 </div>
                             `;
                         }).join('')}
@@ -1620,21 +1624,21 @@ function renderSettingsFieldsEditor() {
                         ${texts.map((f, fIdx) => {
                             const textId = `textLabel_${sys.id}_${fIdx}`;
                             return `
-                                <div class="flex items-center gap-1.5">
+                                <div class="flex items-center gap-1.5 bg-white border border-stone-200 rounded-xl p-2">
                                     <label for="${textId}" class="sr-only">テキスト項目名</label>
-                                    <input type="text" id="${textId}" name="${textId}" value="${escapeHtml(f.label)}" onchange="updateCustomTextFieldLabel('${sys.id}', ${fIdx}, this.value)" class="flex-1 bg-white border border-stone-200 rounded-lg px-2 py-1 text-xs" placeholder="項目名 (例: シンドローム)">
+                                    <input type="text" id="${textId}" name="${textId}" value="${escapeHtml(f.label)}" onchange="updateCustomTextFieldLabel('${sys.id}', ${fIdx}, this.value)" class="flex-1 bg-stone-50 border border-stone-200 rounded-lg px-2 py-1 text-xs text-stone-800" placeholder="項目名 (例: シンドローム)">
                                     
-                                    <!-- 💡 テキスト項目の並び替えボタン -->
+                                    <!-- テキスト項目の並び替えボタン -->
                                     <div class="flex items-center gap-0.5">
-                                        <button type="button" onclick="moveCustomFieldOrder('${sys.id}', 'text', ${fIdx}, -1)" class="w-6 h-6 flex items-center justify-center bg-white border border-stone-200 rounded-md text-stone-600 hover:bg-stone-100 text-[10px]" ${fIdx === 0 ? 'disabled' : ''} style="${fIdx === 0 ? 'opacity:0.3; cursor:not-allowed;' : ''}">
+                                        <button type="button" onclick="moveCustomFieldOrder('${sys.id}', 'text', ${fIdx}, -1)" class="w-6 h-6 flex items-center justify-center bg-stone-50 border border-stone-200 rounded-md text-stone-600 hover:bg-stone-100 text-[10px]" ${fIdx === 0 ? 'disabled' : ''} style="${fIdx === 0 ? 'opacity:0.3; cursor:not-allowed;' : ''}">
                                             <i class="fa-solid fa-arrow-up"></i>
                                         </button>
-                                        <button type="button" onclick="moveCustomFieldOrder('${sys.id}', 'text', ${fIdx}, 1)" class="w-6 h-6 flex items-center justify-center bg-white border border-stone-200 rounded-md text-stone-600 hover:bg-stone-100 text-[10px]" ${fIdx === texts.length - 1 ? 'disabled' : ''} style="${fIdx === texts.length - 1 ? 'opacity:0.3; cursor:not-allowed;' : ''}">
+                                        <button type="button" onclick="moveCustomFieldOrder('${sys.id}', 'text', ${fIdx}, 1)" class="w-6 h-6 flex items-center justify-center bg-stone-50 border border-stone-200 rounded-md text-stone-600 hover:bg-stone-100 text-[10px]" ${fIdx === texts.length - 1 ? 'disabled' : ''} style="${fIdx === texts.length - 1 ? 'opacity:0.3; cursor:not-allowed;' : ''}">
                                             <i class="fa-solid fa-arrow-down"></i>
                                         </button>
                                     </div>
 
-                                    <button type="button" onclick="removeCustomField('${sys.id}', 'text', ${fIdx})" class="text-stone-400 hover:text-rose-500 px-1 text-xs ml-0.5" aria-label="削除"><i class="fa-solid fa-trash"></i></button>
+                                    <button type="button" onclick="removeCustomField('${sys.id}', 'text', ${fIdx})" class="w-6 h-6 flex items-center justify-center text-stone-400 hover:text-rose-500 hover:bg-rose-50 rounded-md text-xs transition-all ml-0.5" aria-label="削除"><i class="fa-solid fa-trash"></i></button>
                                 </div>
                             `;
                         }).join('')}
