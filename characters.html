@@ -1640,11 +1640,11 @@ async function saveCharacter(event) {
     // 🔗 編集モーダルで管理されている複数リンク配列を取得（未定義なら空配列）
     const links = window.editingCharacterLinks || [];
     
-    const thumbnail = window.currentThumbnailBase64 || "";
-    const avatar = window.currentAvatarBase64 || "";
-
-    // 💡 ギャラリー画像を一度クリーンなJSONオブジェクトに変換
-    const images = JSON.parse(JSON.stringify(window.editingCharacterImages || { base: [], combat: [], sd: [], doodle: [] }));
+    // 💡 統合された画像管理オブジェクトから、アイコン・立ち絵・ギャラリーをそれぞれ安全に取得
+    const images = JSON.parse(JSON.stringify(window.editingCharacterImages || { thumb: [], avatar: [], base: [], combat: [], sd: [], doodle: [] }));
+    
+    const thumbnail = images.thumb?.[0]?.url || "";
+    const avatar = images.avatar?.[0]?.url || "";
 
     // カスタム項目の値（ステータス・テキスト）を正しく収集
     const customValues = {};
@@ -1688,7 +1688,7 @@ async function saveCharacter(event) {
         secret,      // 秘匿メモ
         thumbnail, 
         avatar,
-        images,      // カテゴリ別ギャラリー画像
+        images,      // カテゴリ別ギャラリー画像（thumb, avatar, base, combat, sd, doodle を含む）
         customValues,
         updatedAt: new Date().toISOString()
     };
@@ -1930,7 +1930,7 @@ function sortCharacters(chars) {
 window.sortCharacters = sortCharacters;
        
 // ==========================================
-// 💡 編集モーダルを開く関数（設定・秘匿メモ・ギャラリー画像復元・複数リンク対応版）
+// 💡 編集モーダルを開く関数（設定・秘匿メモ・統合画像管理復元・複数リンク対応版）
 // ==========================================
 function openEditCharacterModal(characterId) {
     const ch = window.characters.find(c => String(c.id) === String(characterId));
@@ -1995,49 +1995,31 @@ function openEditCharacterModal(characterId) {
         systemInput.classList.add('opacity-60', 'pointer-events-none', 'bg-stone-100');
     }
 
-    // 画像の復元（サムネイル）
-    const thumbPreview = document.getElementById('thumbPreview');
-    if (thumbPreview) {
-        if (ch.thumbnail) {
-            thumbPreview.src = ch.thumbnail;
-            thumbPreview.classList.remove('hidden');
-            window.currentThumbnailBase64 = ch.thumbnail;
-        } else {
-            thumbPreview.src = '';
-            thumbPreview.classList.add('hidden');
-            window.currentThumbnailBase64 = '';
-        }
-    }
-
-    // 画像の復元（アバター）
-    const avatarPreview = document.getElementById('avatarPreview');
-    if (avatarPreview) {
-        if (ch.avatar) {
-            avatarPreview.src = ch.avatar;
-            avatarPreview.classList.remove('hidden');
-            window.currentAvatarBase64 = ch.avatar;
-        } else {
-            avatarPreview.src = '';
-            avatarPreview.classList.add('hidden');
-            window.currentAvatarBase64 = '';
-        }
-    }
-
-    // 💡【追加】カテゴリ別ギャラリー画像の復元とプレビュー再描画
+    // 💡 統合された画像管理オブジェクト（thumb, avatar含む）の復元
     if (ch.images) {
         window.editingCharacterImages = {
+            thumb: ch.images.thumb || (ch.thumbnail ? [{ url: ch.thumbnail, name: '一覧アイコン', uploadedAt: Date.now() }] : []),
+            avatar: ch.images.avatar || (ch.avatar ? [{ url: ch.avatar, name: '立ち絵', uploadedAt: Date.now() }] : []),
             base: ch.images.base || [],
             combat: ch.images.combat || [],
             sd: ch.images.sd || [],
             doodle: ch.images.doodle || []
         };
     } else {
-        window.editingCharacterImages = { base: [], combat: [], sd: [], doodle: [] };
+        // 古いデータ構造（ch.thumbnail / ch.avatar）からのフォールバック対応
+        window.editingCharacterImages = {
+            thumb: ch.thumbnail ? [{ url: ch.thumbnail, name: '一覧アイコン', uploadedAt: Date.now() }] : [],
+            avatar: ch.avatar ? [{ url: ch.avatar, name: '立ち絵', uploadedAt: Date.now() }] : [],
+            base: [],
+            combat: [],
+            sd: [],
+            doodle: []
+        };
     }
 
-    // 最初のタブ（基本・成長）のプレビューを描画
+    // 最初のタブ（アイコン 'thumb'）のプレビューを描画
     if (typeof switchImageCategory === 'function') {
-        switchImageCategory('base');
+        switchImageCategory('thumb');
     }
 
     // システムに応じたカスタム項目を生成しつつ、保存されていたカスタム値を流し込む
@@ -2930,45 +2912,27 @@ window.toggleSecretMemo = toggleSecretMemo;
                 </div>
             </div>
 
-            <!-- ⚙️ 一覧用アイコン画像 -->
-            <div class="pt-2 border-t border-stone-100">
-                <label for="thumbFile" class="block text-xs font-bold text-stone-600 mb-1">一覧用アイコン画像（自動圧縮）</label>
-                <input type="file" id="thumbFile" accept="image/*" onchange="handleThumbnailFileSelect(event)" class="w-full text-xs text-stone-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-stone-100 file:text-stone-700 hover:file:bg-stone-200 cursor-pointer">
-                <div class="mt-2 flex items-center gap-2">
-                    <span class="text-[10px] text-stone-400">プレビュー:</span>
-                    <img id="thumbPreview" class="w-10 h-10 rounded-lg object-cover border border-stone-200 hidden">
-                </div>
-            </div>
-
-            <!-- ⚙️ 立ち絵画像 -->
-            <div>
-                <label for="avatarFile" class="block text-xs font-bold text-stone-600 mb-1">立ち絵画像（大サイズPNG対応）</label>
-                <input type="file" id="avatarFile" accept="image/*" onchange="handleAvatarFileSelect(event)" class="w-full text-xs text-stone-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-stone-100 file:text-stone-700 hover:file:bg-stone-200 cursor-pointer">
-                <div class="mt-2 flex items-center gap-2">
-                    <span class="text-[10px] text-stone-400">プレビュー:</span>
-                    <img id="avatarPreview" class="w-12 h-16 rounded-lg object-contain border border-stone-200 hidden">
-                </div>
-            </div>
-
-            <!-- 💡 新規追加：カテゴリ別ギャラリー画像管理セクション -->
+            <!-- 💡 統合されたキャラクター画像・イラスト管理セクション -->
             <div class="pt-3 border-t border-stone-100">
                 <div class="flex items-center justify-between mb-2">
                     <h4 class="text-xs font-bold text-stone-700 flex items-center gap-1.5">
                         <i class="fa-solid fa-images text-stone-500"></i>
-                        <span>ギャラリー画像管理</span>
+                        <span>キャラクター画像・イラスト管理</span>
                     </h4>
-                    <span class="text-[10px] text-stone-400">タブごとに複数登録できます</span>
+                    <span class="text-[10px] text-stone-400">タブごとに画像や役割を設定できます</span>
                 </div>
 
-                <!-- カテゴリタブ切り替え -->
-                <div class="flex bg-stone-100 p-1 rounded-xl mb-3 gap-1">
-                    <button type="button" onclick="switchImageCategory('base')" id="imgTab-base" class="flex-1 py-1.5 text-[11px] font-bold rounded-lg bg-white text-stone-800 shadow-sm transition-all">基本・成長</button>
-                    <button type="button" onclick="switchImageCategory('combat')" id="imgTab-combat" class="flex-1 py-1.5 text-[11px] font-bold rounded-lg text-stone-500 hover:text-stone-800 transition-all">戦闘・衣装</button>
-                    <button type="button" onclick="switchImageCategory('sd')" id="imgTab-sd" class="flex-1 py-1.5 text-[11px] font-bold rounded-lg text-stone-500 hover:text-stone-800 transition-all">SD・その他</button>
-                    <button type="button" onclick="switchImageCategory('doodle')" id="imgTab-doodle" class="flex-1 py-1.5 text-[11px] font-bold rounded-lg text-stone-500 hover:text-stone-800 transition-all">落書き</button>
+                <!-- カテゴリ（役割）タブ切り替え：アイコン・立ち絵・各種ギャラリーを統合 -->
+                <div class="flex bg-stone-100 p-1 rounded-xl mb-3 gap-1 overflow-x-auto">
+                    <button type="button" onclick="switchImageCategory('thumb')" id="imgTab-thumb" class="flex-1 py-1.5 px-2 text-[10px] font-bold rounded-lg text-stone-500 hover:text-stone-800 transition-all whitespace-nowrap">アイコン</button>
+                    <button type="button" onclick="switchImageCategory('avatar')" id="imgTab-avatar" class="flex-1 py-1.5 px-2 text-[10px] font-bold rounded-lg text-stone-500 hover:text-stone-800 transition-all whitespace-nowrap">立ち絵</button>
+                    <button type="button" onclick="switchImageCategory('base')" id="imgTab-base" class="flex-1 py-1.5 px-2 text-[10px] font-bold rounded-lg bg-white text-stone-800 shadow-sm transition-all whitespace-nowrap">基本・成長</button>
+                    <button type="button" onclick="switchImageCategory('combat')" id="imgTab-combat" class="flex-1 py-1.5 px-2 text-[10px] font-bold rounded-lg text-stone-500 hover:text-stone-800 transition-all whitespace-nowrap">戦闘・衣装</button>
+                    <button type="button" onclick="switchImageCategory('sd')" id="imgTab-sd" class="flex-1 py-1.5 px-2 text-[10px] font-bold rounded-lg text-stone-500 hover:text-stone-800 transition-all whitespace-nowrap">SD・その他</button>
+                    <button type="button" onclick="switchImageCategory('doodle')" id="imgTab-doodle" class="flex-1 py-1.5 px-2 text-[10px] font-bold rounded-lg text-stone-500 hover:text-stone-800 transition-all whitespace-nowrap">落書き</button>
                 </div>
 
-                <!-- 画像アップロード＆プレビューエリア -->
+                <!-- 画像アップロード＆プレビューエリア（1箇所に集約） -->
                 <div class="bg-stone-50 p-3 rounded-2xl border border-stone-200/80 space-y-3">
                     <input type="file" id="characterImageFile" accept="image/*" multiple onchange="handleCharacterImagesSelect(event)" class="w-full text-xs text-stone-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-white file:text-stone-700 hover:file:bg-stone-100 cursor-pointer border border-stone-200 rounded-xl bg-white">
                     
