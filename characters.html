@@ -1701,8 +1701,14 @@ function renderSettingsSystemsEditor() {
                         <input type="text" id="${nameId}" name="${nameId}" value="${escapeHtml(sys.name)}" onchange="updateSystemProperty('${sys.id}', 'name', this.value)" class="w-full bg-white border border-stone-200 rounded-lg px-3 py-1.5 text-xs font-bold text-stone-800" placeholder="システム名（正式名称）">
                     </div>
 
-                    <!-- 並び替えボタン -->
+                    <!-- 削除ボタン & 並び替えボタン -->
                     <div class="flex items-center gap-1 shrink-0">
+                        <!-- 💡 システム削除ボタン -->
+                        <button type="button" onclick="removeSystem('${sys.id}')" class="w-7 h-7 flex items-center justify-center bg-white border border-stone-200 rounded-lg text-stone-400 hover:text-rose-500 hover:bg-rose-50 text-xs transition-all" aria-label="システムを削除">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+
+                        <!-- 並び替えボタン -->
                         <button type="button" onclick="moveSystemOrder(${index}, -1)" class="w-7 h-7 flex items-center justify-center bg-white border border-stone-200 rounded-lg text-stone-600 hover:bg-stone-100 text-xs" ${index === 0 ? 'disabled' : ''} style="${index === 0 ? 'opacity:0.3; cursor:not-allowed;' : ''}">
                             <i class="fa-solid fa-arrow-up"></i>
                         </button>
@@ -1720,9 +1726,31 @@ function renderSettingsSystemsEditor() {
             </div>
         `;
     });
+
+    // 💡 リストの一番下に「新しいシステムを追加するボタン」を常設
+    html += `
+        <button type="button" onclick="openAddSystemPromptFromEditor()" class="w-full py-2.5 border-2 border-dashed border-stone-300 hover:border-stone-400 text-stone-600 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all bg-stone-50/50 hover:bg-stone-100/50 mt-2">
+            <i class="fa-solid fa-plus text-[10px]"></i> 新しいシステムを追加する
+        </button>
+    `;
+
     container.innerHTML = html;
 }
 window.renderSettingsSystemsEditor = renderSettingsSystemsEditor;
+
+// エディタ内からのシステム追加用ラッパー
+function openAddSystemPromptFromEditor() {
+    const sysName = prompt("追加したいTRPGシステム名（またはジャンル名）を入力してください：\n（例: エモクロアTRPG、オリジナルシステム など）");
+    if (!sysName || !sysName.trim()) return;
+
+    if (typeof addNewSystem === 'function') {
+        addNewSystem(sysName.trim());
+        if (typeof renderSettingsEditors === 'function') {
+            renderSettingsEditors();
+        }
+    }
+}
+window.openAddSystemPromptFromEditor = openAddSystemPromptFromEditor;
 
 // システムのプロパティ（名称や略称、descなど）を更新する汎用関数
 function updateSystemProperty(sysId, key, value) {
@@ -1880,7 +1908,7 @@ function removeCustomField(sysId, type, index) {
 }
 window.removeCustomField = removeCustomField;
 
-// 💡 カスタム項目（ステータス / テキスト）の順序を入れ替える関数
+// カスタム項目（ステータス / テキスト）の順序を入れ替える関数
 function moveCustomFieldOrder(sysId, type, index, direction) {
     if (!window.systemCustomFields[sysId] || !window.systemCustomFields[sysId][type]) return;
     const list = window.systemCustomFields[sysId][type];
@@ -1916,6 +1944,44 @@ function updateCustomTextFieldLabel(sysId, index, val) {
     }
 }
 window.updateCustomTextFieldLabel = updateCustomTextFieldLabel;
+
+// ==========================================
+// 💡 システムの削除機能（ゴミ箱ボタン用）
+// ==========================================
+function removeSystem(sysId) {
+    const sys = window.systems.find(s => s.id === sysId);
+    const sysName = sys ? sys.name : sysId;
+
+    if (!confirm(`システム「${sysName}」を削除しますか？\n※このシステムに紐づくカスタム項目設定が削除されます。`)) {
+        return;
+    }
+
+    // 1. システム一覧から除外
+    window.systems = window.systems.filter(s => s.id !== sysId);
+
+    // 2. カスタムフィールド設定からも除外
+    if (window.systemCustomFields && window.systemCustomFields[sysId]) {
+        delete window.systemCustomFields[sysId];
+    }
+
+    // 3. ストレージへ保存
+    if (typeof saveSystemSettings === 'function') {
+        saveSystemSettings();
+    }
+
+    // 4. 画面やエディタを再描画
+    if (typeof renderSettingsEditors === 'function') {
+        renderSettingsEditors();
+    }
+    if (typeof renderSystemFolders === 'function') {
+        renderSystemFolders();
+    }
+
+    if (typeof showToast === 'function') {
+        showToast(`システム「${sysName}」を削除しました。`, "info");
+    }
+}
+window.removeSystem = removeSystem;
        
 // ==========================================
 // 💡 キャラクターの並び替え機能（更新順・五十音順・誕生日順）
