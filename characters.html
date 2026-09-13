@@ -1105,7 +1105,7 @@ function renderCharacterDetail(characterId) {
                     <div id="galleryThumbnailsContainer" class="flex gap-2 overflow-x-auto pb-1 pt-1 scrollbar-thin">
                         ${safeCatImages.map((img, idx) => `
                             <button onclick="selectGalleryIndex(${idx})" class="relative w-14 h-14 rounded-xl overflow-hidden border-2 transition-all shrink-0 bg-white ${idx === window._currentGalleryState.index ? 'scale-105 shadow-md' : 'border-stone-200 opacity-60 hover:opacity-100'}" style="${idx === window._currentGalleryState.index ? `border-color: ${themeColor};` : ''}">
-                                <img src="${img.url}" class="w-full h-full object-cover">
+                                <img src="${img.url}" class="w-full h-full object-cover object-top">
                             </button>
                         `).join('')}
                     </div>
