@@ -1039,9 +1039,8 @@ function renderCharacterDetail(characterId) {
                         <h4 class="text-xs font-bold text-rose-600 mb-1.5 flex items-center gap-1.5">
                             <i class="fa-solid fa-user-secret text-rose-500"></i> 秘匿メモ（ネタバレ）
                         </h4>
-                        <!-- 上品な背景とローズ系の枠線で少し色濃さを残したコンテナ -->
                         <div class="bg-rose-50/40 rounded-2xl border border-rose-200/70 relative overflow-hidden transition-all shadow-xs">
-                            <!-- 🙈 閉じた状態（トグルヘッダー） -->
+                            <!-- 🙈 閉じた状態 -->
                             <div class="secret-masked cursor-pointer px-4 py-3 flex items-center justify-between select-none hover:bg-rose-50/60 transition-colors" onclick="
                                 this.style.display = 'none';
                                 this.nextElementSibling.style.display = 'block';
@@ -1053,13 +1052,13 @@ function renderCharacterDetail(characterId) {
                                 <span class="text-[11px] font-medium text-rose-400">タップで切替</span>
                             </div>
 
-                            <!-- 👁️ 展開状態（クリック後） -->
-                            <div class="secret-revealed hidden p-4 text-left text-xs text-stone-700 whitespace-pre-wrap leading-relaxed cursor-pointer border-t border-rose-100 bg-white/60" onclick="
+                            <!-- 👁️ 展開状態（余白を詰めて左端にきれいに収める修正版） -->
+                            <div class="secret-revealed hidden p-4 text-xs text-stone-700 whitespace-pre-wrap leading-relaxed cursor-pointer border-t border-rose-100 bg-white/60" onclick="
                                 this.style.display = 'none';
                                 this.previousElementSibling.style.display = 'flex';
                             ">
-                                ${secret}
-                                <div class="text-[10px] text-rose-400 font-bold mt-4 pt-2 border-t border-rose-100 text-center">
+                                <div class="text-left">${secret}</div>
+                                <div class="text-[10px] text-rose-400 font-bold mt-3 pt-2 border-t border-rose-100/60 text-center">
                                     👆 タップして非表示に戻す
                                 </div>
                             </div>
