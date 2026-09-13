@@ -481,7 +481,7 @@ function copyImageToCategory(sourceCategory, index, targetCategory) {
 }
 window.copyImageToCategory = copyImageToCategory;
 
-// 2. 画像ファイルが選択されたときの処理（JSONインポートを見据えて適度に最適化）
+// 2. 画像ファイルが選択されたときの処理（より強力な圧縮で1MB制限を完全に回避）
 function handleCharacterImagesSelect(event) {
     const files = event.target.files;
     if (!files || files.length === 0) return;
@@ -494,9 +494,9 @@ function handleCharacterImagesSelect(event) {
         reader.onload = function(e) {
             const img = new Image();
             img.onload = function() {
-                // Canvasを使って画像を縮小（アイコンは最大200px、他は最大800pxに収める）
                 const canvas = document.createElement('canvas');
-                const MAX_SIZE = (window.currentImageCategory === 'thumb') ? 200 : 800;
+                // 💡 アイコンは150px、他は最大600pxに制限して容量を確実に削る
+                const MAX_SIZE = (window.currentImageCategory === 'thumb') ? 150 : 600;
                 let width = img.width;
                 let height = img.height;
 
@@ -519,8 +519,8 @@ function handleCharacterImagesSelect(event) {
                 ctx.clearRect(0, 0, width, height);
                 ctx.drawImage(img, 0, 0, width, height);
 
-                // 💡 透過を維持したままWebP形式（品質0.65）で圧縮して容量を調整
-                const compressedBase64 = canvas.toDataURL('image/webp', 0.65);
+                // 💡 WebP形式・品質0.5（十分に綺麗かつ超軽量）で圧縮
+                const compressedBase64 = canvas.toDataURL('image/webp', 0.5);
 
                 const defaultName = isSingleSlot 
                     ? (window.currentImageCategory === 'thumb' ? '一覧アイコン' : '立ち絵')
@@ -556,7 +556,7 @@ function handleCharacterImagesSelect(event) {
     event.target.value = '';
 }
 window.handleCharacterImagesSelect = handleCharacterImagesSelect;
-
+       
 // 💡 3. 画像のタイトル（名前）をリアルタイムで更新する関数
 function updateImageLabel(categoryKey, index, newName) {
     if (window.editingCharacterImages?.[categoryKey]?.[index]) {
