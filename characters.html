@@ -926,13 +926,14 @@ function renderCharacterDetail(characterId) {
         `;
     }
 
+    // 💎 修正部分：二つ名（epithet）のフォントサイズを text-3xl に拡大
     let epithetHtml = '';
     if (ch.epithet && ch.epithet.trim() !== '') {
-        const kana = ch.epithetKana ? `<span class="text-[9px] font-medium text-stone-400 block">${ch.epithetKana}</span>` : '';
+        const kana = ch.epithetKana ? `<span class="text-xs font-medium text-stone-400 block mb-0.5">${ch.epithetKana}</span>` : '';
         epithetHtml = `
-            <div class="mb-0.5">
+            <div class="mb-1">
                 ${kana}
-                <span class="text-xs font-bold tracking-widest uppercase" style="color: ${themeColor}">${ch.epithet}</span>
+                <span class="text-3xl font-bold tracking-widest uppercase leading-tight inline-block" style="color: ${themeColor}">${ch.epithet}</span>
             </div>
         `;
     }
