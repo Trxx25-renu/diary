@@ -466,7 +466,7 @@ function switchImageCategory(categoryKey) {
 }
 window.switchImageCategory = switchImageCategory;
 
-// 💡 他のカテゴリの画像を流用・コピーする関数
+// 💡 他のカテゴリの画像を流用・コピーする関数（即時再描画対応）
 function copyImageToCategory(sourceCategory, index, targetCategory) {
     const sourceList = window.editingCharacterImages?.[sourceCategory];
     if (!sourceList || !sourceList[index]) return;
@@ -490,8 +490,8 @@ function copyImageToCategory(sourceCategory, index, targetCategory) {
         }
     }
 
-    // もし現在そのタブを開いていれば再描画
-    if (window.currentImageCategory === targetCategory) {
+    // プレビューを即時再描画
+    if (typeof renderCharacterImagesPreview === 'function') {
         renderCharacterImagesPreview();
     }
 }
@@ -625,12 +625,11 @@ function renderCharacterImagesPreview() {
                     <div class="text-xs font-bold text-stone-700 truncate">${imgObj.name}</div>
                     <div class="text-[10px] text-stone-400 mt-0.5">登録済み（変更する場合は上のファイル選択からアップロードしてください）</div>
                 </div>
-                <button type="button" onclick="removeCharacterImage('${window.currentImageCategory}', ${index})" class="text-stone-400 hover:text-rose-600 p-2 text-xs">
+                <button type="button" onclick="removeCharacterImage('${window.currentImageCategory}', ${index})" class="text-stone-400 hover:text-rose-600 p-2 text-xs" title="削除する">
                     <i class="fa-solid fa-trash-can"></i>
                 </button>
             `;
         } else {
-            // ギャラリー系タブではタイトル入力欄と「アイコンにする」「立ち絵にする」ボタンを表示
             item.className = 'bg-stone-50 rounded-xl overflow-hidden border border-stone-200 p-2.5 flex flex-col gap-2';
             item.innerHTML = `
                 <div class="relative group aspect-square bg-white rounded-lg overflow-hidden border border-stone-200 flex items-center justify-center">
