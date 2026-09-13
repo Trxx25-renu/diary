@@ -691,7 +691,7 @@ function removeCharacterImage(categoryKey, index) {
 window.removeCharacterImage = removeCharacterImage;
 
 // ==========================================
-// 💡 キャラクター保存関数（GitHub Gist自動同期版）
+// 💡 キャラクター保存関数（新規Gist自動作成・同期対応版）
 // ==========================================
 async function saveCharacter(event) {
     event.preventDefault();
@@ -710,7 +710,19 @@ async function saveCharacter(event) {
     const memo = document.getElementById('charMemo')?.value || '';
     const secret = document.getElementById('charSecret')?.value || '';
     
-    const links = window.editingCharacterLinks || [];
+    // 🔗 複数リンク欄から確実にデータを回収する
+    const links = [];
+    const linkRows = document.querySelectorAll('#charLinksContainer > div');
+    linkRows.forEach(row => {
+        const labelInput = row.querySelector('input[type="text"]');
+        const urlInput = row.querySelector('input[type="url"]');
+        if (urlInput && urlInput.value.trim() !== '') {
+            links.push({
+                label: labelInput ? labelInput.value.trim() : '',
+                url: urlInput.value.trim()
+            });
+        }
+    });
     
     const images = JSON.parse(JSON.stringify(window.editingCharacterImages || { 
         thumb: [], avatar: [], base: [], combat: [], sd: [], doodle: [] 
@@ -768,28 +780,57 @@ async function saveCharacter(event) {
         const jsonString = JSON.stringify(window.characters);
         localStorage.setItem('local_characters', jsonString);
 
-        // 🔥 GitHub Gistへ自動同期（クラウド保存）
-        if (window.GIST_CONFIG && window.GIST_CONFIG.token && window.GIST_CONFIG.gistId) {
+        // 🔥 GitHub Gistへ自動同期（クラウド保存 ＆ Gist未作成時は自動新規作成）
+        if (window.GIST_CONFIG && window.GIST_CONFIG.token) {
             if (typeof showToast === 'function') showToast("クラウドへ同期中...", "info");
             
-            const response = await fetch(`https://api.github.com/gists/${window.GIST_CONFIG.gistId}`, {
-                method: 'PATCH',
-                headers: {
-                    'Authorization': `token ${window.GIST_CONFIG.token}`,
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    description: "Character Data Auto Sync",
-                    files: {
-                        "characters.json": {
-                            content: jsonString
-                        }
-                    }
-                })
-            });
+            let currentGistId = window.GIST_CONFIG.gistId;
+            
+            if (currentGistId) {
+                // 既存のGistを更新 (PATCH)
+                const response = await fetch(`https://api.github.com/gists/${currentGistId}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Authorization': `token ${window.GIST_CONFIG.token}`,
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        description: "Character Data Auto Sync",
+                        files: { "characters.json": { content: jsonString } }
+                    })
+                });
 
-            if (!response.ok) {
-                throw new Error('Gistへの同期に失敗しました');
+                if (!response.ok) {
+                    // もし既存Gistが見つからない(404等)場合は新規作成にフォールバックさせる
+                    if (response.status === 404) {
+                        currentGistId = ''; // リセットして下部の新規作成フローへ
+                    } else {
+                        throw new Error('Gistへの同期に失敗しました');
+                    }
+                }
+            }
+            
+            // Gist IDがまだ無い（あるいは404でリセットされた）場合は新しく作成（POST）する
+            if (!currentGistId) {
+                const createResponse = await fetch('https://api.github.com/gists', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `token ${window.GIST_CONFIG.token}`,
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        description: "Character Management App Data",
+                        public: false, // 非公開Gistとして作成
+                        files: { "characters.json": { content: jsonString } }
+                    })
+                });
+
+                if (!createResponse.ok) {
+                    throw new Error('新規Gistの作成に失敗しました');
+                }
+
+                const gistData = await createResponse.json();
+                window.GIST_CONFIG.setGistId(gistData.id); // 新しいIDを保存！
             }
         }
 
