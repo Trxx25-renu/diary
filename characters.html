@@ -95,6 +95,12 @@
 
             window.appId = "photo-journal-app";
 
+            const GIST_CONFIG = {
+        token: 'ここに取得したGitHubアクセストークンを貼り付け',
+        gistId: '00fe0a64db20f34087eccd3dcc263d09'
+    };
+    window.GIST_CONFIG = GIST_CONFIG; // 必要に応じてグローバル化
+
             const firebaseConfig = {
                 apiKey: "AIzaSyA2ctX9sUpJmLSVJomU9cbMzrUX_AXNjuE",
                 authDomain: "diary-36d77.firebaseapp.com",
@@ -218,22 +224,47 @@
         }); // ← ここできちんと非同期イベントの閉じ括弧を閉じます
 
         // ==========================================
-        // 💡 キャラクターデータの読み込み（ローカルストレージ対応版）
-        // ==========================================
-        async function loadCharactersFromLocal() {
-            try {
-                const saved = localStorage.getItem('local_characters');
-                if (saved) {
-                    window.characters = JSON.parse(saved);
-                } else {
-                    window.characters = [];
+// 💡 キャラクターデータの読み込み（GitHub Gist同期・フォールバック対応版）
+// ==========================================
+async function loadCharactersFromLocal() {
+    try {
+        // GitHub Gistの設定がある場合はクラウドから最新データを取得
+        if (window.GIST_CONFIG && window.GIST_CONFIG.token && window.GIST_CONFIG.gistId) {
+            const response = await fetch(`https://api.github.com/gists/${window.GIST_CONFIG.gistId}`, {
+                headers: {
+                    'Authorization': `token ${window.GIST_CONFIG.token}`
                 }
-            } catch (e) {
-                console.error("Characters load error:", e);
-                window.characters = [];
+            });
+            if (response.ok) {
+                const gistData = await response.json();
+                const file = gistData.files['characters.json'];
+                if (file && file.content) {
+                    window.characters = JSON.parse(file.content);
+                    // バックアップとしてローカルにも保存しておく
+                    localStorage.setItem('local_characters', file.content);
+                    console.log('GitHub Gistからデータをロードしました');
+                    return;
+                }
             }
         }
-        window.loadCharactersFromLocal = loadCharactersFromLocal;
+    } catch (e) {
+        console.warn('Gistからのロードに失敗しました。ローカルデータを使用します', e);
+    }
+
+    // Gistから取得できなかった場合は従来のローカルストレージを使用
+    try {
+        const saved = localStorage.getItem('local_characters');
+        if (saved) {
+            window.characters = JSON.parse(saved);
+        } else {
+            window.characters = [];
+        }
+    } catch (e) {
+        console.error("Characters load error:", e);
+        window.characters = [];
+    }
+}
+window.loadCharactersFromLocal = loadCharactersFromLocal;
 
         function renderSystemFolders(filterKeyword = "") {
             const container = document.getElementById('systemFoldersContainer');
@@ -658,7 +689,7 @@ function removeCharacterImage(categoryKey, index) {
 window.removeCharacterImage = removeCharacterImage;
 
 // ==========================================
-// 💡 キャラクター保存関数（自動ダウンロード廃止・ローカル保存完結版）
+// 💡 キャラクター保存関数（GitHub Gist自動同期版）
 // ==========================================
 async function saveCharacter(event) {
     event.preventDefault();
@@ -709,7 +740,6 @@ async function saveCharacter(event) {
         return; 
     }
 
-    // 既存のIDを維持するか、新規ならランダムなIDを生成
     let targetCharacterId = window.editingCharacterId || ('char_' + Math.random().toString(36).substring(2, 11));
 
     const charData = {
@@ -724,7 +754,6 @@ async function saveCharacter(event) {
     };
 
     try {
-        // 1. 画面上のデータ配列（window.characters）を更新または追加
         if (!window.characters) window.characters = [];
         const index = window.characters.findIndex(c => String(c.id) === String(targetCharacterId));
         if (index !== -1) {
@@ -734,10 +763,37 @@ async function saveCharacter(event) {
             window.characters.push(charData);
         }
 
-        // 2. ブラウザのlocalStorageに保存（これで保存ボタンを押しても勝手にDLされなくなります）
-        localStorage.setItem('local_characters', JSON.stringify(window.characters));
+        const jsonString = JSON.stringify(window.characters);
+        localStorage.setItem('local_characters', jsonString);
 
-        showToast("キャラクターを保存しました！", "info");
+        // 🔥 GitHub Gistへ自動同期（クラウド保存）
+        if (window.GIST_CONFIG && window.GIST_CONFIG.token && window.GIST_CONFIG.gistId) {
+            if (typeof showToast === 'function') showToast("クラウドへ同期中...", "info");
+            
+            const response = await fetch(`https://api.github.com/gists/${window.GIST_CONFIG.gistId}`, {
+                method: 'PATCH',
+                headers: {
+                    'Authorization': `token ${window.GIST_CONFIG.token}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    description: "Character Data Auto Sync",
+                    files: {
+                        "characters.json": {
+                            content: jsonString
+                        }
+                    }
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error('Gistへの同期に失敗しました');
+            }
+        }
+
+        if (typeof showToast === 'function') {
+            showToast("キャラクターを保存・同期しました！", "info");
+        }
 
         closeCharacterModal();
         if (typeof renderSystemFolders === 'function') renderSystemFolders();
@@ -750,8 +806,8 @@ async function saveCharacter(event) {
             }
         }
     } catch (e) {
-        console.error("Save error:", e);
-        alert("保存処理に失敗しました。コンソールを確認してください。");
+        console.error("Save & Sync error:", e);
+        alert("保存またはクラウド同期に失敗しました。コンソールを確認してください。");
     }
 }
 window.saveCharacter = saveCharacter;
