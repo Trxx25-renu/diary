@@ -578,6 +578,17 @@ function navigateTo(target, param) {
         if (m) m.classList.add('hidden');
     });
 
+    // 🔍 画面階層に応じて検索バーのプレースホルダーを切り替える
+    // ※ 検索入力欄のIDが 'searchInput' である想定です（もし異なる場合はIDを書き換えてください）
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        if (target === 'home' || !target) {
+            searchInput.placeholder = 'システムやPC名で検索';
+        } else if (target === 'characterList') {
+            searchInput.placeholder = 'このシステム内を検索...';
+        }
+    }
+
     // 0.5. トップ画面（ホーム・システム一覧）へ戻る場合
     if (target === 'home' || !target) {
         const folderView = document.getElementById('systemFolderView') || document.getElementById('view-folders');
@@ -2426,6 +2437,7 @@ window.toggleSecretMemo = toggleSecretMemo;
         <div id="headerBreadcrumbArea"></div>
 
         <script>
+            
             // 🌟 階層ごとに安全にHTMLを生成・切り替える関数
             function renderBreadcrumbAndActions(viewType, param) {
                 const container = document.getElementById('headerBreadcrumbArea');
@@ -2434,13 +2446,16 @@ window.toggleSecretMemo = toggleSecretMemo;
                 // 1. 【1階層目】システム一覧（ホーム）の場合
                 if (viewType === 'home' || viewType === 'systemList' || !viewType) {
                     container.innerHTML = `
-                        <div class="flex items-center justify-between flex-wrap gap-4 mb-4 pb-2">
+                        <div class="flex items-center justify-between flex-wrap gap-4 mb-4 pb-3 border-b border-stone-200/60">
                             <div class="flex items-center gap-2 text-xs text-stone-500 font-medium">
                                 <span class="text-stone-800 font-bold flex items-center gap-1.5">
                                     <i class="fa-solid fa-book-open text-xs"></i> システム一覧
                                 </span>
                             </div>
-                            <div></div>
+                            <!-- 2階層目に合わせて右上にボタンを配置するスペース -->
+                            <a href="diary.html" class="px-3 py-1 rounded-xl bg-white hover:bg-stone-50 border border-stone-200 text-stone-700 text-xs font-medium flex items-center gap-1.5 transition-colors shadow-sm">
+                                <i class="fa-solid fa-book-open text-[11px] text-stone-500"></i> 卓日記へ
+                            </a>
                         </div>
                     `;
                     return;
@@ -2458,8 +2473,7 @@ window.toggleSecretMemo = toggleSecretMemo;
                                 <i class="fa-solid fa-chevron-right text-[10px] text-stone-300"></i>
                                 <span class="text-stone-800 font-bold">${sys ? sys.name : 'システム'}</span>
                             </div>
-                            <!-- 日記サイトのように右上に「日記へ戻る」などを置けるスペース -->
-                            <a href="index.html" class="px-3 py-1 rounded-xl bg-white hover:bg-stone-50 border border-stone-200 text-stone-700 text-xs font-medium flex items-center gap-1.5 transition-colors shadow-sm">
+                            <a href="diary.html" class="px-3 py-1 rounded-xl bg-white hover:bg-stone-50 border border-stone-200 text-stone-700 text-xs font-medium flex items-center gap-1.5 transition-colors shadow-sm">
                                 <i class="fa-solid fa-book-open text-[11px] text-stone-500"></i> 卓日記へ
                             </a>
                         </div>
