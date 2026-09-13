@@ -1724,7 +1724,7 @@ async function saveCharacter(event) {
 window.saveCharacter = saveCharacter;
 
        // ==========================================
-// 🔗 複数リンクエディターの制御関数群
+// 🔗 複数リンクエディターの制御関数群（修正版）
 // ==========================================
 
 // 1. リンクエディターを描画する関数
@@ -1739,7 +1739,7 @@ function renderCharacterLinksEditor() {
         window.editingCharacterLinks = [];
     }
 
-    // 登録されているリンクがない場合の案内（任意）
+    // 登録されているリンクがない場合の案内
     if (window.editingCharacterLinks.length === 0) {
         container.innerHTML = '<p class="text-xs text-stone-400 italic py-1">リンクが追加されていません（「リンクを追加」から登録できます）</p>';
         return;
@@ -1751,10 +1751,10 @@ function renderCharacterLinksEditor() {
         row.className = 'flex items-center gap-2 bg-stone-50 p-2 rounded-lg border border-stone-200';
         
         row.innerHTML = `
-            <input type="text" placeholder="ラベル (例: 本シート)" value="${escapeHtml(link.label || '')}" 
+            <input type="text" placeholder="ラベル (例: 本シート)" value="${escapeHtmlForLink(link.label || '')}" 
                 oninput="window.updateEditingLink(${index}, 'label', this.value)"
                 class="w-1/3 text-xs px-2 py-1.5 rounded border border-stone-300 bg-white focus:outline-none focus:ring-1 focus:ring-stone-500">
-            <input type="url" placeholder="https://..." value="${escapeHtml(link.url || '')}" 
+            <input type="url" placeholder="https://..." value="${escapeHtmlForLink(link.url || '')}" 
                 oninput="window.updateEditingLink(${index}, 'url', this.value)"
                 class="flex-1 text-xs px-2 py-1.5 rounded border border-stone-300 bg-white focus:outline-none focus:ring-1 focus:ring-stone-500">
             <button type="button" onclick="window.removeEditingLink(${index})" 
@@ -1794,8 +1794,8 @@ function removeEditingLink(index) {
 }
 window.removeEditingLink = removeEditingLink;
 
-// HTMLエスケープ用補助（安全対策）
-function escapeHtml(str) {
+// 競合回避用のエスケープ用補助関数
+function escapeHtmlForLink(str) {
     return String(str)
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
