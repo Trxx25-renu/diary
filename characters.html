@@ -52,8 +52,29 @@
 }
     </style>
 
-<script type="module">     
-        // 🔒 ネタバレパーサー
+   <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        // 💡 ここに updateDoc を追加しました！
+        import { getFirestore, collection, getDocs, doc, getDoc, setDoc, addDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // HTMLエスケープ処理
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&'`<>""]/g, function(match) {
+                return {
+                    '&': '&amp;',
+                    "'": '&#x27;',
+                    '`': '&#x60;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    '"': '&quot;',
+                }[match];
+            });
+        }
+        window.escapeHtml = escapeHtml;
+       
+        // 🔒 ネタバレパーサー（||で囲まれた部分を目隠しにする。複数行対応）
         function parseSpoilers(text) {
             if (!text) return '';
             const escaped = escapeHtml(text);
@@ -63,100 +84,119 @@
         }
         window.parseSpoilers = parseSpoilers;
 
-        // デフォルトのシステムリスト
-        window.systems = window.systems || [
-            { id: 'coc', name: 'クトゥルフ神話TRPG (6版)', desc: 'CoC 6版', badgeColor: 'bg-amber-900/80' },
-            { id: 'dx3', name: 'ダブルクロス The 3rd Edition', desc: 'DX3rd', badgeColor: 'bg-rose-900/80' },
-            { id: 'shinobigami', name: 'シノビガミ', desc: '現代忍法アクション', badgeColor: 'bg-cyan-900/80' },
-            { id: 'insane', name: 'インセイン', desc: 'マルチジャンルホラー', badgeColor: 'bg-purple-900/80' },
-            { id: 'magica', name: 'マギカロギア', desc: '魔法使いRPG', badgeColor: 'bg-indigo-900/80' },
-            { id: 'sw25', name: 'ソード・ワールド2.5', desc: 'SW2.5', badgeColor: 'bg-emerald-800/80' }
-        ];
-
-        // デフォルトのシステム別カスタムフィールド
-        window.systemCustomFields = window.systemCustomFields || {
-            coc: {
-                status: [
-                    { id: 'san', label: 'SAN (正気度)', max: 99 },
-                    { id: 'hp', label: 'HP', max: 12 }
-                ],
-                text: [
-                    { id: 'mythos', label: 'クトゥルフ神話技能' },
-                    { id: 'artifact', label: '所持アーティファクト / 呪文' }
-                ]
-            },
-            dx3: {
-                status: [
-                    { id: 'hp', label: 'HP', max: 35 },
-                    { id: '侵蝕率', label: '侵蝕率', max: 150 }
-                ],
-                text: [
-                    { id: 'syndrome', label: 'シンドローム' },
-                    { id: 'ror', label: 'ロイス' }
-                ]
-            },
-            shinobigami: {
-                status: [
-                    { id: 'hp', label: '生命力', max: 6 }
-                ],
-                text: [
-                    { id: 'ryuha', label: '流派 / 階級' },
-                    { id: 'secret', label: '秘密 / 使命' }
-                ]
-            },
-            insane: {
-                status: [
-                    { id: 'hp', label: '狂気点', max: 6 }
-                ],
-                text: [
-                    { id: 'secret', label: '秘密 / 使命' },
-                    { id: 'horror', label: 'ホラー / ゾンビなど' }
-                ]
-            },
-            magica: {
-                status: [
-                    { id: 'hp', label: '生命力', max: 5 }
-                ],
-                text: [
-                    { id: 'kanei', label: '経緯 / 位階' },
-                    { id: 'mahou', label: '魔法 / 使命' }
-                ]
-            },
-            sw25: {
-                status: [
-                    { id: 'hp', label: 'HP', max: 30 },
-                    { id: 'mp', label: 'MP', max: 30 }
-                ],
-                text: [
-                    { id: 'race', label: '種族 / レベル' }
-                ]
-            }
-        };
-
-        // ⭐ 設定読み込み関数
-        window.loadSiteConfigFromFirestore = async function() {
-            if (!(await ensureFirebaseReady())) {
-                console.error("Firebase is not ready for loadSiteConfigFromFirestore.");
-                return;
-            }
+        document.addEventListener("DOMContentLoaded", async () => {
+            console.log("🚀 キャラクター管理ページ初期化開始...");
 
             try {
-                const configRef = doc(window.db, 'artifacts', window.appId, 'public', 'data', 'config', 'settings');
+                if (sessionStorage.getItem('isAdminSession') === 'true') {
+                    window.isAdmin = true;
+                }
+            } catch (e) { console.error(e); }
+
+            window.appId = "photo-journal-app";
+
+            const firebaseConfig = {
+                apiKey: "AIzaSyA2ctX9sUpJmLSVJomU9cbMzrUX_AXNjuE",
+                authDomain: "diary-36d77.firebaseapp.com",
+                projectId: "diary-36d77",
+                storageBucket: "diary-36d77.firebasestorage.app",
+                messagingSenderId: "1060563209082",
+                appId: "1:1060563209082:web:1c6cfc21a496548309e4c3",
+                measurementId: "G-RBK7ZN6NF1"
+            };
+
+            const app = initializeApp(firebaseConfig);
+            const auth = getAuth(app);
+            const db = getFirestore(app);
+            window.db = db;
+
+            await signInAnonymously(auth);
+
+            // デフォルトのシステムリスト（ご指定のひな型順）
+            window.systems = [
+                { id: 'coc', name: 'クトゥルフ神話TRPG (6版)', desc: 'CoC 6版', badgeColor: 'bg-amber-900/80' },
+                { id: 'dx3', name: 'ダブルクロス The 3rd Edition', desc: 'DX3rd', badgeColor: 'bg-rose-900/80' },
+                { id: 'shinobigami', name: 'シノビガミ', desc: '現代忍法アクション', badgeColor: 'bg-cyan-900/80' },
+                { id: 'insane', name: 'インセイン', desc: 'マルチジャンルホラー', badgeColor: 'bg-purple-900/80' },
+                { id: 'magica', name: 'マギカロギア', desc: '魔法使いRPG', badgeColor: 'bg-indigo-900/80' },
+                { id: 'sw25', name: 'ソード・ワールド2.5', desc: 'SW2.5', badgeColor: 'bg-emerald-800/80' }
+            ];
+
+            // デフォルトのシステム別カスタムフィールド
+            window.systemCustomFields = {
+                coc: {
+                    status: [
+                        { id: 'san', label: 'SAN (正気度)', max: 99 },
+                        { id: 'hp', label: 'HP', max: 12 }
+                    ],
+                    text: [
+                        { id: 'mythos', label: 'クトゥルフ神話技能' },
+                        { id: 'artifact', label: '所持アーティファクト / 呪文' }
+                    ]
+                },
+                dx3: {
+                    status: [
+                        { id: 'hp', label: 'HP', max: 35 },
+                        { id: '侵蝕率', label: '侵蝕率', max: 150 }
+                    ],
+                    text: [
+                        { id: 'syndrome', label: 'シンドローム' },
+                        { id: 'ror', label: 'ロイス' }
+                    ]
+                },
+                shinobigami: {
+                    status: [
+                        { id: 'hp', label: '生命力', max: 6 }
+                    ],
+                    text: [
+                        { id: 'ryuha', label: '流派 / 階級' },
+                        { id: 'secret', label: '秘密 / 使命' }
+                    ]
+                },
+                insane: {
+                    status: [
+                        { id: 'hp', label: '狂気点', max: 6 }
+                    ],
+                    text: [
+                        { id: 'secret', label: '秘密 / 使命' },
+                        { id: 'horror', label: 'ホラー / ゾンビなど' }
+                    ]
+                },
+                magica: {
+                    status: [
+                        { id: 'hp', label: '生命力', max: 5 }
+                    ],
+                    text: [
+                        { id: 'kanei', label: '経緯 / 位階' },
+                        { id: 'mahou', label: '魔法 / 使命' }
+                    ]
+                },
+                sw25: {
+                    status: [
+                        { id: 'hp', label: 'HP', max: 30 },
+                        { id: 'mp', label: 'MP', max: 30 }
+                    ],
+                    text: [
+                        { id: 'race', label: '種族 / レベル' }
+                    ]
+                }
+            };
+
+            try {
+                const configRef = doc(db, 'artifacts', window.appId, 'public', 'data', 'config', 'settings');
                 const configSnap = await getDoc(configRef);
                 if (configSnap.exists()) {
                     window.storedPasscode = configSnap.data().passcode;
                 }
 
-                const rosterConfigRef = doc(window.db, 'artifacts', window.appId, 'public', 'data', 'config', 'characterRosterSettings');
+                const rosterConfigRef = doc(db, 'artifacts', window.appId, 'public', 'data', 'config', 'characterRosterSettings');
                 const rosterSnap = await getDoc(rosterConfigRef);
                 if (rosterSnap.exists()) {
                     const data = rosterSnap.data();
                     window.rosterSettings = data;
-                    if (typeof applyRosterSettings === 'function') {
-                        applyRosterSettings(data);
-                    }
+                    applyRosterSettings(data);
                     if (data.systems) {
-                        window.systems = data.systems;
+                        window.systems = data.systems; // 保存された並び順を反映
                     }
                     if (data.customFields) {
                         window.systemCustomFields = data.customFields;
@@ -164,10 +204,206 @@
                 } else {
                     window.rosterSettings = { title: "", favicon: "" };
                 }
-            } catch (e) { 
-                console.error("Config load error:", e); 
+            } catch (e) { console.error("Config load error:", e); }
+
+            await loadCharactersFromFirestore();
+            renderSystemFolders();
+            updateAdminUI();
+        });
+
+        async function loadCharactersFromFirestore() {
+            try {
+                const charsRef = collection(db, 'artifacts', window.appId, 'public', 'data', 'characters');
+                const querySnap = await getDocs(charsRef);
+                const loaded = [];
+                querySnap.forEach(d => {
+                    loaded.push({ id: d.id, ...d.data() });
+                });
+                window.characters = loaded;
+            } catch (e) {
+                console.error("Characters load error:", e);
+                window.characters = [];
             }
-        };
+        }
+
+        function renderSystemFolders(filterKeyword = "") {
+    const container = document.getElementById('systemFoldersContainer');
+    if (!container) return;
+
+    container.innerHTML = '';
+    const keyword = filterKeyword.toLowerCase().trim();
+    
+    // 💡 window.characters が未定義（undefined）の場合に備えて空配列をデフォルトにする
+    const allChars = window.characters || [];
+
+    window.systems.forEach(sys => {
+        const sysChars = allChars.filter(c => c.systemId === sys.id);
+        const matchesSystem = sys.name.toLowerCase().includes(keyword) || sys.desc.toLowerCase().includes(keyword);
+        const matchedChars = sysChars.filter(c => 
+            (c.name && c.name.toLowerCase().includes(keyword)) ||
+            (c.epithet && c.epithet.toLowerCase().includes(keyword)) ||
+            (c.occupation && c.occupation.toLowerCase().includes(keyword))
+        );
+
+        if (keyword && !matchesSystem && matchedChars.length === 0) {
+            return;
+        }
+
+        const card = document.createElement('div');
+        card.className = 'bg-white rounded-2xl p-5 border border-stone-200/80 shadow-sm hover:border-stone-400 transition-all cursor-pointer flex flex-col justify-between gap-4 group';
+        card.onclick = () => navigateTo('characterList', sys.id);
+
+        card.innerHTML = `
+            <div>
+                <div class="flex items-center justify-between mb-3">
+                    <span class="text-[10px] font-medium text-white px-2.5 py-1 rounded-lg ${sys.badgeColor || 'bg-stone-700'}">${sys.desc}</span>
+                    <i class="fa-solid fa-folder-open text-stone-300 group-hover:text-stone-600 transition-colors"></i>
+                </div>
+                <h3 class="font-bold text-base text-stone-800 group-hover:text-stone-900">${sys.name}</h3>
+                <p class="text-xs text-stone-400 mt-1">登録キャラクター: <span class="font-bold text-stone-600">${sysChars.length}</span> 名</p>
+                ${keyword && matchedChars.length > 0 ? `<p class="text-[11px] text-amber-700 bg-amber-50 px-2 py-1 rounded-md mt-2">一致キャラ: ${matchedChars.map(c => c.name).join(', ')}</p>` : ''}
+            </div>
+            <div class="flex items-center justify-between pt-3 border-t border-stone-100 text-xs text-stone-500 font-medium">
+                <span>一覧を見る</span>
+                <i class="fa-solid fa-arrow-right text-[10px] group-hover:translate-x-1 transition-transform"></i>
+            </div>
+        `;
+        container.appendChild(card);
+    });
+
+    if (container.children.length === 0) {
+        container.innerHTML = `
+            <div class="col-span-full text-center py-12 text-stone-400 text-xs">
+                <i class="fa-solid fa-search text-2xl mb-2"></i>
+                <p>一致するシステム・キャラクターが見つかりませんでした。</p>
+            </div>
+        `;
+    }
+}
+window.renderSystemFolders = renderSystemFolders;
+
+function handleFolderSearchInput(e) {
+    renderSystemFolders(e.target.value);
+}
+window.handleFolderSearchInput = handleFolderSearchInput;
+
+ // ==========================================
+// 💡 ファビコンファイル選択時のプレビュー＆Base64変換関数
+// ==========================================
+function handleFaviconFileSelect(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const base64String = e.target.result;
+        window.currentFaviconBase64 = base64String;
+
+        // プレビュー画像を表示
+        const preview = document.getElementById('settingFaviconPreview');
+        if (preview) {
+            preview.src = base64String;
+            preview.classList.remove('hidden');
+        }
+    };
+    reader.readAsDataURL(file);
+}
+window.handleFaviconFileSelect = handleFaviconFileSelect;
+
+// ==========================================
+// 💡 完成版: キャラクター一覧描画関数（並び替え・二つ名対応版）
+// ==========================================
+function renderCharacterList(systemId, filterKeyword = "") {
+    window.selectedSystemId = systemId;
+    const sys = window.systems.find(s => s.id === systemId);
+    const titleEl = document.getElementById('currentSystemTitle');
+    if (titleEl && sys) titleEl.textContent = sys.name;
+
+    const grid = document.getElementById('characterGrid');
+    if (!grid) return;
+
+    grid.innerHTML = '';
+    const keyword = filterKeyword.toLowerCase().trim();
+    const systemChars = window.characters.filter(c => c.systemId === systemId);
+    
+    const filteredChars = systemChars.filter(c => {
+        if (!keyword) return true;
+        const nameMatch = c.name && c.name.toLowerCase().includes(keyword);
+        const epithetMatch = c.epithet && c.epithet.toLowerCase().includes(keyword);
+        const occMatch = c.occupation && c.occupation.toLowerCase().includes(keyword);
+        const ageMatch = c.age && String(c.age).includes(keyword);
+        const birthdateMatch = c.birthdate && String(c.birthdate).toLowerCase().includes(keyword);
+        return nameMatch || epithetMatch || occMatch || ageMatch || birthdateMatch;
+    });
+
+    // 🌟 フィルタリング後のキャラクター配列に並び替え（ソート）を適用！
+    const sortedChars = sortCharacters(filteredChars);
+
+    if (sortedChars.length === 0) {
+        grid.innerHTML = `
+            <div class="col-span-full text-center py-12 text-stone-400 text-xs">
+                <i class="fa-solid fa-user-slash text-2xl mb-2"></i>
+                <p>${systemChars.length === 0 ? 'このシステムに登録されているキャラクターはまだいません。' : '条件に一致するキャラクターがいません。'}</p>
+            </div>
+        `;
+        return;
+    }
+
+    // 🌟 ループを `sortedChars` に変更して、並び順通りにカードを描画
+    sortedChars.forEach(ch => {
+        const card = document.createElement('div');
+        card.className = 'bg-white rounded-3xl p-4 border border-stone-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer flex flex-col gap-3 relative overflow-hidden group';
+        card.onclick = () => navigateTo('detail', ch.id);
+
+        const themeColor = ch.themeColor || '#78716c';
+
+        let thumbHtml = `<div class="w-full h-full flex items-center justify-center text-stone-300 bg-stone-50"><i class="fa-solid fa-user text-3xl"></i></div>`;
+        
+        // 💡 優先順位: サムネイル ＞ 立ち絵 ＞ ギャラリー（基本・成長の1枚目） ＞ デフォルトアイコン
+        if (ch.thumbnail && ch.thumbnail.trim() !== "") {
+            thumbHtml = `<img src="${ch.thumbnail}" class="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500">`;
+        } else if (ch.avatar && ch.avatar.trim() !== "") {
+            thumbHtml = `<img src="${ch.avatar}" class="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500">`;
+        } else if (ch.images && ch.images.base && ch.images.base.length > 0 && ch.images.base[0].url) {
+            thumbHtml = `<img src="${ch.images.base[0].url}" class="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500">`;
+        }
+
+        // ==========================================
+        // 💡 二つ名と読み仮名を崩れないよう上下にスッキリ配置
+        // ==========================================
+        let epithetHtml = '';
+        if (ch.epithet && ch.epithet.trim() !== '') {
+            const kana = ch.epithetKana ? `<span class="text-[8px] font-normal text-stone-400 block">${ch.epithetKana}</span>` : '';
+            epithetHtml = `
+                <div class="mb-[-2px] truncate">
+                    ${kana}
+                    <span class="text-[11px] font-bold tracking-wider" style="color: ${themeColor}">${ch.epithet}</span>
+                </div>
+            `;
+        }
+
+        // 年齢と誕生日のテキスト組み立て（通常の太さ）
+        let ageAndBirthText = '';
+        if (ch.age) ageAndBirthText += `${ch.age}歳`;
+        if (ch.birthdate) {
+            ageAndBirthText += ageAndBirthText ? ` <span class="text-stone-300 font-normal">/</span> ${ch.birthdate}` : ch.birthdate;
+        }
+        const subInfoText = ageAndBirthText || ch.occupation || '';
+
+        card.innerHTML = `
+            <div class="aspect-square w-full rounded-2xl overflow-hidden relative border-2 border-stone-200 shadow-inner flex items-center justify-center" style="background-color: ${themeColor};">
+                ${thumbHtml}
+            </div>
+            <div class="px-1.5 pb-1 pt-1">
+                ${epithetHtml}
+                <h4 class="font-bold text-lg text-stone-900 truncate tracking-wide group-hover:opacity-80 transition-opacity">${ch.name}</h4>
+                <p class="text-xs text-stone-700 font-normal mt-0.5 truncate">${subInfoText}</p>
+            </div>
+        `;
+        grid.appendChild(card);
+    });
+}
+window.renderCharacterList = renderCharacterList;
 
 
 // ==========================================
@@ -348,11 +584,6 @@ function navigateTo(target, param) {
         if (systemSelectView) systemSelectView.classList.remove('hidden');
         if (listView) listView.classList.add('hidden');
         if (detailView) detailView.classList.add('hidden');
-
-        // ⭐ 1階層目（ホーム）のパンくずを描画
-        if (typeof renderBreadcrumbAndActions === 'function') {
-            renderBreadcrumbAndActions('home');
-        }
     }
     // 1. システムごとの「キャラクター一覧画面」へ移動する場合
     else if (target === 'characterList') {
@@ -372,38 +603,28 @@ function navigateTo(target, param) {
         if (systemSelectView) systemSelectView.classList.add('hidden');
         if (listView) listView.classList.remove('hidden');
         if (detailView) detailView.classList.add('hidden');
-
-        // ⭐ 2階層目（キャラクター一覧）のパンくずを描画（システムIDを渡す）
-        if (typeof renderBreadcrumbAndActions === 'function') {
-            renderBreadcrumbAndActions('characterList', targetSystemId);
-        }
     } 
     // 2. 個別の「キャラクター詳細画面」へ移動する場合
     else if (target === 'detail') {
         // 各ビューの表示・非表示を切り替え
         const folderView = document.getElementById('systemFolderView') || document.getElementById('view-folders');
         const listView = document.getElementById('characterListView') || document.getElementById('view-list') || document.getElementById('characterListContainer');
-        const detailView = document.getElementById('view-detail') || document.getElementById('characterDetailView');
+        const detailView = document.getElementById('view-detail') || document.getElementById('characterDetailView'); // 💡 詳細画面のIDに合わせて調整
         const systemSelectView = document.getElementById('systemSelectView');
 
         if (folderView) folderView.classList.add('hidden');
         if (systemSelectView) systemSelectView.classList.add('hidden');
         if (listView) listView.classList.add('hidden');
-        if (detailView) detailView.classList.remove('hidden');
+        if (detailView) detailView.classList.remove('hidden'); // 💡 詳細画面を表示する！
 
         // 詳細画面を描画
         if (typeof renderCharacterDetail === 'function') {
             renderCharacterDetail(param);
         }
-
-        // ⭐ 3階層目（キャラクター詳細）のパンくずを描画（キャラクターIDを渡す）
-        if (typeof renderBreadcrumbAndActions === 'function') {
-            renderBreadcrumbAndActions('detail', param);
-        }
     }
 }
 window.navigateTo = navigateTo;
-       
+
        // ==========================================
 // 💡 カラー調整・文字色判定のヘルパー関数（先に追加する）
 // ==========================================
@@ -2141,28 +2362,6 @@ function toggleSecretMemo() {
     container.classList.toggle('hidden');
 }
 window.toggleSecretMemo = toggleSecretMemo;
-
-       // ==========================================
-    // 💡 データベースの準備を待って自動で全体を初期化するブロック
-    // ==========================================
-    document.addEventListener("DOMContentLoaded", async () => {
-        let checkCount = 0;
-        while (!window.db && checkCount < 30) {
-            await new Promise(resolve => setTimeout(resolve, 100));
-            checkCount++;
-        }
-
-        if (window.db) {
-            await loadSiteConfigFromFirestore();
-            await loadCharactersFromFirestore();
-            renderSystemFolders();
-            if (typeof updateAdminUI === 'function') {
-                updateAdminUI();
-            }
-        } else {
-            console.error("Firebase DB initialization timeout.");
-        }
-    });
        
     </script>
 </head>
@@ -2621,372 +2820,5 @@ window.toggleSecretMemo = toggleSecretMemo;
     <footer class="text-center py-6 text-[11px] text-stone-400 border-t border-stone-100 mt-12">
         <p>© Character log</p>
     </footer>
-
-<script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, getDocs, doc, getDoc, setDoc, addDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        // ==========================================
-        // 🔒 Firebase & appId の超安全な自動初期化
-        // ==========================================
-        async function ensureFirebaseReady() {
-            if (window.db && window.appId) return true;
-
-            if (!window.appId) {
-                window.appId = window.APP_ID || 
-                             (typeof __app_id !== 'undefined' ? __app_id : null) || 
-                             "default_character_app";
-            }
-
-            if (!window.db) {
-                try {
-                    const config = window.firebaseConfig || window.__FIREBASE_CONFIG__;
-                    if (config && Object.keys(config).length > 0) {
-                        const app = initializeApp(config);
-                        window.db = getFirestore(app);
-                    } else {
-                        console.warn("firebaseConfig is not found in window. Please make sure Firebase config is provided.");
-                    }
-                } catch (e) {
-                    console.error("Auto-initialization of Firebase failed:", e);
-                }
-            }
-
-            return !!(window.db && window.appId);
-        }
-
-        // HTMLエスケープ処理
-        function escapeHtml(str) {
-            if (!str) return '';
-            return str.replace(/[&'`<>""]/g, function(match) {
-                return {
-                    '&': '&amp;',
-                    "'": '&#x27;',
-                    '`': '&#x60;',
-                    '<': '&lt;',
-                    '>': '&gt;',
-                    '"': '&quot;',
-                }[match];
-            });
-        }
-        window.escapeHtml = escapeHtml;
-       
-        // 🔒 ネタバレパーサー
-        function parseSpoilers(text) {
-            if (!text) return '';
-            const escaped = escapeHtml(text);
-            return escaped.replace(/\|\|([\s\S]*?)\|\|/g, (match, p1) => {
-                return `<span class="spoiler-text" onclick="this.classList.toggle('revealed')" title="タップでネタバレを表示">${p1}</span>`;
-            });
-        }
-        window.parseSpoilers = parseSpoilers;
-
-        // デフォルトのシステムリスト
-        window.systems = window.systems || [
-            { id: 'coc', name: 'クトゥルフ神話TRPG (6版)', desc: 'CoC 6版', badgeColor: 'bg-amber-900/80' },
-            { id: 'dx3', name: 'ダブルクロス The 3rd Edition', desc: 'DX3rd', badgeColor: 'bg-rose-900/80' },
-            { id: 'shinobigami', name: 'シノビガミ', desc: '現代忍法アクション', badgeColor: 'bg-cyan-900/80' },
-            { id: 'insane', name: 'インセイン', desc: 'マルチジャンルホラー', badgeColor: 'bg-purple-900/80' },
-            { id: 'magica', name: 'マギカロギア', desc: '魔法使いRPG', badgeColor: 'bg-indigo-900/80' },
-            { id: 'sw25', name: 'ソード・ワールド2.5', desc: 'SW2.5', badgeColor: 'bg-emerald-800/80' }
-        ];
-
-        // デフォルトのシステム別カスタムフィールド
-        window.systemCustomFields = window.systemCustomFields || {
-            coc: {
-                status: [{ id: 'san', label: 'SAN (正気度)', max: 99 }, { id: 'hp', label: 'HP', max: 12 }],
-                text: [{ id: 'mythos', label: 'クトゥルフ神話技能' }, { id: 'artifact', label: '所持アーティファクト / 呪文' }]
-            },
-            dx3: {
-                status: [{ id: 'hp', label: 'HP', max: 35 }, { id: '侵蝕率', label: '侵蝕率', max: 150 }],
-                text: [{ id: 'syndrome', label: 'シンドローム' }, { id: 'ror', label: 'ロイス' }]
-            },
-            shinobigami: {
-                status: [{ id: 'hp', label: '生命力', max: 6 }],
-                text: [{ id: 'ryuha', label: '流派 / 階級' }, { id: 'secret', label: '秘密 / 使命' }]
-            },
-            insane: {
-                status: [{ id: 'hp', label: '狂気点', max: 6 }],
-                text: [{ id: 'secret', label: '秘密 / 使命' }, { id: 'horror', label: 'ホラー / ゾンビなど' }]
-            },
-            magica: {
-                status: [{ id: 'hp', label: '生命力', max: 5 }],
-                text: [{ id: 'kanei', label: '経緯 / 位階' }, { id: 'mahou', label: '魔法 / 使命' }]
-            },
-            sw25: {
-                status: [{ id: 'hp', label: 'HP', max: 30 }, { id: 'mp', label: 'MP', max: 30 }],
-                text: [{ id: 'race', label: '種族 / レベル' }]
-            }
-        };
-
-        // ⭐ 設定読み込み関数
-        window.loadSiteConfigFromFirestore = async function() {
-            if (!(await ensureFirebaseReady())) {
-                console.error("Firebase is not ready for loadSiteConfigFromFirestore.");
-                return;
-            }
-
-            try {
-                const configRef = doc(window.db, 'artifacts', window.appId, 'public', 'data', 'config', 'settings');
-                const configSnap = await getDoc(configRef);
-                if (configSnap.exists()) {
-                    window.storedPasscode = configSnap.data().passcode;
-                }
-
-                const rosterConfigRef = doc(window.db, 'artifacts', window.appId, 'public', 'data', 'config', 'characterRosterSettings');
-                const rosterSnap = await getDoc(rosterConfigRef);
-                if (rosterSnap.exists()) {
-                    const data = rosterSnap.data();
-                    window.rosterSettings = data;
-                    if (typeof applyRosterSettings === 'function') {
-                        applyRosterSettings(data);
-                    }
-                    if (data.systems) {
-                        window.systems = data.systems;
-                    }
-                    if (data.customFields) {
-                        window.systemCustomFields = data.customFields;
-                    }
-                } else {
-                    window.rosterSettings = { title: "", favicon: "" };
-                }
-            } catch (e) { 
-                console.error("Config load error:", e); 
-            }
-        };
-
-        // ⭐ キャラクター読み込み関数
-        window.loadCharactersFromFirestore = async function() {
-            if (!(await ensureFirebaseReady())) return;
-            try {
-                const charsRef = collection(window.db, 'artifacts', window.appId, 'public', 'data', 'characters');
-                const querySnap = await getDocs(charsRef);
-                const loaded = [];
-                querySnap.forEach(d => {
-                    loaded.push({ id: d.id, ...d.data() });
-                });
-                window.characters = loaded;
-            } catch (e) {
-                console.error("Characters load error:", e);
-                window.characters = [];
-            }
-        };
-
-        // フォルダ描画関数
-        window.renderSystemFolders = function(filterKeyword = "") {
-            const container = document.getElementById('systemFoldersContainer');
-            if (!container) return;
-
-            container.innerHTML = '';
-            const keyword = filterKeyword.toLowerCase().trim();
-            const allChars = window.characters || [];
-
-            window.systems.forEach(sys => {
-                const sysChars = allChars.filter(c => c.systemId === sys.id);
-                const matchesSystem = sys.name.toLowerCase().includes(keyword) || sys.desc.toLowerCase().includes(keyword);
-                const matchedChars = sysChars.filter(c => 
-                    (c.name && c.name.toLowerCase().includes(keyword)) ||
-                    (c.epithet && c.epithet.toLowerCase().includes(keyword)) ||
-                    (c.occupation && c.occupation.toLowerCase().includes(keyword))
-                );
-
-                if (keyword && !matchesSystem && matchedChars.length === 0) {
-                    return;
-                }
-
-                const card = document.createElement('div');
-                card.className = 'bg-white rounded-2xl p-5 border border-stone-200/80 shadow-sm hover:border-stone-400 transition-all cursor-pointer flex flex-col justify-between gap-4 group';
-                card.onclick = () => navigateTo('characterList', sys.id);
-
-                card.innerHTML = `
-                    <div>
-                        <div class="flex items-center justify-between mb-3">
-                            <span class="text-[10px] font-medium text-white px-2.5 py-1 rounded-lg ${sys.badgeColor || 'bg-stone-700'}">${sys.desc}</span>
-                            <i class="fa-solid fa-folder-open text-stone-300 group-hover:text-stone-600 transition-colors"></i>
-                        </div>
-                        <h3 class="font-bold text-base text-stone-800 group-hover:text-stone-900">${sys.name}</h3>
-                        <p class="text-xs text-stone-400 mt-1">登録キャラクター: <span class="font-bold text-stone-600">${sysChars.length}</span> 名</p>
-                        ${keyword && matchedChars.length > 0 ? `<p class="text-[11px] text-amber-700 bg-amber-50 px-2 py-1 rounded-md mt-2">一致キャラ: ${matchedChars.map(c => c.name).join(', ')}</p>` : ''}
-                    </div>
-                    <div class="flex items-center justify-between pt-3 border-t border-stone-100 text-xs text-stone-500 font-medium">
-                        <span>一覧を見る</span>
-                        <i class="fa-solid fa-arrow-right text-[10px] group-hover:translate-x-1 transition-transform"></i>
-                    </div>
-                `;
-                container.appendChild(card);
-            });
-
-            if (container.children.length === 0) {
-                container.innerHTML = `
-                    <div class="col-span-full text-center py-12 text-stone-400 text-xs">
-                        <i class="fa-solid fa-search text-2xl mb-2"></i>
-                        <p>一致するシステム・キャラクターが見つかりませんでした。</p>
-                    </div>
-                `;
-            }
-        };
-
-        window.handleFolderSearchInput = function(e) {
-            window.renderSystemFolders(e.target.value);
-        };
-
-        // ファビコン選択用関数
-        function handleFaviconFileSelect(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const base64String = e.target.result;
-                window.currentFaviconBase64 = base64String;
-
-                const preview = document.getElementById('settingFaviconPreview');
-                if (preview) {
-                    preview.src = base64String;
-                    preview.classList.remove('hidden');
-                }
-            };
-            reader.readAsDataURL(file);
-        }
-        window.handleFaviconFileSelect = handleFaviconFileSelect;
-
-        // 初期化トリガー（1つに統一）
-        document.addEventListener("DOMContentLoaded", async () => {
-            let checkCount = 0;
-            while (!(await ensureFirebaseReady()) && checkCount < 30) {
-                await new Promise(resolve => setTimeout(resolve, 100));
-                checkCount++;
-            }
-
-            if (window.db && window.appId) {
-                await window.loadSiteConfigFromFirestore();
-                await window.loadCharactersFromFirestore();
-                window.renderSystemFolders();
-                if (typeof updateAdminUI === 'function') {
-                    updateAdminUI();
-                }
-            } else {
-                console.error("Firebase DB initialization timeout. Please check your Firebase configuration script placement.");
-            }
-        });
-
-        // ==========================================
-        // 💡 キャラクター一覧描画関数（並び替え・二つ名対応版）
-        // ==========================================
-        function renderCharacterList(systemId, filterKeyword = "") {
-            window.selectedSystemId = systemId;
-            const sys = window.systems.find(s => s.id === systemId);
-            const titleEl = document.getElementById('currentSystemTitle');
-            if (titleEl && sys) titleEl.textContent = sys.name;
-
-            const grid = document.getElementById('characterGrid');
-            if (!grid) return;
-
-            grid.innerHTML = '';
-            const keyword = filterKeyword.toLowerCase().trim();
-            const systemChars = window.characters.filter(c => c.systemId === systemId);
-            
-            const filteredChars = systemChars.filter(c => {
-                if (!keyword) return true;
-                const nameMatch = c.name && c.name.toLowerCase().includes(keyword);
-                const epithetMatch = c.epithet && c.epithet.toLowerCase().includes(keyword);
-                const occMatch = c.occupation && c.occupation.toLowerCase().includes(keyword);
-                const ageMatch = c.age && String(c.age).includes(keyword);
-                const birthdateMatch = c.birthdate && String(c.birthdate).toLowerCase().includes(keyword);
-                return nameMatch || epithetMatch || occMatch || ageMatch || birthdateMatch;
-            });
-
-            const sortedChars = typeof sortCharacters === 'function' ? sortCharacters(filteredChars) : filteredChars;
-
-            if (sortedChars.length === 0) {
-                grid.innerHTML = `
-                    <div class="col-span-full text-center py-12 text-stone-400 text-xs">
-                        <i class="fa-solid fa-user-slash text-2xl mb-2"></i>
-                        <p>${systemChars.length === 0 ? 'このシステムに登録されているキャラクターはまだいません。' : '条件に一致するキャラクターがいません。'}</p>
-                    </div>
-                `;
-                return;
-            }
-
-            sortedChars.forEach(ch => {
-                const card = document.createElement('div');
-                card.className = 'bg-white rounded-3xl p-4 border border-stone-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer flex flex-col gap-3 relative overflow-hidden group';
-                card.onclick = () => navigateTo('detail', ch.id);
-
-                const themeColor = ch.themeColor || '#78716c';
-
-                let thumbHtml = `<div class="w-full h-full flex items-center justify-center text-stone-300 bg-stone-50"><i class="fa-solid fa-user text-3xl"></i></div>`;
-                
-                if (ch.thumbnail && ch.thumbnail.trim() !== "") {
-                    thumbHtml = `<img src="${ch.thumbnail}" class="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500">`;
-                } else if (ch.avatar && ch.avatar.trim() !== "") {
-                    thumbHtml = `<img src="${ch.avatar}" class="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500">`;
-                } else if (ch.images && ch.images.base && ch.images.base.length > 0 && ch.images.base[0].url) {
-                    thumbHtml = `<img src="${ch.images.base[0].url}" class="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500">`;
-                }
-
-                let epithetHtml = '';
-                if (ch.epithet && ch.epithet.trim() !== '') {
-                    const kana = ch.epithetKana ? `<span class="text-[8px] font-normal text-stone-400 block">${ch.epithetKana}</span>` : '';
-                    epithetHtml = `
-                        <div class="mb-[-2px] truncate">
-                            ${kana}
-                            <span class="text-[11px] font-bold tracking-wider" style="color: ${themeColor}">${ch.epithet}</span>
-                        </div>
-                    `;
-                }
-
-                let ageAndBirthText = '';
-                if (ch.age) ageAndBirthText += `${ch.age}歳`;
-                if (ch.birthdate) {
-                    ageAndBirthText += ageAndBirthText ? ` <span class="text-stone-300 font-normal">/</span> ${ch.birthdate}` : ch.birthdate;
-                }
-                const subInfoText = ageAndBirthText || ch.occupation || '';
-
-                card.innerHTML = `
-                    <div class="aspect-square w-full rounded-2xl overflow-hidden relative border-2 border-stone-200 shadow-inner flex items-center justify-center" style="background-color: ${themeColor};">
-                        ${thumbHtml}
-                    </div>
-                    <div class="px-1.5 pb-1 pt-1">
-                        ${epithetHtml}
-                        <h4 class="font-bold text-lg text-stone-900 truncate tracking-wide group-hover:opacity-80 transition-opacity">${ch.name}</h4>
-                        <p class="text-xs text-stone-700 font-normal mt-0.5 truncate">${subInfoText}</p>
-                    </div>
-                `;
-                grid.appendChild(card);
-            });
-        }
-        window.renderCharacterList = renderCharacterList;
-
-        // ==========================================
-        // 💡 キャラクター画像（ギャラリー）管理まわり
-        // ==========================================
-        window.currentImageCategory = 'base';
-        window.editingCharacterImages = {
-            base: [],
-            combat: [],
-            sd: [],
-            doodle: []
-        };
-
-        function switchImageCategory(categoryKey) {
-            window.currentImageCategory = categoryKey;
-            ['base', 'combat', 'sd', 'doodle'].forEach(cat => {
-                const btn = document.getElementById(`imgTab-${cat}`);
-                if (!btn) return;
-                if (cat === categoryKey) {
-                    btn.className = "flex-1 py-2 text-xs font-bold rounded-lg bg-stone-900 text-white shadow-sm transition-all";
-                } else {
-                    btn.className = "flex-1 py-2 text-xs font-medium rounded-lg text-stone-500 hover:text-stone-900 transition-all";
-                }
-            });
-            if (typeof renderEditingImageContainer === 'function') {
-                renderEditingImageContainer();
-            }
-        }
-        window.switchImageCategory = switchImageCategory;
-    </script>
-    
 </body>
 </html>
