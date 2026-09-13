@@ -95,11 +95,13 @@
 
             window.appId = "photo-journal-app";
 
-            const GIST_CONFIG = {
-        token: 'ここに取得したGitHubアクセストークンを貼り付け',
-        gistId: '00fe0a64db20f34087eccd3dcc263d09'
-    };
-    window.GIST_CONFIG = GIST_CONFIG; // 必要に応じてグローバル化
+const GIST_CONFIG = {
+            get token() { return localStorage.getItem('github_gist_token') || ''; },
+            gistId: '00fe0a64db20f34087eccd3dcc263d09',
+            setToken(t) { localStorage.setItem('github_gist_token', t); },
+            setGistId(id) { localStorage.setItem('github_gist_id', id); }
+        };
+        window.GIST_CONFIG = GIST_CONFIG;
 
             const firebaseConfig = {
                 apiKey: "AIzaSyA2ctX9sUpJmLSVJomU9cbMzrUX_AXNjuE",
