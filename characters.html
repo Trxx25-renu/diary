@@ -57,6 +57,39 @@
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, getDocs, doc, getDoc, setDoc, addDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
+        // ==========================================
+        // 🔒 Firebase & appId の超安全な自動初期化
+        // ==========================================
+        async function ensureFirebaseReady() {
+            if (window.db && window.appId) return true;
+
+            // 1. window.appId がない場合は URL やデフォルトから自動推測
+            if (!window.appId) {
+                window.appId = window.APP_ID || 
+                               (typeof __app_id !== 'undefined' ? __app_id : null) || 
+                               "default_character_app";
+            }
+
+            // 2. window.db がない場合、firebaseConfig を探して初期化を試みる
+            if (!window.db) {
+                try {
+                    // 一般的な環境変数や別スクリプトのconfigを探す
+                    const config = window.firebaseConfig || window.__FIREBASE_CONFIG__;
+                    if (config && Object.keys(config).length > 0) {
+                        const app = initializeApp(config);
+                        window.db = getFirestore(app);
+                    } else {
+                        // それでもない場合、Artifacts等のグローバル領域を確認するか、ダミーではなくエラーを防ぐためのプレースホルダー
+                        console.warn("firebaseConfig is not found in window. Please make sure Firebase config is provided.");
+                    }
+                } catch (e) {
+                    console.error("Auto-initialization of Firebase failed:", e);
+                }
+            }
+
+            return !!(window.db && window.appId);
+        }
+
         // HTMLエスケープ処理
         function escapeHtml(str) {
             if (!str) return '';
@@ -73,7 +106,7 @@
         }
         window.escapeHtml = escapeHtml;
        
-        // 🔒 ネタバレパーサー（||で囲まれた部分を目隠しにする。複数行対応）
+        // 🔒 ネタバレパーサー
         function parseSpoilers(text) {
             if (!text) return '';
             const escaped = escapeHtml(text);
@@ -83,8 +116,8 @@
         }
         window.parseSpoilers = parseSpoilers;
 
-        // デフォルトのシステムリスト（ご指定のひな型順）
-        window.systems = [
+        // デフォルトのシステムリスト
+        window.systems = window.systems || [
             { id: 'coc', name: 'クトゥルフ神話TRPG (6版)', desc: 'CoC 6版', badgeColor: 'bg-amber-900/80' },
             { id: 'dx3', name: 'ダブルクロス The 3rd Edition', desc: 'DX3rd', badgeColor: 'bg-rose-900/80' },
             { id: 'shinobigami', name: 'シノビガミ', desc: '現代忍法アクション', badgeColor: 'bg-cyan-900/80' },
@@ -94,7 +127,7 @@
         ];
 
         // デフォルトのシステム別カスタムフィールド
-        window.systemCustomFields = {
+        window.systemCustomFields = window.systemCustomFields || {
             coc: {
                 status: [
                     { id: 'san', label: 'SAN (正気度)', max: 99 },
@@ -153,10 +186,10 @@
             }
         };
 
-        // ⭐ 設定を安全に読み込む専用の関数
-        async function loadSiteConfigFromFirestore() {
-            if (!window.db || !window.appId) {
-                console.error("window.db or window.appId is not ready yet!");
+        // ⭐ 設定読み込み関数
+        window.loadSiteConfigFromFirestore = async function() {
+            if (!(await ensureFirebaseReady())) {
+                console.error("Firebase is not ready for loadSiteConfigFromFirestore.");
                 return;
             }
 
@@ -176,7 +209,7 @@
                         applyRosterSettings(data);
                     }
                     if (data.systems) {
-                        window.systems = data.systems; // 保存された並び順を反映
+                        window.systems = data.systems;
                     }
                     if (data.customFields) {
                         window.systemCustomFields = data.customFields;
@@ -187,12 +220,11 @@
             } catch (e) { 
                 console.error("Config load error:", e); 
             }
-        }
-        window.loadSiteConfigFromFirestore = loadSiteConfigFromFirestore;
+        };
 
         // ⭐ キャラクター読み込み関数
-        async function loadCharactersFromFirestore() {
-            if (!window.db || !window.appId) return;
+        window.loadCharactersFromFirestore = async function() {
+            if (!(await ensureFirebaseReady())) return;
             try {
                 const charsRef = collection(window.db, 'artifacts', window.appId, 'public', 'data', 'characters');
                 const querySnap = await getDocs(charsRef);
@@ -205,18 +237,15 @@
                 console.error("Characters load error:", e);
                 window.characters = [];
             }
-        }
-        window.loadCharactersFromFirestore = loadCharactersFromFirestore;
+        };
 
         // フォルダ描画関数
-        function renderSystemFolders(filterKeyword = "") {
+        window.renderSystemFolders = function(filterKeyword = "") {
             const container = document.getElementById('systemFoldersContainer');
             if (!container) return;
 
             container.innerHTML = '';
             const keyword = filterKeyword.toLowerCase().trim();
-            
-            // 💡 window.characters が未定義の場合に備えて空配列にする
             const allChars = window.characters || [];
 
             window.systems.forEach(sys => {
@@ -262,13 +291,50 @@
                     </div>
                 `;
             }
-        }
-        window.renderSystemFolders = renderSystemFolders;
+        };
 
-        function handleFolderSearchInput(e) {
-            renderSystemFolders(e.target.value);
-        }
-        window.handleFolderSearchInput = handleFolderSearchInput;
+        window.handleFolderSearchInput = function(e) {
+            window.renderSystemFolders(e.target.value);
+        };
+
+        // ファビコン選択用関数
+        window.handleFaviconFileSelect = function(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const base64String = e.target.result;
+                window.currentFaviconBase64 = base64String;
+
+                const preview = document.getElementById('settingFaviconPreview');
+                if (preview) {
+                    preview.src = base64String;
+                    preview.classList.remove('hidden');
+                }
+            };
+            reader.readAsDataURL(file);
+        };
+
+        // 初期化トリガー
+        document.addEventListener("DOMContentLoaded", async () => {
+            let checkCount = 0;
+            while (!(await ensureFirebaseReady()) && checkCount < 30) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+                checkCount++;
+            }
+
+            if (window.db && window.appId) {
+                await window.loadSiteConfigFromFirestore();
+                await window.loadCharactersFromFirestore();
+                window.renderSystemFolders();
+                if (typeof updateAdminUI === 'function') {
+                    updateAdminUI();
+                }
+            } else {
+                console.error("Firebase DB initialization timeout. Please check your Firebase configuration script placement.");
+            }
+        });
 
         // ==========================================
         // 💡 ファビコンファイル選択時のプレビュー＆Base64変換関数
