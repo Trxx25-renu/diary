@@ -410,7 +410,7 @@ function renderCharacterList(systemId, filterKeyword = "") {
 
         let thumbHtml = `<div class="w-full h-full flex items-center justify-center text-stone-300 bg-stone-50"><i class="fa-solid fa-user text-3xl"></i></div>`;
         
-       // 💡 優先順位: サムネイル ＞ 立ち絵 ＞ ギャラリー（基本・成長の1枚目） ＞ デフォルトアイコン
+       // 💡 優先順位: サムネイル ＞ 立ち絵 ＞ ギャラリー（基本の1枚目） ＞ デフォルトアイコン
         if (ch.thumbnail && ch.thumbnail.trim() !== "") {
             thumbHtml = `<img src="${ch.thumbnail}" class="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500">`;
         } else if (ch.avatar && ch.avatar.trim() !== "") {
@@ -479,9 +479,9 @@ function getGalleryCategoryName(categoryKey) {
     const defaults = {
         thumb: '一覧用アイコン',
         avatar: '立ち絵',
-        base: '基本・成長',
-        combat: '戦闘・衣装',
-        sd: 'SD・その他',
+        base: '基本',
+        combat: '戦闘',
+        sd: 'SD・他',
         doodle: '落書き'
     };
 
@@ -1046,9 +1046,9 @@ function renderCharacterDetail(characterId) {
     }
 
     const galleryCategories = [
-        { key: 'base', name: '基本・成長' },
-        { key: 'combat', name: '戦闘・衣装' },
-        { key: 'sd', name: 'SD・その他' },
+        { key: 'base', name: '基本' },
+        { key: 'combat', name: '戦闘' },
+        { key: 'sd', name: 'SD・他' },
         { key: 'doodle', name: '落書き' }
     ];
 
@@ -2267,9 +2267,9 @@ async function saveRosterSettings(event) {
     const favicon = window.currentFaviconBase64 || window.rosterSettings?.favicon || "";
 
     const galleryCategories = {
-        base: document.getElementById('catNameBase')?.value.trim() || '基本・成長',
-        combat: document.getElementById('catNameCombat')?.value.trim() || '戦闘・衣装',
-        sd: document.getElementById('catNameSd')?.value.trim() || 'SD・その他',
+        base: document.getElementById('catNameBase')?.value.trim() || '基本',
+        combat: document.getElementById('catNameCombat')?.value.trim() || '戦闘',
+        sd: document.getElementById('catNameSd')?.value.trim() || 'SD・他',
         doodle: document.getElementById('catNameDoodle')?.value.trim() || '落書き'
     };
 
@@ -3229,16 +3229,16 @@ function escapeHtml(str) {
                 <p class="text-[11px] text-stone-400 mb-3">キャラクター詳細やアップロード画面で表示されるタブ名を変更できます</p>
                 <div class="grid grid-cols-2 gap-2">
                     <div>
-                        <label class="block text-[10px] text-stone-400 mb-1">カテゴリ1（デフォルト: 基本・成長）</label>
-                        <input type="text" id="catNameBase" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-1.5 text-xs text-stone-800" placeholder="基本・成長">
+                        <label class="block text-[10px] text-stone-400 mb-1">カテゴリ1（デフォルト: 基本）</label>
+                        <input type="text" id="catNameBase" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-1.5 text-xs text-stone-800" placeholder="基本">
                     </div>
                     <div>
-                        <label class="block text-[10px] text-stone-400 mb-1">カテゴリ2（デフォルト: 戦闘・衣装）</label>
-                        <input type="text" id="catNameCombat" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-1.5 text-xs text-stone-800" placeholder="戦闘・衣装">
+                        <label class="block text-[10px] text-stone-400 mb-1">カテゴリ2（デフォルト: 戦闘）</label>
+                        <input type="text" id="catNameCombat" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-1.5 text-xs text-stone-800" placeholder="戦闘">
                     </div>
                     <div>
-                        <label class="block text-[10px] text-stone-400 mb-1">カテゴリ3（デフォルト: SD・その他）</label>
-                        <input type="text" id="catNameSd" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-1.5 text-xs text-stone-800" placeholder="SD・その他">
+                        <label class="block text-[10px] text-stone-400 mb-1">カテゴリ3（デフォルト: SD・他）</label>
+                        <input type="text" id="catNameSd" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-1.5 text-xs text-stone-800" placeholder="SD・他">
                     </div>
                     <div>
                         <label class="block text-[10px] text-stone-400 mb-1">カテゴリ4（デフォルト: 落書き）</label>
@@ -3390,9 +3390,9 @@ function escapeHtml(str) {
                 <div class="flex bg-stone-100 p-1 rounded-xl mb-3 gap-1 overflow-x-auto">
                     <button type="button" onclick="switchImageCategory('thumb')" id="imgTab-thumb" class="flex-1 py-1.5 px-2 text-[10px] font-bold rounded-lg text-stone-500 hover:text-stone-800 transition-all whitespace-nowrap">アイコン</button>
                     <button type="button" onclick="switchImageCategory('avatar')" id="imgTab-avatar" class="flex-1 py-1.5 px-2 text-[10px] font-bold rounded-lg text-stone-500 hover:text-stone-800 transition-all whitespace-nowrap">立ち絵</button>
-                    <button type="button" onclick="switchImageCategory('base')" id="imgTab-base" class="flex-1 py-1.5 px-2 text-[10px] font-bold rounded-lg bg-white text-stone-800 shadow-sm transition-all whitespace-nowrap">基本・成長</button>
-                    <button type="button" onclick="switchImageCategory('combat')" id="imgTab-combat" class="flex-1 py-1.5 px-2 text-[10px] font-bold rounded-lg text-stone-500 hover:text-stone-800 transition-all whitespace-nowrap">戦闘・衣装</button>
-                    <button type="button" onclick="switchImageCategory('sd')" id="imgTab-sd" class="flex-1 py-1.5 px-2 text-[10px] font-bold rounded-lg text-stone-500 hover:text-stone-800 transition-all whitespace-nowrap">SD・その他</button>
+                    <button type="button" onclick="switchImageCategory('base')" id="imgTab-base" class="flex-1 py-1.5 px-2 text-[10px] font-bold rounded-lg bg-white text-stone-800 shadow-sm transition-all whitespace-nowrap">基本</button>
+                    <button type="button" onclick="switchImageCategory('combat')" id="imgTab-combat" class="flex-1 py-1.5 px-2 text-[10px] font-bold rounded-lg text-stone-500 hover:text-stone-800 transition-all whitespace-nowrap">戦闘</button>
+                    <button type="button" onclick="switchImageCategory('sd')" id="imgTab-sd" class="flex-1 py-1.5 px-2 text-[10px] font-bold rounded-lg text-stone-500 hover:text-stone-800 transition-all whitespace-nowrap">SD・他</button>
                     <button type="button" onclick="switchImageCategory('doodle')" id="imgTab-doodle" class="flex-1 py-1.5 px-2 text-[10px] font-bold rounded-lg text-stone-500 hover:text-stone-800 transition-all whitespace-nowrap">落書き</button>
                 </div>
 
