@@ -2660,11 +2660,84 @@ function importCharacterFromJson(event) {
     event.target.value = ''; // 連続で同じファイルを読み込めるようにリセット
 }
 window.importCharacterFromJson = importCharacterFromJson;
+
+       // 引っ張り更新（プル・トゥ・リフレッシュ）の処理
+document.addEventListener('DOMContentLoaded', () => {
+    let startY = 0;
+    let currentY = 0;
+    let isPulling = false;
+    let isRefreshing = false;
+    
+    const indicator = document.getElementById('pullToRefreshIndicator');
+    const pullIcon = document.getElementById('pullIcon');
+    const pullText = document.getElementById('pullText');
+    const threshold = 70;
+
+    if (!indicator) return;
+
+    window.addEventListener('touchstart', (e) => {
+        if (window.scrollY <= 0 && !isRefreshing) {
+            startY = e.touches[0].clientY;
+            isPulling = true;
+        }
+    }, { passive: true });
+
+    window.addEventListener('touchmove', (e) => {
+        if (!isPulling || isRefreshing) return;
+
+        currentY = e.touches[0].clientY;
+        const diff = currentY - startY;
+
+        if (diff > 0) {
+            const pullDistance = Math.min(diff * 0.5, 100);
+            indicator.style.transform = `translateY(${pullDistance - 64}px)`;
+
+            if (pullDistance > threshold) {
+                pullIcon.className = "fa-solid fa-arrow-rotate-right text-stone-800 dark:text-stone-200 animate-spin";
+                pullText.textContent = "指を離して更新";
+            } else {
+                pullIcon.className = "fa-solid fa-arrow-down text-stone-500 transition-transform";
+                pullText.textContent = "下に引っ張って更新";
+            }
+        } else {
+            indicator.style.transform = `translateY(-100%)`;
+        }
+    }, { passive: true });
+
+    window.addEventListener('touchend', () => {
+        if (!isPulling || isRefreshing) return;
+        isPulling = false;
+
+        const diff = currentY - startY;
+        const pullDistance = diff * 0.5;
+
+        if (pullDistance > threshold) {
+            isRefreshing = true;
+            indicator.style.transform = `translateY(0px)`;
+            pullText.textContent = "更新中...";
+            
+            setTimeout(() => {
+                location.reload();
+            }, 500);
+        } else {
+            indicator.style.transform = `translateY(-100%)`;
+        }
+        
+        startY = 0;
+        currentY = 0;
+    });
+});
        
     </script>
 </head>
     
 <body class="min-h-screen flex flex-col bg-stone-50 text-stone-800">
+
+    <!-- プル・トゥ・リフレッシュ用インジケーター -->
+<div id="pullToRefreshIndicator" class="fixed top-0 left-0 w-full h-16 bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-200 flex items-center justify-center gap-2 shadow-md transition-transform duration-200 z-50" style="transform: translateY(-100%);">
+    <i id="pullIcon" class="fa-solid fa-arrow-down"></i>
+    <span id="pullText" class="text-sm font-medium">下に引っ張って更新</span>
+</div>
 
     <!-- ヘッダー -->
     <header class="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-stone-200/80 px-4 py-3">
