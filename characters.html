@@ -1908,7 +1908,32 @@ function sortCharacters(chars) {
 window.sortCharacters = sortCharacters;
        
 // ==========================================
-// 💡 編集モーダルを開く関数（設定・秘匿メモ・統合画像管理復元・複数リンク対応版）
+// 💡 テキストエリアの自動高さ調整関数（共通）
+// ==========================================
+function initAutoResizeTextareas() {
+    const textareas = document.querySelectorAll('#characterModal textarea, .character-form textarea');
+    
+    textareas.forEach(textarea => {
+        textarea.classList.add('auto-resize');
+
+        const adjust = () => {
+            textarea.style.height = 'auto'; // 一度縮めてから高さを再計算
+            textarea.style.height = (textarea.scrollHeight + 2) + 'px'; // 内容の高さに合わせる
+        };
+
+        // 入力するたびに高さを自動変更
+        textarea.removeEventListener('input', adjust);
+        textarea.addEventListener('input', adjust);
+
+        // すでに文字が入っている状態（編集時など）でも高さを合わせる
+        setTimeout(adjust, 0);
+    });
+}
+window.initAutoResizeTextareas = initAutoResizeTextareas;
+
+
+// ==========================================
+// 💡 編集モーダルを開く関数（自動リサイズ対応版）
 // ==========================================
 function openEditCharacterModal(characterId) {
     const ch = window.characters.find(c => String(c.id) === String(characterId));
@@ -1932,7 +1957,7 @@ function openEditCharacterModal(characterId) {
     const birthdateInput = document.getElementById('charBirthdate');
     const occupationInput = document.getElementById('charOccupation');
     const colorInput = document.getElementById('charThemeColor');
-    const sheetUrlInput = document.getElementById('charSheetUrl'); // （もし残していれば）
+    const sheetUrlInput = document.getElementById('charSheetUrl');
     const systemInput = document.getElementById('charSystemSelect');
 
     // 設定／メモ と 秘匿メモの入力欄を取得して値をセット
@@ -1953,11 +1978,10 @@ function openEditCharacterModal(characterId) {
     if (memoInput) memoInput.value = ch.memo || '';
     if (secretInput) secretInput.value = ch.secret || '';
 
-    // 🔗 【追加】複数リンク（links）の復元と初期化・レンダリング
+    // 🔗 複数リンク（links）の復元と初期化・レンダリング
     if (ch.links && Array.isArray(ch.links)) {
         window.editingCharacterLinks = JSON.parse(JSON.stringify(ch.links));
     } else if (ch.sheetUrl) {
-        // 互換性維持：古い sheetUrl が残っている場合は配列に変換
         window.editingCharacterLinks = [{ label: 'キャラクターシート', url: ch.sheetUrl }];
     } else {
         window.editingCharacterLinks = [];
@@ -1973,7 +1997,7 @@ function openEditCharacterModal(characterId) {
         systemInput.classList.add('opacity-60', 'pointer-events-none', 'bg-stone-100');
     }
 
-    // 💡 統合された画像管理オブジェクト（thumb, avatar含む）の復元
+    // 💡 統合された画像管理オブジェクトの復元
     if (ch.images) {
         window.editingCharacterImages = {
             thumb: ch.images.thumb || (ch.thumbnail ? [{ url: ch.thumbnail, name: '一覧アイコン', uploadedAt: Date.now() }] : []),
@@ -1984,7 +2008,6 @@ function openEditCharacterModal(characterId) {
             doodle: ch.images.doodle || []
         };
     } else {
-        // 古いデータ構造（ch.thumbnail / ch.avatar）からのフォールバック対応
         window.editingCharacterImages = {
             thumb: ch.thumbnail ? [{ url: ch.thumbnail, name: '一覧アイコン', uploadedAt: Date.now() }] : [],
             avatar: ch.avatar ? [{ url: ch.avatar, name: '立ち絵', uploadedAt: Date.now() }] : [],
@@ -1995,17 +2018,14 @@ function openEditCharacterModal(characterId) {
         };
     }
 
-    // 最初のタブ（アイコン 'thumb'）のプレビューを描画
     if (typeof switchImageCategory === 'function') {
         switchImageCategory('thumb');
     }
 
-    // システムに応じたカスタム項目を生成しつつ、保存されていたカスタム値を流し込む
     if (typeof handleSystemChangeInModal === 'function') {
         handleSystemChangeInModal(ch.customValues || {});
     }
 
-    // カラープレビュー連動
     if (typeof handleThemeColorInput === 'function') {
         handleThemeColorInput(ch.themeColor || '#292524');
     }
@@ -2018,6 +2038,11 @@ function openEditCharacterModal(characterId) {
     const modal = document.getElementById('characterModal');
     if (modal) {
         modal.classList.remove('hidden');
+        
+        // 🌟 【追加】編集モーダルを開いたときにテキストエリアの高さを一括調整
+        if (typeof initAutoResizeTextareas === 'function') {
+            initAutoResizeTextareas();
+        }
     }
 }
 window.openEditCharacterModal = openEditCharacterModal;
@@ -2031,7 +2056,6 @@ async function saveRosterSettings(event) {
     const title = document.getElementById('settingTitleInput').value.trim();
     const favicon = window.currentFaviconBase64 || window.rosterSettings?.favicon || "";
 
-    // HP設定モーダルからカスタムカテゴリ名を取得（未入力ならデフォルト名）
     const galleryCategories = {
         base: document.getElementById('catNameBase')?.value.trim() || '基本・成長',
         combat: document.getElementById('catNameCombat')?.value.trim() || '戦闘・衣装',
@@ -2088,9 +2112,9 @@ function renderCharacterModalSystemSelect() {
     handleSystemChangeInModal();
 }
 window.renderCharacterModalSystemSelect = renderCharacterModalSystemSelect;
-       
+        
 // ==========================================
-// 💡 2. モーダル内でシステムが変更された時に動的項目を描画する関数（警告完全対策版）
+// 💡 2. モーダル内でシステムが変更された時に動ティブ項目を描画する関数
 // ==========================================
 function handleSystemChangeInModal(existingCustomValues = {}) {
     const select = document.getElementById('charSystemSelect');
@@ -2103,7 +2127,6 @@ function handleSystemChangeInModal(existingCustomValues = {}) {
     const fields = window.systemCustomFields?.[systemId];
     if (!fields) return;
 
-    // A. ステータス項目（数値入力など）の生成
     if (fields.status && fields.status.length > 0) {
         const statusWrapper = document.createElement('div');
         statusWrapper.className = 'space-y-2';
@@ -2117,7 +2140,6 @@ function handleSystemChangeInModal(existingCustomValues = {}) {
             const inputId = `custom_status_${st.id}`;
             const savedVal = existingCustomValues[st.id] !== undefined ? existingCustomValues[st.id] : '';
 
-            // 💡 ラベルの中にinputを内包（ネスト）させることで、警告を100%防止します
             div.innerHTML = `
                 <label class="block text-[10px] font-bold text-stone-600 mb-0.5" for="${inputId}">
                     ${st.label} (max: ${st.max || '-'})
@@ -2135,7 +2157,6 @@ function handleSystemChangeInModal(existingCustomValues = {}) {
         container.appendChild(statusWrapper);
     }
 
-    // B. テキスト項目（メモなど）の生成
     if (fields.text && fields.text.length > 0) {
         const textWrapper = document.createElement('div');
         textWrapper.className = 'space-y-2 mt-2';
@@ -2146,7 +2167,6 @@ function handleSystemChangeInModal(existingCustomValues = {}) {
             const inputId = `custom_text_${tx.id}`;
             const savedVal = existingCustomValues[tx.id] !== undefined ? existingCustomValues[tx.id] : '';
 
-            // 💡 こちらも同様にネストさせて警告を防止
             div.innerHTML = `
                 <label class="block text-[10px] font-bold text-stone-600 mb-0.5" for="${inputId}">
                     ${tx.label}
@@ -2161,11 +2181,16 @@ function handleSystemChangeInModal(existingCustomValues = {}) {
         });
         container.appendChild(textWrapper);
     }
+
+    // 🌟 【追加】動的にカスタム項目が生成された直後にも、テキストエリアの高さを再適応させる
+    if (typeof initAutoResizeTextareas === 'function') {
+        initAutoResizeTextareas();
+    }
 }
 window.handleSystemChangeInModal = handleSystemChangeInModal;
 
 // ==========================================
-// 💡 カラープレビュー更新関数（#あり・なし両対応の完全版）
+// 💡 カラープレビュー更新関数
 // ==========================================
 function updateColorPreview(colorCode) {
     const previewBox = document.getElementById('characterColorPreview');
@@ -2177,19 +2202,14 @@ function updateColorPreview(colorCode) {
     }
 
     let code = colorCode.trim();
-    // # がなくて、かつ英数字のみ（3文字か6文字など）の場合は自動で # を補う
     if (!code.startsWith('#') && /^[0-9A-Fa-f]+$/.test(code)) {
         code = '#' + code;
     }
 
-    // 色として適用してみる
     previewBox.style.backgroundColor = code;
 }
 window.updateColorPreview = updateColorPreview;
 
-// ==========================================
-// 💡 handleThemeColorInput のブリッジ関数
-// ==========================================
 function handleThemeColorInput(colorCode) {
     if (typeof updateColorPreview === 'function') {
         updateColorPreview(colorCode);
@@ -2198,21 +2218,18 @@ function handleThemeColorInput(colorCode) {
 window.handleThemeColorInput = handleThemeColorInput;
 
 // ==========================================
-// 💡 4. 新規キャラクター登録モーダルを開く関数
+// 💡 4. 新規キャラクター登録モーダルを開く関数（自動リサイズ対応版）
 // ==========================================
 function openCharacterModal() {
     const modal = document.getElementById('characterModal');
     if (modal) {
-        // 編集IDをクリアして新規作成モードにする
         window.editingCharacterId = null;
         
-        // 🔗 新規作成時：リンク配列を空で初期化してエディターを再描画
         window.editingCharacterLinks = [];
         if (typeof renderCharacterLinksEditor === 'function') {
             renderCharacterLinksEditor();
         }
         
-        // 💡 新規作成時：統合画像管理オブジェクトを空で初期化
         window.editingCharacterImages = {
             thumb: [],
             avatar: [],
@@ -2221,45 +2238,44 @@ function openCharacterModal() {
             sd: [],
             doodle: []
         };
-        // 初期タブ（アイコン）のプレビューを描画・反映
         if (typeof switchImageCategory === 'function') {
             switchImageCategory('thumb');
         }
         
-        // モーダルのタイトルを「新規登録」用に書き戻す
         const modalTitle = document.querySelector('#characterModal h3 span');
         if (modalTitle) modalTitle.textContent = 'キャラクター登録';
 
-        // フォーム要素の初期化やシステムセレクトの構築
         renderCharacterModalSystemSelect();
         
-        // フォーム自体もリセット
         const form = document.getElementById('characterForm');
         if (form) form.reset();
         
         const systemInput = document.getElementById('charSystemSelect');
-        if (systemInput) systemInput.disabled = false; // 新規時はシステム変更可能に
+        if (systemInput) systemInput.disabled = false;
 
         modal.classList.remove('hidden');
+
+        // 🌟 【追加】新規登録モーダルが開いたときにも自動リサイズを初期化
+        if (typeof initAutoResizeTextareas === 'function') {
+            initAutoResizeTextareas();
+        }
     }
 }
 window.openCharacterModal = openCharacterModal;
 
-// 💡 キャラクター作成・編集モーダルを閉じる関数（これだけを残す）
+// 💡 キャラクター作成・編集モーダルを閉じる関数
 function closeCharacterModal() {
     const modal = document.getElementById('characterModal');
     if (modal) modal.classList.add('hidden');
     
-    // 💡 モーダルを閉じるときにシステム選択のロックを解除しておく
     const systemInput = document.getElementById('charSystemSelect');
     if (systemInput) systemInput.disabled = false;
 
-    // 編集IDもクリア
     window.editingCharacterId = null;
 }
 window.closeCharacterModal = closeCharacterModal;
 
-       // 1. 一覧用アイコン画像のファイル選択時＆自動圧縮処理（透過維持・PNG形式）
+// 1. 一覧用アイコン画像のファイル選択時＆自動圧縮処理
 function handleThumbnailFileSelect(event) {
     const file = event.target.files[0];
     if (!file) return;
@@ -2272,7 +2288,6 @@ function handleThumbnailFileSelect(event) {
             let width = img.width;
             let height = img.height;
 
-            // アイコン用は最大 200px に制限
             const MAX_SIZE = 200;
             if (width > height) {
                 if (width > MAX_SIZE) {
@@ -2290,15 +2305,12 @@ function handleThumbnailFileSelect(event) {
             canvas.height = height;
             const ctx = canvas.getContext('2d');
             
-            // 💡 透過情報をクリアして保持
             ctx.clearRect(0, 0, width, height);
             ctx.drawImage(img, 0, 0, width, height);
 
-            // 💡 PNG形式で出力（背景が黒くならない）
             const compressedBase64 = canvas.toDataURL('image/png');
             window.currentThumbnailBase64 = compressedBase64;
 
-            // プレビュー表示
             const preview = document.getElementById('thumbPreview');
             if (preview) {
                 preview.src = compressedBase64;
@@ -2311,8 +2323,7 @@ function handleThumbnailFileSelect(event) {
 }
 window.handleThumbnailFileSelect = handleThumbnailFileSelect;
 
-
-// 2. 立ち絵画像のファイル選択時＆自動圧縮処理（透過維持・PNG形式）
+// 2. 立ち絵画像のファイル選択時＆自動圧縮処理
 function handleAvatarFileSelect(event) {
     const file = event.target.files[0];
     if (!file) return;
@@ -2325,7 +2336,6 @@ function handleAvatarFileSelect(event) {
             let width = img.width;
             let height = img.height;
 
-            // 立ち絵は最大 800px に制限（Firestoreの1MB制限をクリアするため）
             const MAX_SIZE = 800;
             if (width > height) {
                 if (width > MAX_SIZE) {
@@ -2343,22 +2353,17 @@ function handleAvatarFileSelect(event) {
             canvas.height = height;
             const ctx = canvas.getContext('2d');
             
-            // 💡 透過情報をクリアして保持
             ctx.clearRect(0, 0, width, height);
             ctx.drawImage(img, 0, 0, width, height);
 
-            // 💡 PNG形式で出力（背景が黒くならない）
             const compressedBase64 = canvas.toDataURL('image/png');
             window.currentAvatarBase64 = compressedBase64;
 
-            // プレビュー表示
             const preview = document.getElementById('avatarPreview');
             if (preview) {
                 preview.src = compressedBase64;
                 preview.classList.remove('hidden');
             }
-            
-            console.log("立ち絵圧縮完了(透過維持・PNG):", Math.round(compressedBase64.length / 1024), "KB");
         };
         img.src = e.target.result;
     };
@@ -2366,41 +2371,32 @@ function handleAvatarFileSelect(event) {
 }
 window.handleAvatarFileSelect = handleAvatarFileSelect;
 
-       // ==========================================
-// 💡 キャラクターを削除する関数（ローカル管理・JSON対応版）
-// ==========================================
+// キャラクターを削除する関数
 async function deleteCharacter(characterId) {
-    // 削除の確認ダイアログ
     if (!confirm('本当にこのキャラクターを削除しますか？\n（※ローカル一覧から削除されます。必要に応じて個別のJSONファイルも手動で削除してください）')) {
         return;
     }
 
-    // 🌟 1. 削除するキャラクターがどのシステムに所属していたかを、削除処理の「前」に控えておく
     const targetChar = window.characters ? window.characters.find(c => String(c.id) === String(characterId)) : null;
     const systemId = targetChar ? targetChar.systemId : null;
 
     try {
-        // 2. 🔥 Firestoreへのアクセスを廃止し、配列から該当キャラクターを除外
         if (window.characters) {
             window.characters = window.characters.filter(c => String(c.id) !== String(characterId));
         }
 
-        // 3. 💡 変更後のキャラクター配列をローカルストレージへ即座に上書き保存
         localStorage.setItem('local_characters', JSON.stringify(window.characters || []));
 
-        // 4. サイドバーやフォルダの表示を更新
         if (typeof renderSystemFolders === 'function') {
             renderSystemFolders();
         }
 
-        // 5. 🌟 控えておいた systemId を使って、削除されたシステムの「キャラクター一覧画面」に確実に戻る
         if (systemId && typeof navigateTo === 'function') {
             navigateTo('characterList', systemId);
         } else if (typeof goToTopPage === 'function') {
             goToTopPage();
         }
 
-        // 6. 削除成功のトースト通知
         if (typeof showToast === 'function') {
             showToast('キャラクターを削除しました', 'success');
         }
@@ -2410,44 +2406,36 @@ async function deleteCharacter(characterId) {
         alert("削除処理に失敗しました。コンソールを確認してください。");
     }
 }
-// 🌟 window に登録
 window.deleteCharacter = deleteCharacter;
 
-// ==========================================
-// 💡 設定を画面に適用する関数（システム・カスタム項目完全同期版）
-// ==========================================
+// 設定を画面に適用する関数
 function applyRosterSettings(settings) {
     if (!settings) return;
-    window.rosterSettings = settings; // データを保持
+    window.rosterSettings = settings;
 
-    // 1. 💡 保存されているカスタムシステムがあれば、グローバル変数に反映
     if (settings.systems && Array.isArray(settings.systems) && settings.systems.length > 0) {
         window.systems = settings.systems;
     }
 
-    // 2. 💡 保存されているカスタム項目があれば、グローバル変数に反映
     if (settings.customFields) {
         window.systemCustomFields = settings.customFields;
     }
 
-    // 3. 画面上のサイトタイトルを反映
     const siteHeaderTitle = document.getElementById('siteHeaderTitle');
     if (siteHeaderTitle && settings.title) {
         siteHeaderTitle.textContent = settings.title;
     }
 
-    // 4. ヘッダー左側のアイコン画像を反映
     const faviconImgEl = document.getElementById('headerFaviconImg');
     if (faviconImgEl) {
         if (settings.favicon && settings.favicon.trim() !== '') {
             faviconImgEl.src = settings.favicon;
-            faviconImgEl.classList.remove('hidden'); // 画像を表示
+            faviconImgEl.classList.remove('hidden');
         } else {
-            faviconImgEl.classList.add('hidden');    // 画像を隠す
+            faviconImgEl.classList.add('hidden');
         }
     }
 
-    // 5. ブラウザ自体のタブアイコン（ファビコン）の反映
     if (settings.favicon) {
         const faviconEl = document.getElementById('faviconIcon') || document.getElementById('dynamicFavicon') || document.querySelector("link[rel*='icon']");
         if (faviconEl) faviconEl.href = settings.favicon;
@@ -2456,38 +2444,32 @@ function applyRosterSettings(settings) {
         if (appleIconEl) appleIconEl.href = settings.favicon;
     }
 
-    // 6. ギャラリーカテゴリ名が設定されていれば反映
     if (settings.galleryCategories) {
         window.galleryCategories = settings.galleryCategories;
     }
 
-    // 7. システムやフォルダの表示を最新の状態で再描画
     if (typeof renderSystemFolders === 'function') {
         renderSystemFolders();
     }
 }
 window.applyRosterSettings = applyRosterSettings;
 
-        // 🔑 パスコード送信（認証・新規設定）の処理
+// パスコード送信処理
 function handleAuthSubmit(e) {
-    e.preventDefault(); // フォームのデフォルト送信を防ぐ
+    e.preventDefault();
     const passInput = document.getElementById('inputPasscode');
     const err = document.getElementById('authErrorMsg');
     const enteredPass = passInput ? passInput.value : '';
 
-    // 1. 【初回】パスコードがまだ設定されていない場合（初期設定）
     if (!window.storedPasscode) {
         if (!enteredPass) return;
         window.storedPasscode = enteredPass;
-        // 必要であればローカルストレージ等に保存する処理をここに記述
-        // localStorage.setItem('appStoredPasscode', enteredPass);
 
-        // 管理者状態にする
         window.isAdmin = true;
         sessionStorage.setItem('isAdminSession', 'true');
 
         closeAuthModal();
-        updateAdminUI(); // 💡 これにより鍵アイコンと「PC追加」ボタンが一発で切り替わる！
+        updateAdminUI();
         
         if (typeof showToast === 'function') {
             showToast('パスコードを設定し、ログインしました', 'success');
@@ -2495,22 +2477,19 @@ function handleAuthSubmit(e) {
         return;
     }
 
-    // 2. 【通常】すでに設定されているパスコードと照合する場合
     if (enteredPass === window.storedPasscode) {
         if (err) err.classList.add('hidden');
         
-        // 管理者状態にする
         window.isAdmin = true;
         sessionStorage.setItem('isAdminSession', 'true');
 
         closeAuthModal();
-        updateAdminUI(); // 💡 ログイン成功時に鍵とPC追加ボタンを反映！
+        updateAdminUI();
 
         if (typeof showToast === 'function') {
             showToast('管理者としてログインしました', 'success');
         }
     } else {
-        // パスコードが間違っている場合
         if (err) err.classList.remove('hidden');
         if (passInput) {
             passInput.value = '';
