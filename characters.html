@@ -412,7 +412,7 @@ function renderCharacterList(systemId, filterKeyword = "") {
 window.renderCharacterList = renderCharacterList;
 
 // ==========================================
-// 💡 キャラクター画像（アイコン・立ち絵・ギャラリー）統合管理まわり
+// 💡 キャラクター画像・データ管理まわり（JSON形式対応版）
 // ==========================================
 
 // 現在選択されている画像カテゴリ（初期値: thumb）
@@ -420,19 +420,18 @@ window.currentImageCategory = 'thumb';
 
 // キャラクターごとの画像をカテゴリ別に保持する一時オブジェクト
 window.editingCharacterImages = {
-    thumb: [],   // 一覧用アイコン（原則1枚）
-    avatar: [],  // 立ち絵（原則1枚）
-    base: [],
-    combat: [],
-    sd: [],
-    doodle: []
+    thumb: [],   // 一覧用アイコン
+    avatar: [],  // 立ち絵
+    base: [],    // 基本・成長
+    combat: [],  // 戦闘・衣装
+    sd: [],      // SD・その他
+    doodle: []   // 落書き
 };
 
 // 1. 画像カテゴリタブを切り替える関数
 function switchImageCategory(categoryKey) {
     window.currentImageCategory = categoryKey;
 
-    // タブの見た目をアクティブ・非アクティブに切り替え
     ['thumb', 'avatar', 'base', 'combat', 'sd', 'doodle'].forEach(cat => {
         const btn = document.getElementById(`imgTab-${cat}`);
         if (!btn) return;
@@ -443,14 +442,13 @@ function switchImageCategory(categoryKey) {
         }
     });
 
-    // プレビューを再描画
     if (typeof renderCharacterImagesPreview === 'function') {
         renderCharacterImagesPreview();
     }
 }
 window.switchImageCategory = switchImageCategory;
 
-// 💡 他のカテゴリの画像を流用・コピーする関数（即時再描画対応）
+// 💡 他のカテゴリの画像を流用・コピーする関数
 function copyImageToCategory(sourceCategory, index, targetCategory) {
     const sourceList = window.editingCharacterImages?.[sourceCategory];
     if (!sourceList || !sourceList[index]) return;
@@ -461,7 +459,6 @@ function copyImageToCategory(sourceCategory, index, targetCategory) {
         window.editingCharacterImages[targetCategory] = [];
     }
 
-    // アイコンや立ち絵は1枚制限なので置き換え、ギャラリー系は追加
     if (targetCategory === 'thumb' || targetCategory === 'avatar') {
         window.editingCharacterImages[targetCategory] = [targetImg];
         if (typeof showToast === 'function') {
@@ -474,14 +471,13 @@ function copyImageToCategory(sourceCategory, index, targetCategory) {
         }
     }
 
-    // プレビューを即時再描画
     if (typeof renderCharacterImagesPreview === 'function') {
         renderCharacterImagesPreview();
     }
 }
 window.copyImageToCategory = copyImageToCategory;
 
-// 2. 画像ファイルが選択されたときの処理（アイコン・立ち絵は1枚制限、他は複数対応・WebP自動圧縮）
+// 2. 画像ファイル選択時の処理（JSON構造を汚さないよう適度に最適化）
 function handleCharacterImagesSelect(event) {
     const files = event.target.files;
     if (!files || files.length === 0) return;
@@ -494,7 +490,6 @@ function handleCharacterImagesSelect(event) {
         reader.onload = function(e) {
             const img = new Image();
             img.onload = function() {
-                // Canvasを使って画像を縮小（アイコンは最大200px、他は最大800pxに収める）
                 const canvas = document.createElement('canvas');
                 const MAX_SIZE = (window.currentImageCategory === 'thumb') ? 200 : 800;
                 let width = img.width;
@@ -516,12 +511,11 @@ function handleCharacterImagesSelect(event) {
                 canvas.height = height;
                 const ctx = canvas.getContext('2d');
                 
-                // 💡 透過背景が黒くならないようにクリアしてから描画
                 ctx.clearRect(0, 0, width, height);
                 ctx.drawImage(img, 0, 0, width, height);
 
-                // 💡 透過を維持したままWebP形式（品質0.75）で圧縮してBase64化
-                const compressedBase64 = canvas.toDataURL('image/webp', 0.75);
+                // 画質を適度に調整し、JSONインポート時も重くなりすぎないようにする
+                const compressedBase64 = canvas.toDataURL('image/webp', 0.65);
 
                 const defaultName = isSingleSlot 
                     ? (window.currentImageCategory === 'thumb' ? '一覧アイコン' : '立ち絵')
@@ -558,7 +552,7 @@ function handleCharacterImagesSelect(event) {
 }
 window.handleCharacterImagesSelect = handleCharacterImagesSelect;
 
-// 💡 3. 画像のタイトル（名前）をリアルタイムで更新する関数
+// 3. 画像タイトルのリアルタイム更新
 function updateImageLabel(categoryKey, index, newName) {
     if (window.editingCharacterImages?.[categoryKey]?.[index]) {
         window.editingCharacterImages[categoryKey][index].name = newName;
@@ -566,7 +560,7 @@ function updateImageLabel(categoryKey, index, newName) {
 }
 window.updateImageLabel = updateImageLabel;
 
-// 4. プレビュー領域を描画する関数（アイコン・立ち絵とギャラリーで表示を切り替え、流用ボタン付き）
+// 4. プレビュー描画
 function renderCharacterImagesPreview() {
     const container = document.getElementById('characterImagesPreviewContainer');
     if (!container) return;
@@ -607,7 +601,7 @@ function renderCharacterImagesPreview() {
                 </div>
                 <div class="flex-1 min-w-0">
                     <div class="text-xs font-bold text-stone-700 truncate">${imgObj.name}</div>
-                    <div class="text-[10px] text-stone-400 mt-0.5">登録済み（変更する場合は上のファイル選択からアップロードしてください）</div>
+                    <div class="text-[10px] text-stone-400 mt-0.5">登録済み</div>
                 </div>
                 <button type="button" onclick="removeCharacterImage('${window.currentImageCategory}', ${index})" class="text-stone-400 hover:text-rose-600 p-2 text-xs" title="削除する">
                     <i class="fa-solid fa-trash-can"></i>
@@ -627,8 +621,8 @@ function renderCharacterImagesPreview() {
                     <input type="text" value="${imgObj.name || ''}" oninput="updateImageLabel('${window.currentImageCategory}', ${index}, this.value)" class="w-full text-xs bg-white border border-stone-200 rounded-lg px-2 py-1 text-stone-700 focus:outline-none focus:border-stone-400" placeholder="例: 通常, 笑顔 など">
                 </div>
                 <div class="flex gap-1 pt-1 border-t border-stone-200">
-                    <button type="button" onclick="copyImageToCategory('${window.currentImageCategory}', ${index}, 'thumb')" class="flex-1 bg-white hover:bg-stone-100 border border-stone-200 text-stone-600 text-[10px] py-1 rounded-lg transition-all" title="この画像をアイコンに流用する">アイコンにする</button>
-                    <button type="button" onclick="copyImageToCategory('${window.currentImageCategory}', ${index}, 'avatar')" class="flex-1 bg-white hover:bg-stone-100 border border-stone-200 text-stone-600 text-[10px] py-1 rounded-lg transition-all" title="この画像を立ち絵に流用する">立ち絵にする</button>
+                    <button type="button" onclick="copyImageToCategory('${window.currentImageCategory}', ${index}, 'thumb')" class="flex-1 bg-white hover:bg-stone-100 border border-stone-200 text-stone-600 text-[10px] py-1 rounded-lg transition-all" title="アイコンに流用">アイコン</button>
+                    <button type="button" onclick="copyImageToCategory('${window.currentImageCategory}', ${index}, 'avatar')" class="flex-1 bg-white hover:bg-stone-100 border border-stone-200 text-stone-600 text-[10px] py-1 rounded-lg transition-all" title="立ち絵に流用">立ち絵</button>
                 </div>
             `;
         }
@@ -637,7 +631,7 @@ function renderCharacterImagesPreview() {
 }
 window.renderCharacterImagesPreview = renderCharacterImagesPreview;
         
-// 5. 登録した画像を削除する関数
+// 5. 画像削除
 function removeCharacterImage(categoryKey, index) {
     if (window.editingCharacterImages?.[categoryKey]) {
         window.editingCharacterImages[categoryKey].splice(index, 1);
@@ -647,7 +641,7 @@ function removeCharacterImage(categoryKey, index) {
 window.removeCharacterImage = removeCharacterImage;
 
 // ==========================================
-// 💡 キャラクター保存関数
+// 💡 キャラクター保存関数（JSONスキーマ準拠）
 // ==========================================
 async function saveCharacter(event) {
     event.preventDefault();
@@ -668,6 +662,7 @@ async function saveCharacter(event) {
     
     const links = window.editingCharacterLinks || [];
     
+    // 💡 JSONエクスポート時に綺麗にシリアライズできる構造で画像を保持
     const images = JSON.parse(JSON.stringify(window.editingCharacterImages || { 
         thumb: [], avatar: [], base: [], combat: [], sd: [], doodle: [] 
     }));
@@ -697,6 +692,7 @@ async function saveCharacter(event) {
         return; 
     }
 
+    // まとめてJSONとして扱いやすいオブジェクト構造
     const charData = {
         systemId, name, nameKana, epithet, epithetKana,
         age: age ? Number(age) : '',
@@ -742,7 +738,12 @@ async function saveCharacter(event) {
         }
     } catch (e) {
         console.error("Save error:", e);
-        alert("保存に失敗しました。画像サイズが大きすぎないか確認してください。");
+        // 万が一1MB制限を超えそうな場合の親切な案内
+        if (e.code === 'resource-exhausted' || (e.message && e.message.includes('exceeds the maximum allowed size'))) {
+            alert("キャラクターデータのサイズがFirestoreの制限（1MB）を超えました。画像が多すぎるかファイルサイズが大きすぎます。容量を減らすか、管理者モードのJSON機能をご活用ください。");
+        } else {
+            alert("保存に失敗しました。コンソールを確認してください。");
+        }
     }
 }
 window.saveCharacter = saveCharacter;
