@@ -2550,6 +2550,80 @@ window.handleAuthSubmit = handleAuthSubmit;
     container.classList.toggle('hidden');
 }
 window.toggleSecretMemo = toggleSecretMemo;
+
+       // ==========================================
+// 💡 JSONファイルからキャラクターデータをモーダルに復元する関数
+// ==========================================
+function importCharacterFromJson(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const data = JSON.parse(e.target.result);
+            
+            // 1. 基本テキストフィールドの復元
+            if (document.getElementById('charSystemSelect')) document.getElementById('charSystemSelect').value = data.systemId || '';
+            if (document.getElementById('charName')) document.getElementById('charName').value = data.name || '';
+            if (document.getElementById('charNameKana')) document.getElementById('charNameKana').value = data.nameKana || '';
+            if (document.getElementById('charEpithet')) document.getElementById('charEpithet').value = data.epithet || '';
+            if (document.getElementById('charEpithetKana')) document.getElementById('charEpithetKana').value = data.epithetKana || '';
+            if (document.getElementById('charAge')) document.getElementById('charAge').value = data.age ?? '';
+            if (document.getElementById('charGender')) document.getElementById('charGender').value = data.gender || '';
+            if (document.getElementById('charBirthdate')) document.getElementById('charBirthdate').value = data.birthdate || '';
+            if (document.getElementById('charOccupation')) document.getElementById('charOccupation').value = data.occupation || '';
+            if (document.getElementById('charThemeColor')) {
+                document.getElementById('charThemeColor').value = data.themeColor || '#292524';
+                if (typeof handleThemeColorInput === 'function') handleThemeColorInput(data.themeColor || '#292524');
+            }
+            if (document.getElementById('charSheetUrl')) document.getElementById('charSheetUrl').value = data.sheetUrl || '';
+            if (document.getElementById('charMemo')) document.getElementById('charMemo').value = data.memo || '';
+            if (document.getElementById('charSecret')) document.getElementById('charSecret').value = data.secret || '';
+
+            // 2. 画像データの復元（差分やアイコンなど）
+            if (data.images) {
+                window.editingCharacterImages = JSON.parse(JSON.stringify(data.images));
+            } else {
+                window.editingCharacterImages = {
+                    thumb: data.thumbnail ? [{ url: data.thumbnail, name: '一覧アイコン', uploadedAt: Date.now() }] : [],
+                    avatar: data.avatar ? [{ url: data.avatar, name: '立ち絵', uploadedAt: Date.now() }] : [],
+                    base: [], combat: [], sd: [], doodle: []
+                };
+            }
+
+            // 3. リンクの復元
+            window.editingCharacterLinks = data.links || [];
+
+            // 4. カスタムステータス・テキストの復元
+            if (data.customValues) {
+                for (const [fieldId, val] of Object.entries(data.customValues)) {
+                    const statusInput = document.getElementById(`custom_status_${fieldId}`);
+                    if (statusInput) statusInput.value = val;
+
+                    const textInput = document.getElementById(`custom_text_${fieldId}`);
+                    if (textInput) textInput.value = val;
+                }
+            }
+
+            // 5. プレビューの再描画
+            if (typeof renderCharacterImagesPreview === 'function') {
+                renderCharacterImagesPreview();
+            }
+            if (typeof renderCharacterLinksList === 'function') {
+                renderCharacterLinksList();
+            }
+
+            showToast("JSONからデータを正常に読み込みました！", "info");
+        } catch (err) {
+            console.error("JSON parse error:", err);
+            alert("JSONファイルの読み込みに失敗しました。正しいキャラクターJSONファイルか確認してください。");
+        }
+    };
+    reader.readAsText(file);
+    event.target.value = ''; // 連続で同じファイルを読み込めるようにリセット
+}
+window.importCharacterFromJson = importCharacterFromJson;
        
     </script>
 </head>
