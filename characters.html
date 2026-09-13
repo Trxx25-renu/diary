@@ -1712,43 +1712,270 @@ function updateCustomTextFieldLabel(sysId, index, val) {
 window.updateCustomTextFieldLabel = updateCustomTextFieldLabel;
        
 // ==========================================
-// 💡 完全修正版: キャラクター保存関数（詳細画面へのシームレス遷移対応版）
+// 💡 キャラクター画像（アイコン・立ち絵・ギャラリー）統合管理まわり
+// ==========================================
+
+// 現在選択されている画像カテゴリ（初期値: base、必要に応じて変更可能）
+window.currentImageCategory = 'base';
+
+// キャラクターごとの画像をカテゴリ別に保持する一時オブジェクト
+window.editingCharacterImages = {
+    thumb: [],   // 一覧用アイコン（原則1枚）
+    avatar: [],  // 立ち絵（原則1枚）
+    base: [],    // 基本・成長
+    combat: [],  // 戦闘・衣装
+    sd: [],      // SD・その他
+    doodle: []   // 落書き
+};
+
+// 1. 画像カテゴリタブを切り替える関数
+function switchImageCategory(categoryKey) {
+    window.currentImageCategory = categoryKey;
+
+    // タブの見た目をアクティブ・非アクティブに切り替え
+    ['thumb', 'avatar', 'base', 'combat', 'sd', 'doodle'].forEach(cat => {
+        const btn = document.getElementById(`imgTab-${cat}`);
+        if (!btn) return;
+        if (cat === categoryKey) {
+            btn.className = 'flex-1 py-1.5 px-2 text-[10px] font-bold rounded-lg bg-white text-stone-800 shadow-sm transition-all whitespace-nowrap';
+        } else {
+            btn.className = 'flex-1 py-1.5 px-2 text-[10px] font-bold rounded-lg text-stone-500 hover:text-stone-800 transition-all whitespace-nowrap';
+        }
+    });
+
+    // プレビューを再描画
+    if (typeof renderCharacterImagesPreview === 'function') {
+        renderCharacterImagesPreview();
+    }
+}
+window.switchImageCategory = switchImageCategory;
+
+// 💡 他のカテゴリの画像を流用・コピーする関数
+function copyImageToCategory(sourceCategory, index, targetCategory) {
+    const sourceList = window.editingCharacterImages?.[sourceCategory];
+    if (!sourceList || !sourceList[index]) return;
+
+    const targetImg = JSON.parse(JSON.stringify(sourceList[index]));
+
+    if (!window.editingCharacterImages[targetCategory]) {
+        window.editingCharacterImages[targetCategory] = [];
+    }
+
+    // アイコンや立ち絵は1枚制限なので置き換え、ギャラリー系は追加
+    if (targetCategory === 'thumb' || targetCategory === 'avatar') {
+        window.editingCharacterImages[targetCategory] = [targetImg];
+        if (typeof showToast === 'function') {
+            showToast(targetCategory === 'thumb' ? 'アイコンに設定しました！' : '立ち絵に設定しました！', 'info');
+        }
+    } else {
+        window.editingCharacterImages[targetCategory].push(targetImg);
+        if (typeof showToast === 'function') {
+            showToast('ギャラリーに追加しました！', 'info');
+        }
+    }
+
+    if (typeof renderCharacterImagesPreview === 'function') {
+        renderCharacterImagesPreview();
+    }
+}
+window.copyImageToCategory = copyImageToCategory;
+
+// 2. 画像ファイルが選択されたときの処理（自動軽量化・WebP圧縮付き）
+function handleCharacterImagesSelect(event) {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+
+    const isSingleSlot = (window.currentImageCategory === 'thumb' || window.currentImageCategory === 'avatar');
+    const targetFiles = isSingleSlot ? [files[0]] : Array.from(files);
+
+    targetFiles.forEach(file => {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const img = new Image();
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                let MAX_SIZE = 600;
+                if (window.currentImageCategory === 'thumb') MAX_SIZE = 180;
+                else if (window.currentImageCategory === 'avatar') MAX_SIZE = 700;
+
+                let width = img.width;
+                let height = img.height;
+
+                if (width > height) {
+                    if (width > MAX_SIZE) {
+                        height *= MAX_SIZE / width;
+                        width = MAX_SIZE;
+                    }
+                } else {
+                    if (height > MAX_SIZE) {
+                        width *= MAX_SIZE / height;
+                        height = MAX_SIZE;
+                    }
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                
+                ctx.clearRect(0, 0, width, height);
+                ctx.drawImage(img, 0, 0, width, height);
+
+                const compressedBase64 = canvas.toDataURL('image/webp', 0.65);
+
+                const defaultName = isSingleSlot 
+                    ? (window.currentImageCategory === 'thumb' ? '一覧アイコン' : '立ち絵')
+                    : file.name.replace(/\.[^/.]+$/, "");
+
+                if (!window.editingCharacterImages[window.currentImageCategory]) {
+                    window.editingCharacterImages[window.currentImageCategory] = [];
+                }
+
+                if (isSingleSlot) {
+                    window.editingCharacterImages[window.currentImageCategory] = [{
+                        url: compressedBase64,
+                        name: defaultName,
+                        uploadedAt: Date.now()
+                    }];
+                } else {
+                    window.editingCharacterImages[window.currentImageCategory].push({
+                        url: compressedBase64,
+                        name: defaultName,
+                        uploadedAt: Date.now()
+                    });
+                }
+
+                if (typeof renderCharacterImagesPreview === 'function') {
+                    renderCharacterImagesPreview();
+                }
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    });
+
+    event.target.value = '';
+}
+window.handleCharacterImagesSelect = handleCharacterImagesSelect;
+
+// 3. 画像のタイトル（名前）をリアルタイムで更新する関数
+function updateImageLabel(categoryKey, index, newName) {
+    if (window.editingCharacterImages?.[categoryKey]?.[index]) {
+        window.editingCharacterImages[categoryKey][index].name = newName;
+    }
+}
+window.updateImageLabel = updateImageLabel;
+
+// 4. プレビュー領域を描画する関数
+function renderCharacterImagesPreview() {
+    const container = document.getElementById('characterImagesPreviewContainer');
+    if (!container) return;
+
+    const currentList = window.editingCharacterImages[window.currentImageCategory] || [];
+
+    const categoryNames = {
+        thumb: 'アイコン',
+        avatar: '立ち絵',
+        base: '基本・成長',
+        combat: '戦闘・衣装',
+        sd: 'SD・その他',
+        doodle: '落書き'
+    };
+
+    if (currentList.length === 0) {
+        container.innerHTML = `
+            <div class="col-span-full flex items-center justify-center text-[11px] text-stone-400 py-4">
+                ${categoryNames[window.currentImageCategory] || 'このカテゴリ'}にはまだ画像が登録されていません
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = '';
+    const isSingleSlot = (window.currentImageCategory === 'thumb' || window.currentImageCategory === 'avatar');
+
+    currentList.forEach((imgObj, index) => {
+        const item = document.createElement('div');
+        
+        if (isSingleSlot) {
+            item.className = 'col-span-full bg-stone-50 rounded-xl overflow-hidden border border-stone-200 p-3 flex items-center gap-3';
+            item.innerHTML = `
+                <div class="relative group w-16 h-16 bg-white rounded-lg overflow-hidden border border-stone-200 shrink-0 flex items-center justify-center">
+                    <img src="${imgObj.url}" class="w-full h-full object-cover object-top">
+                    <button type="button" onclick="removeCharacterImage('${window.currentImageCategory}', ${index})" class="absolute top-1 right-1 bg-stone-900/70 hover:bg-rose-600 text-white w-5 h-5 rounded-full flex items-center justify-center text-[10px] opacity-0 group-hover:opacity-100 transition-opacity">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <div class="text-xs font-bold text-stone-700 truncate">${imgObj.name}</div>
+                    <div class="text-[10px] text-stone-400 mt-0.5">登録済み</div>
+                </div>
+                <button type="button" onclick="removeCharacterImage('${window.currentImageCategory}', ${index})" class="text-stone-400 hover:text-rose-600 p-2 text-xs" title="削除する">
+                    <i class="fa-solid fa-trash-can"></i>
+                </button>
+            `;
+        } else {
+            item.className = 'bg-stone-50 rounded-xl overflow-hidden border border-stone-200 p-2.5 flex flex-col gap-2';
+            item.innerHTML = `
+                <div class="relative group aspect-square bg-white rounded-lg overflow-hidden border border-stone-200 flex items-center justify-center">
+                    <img src="${imgObj.url}" class="w-full h-full object-cover object-top">
+                    <button type="button" onclick="removeCharacterImage('${window.currentImageCategory}', ${index})" class="absolute top-1 right-1 bg-stone-900/70 hover:bg-rose-600 text-white w-5 h-5 rounded-full flex items-center justify-center text-[10px] opacity-0 group-hover:opacity-100 transition-opacity">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+                <div>
+                    <label class="text-[10px] text-stone-400 block mb-0.5">画像タイトル</label>
+                    <input type="text" value="${imgObj.name || ''}" oninput="updateImageLabel('${window.currentImageCategory}', ${index}, this.value)" class="w-full text-xs bg-white border border-stone-200 rounded-lg px-2 py-1 text-stone-700 focus:outline-none focus:border-stone-400" placeholder="例: 通常, 笑顔 など">
+                </div>
+                <div class="flex gap-1 pt-1 border-t border-stone-200">
+                    <button type="button" onclick="copyImageToCategory('${window.currentImageCategory}', ${index}, 'thumb')" class="flex-1 bg-white hover:bg-stone-100 border border-stone-200 text-stone-600 text-[10px] py-1 rounded-lg transition-all" title="アイコンに流用">アイコン</button>
+                    <button type="button" onclick="copyImageToCategory('${window.currentImageCategory}', ${index}, 'avatar')" class="flex-1 bg-white hover:bg-stone-100 border border-stone-200 text-stone-600 text-[10px] py-1 rounded-lg transition-all" title="立ち絵に流用">立ち絵</button>
+                </div>
+            `;
+        }
+        container.appendChild(item);
+    });
+}
+window.renderCharacterImagesPreview = renderCharacterImagesPreview;
+       
+// 5. 登録した画像を削除する関数
+function removeCharacterImage(categoryKey, index) {
+    if (window.editingCharacterImages?.[categoryKey]) {
+        window.editingCharacterImages[categoryKey].splice(index, 1);
+        renderCharacterImagesPreview();
+    }
+}
+window.removeCharacterImage = removeCharacterImage;
+
+// ==========================================
+// 💡 キャラクター保存関数
 // ==========================================
 async function saveCharacter(event) {
     event.preventDefault();
     const systemId = document.getElementById('charSystemSelect').value;
     
-    // 基本情報の取得
     const name = document.getElementById('charName')?.value?.trim() || '';
     const nameKana = document.getElementById('charNameKana')?.value?.trim() || '';
     const epithet = document.getElementById('charEpithet')?.value?.trim() || '';
     const epithetKana = document.getElementById('charEpithetKana')?.value?.trim() || '';
     const age = document.getElementById('charAge')?.value;
-    
-    // 性別と誕生日の取得
     const gender = document.getElementById('charGender')?.value?.trim() || '';
     const birthdate = document.getElementById('charBirthdate')?.value?.trim() || '';
-    
     const occupation = document.getElementById('charOccupation')?.value?.trim() || '';
     const themeColor = document.getElementById('charThemeColor')?.value || '#292524';
     const sheetUrl = document.getElementById('charSheetUrl')?.value?.trim() || '';
-    
-    // 💡 設定／メモ と 秘匿メモの取得
     const memo = document.getElementById('charMemo')?.value || '';
     const secret = document.getElementById('charSecret')?.value || '';
     
-    // 🔗 編集モーダルで管理されている複数リンク配列を取得（未定義なら空配列）
     const links = window.editingCharacterLinks || [];
     
-    // 💡 統合された画像管理オブジェクトから、アイコン・立ち絵・ギャラリーをそれぞれ安全に取得
-    const images = JSON.parse(JSON.stringify(window.editingCharacterImages || { thumb: [], avatar: [], base: [], combat: [], sd: [], doodle: [] }));
+    const images = JSON.parse(JSON.stringify(window.editingCharacterImages || { 
+        thumb: [], avatar: [], base: [], combat: [], sd: [], doodle: [] 
+    }));
     
     const thumbnail = images.thumb?.[0]?.url || "";
     const avatar = images.avatar?.[0]?.url || "";
 
-    // カスタム項目の値（ステータス・テキスト）を正しく収集
     const customValues = {};
-
     document.querySelectorAll('.char-custom-status-input').forEach(inputEl => {
         const inputId = inputEl.id;
         if (inputId && inputId.startsWith('custom_status_')) {
@@ -1770,25 +1997,12 @@ async function saveCharacter(event) {
         return; 
     }
 
-    // 保存するデータオブジェクト
     const charData = {
-        systemId, 
-        name, 
-        nameKana, 
-        epithet, 
-        epithetKana,
+        systemId, name, nameKana, epithet, epithetKana,
         age: age ? Number(age) : '',
-        gender,     
-        birthdate,   
-        occupation, 
-        themeColor,  
-        sheetUrl: links.length > 0 ? links[0].url : sheetUrl, // 互換性考慮：最初のリンクURLを sheetUrl にも反映
-        links,       // 🔗 複数リンク配列を保存
-        memo,        // 設定／メモ
-        secret,      // 秘匿メモ
-        thumbnail, 
-        avatar,
-        images,      // カテゴリ別ギャラリー画像（thumb, avatar, base, combat, sd, doodle を含む）
+        gender, birthdate, occupation, themeColor, 
+        sheetUrl: links.length > 0 ? links[0].url : sheetUrl,
+        links, memo, secret, thumbnail, avatar, images,
         customValues,
         updatedAt: new Date().toISOString()
     };
@@ -1799,34 +2013,26 @@ async function saveCharacter(event) {
         const charsRef = collection(db, 'artifacts', window.appId, 'public', 'data', 'characters');
 
         if (window.editingCharacterId) {
-            // 📝 編集（更新）の場合
             const docRef = doc(db, 'artifacts', window.appId, 'public', 'data', 'characters', window.editingCharacterId);
             await updateDoc(docRef, charData);
 
-            // ローカルの配列を更新
             const index = window.characters.findIndex(c => String(c.id) === String(window.editingCharacterId));
             if (index !== -1) {
                 window.characters[index] = { id: window.editingCharacterId, ...window.characters[index], ...charData };
             }
-
             showToast("キャラクターを更新しました！", "info");
         } else {
-            // 🆕 新規作成の場合
             charData.createdAt = new Date().toISOString();
             const docRef = await addDoc(charsRef, charData);
-            targetCharacterId = docRef.id; // 新しく発行されたIDを保存先として保持
+            targetCharacterId = docRef.id;
             
             window.characters.push({ id: targetCharacterId, ...charData });
             showToast("キャラクターを登録しました！", "info");
         }
 
-        // 💡 モーダルを閉じる
         closeCharacterModal();
-
-        // 💡 一覧やサイドバーのデータを最新に同期
         if (typeof renderSystemFolders === 'function') renderSystemFolders();
 
-        // 💡 ✨ここがポイント：保存直後に必ずそのキャラの詳細画面を開いて描画する！
         if (targetCharacterId) {
             if (typeof navigateTo === 'function') {
                 navigateTo('detail', targetCharacterId);
@@ -1834,94 +2040,12 @@ async function saveCharacter(event) {
                 renderCharacterDetail(targetCharacterId);
             }
         }
-
     } catch (e) {
         console.error("Save error:", e);
         alert("保存に失敗しました。画像サイズが大きすぎないか確認してください。");
     }
 }
 window.saveCharacter = saveCharacter;
-
-       // ==========================================
-// 🔗 複数リンクエディターの制御関数群（修正版）
-// ==========================================
-
-// 1. リンクエディターを描画する関数
-function renderCharacterLinksEditor() {
-    const container = document.getElementById('charLinksContainer');
-    if (!container) return;
-
-    container.innerHTML = '';
-
-    // window.editingCharacterLinks が未定義なら空配列にする
-    if (!window.editingCharacterLinks || !Array.isArray(window.editingCharacterLinks)) {
-        window.editingCharacterLinks = [];
-    }
-
-    // 登録されているリンクがない場合の案内
-    if (window.editingCharacterLinks.length === 0) {
-        container.innerHTML = '<p class="text-xs text-stone-400 italic py-1">リンクが追加されていません（「リンクを追加」から登録できます）</p>';
-        return;
-    }
-
-    // 配列をループして入力行を作成
-    window.editingCharacterLinks.forEach((link, index) => {
-        const row = document.createElement('div');
-        row.className = 'flex items-center gap-2 bg-stone-50 p-2 rounded-lg border border-stone-200';
-        
-        row.innerHTML = `
-            <input type="text" placeholder="ラベル (例: 本シート)" value="${escapeHtmlForLink(link.label || '')}" 
-                oninput="window.updateEditingLink(${index}, 'label', this.value)"
-                class="w-1/3 text-xs px-2 py-1.5 rounded border border-stone-300 bg-white focus:outline-none focus:ring-1 focus:ring-stone-500">
-            <input type="url" placeholder="https://..." value="${escapeHtmlForLink(link.url || '')}" 
-                oninput="window.updateEditingLink(${index}, 'url', this.value)"
-                class="flex-1 text-xs px-2 py-1.5 rounded border border-stone-300 bg-white focus:outline-none focus:ring-1 focus:ring-stone-500">
-            <button type="button" onclick="window.removeEditingLink(${index})" 
-                class="text-stone-400 hover:text-rose-600 p-1 text-xs transition-colors" title="削除">
-                <i class="fa-solid fa-trash-can"></i>
-            </button>
-        `;
-        container.appendChild(row);
-    });
-}
-window.renderCharacterLinksEditor = renderCharacterLinksEditor;
-
-// 2. 「リンクを追加」ボタンが押されたときに行を増やす関数
-function addEditingLink() {
-    if (!window.editingCharacterLinks) {
-        window.editingCharacterLinks = [];
-    }
-    window.editingCharacterLinks.push({ label: '', url: '' });
-    renderCharacterLinksEditor();
-}
-window.addEditingLink = addEditingLink;
-
-// 3. 入力内容を変更したときに配列へ即時反映する関数
-function updateEditingLink(index, field, value) {
-    if (window.editingCharacterLinks && window.editingCharacterLinks[index]) {
-        window.editingCharacterLinks[index][field] = value;
-    }
-}
-window.updateEditingLink = updateEditingLink;
-
-// 4. ゴミ箱ボタンが押されたときに特定の行を削除する関数
-function removeEditingLink(index) {
-    if (window.editingCharacterLinks) {
-        window.editingCharacterLinks.splice(index, 1);
-        renderCharacterLinksEditor();
-    }
-}
-window.removeEditingLink = removeEditingLink;
-
-// 競合回避用のエスケープ用補助関数
-function escapeHtmlForLink(str) {
-    return String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#039;');
-}
        
 // ==========================================
 // 💡 キャラクターの並び替え機能（更新順・五十音順・誕生日順）
@@ -2489,8 +2613,8 @@ function handleAvatarFileSelect(event) {
 window.handleAvatarFileSelect = handleAvatarFileSelect;
 
        // ==========================================
-// 💡 キャラクターを削除する関数（Firestore対応版・修正版）
-// ==========================================
+       // 💡 キャラクターを削除する関数（Firestore対応版・修正版）
+       // ==========================================
 async function deleteCharacter(characterId) {
     // 削除の確認ダイアログ
     if (!confirm('本当にこのキャラクターを削除しますか？')) {
