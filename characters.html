@@ -544,7 +544,7 @@ function copyImageToCategory(sourceCategory, index, targetCategory) {
 }
 window.copyImageToCategory = copyImageToCategory;
 
-// 2. 画像ファイルが選択されたときの処理（強力な圧縮で1MB制限回避）
+// 2. 画像ファイルが選択されたときの処理（画質を綺麗に保つ滑らかな圧縮処理）
 function handleCharacterImagesSelect(event) {
     const files = event.target.files;
     if (!files || files.length === 0) return;
@@ -558,7 +558,8 @@ function handleCharacterImagesSelect(event) {
             const img = new Image();
             img.onload = function() {
                 const canvas = document.createElement('canvas');
-                const MAX_SIZE = (window.currentImageCategory === 'thumb') ? 150 : 600;
+                // 💡 立ち絵やギャラリーが荒れないよう、最大サイズを少し大きめ（例: 1200px）に調整して画質を保持します
+                const MAX_SIZE = (window.currentImageCategory === 'thumb') ? 150 : 1200;
                 let width = img.width;
                 let height = img.height;
 
@@ -578,10 +579,15 @@ function handleCharacterImagesSelect(event) {
                 canvas.height = height;
                 const ctx = canvas.getContext('2d');
                 
+                // 💡 縮小時の画像のガタつき（ジャギー）を防ぐため、滑らかさの補正を有効化
+                ctx.imageSmoothingEnabled = true;
+                ctx.imageSmoothingQuality = 'high';
+
                 ctx.clearRect(0, 0, width, height);
                 ctx.drawImage(img, 0, 0, width, height);
 
-                const compressedBase64 = canvas.toDataURL('image/webp', 0.5);
+                // 💡 画質が荒れないよう、WebPの圧縮率を少し高め（0.85）に調整
+                const compressedBase64 = canvas.toDataURL('image/webp', 0.85);
 
                 const defaultName = isSingleSlot 
                     ? (window.currentImageCategory === 'thumb' ? '一覧アイコン' : '立ち絵')
@@ -626,7 +632,7 @@ function updateImageLabel(categoryKey, index, newName) {
 }
 window.updateImageLabel = updateImageLabel;
 
-// 4. プレビュー領域を描画する関数（設定されたカスタムカテゴリ名を反映）
+// 4. プレビュー領域を描画する関数（設定されたカスタムカテゴリ名を反映 ＆ 画質最適化）
 function renderCharacterImagesPreview() {
     const container = document.getElementById('characterImagesPreviewContainer');
     if (!container) return;
@@ -653,7 +659,8 @@ function renderCharacterImagesPreview() {
             item.className = 'col-span-full bg-stone-50 rounded-xl overflow-hidden border border-stone-200 p-3 flex items-center gap-3';
             item.innerHTML = `
                 <div class="relative group w-16 h-16 bg-white rounded-lg overflow-hidden border border-stone-200 shrink-0 flex items-center justify-center">
-                    <img src="${imgObj.url}" class="w-full h-full object-contain">
+                    <!-- 💡 画像が荒れないよう style="image-rendering: auto;" を付与 -->
+                    <img src="${imgObj.url}" style="image-rendering: auto;" class="w-full h-full object-contain">
                     <button type="button" onclick="removeCharacterImage('${window.currentImageCategory}', ${index})" class="absolute top-1 right-1 bg-stone-900/70 hover:bg-rose-600 text-white w-5 h-5 rounded-full flex items-center justify-center text-[10px] opacity-0 group-hover:opacity-100 transition-opacity">
                         <i class="fa-solid fa-xmark"></i>
                     </button>
@@ -670,7 +677,8 @@ function renderCharacterImagesPreview() {
             item.className = 'bg-stone-50 rounded-xl overflow-hidden border border-stone-200 p-2.5 flex flex-col gap-2';
             item.innerHTML = `
                 <div class="relative group aspect-square bg-white rounded-lg overflow-hidden border border-stone-200 flex items-center justify-center">
-                    <img src="${imgObj.url}" class="w-full h-full object-contain">
+                    <!-- 💡 画像が荒れないよう style="image-rendering: auto;" を付与 -->
+                    <img src="${imgObj.url}" style="image-rendering: auto;" class="w-full h-full object-contain">
                     <button type="button" onclick="removeCharacterImage('${window.currentImageCategory}', ${index})" class="absolute top-1 right-1 bg-stone-900/70 hover:bg-rose-600 text-white w-5 h-5 rounded-full flex items-center justify-center text-[10px] opacity-0 group-hover:opacity-100 transition-opacity">
                         <i class="fa-solid fa-xmark"></i>
                     </button>
@@ -719,13 +727,12 @@ async function saveCharacter(event) {
     const memo = document.getElementById('charMemo')?.value || '';
     const secret = document.getElementById('charSecret')?.value || '';
     
-    // 🔗 モーダル内のリンク入力欄から直接データを確実に回収する
     const links = [];
     const linkRows = document.querySelectorAll('#charLinksContainer > div');
     linkRows.forEach(row => {
         const inputs = row.querySelectorAll('input');
-        const labelInput = inputs[0]; // 1つ目がラベル
-        const urlInput = inputs[1];   // 2つ目がURL
+        const labelInput = inputs[0]; 
+        const urlInput = inputs[1];   
         if (urlInput && urlInput.value.trim() !== '') {
             links.push({
                 label: labelInput ? labelInput.value.trim() : '',
@@ -790,14 +797,12 @@ async function saveCharacter(event) {
         const jsonString = JSON.stringify(window.characters);
         localStorage.setItem('local_characters', jsonString);
 
-        // 🔥 GitHub Gistへ自動同期（クラウド保存 ＆ Gist未作成時は自動新規作成）
         if (window.GIST_CONFIG && window.GIST_CONFIG.token) {
             if (typeof showToast === 'function') showToast("クラウドへ同期中...", "info");
             
             let currentGistId = window.GIST_CONFIG.gistId;
             
             if (currentGistId) {
-                // 既存のGistを更新 (PATCH)
                 const response = await fetch(`https://api.github.com/gists/${currentGistId}`, {
                     method: 'PATCH',
                     headers: {
