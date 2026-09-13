@@ -927,14 +927,14 @@ function renderCharacterDetail(characterId) {
         `;
     }
 
-    // 💎 修正部分：二つ名（epithet）のフォントサイズを text-3xl に拡大
+    // 💎 二つ名（epithet）のフォントサイズを控えめなサブタイトルサイズに調整
     let epithetHtml = '';
     if (ch.epithet && ch.epithet.trim() !== '') {
-        const kana = ch.epithetKana ? `<span class="text-xs font-medium text-stone-400 block mb-0.5">${ch.epithetKana}</span>` : '';
+        const kana = ch.epithetKana ? `<span class="text-[10px] font-medium text-stone-400 block mb-0.5">${ch.epithetKana}</span>` : '';
         epithetHtml = `
             <div class="mb-1">
                 ${kana}
-                <span class="text-3xl font-bold tracking-widest uppercase leading-tight inline-block" style="color: ${themeColor}">${ch.epithet}</span>
+                <span class="text-lg md:text-xl font-bold tracking-wider block leading-tight" style="color: color-mix(in srgb, ${themeColor} 75%, #1c1917);">${ch.epithet}</span>
             </div>
         `;
     }
@@ -943,7 +943,7 @@ function renderCharacterDetail(characterId) {
     const nameRuby = `
         <div>
             ${nameKanaHtml}
-            <h2 class="text-2xl font-bold text-stone-800 leading-tight">${ch.name || ''}</h2>
+            <h2 class="text-2xl md:text-3xl font-extrabold text-stone-900 tracking-wide leading-tight">${ch.name || ''}</h2>
         </div>
     `;
 
