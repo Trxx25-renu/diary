@@ -2146,12 +2146,22 @@ function openCharacterModal() {
         // 編集IDをクリアして新規作成モードにする
         window.editingCharacterId = null;
         
+        // 🔗 新規作成時：リンク配列を空で初期化してエディターを再描画
+        window.editingCharacterLinks = [];
+        if (typeof renderCharacterLinksEditor === 'function') {
+            renderCharacterLinksEditor();
+        }
+        
         // モーダルのタイトルを「新規登録」用に書き戻す
         const modalTitle = document.querySelector('#characterModal h3 span');
         if (modalTitle) modalTitle.textContent = 'キャラクター登録';
 
         // フォーム要素の初期化やシステムセレクトの構築
         renderCharacterModalSystemSelect();
+        
+        // フォーム自体もリセット
+        const form = document.getElementById('characterForm');
+        if (form) form.reset();
         
         const systemInput = document.getElementById('charSystemSelect');
         if (systemInput) systemInput.disabled = false; // 新規時はシステム変更可能に
@@ -2772,12 +2782,16 @@ window.toggleSecretMemo = toggleSecretMemo;
                 </div>
             </div>
             
-            <!-- キャラクターシートURL入力欄 -->
+            <!-- 🔗 複数リンク管理エリア -->
             <div class="mt-3">
-                <label class="block text-xs font-bold text-stone-600 mb-1">
-                    キャラクターシートURL <span class="text-rose-500">*</span>
+                <label class="block text-xs font-bold text-stone-600 mb-1 flex items-center justify-between">
+                    <span><i class="fa-solid fa-link text-stone-400 mr-1"></i> 関連リンク（キャラクターシート等）</span>
+                    <button type="button" onclick="window.addEditingLink()" class="text-[11px] text-rose-600 hover:text-rose-700 font-bold flex items-center gap-1">
+                        <i class="fa-solid fa-plus"></i> リンクを追加
+                    </button>
                 </label>
-                <input type="url" id="charSheetUrl" placeholder="https://iachara.com/... など" required class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-800 focus:outline-none focus:border-stone-400">
+                <!-- ここにJavaScriptで「ラベル」と「URL」の入力行が動的に並びます -->
+                <div id="charLinksContainer" class="space-y-2"></div>
             </div>
 
             <div id="dynamicCustomFieldsContainer" class="space-y-3 pt-2 border-t border-stone-100"></div>
