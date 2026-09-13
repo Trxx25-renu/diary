@@ -1035,13 +1035,36 @@ function renderCharacterDetail(characterId) {
                 ` : ''}
                 
                 ${secret ? `
-                    <div>
+                    <div class="mb-4">
                         <h4 class="text-xs font-bold text-rose-600 mb-1.5 flex items-center gap-1.5">
                             <i class="fa-solid fa-user-secret text-rose-500"></i> 秘匿メモ（ネタバレ）
                         </h4>
-                        <!-- 余計な枠や中央寄せをなくし、日記サイトと同じスッキリしたテキストブロックにする -->
-                        <div class="bg-rose-50/30 rounded-2xl p-4 border border-rose-200/60 text-xs text-stone-700 leading-relaxed">
-                            <div class="text-left whitespace-pre-wrap">${secret}</div>
+                        <!-- トグルボックス全体 -->
+                        <div class="bg-rose-50/40 rounded-2xl border border-rose-200/70 overflow-hidden shadow-xs">
+                            <!-- 🙈 閉じている時のヘッダー（初期状態：表示） -->
+                            <div class="secret-masked cursor-pointer px-4 py-3 flex items-center justify-between select-none hover:bg-rose-50/70 transition-colors" onclick="
+                                const parentBox = this.closest('.bg-rose-50\\/40');
+                                parentBox.querySelector('.secret-masked-header').style.display = 'none';
+                                parentBox.querySelector('.secret-revealed-body').style.display = 'block';
+                            ">
+                                <div class="flex items-center gap-2 text-rose-800 text-xs font-bold secret-masked-header">
+                                    <i class="fa-solid fa-triangle-exclamation text-rose-500"></i>
+                                    <span>ネタバレ防止用本文</span>
+                                </div>
+                                <span class="text-[11px] font-medium text-rose-400">タップで切替</span>
+                            </div>
+
+                            <!-- 👁️ 展開される本文（初期状態：style="display: none;" で確実に隠す） -->
+                            <div class="secret-revealed-body p-4 text-left text-xs text-stone-700 whitespace-pre-wrap leading-relaxed border-t border-rose-100 bg-white/60" style="display: none;">
+                                <div class="text-left">${secret}</div>
+                                <div class="text-[10px] text-rose-400 font-bold mt-3 pt-2 border-t border-rose-100/60 text-center cursor-pointer" onclick="
+                                    const parentBox = this.closest('.bg-rose-50\\/40');
+                                    parentBox.querySelector('.secret-revealed-body').style.display = 'none';
+                                    parentBox.querySelector('.secret-masked-header').style.display = 'flex';
+                                ">
+                                    👆 タップして非表示に戻す
+                                </div>
+                            </div>
                         </div>
                     </div>
                 ` : ''}
