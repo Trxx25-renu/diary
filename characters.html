@@ -1679,7 +1679,7 @@ function renderSettingsEditors() {
 }
 window.renderSettingsEditors = renderSettingsEditors;
 
-// 1. システムの並び順・名前・略称・説明(desc)変更エディタの描画
+// 1. システムの並び順・名前・説明(desc)変更エディタの描画 ＋ 追加・削除ボタン付き
 function renderSettingsSystemsEditor() {
     const container = document.getElementById('settingsSystemsEditorContainer');
     if (!container) return;
@@ -1695,7 +1695,7 @@ function renderSettingsSystemsEditor() {
                 <div class="flex items-center gap-2">
                     <span class="text-xs font-bold text-stone-500 w-6 text-center shrink-0">${index + 1}</span>
                     
-                    <!-- ① システム名（正式名称）：大きく取る -->
+                    <!-- ① システム名（正式名称） -->
                     <div class="flex-1 min-w-0">
                         <label for="${nameId}" class="sr-only">システム名 ${index + 1}</label>
                         <input type="text" id="${nameId}" name="${nameId}" value="${escapeHtml(sys.name)}" onchange="updateSystemProperty('${sys.id}', 'name', this.value)" class="w-full bg-white border border-stone-200 rounded-lg px-3 py-1.5 text-xs font-bold text-stone-800" placeholder="システム名（正式名称）">
@@ -1703,7 +1703,7 @@ function renderSettingsSystemsEditor() {
 
                     <!-- 削除ボタン & 並び替えボタン -->
                     <div class="flex items-center gap-1 shrink-0">
-                        <!-- 💡 システム削除ボタン -->
+                        <!-- システム削除ボタン -->
                         <button type="button" onclick="removeSystem('${sys.id}')" class="w-7 h-7 flex items-center justify-center bg-white border border-stone-200 rounded-lg text-stone-400 hover:text-rose-500 hover:bg-rose-50 text-xs transition-all" aria-label="システムを削除">
                             <i class="fa-solid fa-trash"></i>
                         </button>
@@ -1718,7 +1718,7 @@ function renderSettingsSystemsEditor() {
                     </div>
                 </div>
 
-                <!-- ② 2段目：説明文・サブ情報（タグや略称的に表示される部分） -->
+                <!-- ② 2段目：説明文・タグ表記 -->
                 <div class="pl-8">
                     <label for="${descId}" class="sr-only">説明文・タグ表記 ${index + 1}</label>
                     <input type="text" id="${descId}" name="${descId}" value="${escapeHtml(sys.desc || '')}" onchange="updateSystemProperty('${sys.id}', 'desc', this.value)" class="w-full bg-white border border-stone-200 rounded-lg px-2.5 py-1 text-xs text-stone-600" placeholder="説明文・タグ表記 (例: CoC / DX3rd など)">
@@ -1738,17 +1738,55 @@ function renderSettingsSystemsEditor() {
 }
 window.renderSettingsSystemsEditor = renderSettingsSystemsEditor;
 
-// エディタ内からのシステム追加用ラッパー
+// ==========================================
+// 💡 システムの新規追加を確実に行う関数
+// ==========================================
+function addNewSystem(sysName) {
+    if (!sysName || !sysName.trim()) return;
+
+    // IDを安全に生成 (例: sys_abc123)
+    const newId = 'sys_' + Math.random().toString(36).substring(2, 8);
+    
+    // システム一覧に追加
+    if (!window.systems) window.systems = [];
+    window.systems.push({
+        id: newId,
+        name: sysName.trim(),
+        desc: ''
+    });
+
+    // カスタムフィールドの初期枠を用意
+    if (!window.systemCustomFields) window.systemCustomFields = {};
+    window.systemCustomFields[newId] = { status: [], text: [] };
+
+    // 保存・再描画
+    if (typeof saveSystemSettings === 'function') {
+        saveSystemSettings();
+    }
+    if (typeof renderSettingsEditors === 'function') {
+        renderSettingsEditors();
+    }
+    if (typeof renderSystemFolders === 'function') {
+        renderSystemFolders();
+    }
+    // キャラクター登録画面のシステム選択肢セレクトボックスなども再描画する関数があれば呼ぶ
+    if (typeof updateCharacterFormSystemOptions === 'function') {
+        updateCharacterFormSystemOptions();
+    } else if (typeof renderCharacterForm === 'function') {
+        renderCharacterForm();
+    }
+
+    if (typeof showToast === 'function') {
+        showToast(`システム「${sysName}」を追加しました！`, "success");
+    }
+}
+window.addNewSystem = addNewSystem;
+
+// エディタ内からのシステム追加用プロンプト呼び出しラッパー
 function openAddSystemPromptFromEditor() {
     const sysName = prompt("追加したいTRPGシステム名（またはジャンル名）を入力してください：\n（例: エモクロアTRPG、オリジナルシステム など）");
     if (!sysName || !sysName.trim()) return;
-
-    if (typeof addNewSystem === 'function') {
-        addNewSystem(sysName.trim());
-        if (typeof renderSettingsEditors === 'function') {
-            renderSettingsEditors();
-        }
-    }
+    addNewSystem(sysName.trim());
 }
 window.openAddSystemPromptFromEditor = openAddSystemPromptFromEditor;
 
@@ -1757,11 +1795,13 @@ function updateSystemProperty(sysId, key, value) {
     const sys = window.systems.find(s => s.id === sysId);
     if (sys) {
         sys[key] = value.trim();
+        // 変更時にキャラクター登録画面等の選択肢もリアルタイム更新させる
+        if (typeof renderSystemFolders === 'function') renderSystemFolders();
     }
 }
 window.updateSystemProperty = updateSystemProperty;
 
-// システムの順番を上下に入れ替える（カスタム項目エディタの再描画も連動）
+// システムの順番を上下に入れ替える
 function moveSystemOrder(index, direction) {
     const newIndex = index + direction;
     if (newIndex < 0 || newIndex >= window.systems.length) return;
@@ -1770,14 +1810,14 @@ function moveSystemOrder(index, direction) {
     window.systems[index] = window.systems[newIndex];
     window.systems[newIndex] = temp;
     
-    // 順番が変わったら、上と下の両方のエディタを再描画して連動させる
     renderSettingsSystemsEditor();
     renderSettingsFieldsEditor();
+    if (typeof renderSystemFolders === 'function') renderSystemFolders();
 }
 window.moveSystemOrder = moveSystemOrder;
 
 // ==========================================
-// 💡 システム別 カスタム項目エディタの描画（スマホでもはみ出さないレスポンシブ最適化版）
+// 💡 システム別 カスタム項目エディタの描画
 // ==========================================
 function renderSettingsFieldsEditor() {
     const container = document.getElementById('settingsFieldsEditorContainer');
@@ -1814,22 +1854,17 @@ function renderSettingsFieldsEditor() {
                             const maxId = `statusMax_${sys.id}_${fIdx}`;
                             return `
                                 <div class="bg-white border border-stone-200 rounded-xl p-2.5 flex flex-col gap-2">
-                                    <!-- 1段目：項目名入力 -->
                                     <div class="min-w-0">
                                         <label for="${labelId}" class="sr-only">ステータス項目名</label>
                                         <input type="text" id="${labelId}" name="${labelId}" value="${escapeHtml(f.label)}" onchange="updateCustomFieldLabel('${sys.id}', 'status', ${fIdx}, this.value)" class="w-full bg-stone-50 border border-stone-200 rounded-lg px-2 py-1 text-xs text-stone-800" placeholder="項目名 (例: HP)">
                                     </div>
-                                    
-                                    <!-- 2段目：最大値 ＋ 並び替え ＋ 削除ボタンをコンパクトに配置 -->
                                     <div class="flex items-center justify-between gap-2 pt-1 border-t border-stone-100">
                                         <div class="flex items-center gap-1.5">
                                             <span class="text-[10px] text-stone-400">最大値:</span>
                                             <label for="${maxId}" class="sr-only">最大値</label>
                                             <input type="number" id="${maxId}" name="${maxId}" value="${f.max || ''}" onchange="updateCustomFieldMax('${sys.id}', ${fIdx}, this.value)" class="w-20 bg-stone-50 border border-stone-200 rounded-lg px-2 py-1 text-xs text-stone-800 text-center" placeholder="なし可">
                                         </div>
-
                                         <div class="flex items-center gap-1 shrink-0">
-                                            <!-- 並び替えボタン -->
                                             <div class="flex items-center gap-0.5">
                                                 <button type="button" onclick="moveCustomFieldOrder('${sys.id}', 'status', ${fIdx}, -1)" class="w-6 h-6 flex items-center justify-center bg-stone-50 border border-stone-200 rounded-md text-stone-600 hover:bg-stone-100 text-[10px]" ${fIdx === 0 ? 'disabled' : ''} style="${fIdx === 0 ? 'opacity:0.3; cursor:not-allowed;' : ''}">
                                                     <i class="fa-solid fa-arrow-up"></i>
@@ -1838,7 +1873,6 @@ function renderSettingsFieldsEditor() {
                                                     <i class="fa-solid fa-arrow-down"></i>
                                                 </button>
                                             </div>
-                                            <!-- 削除ボタン -->
                                             <button type="button" onclick="removeCustomField('${sys.id}', 'status', ${fIdx})" class="w-6 h-6 flex items-center justify-center text-stone-400 hover:text-rose-500 hover:bg-rose-50 rounded-md text-xs transition-all" aria-label="削除"><i class="fa-solid fa-trash"></i></button>
                                         </div>
                                     </div>
@@ -1861,8 +1895,6 @@ function renderSettingsFieldsEditor() {
                                 <div class="flex items-center gap-1.5 bg-white border border-stone-200 rounded-xl p-2 min-w-0">
                                     <label for="${textId}" class="sr-only">テキスト項目名</label>
                                     <input type="text" id="${textId}" name="${textId}" value="${escapeHtml(f.label)}" onchange="updateCustomTextFieldLabel('${sys.id}', ${fIdx}, this.value)" class="flex-1 min-w-0 bg-stone-50 border border-stone-200 rounded-lg px-2 py-1 text-xs text-stone-800" placeholder="項目名 (例: シンドローム)">
-                                    
-                                    <!-- テキスト項目の並び替えボタン -->
                                     <div class="flex items-center gap-0.5 shrink-0">
                                         <button type="button" onclick="moveCustomFieldOrder('${sys.id}', 'text', ${fIdx}, -1)" class="w-6 h-6 flex items-center justify-center bg-stone-50 border border-stone-200 rounded-md text-stone-600 hover:bg-stone-100 text-[10px]" ${fIdx === 0 ? 'disabled' : ''} style="${fIdx === 0 ? 'opacity:0.3; cursor:not-allowed;' : ''}">
                                             <i class="fa-solid fa-arrow-up"></i>
@@ -1871,7 +1903,6 @@ function renderSettingsFieldsEditor() {
                                             <i class="fa-solid fa-arrow-down"></i>
                                         </button>
                                     </div>
-
                                     <button type="button" onclick="removeCustomField('${sys.id}', 'text', ${fIdx})" class="w-6 h-6 flex items-center justify-center text-stone-400 hover:text-rose-500 hover:bg-rose-50 rounded-md text-xs transition-all ml-0.5 shrink-0" aria-label="削除"><i class="fa-solid fa-trash"></i></button>
                                 </div>
                             `;
@@ -1885,7 +1916,7 @@ function renderSettingsFieldsEditor() {
 }
 window.renderSettingsFieldsEditor = renderSettingsFieldsEditor;
 
-// カスタム項目の追加・削除・編集用ヘルパー関数
+// カスタム項目のヘルパー関数
 function addCustomField(sysId, type) {
     if (!window.systemCustomFields[sysId]) {
         window.systemCustomFields[sysId] = { status: [], text: [] };
@@ -1908,18 +1939,15 @@ function removeCustomField(sysId, type, index) {
 }
 window.removeCustomField = removeCustomField;
 
-// カスタム項目（ステータス / テキスト）の順序を入れ替える関数
 function moveCustomFieldOrder(sysId, type, index, direction) {
     if (!window.systemCustomFields[sysId] || !window.systemCustomFields[sysId][type]) return;
     const list = window.systemCustomFields[sysId][type];
     const newIndex = index + direction;
-    
     if (newIndex < 0 || newIndex >= list.length) return;
     
     const temp = list[index];
     list[index] = list[newIndex];
     list[newIndex] = temp;
-    
     renderSettingsFieldsEditor();
 }
 window.moveCustomFieldOrder = moveCustomFieldOrder;
@@ -1946,7 +1974,7 @@ function updateCustomTextFieldLabel(sysId, index, val) {
 window.updateCustomTextFieldLabel = updateCustomTextFieldLabel;
 
 // ==========================================
-// 💡 システムの削除機能（ゴミ箱ボタン用）
+// 💡 システムの削除機能
 // ==========================================
 function removeSystem(sysId) {
     const sys = window.systems.find(s => s.id === sysId);
@@ -1956,20 +1984,15 @@ function removeSystem(sysId) {
         return;
     }
 
-    // 1. システム一覧から除外
     window.systems = window.systems.filter(s => s.id !== sysId);
 
-    // 2. カスタムフィールド設定からも除外
     if (window.systemCustomFields && window.systemCustomFields[sysId]) {
         delete window.systemCustomFields[sysId];
     }
 
-    // 3. ストレージへ保存
     if (typeof saveSystemSettings === 'function') {
         saveSystemSettings();
     }
-
-    // 4. 画面やエディタを再描画
     if (typeof renderSettingsEditors === 'function') {
         renderSettingsEditors();
     }
