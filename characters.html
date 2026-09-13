@@ -1039,8 +1039,9 @@ function renderCharacterDetail(characterId) {
                         <h4 class="text-xs font-bold text-rose-600 mb-1.5 flex items-center gap-1.5">
                             <i class="fa-solid fa-user-secret text-rose-500"></i> 秘匿メモ（ネタバレ）
                         </h4>
-                        <div class="bg-stone-50 rounded-2xl p-4 border border-stone-200/80 text-xs text-stone-700 leading-relaxed text-left whitespace-pre-wrap">
-                            ${secret}
+                        <!-- 余計な枠や中央寄せをなくし、日記サイトと同じスッキリしたテキストブロックにする -->
+                        <div class="bg-rose-50/30 rounded-2xl p-4 border border-rose-200/60 text-xs text-stone-700 leading-relaxed">
+                            <div class="text-left whitespace-pre-wrap">${secret}</div>
                         </div>
                     </div>
                 ` : ''}
