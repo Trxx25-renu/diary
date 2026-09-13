@@ -691,7 +691,7 @@ function removeCharacterImage(categoryKey, index) {
 window.removeCharacterImage = removeCharacterImage;
 
 // ==========================================
-// 💡 キャラクター保存関数（新規Gist自動作成・同期対応版）
+// 💡 キャラクター保存関数（GitHub Gist自動同期・リンク直取得版）
 // ==========================================
 async function saveCharacter(event) {
     event.preventDefault();
@@ -710,12 +710,13 @@ async function saveCharacter(event) {
     const memo = document.getElementById('charMemo')?.value || '';
     const secret = document.getElementById('charSecret')?.value || '';
     
-    // 🔗 複数リンク欄から確実にデータを回収する
+    // 🔗 モーダル内のリンク入力欄から直接データを確実に回収する
     const links = [];
     const linkRows = document.querySelectorAll('#charLinksContainer > div');
     linkRows.forEach(row => {
-        const labelInput = row.querySelector('input[type="text"]');
-        const urlInput = row.querySelector('input[type="url"]');
+        const inputs = row.querySelectorAll('input');
+        const labelInput = inputs[0]; // 1つ目がラベル
+        const urlInput = inputs[1];   // 2つ目がURL
         if (urlInput && urlInput.value.trim() !== '') {
             links.push({
                 label: labelInput ? labelInput.value.trim() : '',
@@ -801,16 +802,14 @@ async function saveCharacter(event) {
                 });
 
                 if (!response.ok) {
-                    // もし既存Gistが見つからない(404等)場合は新規作成にフォールバックさせる
                     if (response.status === 404) {
-                        currentGistId = ''; // リセットして下部の新規作成フローへ
+                        currentGistId = ''; 
                     } else {
                         throw new Error('Gistへの同期に失敗しました');
                     }
                 }
             }
             
-            // Gist IDがまだ無い（あるいは404でリセットされた）場合は新しく作成（POST）する
             if (!currentGistId) {
                 const createResponse = await fetch('https://api.github.com/gists', {
                     method: 'POST',
@@ -820,7 +819,7 @@ async function saveCharacter(event) {
                     },
                     body: JSON.stringify({
                         description: "Character Management App Data",
-                        public: false, // 非公開Gistとして作成
+                        public: false,
                         files: { "characters.json": { content: jsonString } }
                     })
                 });
@@ -830,7 +829,7 @@ async function saveCharacter(event) {
                 }
 
                 const gistData = await createResponse.json();
-                window.GIST_CONFIG.setGistId(gistData.id); // 新しいIDを保存！
+                window.GIST_CONFIG.setGistId(gistData.id);
             }
         }
 
