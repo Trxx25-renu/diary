@@ -432,6 +432,23 @@ window.editingCharacterImages = {
     doodle: []
 };
 
+// 💡 ギャラリーカテゴリ名（設定で変更されていればそれを、なければデフォルト名を使用する関数）
+function getGalleryCategoryName(categoryKey) {
+    const defaults = {
+        thumb: '一覧用アイコン',
+        avatar: '立ち絵',
+        base: '基本・成長',
+        combat: '戦闘・衣装',
+        sd: 'SD・その他',
+        doodle: '落書き'
+    };
+
+    // window.rosterSettings.galleryCategories からカスタム名を取得、なければデフォルト
+    const customNames = window.rosterSettings?.galleryCategories || {};
+    return customNames[categoryKey] || defaults[categoryKey] || categoryKey;
+}
+window.getGalleryCategoryName = getGalleryCategoryName;
+
 // 1. 画像カテゴリタブを切り替える関数
 function switchImageCategory(categoryKey) {
     window.currentImageCategory = categoryKey;
@@ -454,25 +471,131 @@ function switchImageCategory(categoryKey) {
 }
 window.switchImageCategory = switchImageCategory;
 
-// 4. プレビュー領域を描画する関数（object-contain で全体表示・切れ防止対応版）
+// 💡 他のカテゴリの画像を流用・コピーする関数（即時再描画対応）
+function copyImageToCategory(sourceCategory, index, targetCategory) {
+    const sourceList = window.editingCharacterImages?.[sourceCategory];
+    if (!sourceList || !sourceList[index]) return;
+
+    const targetImg = JSON.parse(JSON.stringify(sourceList[index]));
+
+    if (!window.editingCharacterImages[targetCategory]) {
+        window.editingCharacterImages[targetCategory] = [];
+    }
+
+    // アイコンや立ち絵は1枚制限なので置き換え、ギャラリー系は追加
+    if (targetCategory === 'thumb' || targetCategory === 'avatar') {
+        window.editingCharacterImages[targetCategory] = [targetImg];
+        if (typeof showToast === 'function') {
+            showToast(targetCategory === 'thumb' ? 'アイコンに設定しました！' : '立ち絵に設定しました！', 'info');
+        }
+    } else {
+        window.editingCharacterImages[targetCategory].push(targetImg);
+        if (typeof showToast === 'function') {
+            showToast('ギャラリーに追加しました！', 'info');
+        }
+    }
+
+    // プレビューを即時再描画
+    if (typeof renderCharacterImagesPreview === 'function') {
+        renderCharacterImagesPreview();
+    }
+}
+window.copyImageToCategory = copyImageToCategory;
+
+// 2. 画像ファイルが選択されたときの処理（強力な圧縮で1MB制限回避）
+function handleCharacterImagesSelect(event) {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+
+    const isSingleSlot = (window.currentImageCategory === 'thumb' || window.currentImageCategory === 'avatar');
+    const targetFiles = isSingleSlot ? [files[0]] : Array.from(files);
+
+    targetFiles.forEach(file => {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const img = new Image();
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                const MAX_SIZE = (window.currentImageCategory === 'thumb') ? 150 : 600;
+                let width = img.width;
+                let height = img.height;
+
+                if (width > height) {
+                    if (width > MAX_SIZE) {
+                        height *= MAX_SIZE / width;
+                        width = MAX_SIZE;
+                    }
+                } else {
+                    if (height > MAX_SIZE) {
+                        width *= MAX_SIZE / height;
+                        height = MAX_SIZE;
+                    }
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                
+                ctx.clearRect(0, 0, width, height);
+                ctx.drawImage(img, 0, 0, width, height);
+
+                const compressedBase64 = canvas.toDataURL('image/webp', 0.5);
+
+                const defaultName = isSingleSlot 
+                    ? (window.currentImageCategory === 'thumb' ? '一覧アイコン' : '立ち絵')
+                    : file.name.replace(/\.[^/.]+$/, "");
+
+                if (!window.editingCharacterImages[window.currentImageCategory]) {
+                    window.editingCharacterImages[window.currentImageCategory] = [];
+                }
+
+                if (isSingleSlot) {
+                    window.editingCharacterImages[window.currentImageCategory] = [{
+                        url: compressedBase64,
+                        name: defaultName,
+                        uploadedAt: Date.now()
+                    }];
+                } else {
+                    window.editingCharacterImages[window.currentImageCategory].push({
+                        url: compressedBase64,
+                        name: defaultName,
+                        uploadedAt: Date.now()
+                    });
+                }
+
+                if (typeof renderCharacterImagesPreview === 'function') {
+                    renderCharacterImagesPreview();
+                }
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    });
+
+    event.target.value = '';
+}
+window.handleCharacterImagesSelect = handleCharacterImagesSelect;
+       
+// 💡 3. 画像のタイトル（名前）をリアルタイムで更新する関数
+function updateImageLabel(categoryKey, index, newName) {
+    if (window.editingCharacterImages?.[categoryKey]?.[index]) {
+        window.editingCharacterImages[categoryKey][index].name = newName;
+    }
+}
+window.updateImageLabel = updateImageLabel;
+
+// 4. プレビュー領域を描画する関数（設定されたカスタムカテゴリ名を反映）
 function renderCharacterImagesPreview() {
     const container = document.getElementById('characterImagesPreviewContainer');
     if (!container) return;
 
     const currentList = window.editingCharacterImages[window.currentImageCategory] || [];
+    const currentCategoryDisplayName = getGalleryCategoryName(window.currentImageCategory);
 
     if (currentList.length === 0) {
-        const categoryNames = {
-            thumb: '一覧用アイコン',
-            avatar: '立ち絵',
-            base: '基本',
-            combat: '戦闘差分',
-            sd: 'SD・その他',
-            doodle: '落書き'
-        };
         container.innerHTML = `
             <div class="col-span-full flex items-center justify-center text-[11px] text-stone-400 py-4">
-                ${categoryNames[window.currentImageCategory] || 'このカテゴリ'}にはまだ画像がありません
+                「${currentCategoryDisplayName}」にはまだ画像がありません
             </div>
         `;
         return;
@@ -524,7 +647,7 @@ function renderCharacterImagesPreview() {
     });
 }
 window.renderCharacterImagesPreview = renderCharacterImagesPreview;
-        
+       
 // 5. 登録した画像を削除する関数
 function removeCharacterImage(categoryKey, index) {
     if (window.editingCharacterImages?.[categoryKey]) {
@@ -1556,7 +1679,7 @@ function renderSettingsFieldsEditor() {
                             return `
                                 <div class="bg-white border border-stone-200 rounded-xl p-2.5 flex flex-col gap-2">
                                     <!-- 1段目：項目名入力 -->
-                                    <div>
+                                    <div class="min-w-0">
                                         <label for="${labelId}" class="sr-only">ステータス項目名</label>
                                         <input type="text" id="${labelId}" name="${labelId}" value="${escapeHtml(f.label)}" onchange="updateCustomFieldLabel('${sys.id}', 'status', ${fIdx}, this.value)" class="w-full bg-stone-50 border border-stone-200 rounded-lg px-2 py-1 text-xs text-stone-800" placeholder="項目名 (例: HP)">
                                     </div>
@@ -1569,7 +1692,7 @@ function renderSettingsFieldsEditor() {
                                             <input type="number" id="${maxId}" name="${maxId}" value="${f.max || ''}" onchange="updateCustomFieldMax('${sys.id}', ${fIdx}, this.value)" class="w-20 bg-stone-50 border border-stone-200 rounded-lg px-2 py-1 text-xs text-stone-800 text-center" placeholder="なし可">
                                         </div>
 
-                                        <div class="flex items-center gap-1">
+                                        <div class="flex items-center gap-1 shrink-0">
                                             <!-- 並び替えボタン -->
                                             <div class="flex items-center gap-0.5">
                                                 <button type="button" onclick="moveCustomFieldOrder('${sys.id}', 'status', ${fIdx}, -1)" class="w-6 h-6 flex items-center justify-center bg-stone-50 border border-stone-200 rounded-md text-stone-600 hover:bg-stone-100 text-[10px]" ${fIdx === 0 ? 'disabled' : ''} style="${fIdx === 0 ? 'opacity:0.3; cursor:not-allowed;' : ''}">
@@ -1599,12 +1722,12 @@ function renderSettingsFieldsEditor() {
                         ${texts.map((f, fIdx) => {
                             const textId = `textLabel_${sys.id}_${fIdx}`;
                             return `
-                                <div class="flex items-center gap-1.5 bg-white border border-stone-200 rounded-xl p-2">
+                                <div class="flex items-center gap-1.5 bg-white border border-stone-200 rounded-xl p-2 min-w-0">
                                     <label for="${textId}" class="sr-only">テキスト項目名</label>
-                                    <input type="text" id="${textId}" name="${textId}" value="${escapeHtml(f.label)}" onchange="updateCustomTextFieldLabel('${sys.id}', ${fIdx}, this.value)" class="flex-1 bg-stone-50 border border-stone-200 rounded-lg px-2 py-1 text-xs text-stone-800" placeholder="項目名 (例: シンドローム)">
+                                    <input type="text" id="${textId}" name="${textId}" value="${escapeHtml(f.label)}" onchange="updateCustomTextFieldLabel('${sys.id}', ${fIdx}, this.value)" class="flex-1 min-w-0 bg-stone-50 border border-stone-200 rounded-lg px-2 py-1 text-xs text-stone-800" placeholder="項目名 (例: シンドローム)">
                                     
                                     <!-- テキスト項目の並び替えボタン -->
-                                    <div class="flex items-center gap-0.5">
+                                    <div class="flex items-center gap-0.5 shrink-0">
                                         <button type="button" onclick="moveCustomFieldOrder('${sys.id}', 'text', ${fIdx}, -1)" class="w-6 h-6 flex items-center justify-center bg-stone-50 border border-stone-200 rounded-md text-stone-600 hover:bg-stone-100 text-[10px]" ${fIdx === 0 ? 'disabled' : ''} style="${fIdx === 0 ? 'opacity:0.3; cursor:not-allowed;' : ''}">
                                             <i class="fa-solid fa-arrow-up"></i>
                                         </button>
@@ -1613,7 +1736,7 @@ function renderSettingsFieldsEditor() {
                                         </button>
                                     </div>
 
-                                    <button type="button" onclick="removeCustomField('${sys.id}', 'text', ${fIdx})" class="w-6 h-6 flex items-center justify-center text-stone-400 hover:text-rose-500 hover:bg-rose-50 rounded-md text-xs transition-all ml-0.5" aria-label="削除"><i class="fa-solid fa-trash"></i></button>
+                                    <button type="button" onclick="removeCustomField('${sys.id}', 'text', ${fIdx})" class="w-6 h-6 flex items-center justify-center text-stone-400 hover:text-rose-500 hover:bg-rose-50 rounded-md text-xs transition-all ml-0.5 shrink-0" aria-label="削除"><i class="fa-solid fa-trash"></i></button>
                                 </div>
                             `;
                         }).join('')}
