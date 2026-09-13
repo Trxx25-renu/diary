@@ -624,25 +624,13 @@ window.navigateTo = navigateTo;
     }
     window.renderWeatherSelectOptions = renderWeatherSelectOptions;
 
-    // 🌟 戻るボタン専用：HTMLの表示状態から確実に判断して戻る関数
+    // 🌟 1つ前のページ（直前の履歴）に安全に戻る関数
 function goBack() {
-    const viewDetail = document.getElementById('view-detail');
-    const viewGallery = document.getElementById('view-gallery');
-
-    // 1. もし現在「詳細画面」が表示されていたら、ギャラリー（または月一覧）へ戻る
-    if (viewDetail && !viewDetail.classList.contains('hidden')) {
-        if (window.selectedYearMonth) {
-            navigateTo('gallery', window.selectedYearMonth);
-        } else {
-            navigateTo('months');
-        }
-    } 
-    // 2. もし現在「ギャラリー画面」が表示されていたら、月一覧へ戻る
-    else if (viewGallery && !viewGallery.classList.contains('hidden')) {
-        navigateTo('months');
-    } 
-    // 3. それ以外（予期せぬ状態のとき）は安全のため月一覧へ
-    else {
+    // ブラウザの履歴を使って「直前の画面」に戻る
+    if (window.history.length > 1) {
+        window.history.back();
+    } else {
+        // 履歴がない（直接リンクなどで来た）場合のフォールバックとして月一覧へ
         navigateTo('months');
     }
 
