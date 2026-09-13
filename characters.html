@@ -454,122 +454,7 @@ function switchImageCategory(categoryKey) {
 }
 window.switchImageCategory = switchImageCategory;
 
-// 💡 他のカテゴリの画像を流用・コピーする関数（即時再描画対応）
-function copyImageToCategory(sourceCategory, index, targetCategory) {
-    const sourceList = window.editingCharacterImages?.[sourceCategory];
-    if (!sourceList || !sourceList[index]) return;
-
-    const targetImg = JSON.parse(JSON.stringify(sourceList[index]));
-
-    if (!window.editingCharacterImages[targetCategory]) {
-        window.editingCharacterImages[targetCategory] = [];
-    }
-
-    // アイコンや立ち絵は1枚制限なので置き換え、ギャラリー系は追加
-    if (targetCategory === 'thumb' || targetCategory === 'avatar') {
-        window.editingCharacterImages[targetCategory] = [targetImg];
-        if (typeof showToast === 'function') {
-            showToast(targetCategory === 'thumb' ? 'アイコンに設定しました！' : '立ち絵に設定しました！', 'info');
-        }
-    } else {
-        window.editingCharacterImages[targetCategory].push(targetImg);
-        if (typeof showToast === 'function') {
-            showToast('ギャラリーに追加しました！', 'info');
-        }
-    }
-
-    // プレビューを即時再描画
-    if (typeof renderCharacterImagesPreview === 'function') {
-        renderCharacterImagesPreview();
-    }
-}
-window.copyImageToCategory = copyImageToCategory;
-
-// 2. 画像ファイルが選択されたときの処理（より強力な圧縮で1MB制限を完全に回避）
-function handleCharacterImagesSelect(event) {
-    const files = event.target.files;
-    if (!files || files.length === 0) return;
-
-    const isSingleSlot = (window.currentImageCategory === 'thumb' || window.currentImageCategory === 'avatar');
-    const targetFiles = isSingleSlot ? [files[0]] : Array.from(files);
-
-    targetFiles.forEach(file => {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const img = new Image();
-            img.onload = function() {
-                const canvas = document.createElement('canvas');
-                // 💡 アイコンは150px、他は最大600pxに制限して容量を確実に削る
-                const MAX_SIZE = (window.currentImageCategory === 'thumb') ? 150 : 600;
-                let width = img.width;
-                let height = img.height;
-
-                if (width > height) {
-                    if (width > MAX_SIZE) {
-                        height *= MAX_SIZE / width;
-                        width = MAX_SIZE;
-                    }
-                } else {
-                    if (height > MAX_SIZE) {
-                        width *= MAX_SIZE / height;
-                        height = MAX_SIZE;
-                    }
-                }
-
-                canvas.width = width;
-                canvas.height = height;
-                const ctx = canvas.getContext('2d');
-                
-                ctx.clearRect(0, 0, width, height);
-                ctx.drawImage(img, 0, 0, width, height);
-
-                // 💡 WebP形式・品質0.5（十分に綺麗かつ超軽量）で圧縮
-                const compressedBase64 = canvas.toDataURL('image/webp', 0.5);
-
-                const defaultName = isSingleSlot 
-                    ? (window.currentImageCategory === 'thumb' ? '一覧アイコン' : '立ち絵')
-                    : file.name.replace(/\.[^/.]+$/, "");
-
-                if (!window.editingCharacterImages[window.currentImageCategory]) {
-                    window.editingCharacterImages[window.currentImageCategory] = [];
-                }
-
-                if (isSingleSlot) {
-                    window.editingCharacterImages[window.currentImageCategory] = [{
-                        url: compressedBase64,
-                        name: defaultName,
-                        uploadedAt: Date.now()
-                    }];
-                } else {
-                    window.editingCharacterImages[window.currentImageCategory].push({
-                        url: compressedBase64,
-                        name: defaultName,
-                        uploadedAt: Date.now()
-                    });
-                }
-
-                if (typeof renderCharacterImagesPreview === 'function') {
-                    renderCharacterImagesPreview();
-                }
-            };
-            img.src = e.target.result;
-        };
-        reader.readAsDataURL(file);
-    });
-
-    event.target.value = '';
-}
-window.handleCharacterImagesSelect = handleCharacterImagesSelect;
-       
-// 💡 3. 画像のタイトル（名前）をリアルタイムで更新する関数
-function updateImageLabel(categoryKey, index, newName) {
-    if (window.editingCharacterImages?.[categoryKey]?.[index]) {
-        window.editingCharacterImages[categoryKey][index].name = newName;
-    }
-}
-window.updateImageLabel = updateImageLabel;
-
-// 4. プレビュー領域を描画する関数
+// 4. プレビュー領域を描画する関数（object-contain で全体表示・切れ防止対応版）
 function renderCharacterImagesPreview() {
     const container = document.getElementById('characterImagesPreviewContainer');
     if (!container) return;
@@ -603,7 +488,7 @@ function renderCharacterImagesPreview() {
             item.className = 'col-span-full bg-stone-50 rounded-xl overflow-hidden border border-stone-200 p-3 flex items-center gap-3';
             item.innerHTML = `
                 <div class="relative group w-16 h-16 bg-white rounded-lg overflow-hidden border border-stone-200 shrink-0 flex items-center justify-center">
-                    <img src="${imgObj.url}" class="w-full h-full object-cover object-top">
+                    <img src="${imgObj.url}" class="w-full h-full object-contain">
                     <button type="button" onclick="removeCharacterImage('${window.currentImageCategory}', ${index})" class="absolute top-1 right-1 bg-stone-900/70 hover:bg-rose-600 text-white w-5 h-5 rounded-full flex items-center justify-center text-[10px] opacity-0 group-hover:opacity-100 transition-opacity">
                         <i class="fa-solid fa-xmark"></i>
                     </button>
@@ -620,7 +505,7 @@ function renderCharacterImagesPreview() {
             item.className = 'bg-stone-50 rounded-xl overflow-hidden border border-stone-200 p-2.5 flex flex-col gap-2';
             item.innerHTML = `
                 <div class="relative group aspect-square bg-white rounded-lg overflow-hidden border border-stone-200 flex items-center justify-center">
-                    <img src="${imgObj.url}" class="w-full h-full object-cover object-top">
+                    <img src="${imgObj.url}" class="w-full h-full object-contain">
                     <button type="button" onclick="removeCharacterImage('${window.currentImageCategory}', ${index})" class="absolute top-1 right-1 bg-stone-900/70 hover:bg-rose-600 text-white w-5 h-5 rounded-full flex items-center justify-center text-[10px] opacity-0 group-hover:opacity-100 transition-opacity">
                         <i class="fa-solid fa-xmark"></i>
                     </button>
