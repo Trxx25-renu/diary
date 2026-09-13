@@ -1722,6 +1722,87 @@ async function saveCharacter(event) {
     }
 }
 window.saveCharacter = saveCharacter;
+
+       // ==========================================
+// 🔗 複数リンクエディターの制御関数群
+// ==========================================
+
+// 1. リンクエディターを描画する関数
+function renderCharacterLinksEditor() {
+    const container = document.getElementById('charLinksContainer');
+    if (!container) return;
+
+    container.innerHTML = '';
+
+    // window.editingCharacterLinks が未定義なら空配列にする
+    if (!window.editingCharacterLinks || !Array.isArray(window.editingCharacterLinks)) {
+        window.editingCharacterLinks = [];
+    }
+
+    // 登録されているリンクがない場合の案内（任意）
+    if (window.editingCharacterLinks.length === 0) {
+        container.innerHTML = '<p class="text-xs text-stone-400 italic py-1">リンクが追加されていません（「リンクを追加」から登録できます）</p>';
+        return;
+    }
+
+    // 配列をループして入力行を作成
+    window.editingCharacterLinks.forEach((link, index) => {
+        const row = document.createElement('div');
+        row.className = 'flex items-center gap-2 bg-stone-50 p-2 rounded-lg border border-stone-200';
+        
+        row.innerHTML = `
+            <input type="text" placeholder="ラベル (例: 本シート)" value="${escapeHtml(link.label || '')}" 
+                oninput="window.updateEditingLink(${index}, 'label', this.value)"
+                class="w-1/3 text-xs px-2 py-1.5 rounded border border-stone-300 bg-white focus:outline-none focus:ring-1 focus:ring-stone-500">
+            <input type="url" placeholder="https://..." value="${escapeHtml(link.url || '')}" 
+                oninput="window.updateEditingLink(${index}, 'url', this.value)"
+                class="flex-1 text-xs px-2 py-1.5 rounded border border-stone-300 bg-white focus:outline-none focus:ring-1 focus:ring-stone-500">
+            <button type="button" onclick="window.removeEditingLink(${index})" 
+                class="text-stone-400 hover:text-rose-600 p-1 text-xs transition-colors" title="削除">
+                <i class="fa-solid fa-trash-can"></i>
+            </button>
+        `;
+        container.appendChild(row);
+    });
+}
+window.renderCharacterLinksEditor = renderCharacterLinksEditor;
+
+// 2. 「リンクを追加」ボタンが押されたときに行を増やす関数
+function addEditingLink() {
+    if (!window.editingCharacterLinks) {
+        window.editingCharacterLinks = [];
+    }
+    window.editingCharacterLinks.push({ label: '', url: '' });
+    renderCharacterLinksEditor();
+}
+window.addEditingLink = addEditingLink;
+
+// 3. 入力内容を変更したときに配列へ即時反映する関数
+function updateEditingLink(index, field, value) {
+    if (window.editingCharacterLinks && window.editingCharacterLinks[index]) {
+        window.editingCharacterLinks[index][field] = value;
+    }
+}
+window.updateEditingLink = updateEditingLink;
+
+// 4. ゴミ箱ボタンが押されたときに特定の行を削除する関数
+function removeEditingLink(index) {
+    if (window.editingCharacterLinks) {
+        window.editingCharacterLinks.splice(index, 1);
+        renderCharacterLinksEditor();
+    }
+}
+window.removeEditingLink = removeEditingLink;
+
+// HTMLエスケープ用補助（安全対策）
+function escapeHtml(str) {
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
        
 // ==========================================
 // 💡 キャラクターの並び替え機能（更新順・五十音順・誕生日順）
