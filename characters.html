@@ -364,7 +364,7 @@ function renderCharacterList(systemId, filterKeyword = "") {
 
         let thumbHtml = `<div class="w-full h-full flex items-center justify-center text-stone-300 bg-stone-50"><i class="fa-solid fa-user text-3xl"></i></div>`;
         
-        // 💡 優先順位: サムネイル ＞ 立ち絵 ＞ ギャラリー（基本・成長の1枚目） ＞ デフォルトアイコン
+       // 💡 優先順位: サムネイル ＞ 立ち絵 ＞ ギャラリー（基本・成長の1枚目） ＞ デフォルトアイコン
         if (ch.thumbnail && ch.thumbnail.trim() !== "") {
             thumbHtml = `<img src="${ch.thumbnail}" class="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500">`;
         } else if (ch.avatar && ch.avatar.trim() !== "") {
