@@ -1039,34 +1039,34 @@ function renderCharacterDetail(characterId) {
                         <h4 class="text-xs font-bold text-rose-600 mb-1.5 flex items-center gap-1.5">
                             <i class="fa-solid fa-user-secret text-rose-500"></i> 秘匿メモ（ネタバレ）
                         </h4>
-                        <!-- トグルボックス全体 -->
+                        <!-- マスクボックス全体 -->
                         <div class="bg-rose-50/40 rounded-2xl border border-rose-200/70 overflow-hidden shadow-xs">
-                            <!-- 🙈 閉じている時の表示 -->
-                            <div class="js-secret-closed cursor-pointer px-4 py-3 flex items-center justify-between select-none hover:bg-rose-50/70 transition-colors" onclick="
+                            
+                            <!-- 🙈 【初期状態】枠全体が目隠し（ここをタップすると本文が現れる） -->
+                            <div class="js-secret-mask cursor-pointer py-10 px-4 text-center select-none hover:bg-rose-50/70 transition-colors" onclick="
                                 const box = this.parentNode;
-                                box.querySelector('.js-secret-closed').style.display = 'none';
-                                box.querySelector('.js-secret-opened').style.display = 'block';
+                                box.querySelector('.js-secret-mask').style.display = 'none';
+                                box.querySelector('.js-secret-content').style.display = 'block';
                             ">
-                                <div class="flex items-center gap-2 text-rose-800 text-xs font-bold">
-                                    <i class="fa-solid fa-triangle-exclamation text-rose-500"></i>
-                                    <span>ネタバレ防止用本文</span>
+                                <div class="w-12 h-12 rounded-full bg-rose-100/80 flex items-center justify-center mx-auto mb-2 text-rose-600 shadow-xs">
+                                    <i class="fa-solid fa-eye-slash text-base"></i>
                                 </div>
-                                <span class="text-[11px] font-medium text-rose-400">タップで切替</span>
+                                <p class="text-xs font-bold text-rose-800">タップしてネタバレを表示</p>
                             </div>
 
-                            <!-- 👁️ 開いた時の表示 -->
-                            <div class="js-secret-opened bg-white/60" style="display: none;">
-                                <!-- 開いた状態のヘッダー（ここをタップすると閉じる） -->
+                            <!-- 👁️ 【展開された状態】初期は非表示 -->
+                            <div class="js-secret-content bg-white/60" style="display: none;">
+                                <!-- 上部ヘッダー（ここをタップすると、また元の目隠し状態に戻る） -->
                                 <div class="cursor-pointer px-4 py-3 flex items-center justify-between select-none bg-rose-50/60 border-b border-rose-100 hover:bg-rose-50 transition-colors" onclick="
                                     const box = this.parentNode.parentNode;
-                                    box.querySelector('.js-secret-opened').style.display = 'none';
-                                    box.querySelector('.js-secret-closed').style.display = 'flex';
+                                    box.querySelector('.js-secret-content').style.display = 'none';
+                                    box.querySelector('.js-secret-mask').style.display = 'block';
                                 ">
                                     <div class="flex items-center gap-2 text-rose-800 text-xs font-bold">
                                         <i class="fa-solid fa-triangle-exclamation text-rose-500"></i>
                                         <span>ネタバレ防止用本文</span>
                                     </div>
-                                    <span class="text-[11px] font-medium text-rose-400">タップして閉じる</span>
+                                    <span class="text-[11px] font-medium text-rose-400">タップして隠す</span>
                                 </div>
                                 <!-- 本文エリア -->
                                 <div class="p-4 text-left text-xs text-stone-700 whitespace-pre-wrap leading-relaxed">
