@@ -2638,7 +2638,7 @@ window.handleAuthSubmit = handleAuthSubmit;
 window.toggleSecretMemo = toggleSecretMemo;
 
        // ==========================================
-// 💡 JSONファイルからキャラクターデータをモーダルに復元する関数
+// 💡 JSONファイルからキャラクターデータをモーダルに復元する関数（システム自動適応版）
 // ==========================================
 function importCharacterFromJson(event) {
     const file = event.target.files[0];
@@ -2649,8 +2649,18 @@ function importCharacterFromJson(event) {
         try {
             const data = JSON.parse(e.target.result);
             
-            // 1. 基本テキストフィールドの復元
-            if (document.getElementById('charSystemSelect')) document.getElementById('charSystemSelect').value = data.systemId || '';
+            // 1. システムIDを先にセットし、カスタム項目欄のHTMLを動的に生成させる
+            if (document.getElementById('charSystemSelect') && data.systemId) {
+                const systemSelect = document.getElementById('charSystemSelect');
+                systemSelect.value = data.systemId;
+                
+                // 🌟 【ポイント】システム変更時の描画関数を呼び出してカスタム入力欄を生成する
+                if (typeof handleSystemChangeInModal === 'function') {
+                    handleSystemChangeInModal(data.customValues || {});
+                }
+            }
+
+            // 2. 基本テキストフィールドの復元
             if (document.getElementById('charName')) document.getElementById('charName').value = data.name || '';
             if (document.getElementById('charNameKana')) document.getElementById('charNameKana').value = data.nameKana || '';
             if (document.getElementById('charEpithet')) document.getElementById('charEpithet').value = data.epithet || '';
@@ -2667,7 +2677,7 @@ function importCharacterFromJson(event) {
             if (document.getElementById('charMemo')) document.getElementById('charMemo').value = data.memo || '';
             if (document.getElementById('charSecret')) document.getElementById('charSecret').value = data.secret || '';
 
-            // 2. 画像データの復元（差分やアイコンなど）
+            // 3. 画像データの復元
             if (data.images) {
                 window.editingCharacterImages = JSON.parse(JSON.stringify(data.images));
             } else {
@@ -2678,10 +2688,15 @@ function importCharacterFromJson(event) {
                 };
             }
 
-            // 3. リンクの復元
+            // 4. リンクの復元 ＆ エディタ再描画
             window.editingCharacterLinks = data.links || [];
+            if (typeof renderCharacterLinksEditor === 'function') {
+                renderCharacterLinksEditor(); // 🔗 新しいリンクエディタ用
+            } else if (typeof renderCharacterLinksList === 'function') {
+                renderCharacterLinksList(); // 念のため古い方にもフォールバック
+            }
 
-            // 4. カスタムステータス・テキストの復元
+            // 5. カスタムステータス・テキストの復元（※すでに1番で生成されているので確実に値が入ります）
             if (data.customValues) {
                 for (const [fieldId, val] of Object.entries(data.customValues)) {
                     const statusInput = document.getElementById(`custom_status_${fieldId}`);
@@ -2692,22 +2707,21 @@ function importCharacterFromJson(event) {
                 }
             }
 
-            // 5. プレビューの再描画
+            // 6. 画像プレビュー等の再描画
             if (typeof renderCharacterImagesPreview === 'function') {
                 renderCharacterImagesPreview();
             }
-            if (typeof renderCharacterLinksList === 'function') {
-                renderCharacterLinksList();
-            }
 
-            showToast("JSONからデータを正常に読み込みました！", "info");
+            if (typeof showToast === 'function') {
+                showToast("JSONからデータを正常に読み込みました！", "info");
+            }
         } catch (err) {
             console.error("JSON parse error:", err);
             alert("JSONファイルの読み込みに失敗しました。正しいキャラクターJSONファイルか確認してください。");
         }
     };
     reader.readAsText(file);
-    event.target.value = ''; // 連続で同じファイルを読み込めるようにリセット
+    event.target.value = ''; 
 }
 window.importCharacterFromJson = importCharacterFromJson;
 
