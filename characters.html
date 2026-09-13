@@ -1064,7 +1064,8 @@ function renderCharacterDetail(characterId) {
         const labelContainer = document.getElementById('galleryImageLabel');
         if (imgContainer) {
             if (currentImg && currentImg.url) {
-                imgContainer.innerHTML = `<img src="${currentImg.url}" class="w-full h-auto max-h-[600px] object-contain rounded-xl transition-all duration-300">`;
+                // 🌟 メイン画像のクラスを統一（object-containで全体を表示）
+                imgContainer.innerHTML = `<img src="${currentImg.url}" class="w-full h-auto max-h-[600px] object-contain rounded-xl transition-all duration-300 [image-rendering:-webkit-optimize-contrast]">`;
             } else {
                 imgContainer.innerHTML = `<div class="text-stone-400 text-xs py-20"><i class="fa-solid fa-image text-3xl mb-1 block"></i>画像がありません</div>`;
             }
@@ -1142,7 +1143,7 @@ function renderCharacterDetail(characterId) {
 
                 <div class="relative flex items-center justify-center rounded-2xl overflow-hidden border border-stone-200/60 shadow-inner bg-stone-50/50 p-2 min-h-[400px] sm:min-h-[500px]">
                     <div id="galleryImageContainer" class="w-full h-full flex items-center justify-center">
-                        <img src="${safeCurrentImg ? safeCurrentImg.url : ''}" class="w-full h-auto max-h-[600px] object-contain rounded-xl transition-all duration-300">
+                        <img src="${safeCurrentImg ? safeCurrentImg.url : ''}" class="w-full h-auto max-h-[600px] object-contain rounded-xl transition-all duration-300 [image-rendering:-webkit-optimize-contrast]">
                     </div>
 
                     ${safeCatImages.length > 1 ? `
@@ -1285,40 +1286,40 @@ function renderCharacterDetail(characterId) {
                 ` : ''}
                 
                 ${secret ? `
-                    <div class="mb-4">
-                        <h4 class="text-xs font-bold text-rose-600 mb-1.5 flex items-center gap-1.5">
-                            <i class="fa-solid fa-user-secret text-rose-500"></i> 秘匿メモ（ネタバレ）
-                        </h4>
-                        <!-- 日記側と同じ構造のコンテナ -->
-                        <div class="relative bg-rose-50/40 text-stone-800 rounded-2xl p-4 border border-rose-200/70 cursor-pointer overflow-hidden transition-all shadow-xs group" onclick="
-                            const container = this;
-                            const overlay = container.querySelector('.js-secret-overlay');
-                            const isHidden = overlay.style.display !== 'none';
-                            overlay.style.display = isHidden ? 'none' : 'flex';
-                        ">
-                            <!-- ヘッダー部分 -->
-                            <div class="flex items-center justify-between mb-2 pb-1.5 border-b border-rose-200/60 text-xs text-rose-800 font-bold select-none">
-                                <span class="flex items-center gap-1.5">
-                                    <i class="fa-solid fa-triangle-exclamation text-rose-500"></i> ネタバレ防止用本文
-                                </span>
-                                <span class="text-[10px] text-rose-400 font-normal">タップで切替</span>
-                            </div>
+                <div class="mb-4">
+                    <h4 class="text-xs font-bold text-rose-600 mb-1.5 flex items-center gap-1.5">
+                        <i class="fa-solid fa-user-secret text-rose-500"></i> 秘匿メモ（ネタバレ）
+                    </h4>
+                    <!-- 日記側と同じ構造のコンテナ -->
+                    <div class="relative bg-rose-50/40 text-stone-800 rounded-2xl p-4 border border-rose-200/70 cursor-pointer overflow-hidden transition-all shadow-xs group" onclick="
+                        const container = this;
+                        const overlay = container.querySelector('.js-secret-overlay');
+                        const isHidden = overlay.style.display !== 'none';
+                        overlay.style.display = isHidden ? 'none' : 'flex';
+                    ">
+                        <!-- ヘッダー部分 -->
+                        <div class="flex items-center justify-between mb-2 pb-1.5 border-b border-rose-200/60 text-xs text-rose-800 font-bold select-none">
+                            <span class="flex items-center gap-1.5">
+                                <i class="fa-solid fa-triangle-exclamation text-rose-500"></i> ネタバレ防止用本文
+                            </span>
+                            <span class="text-[10px] text-rose-400 font-normal">タップで切替</span>
+                        </div>
 
-                            <!-- 本文エリア（最初から中身はあるが、オーバーレイで隠されている） -->
-                            <div class="text-xs text-stone-700 leading-relaxed whitespace-pre-wrap text-left">
-                                ${secret}
-                            </div>
+                        <!-- 本文エリア（最初から中身はあるが、オーバーレイで隠されている） -->
+                        <div class="text-xs text-stone-700 leading-relaxed whitespace-pre-wrap text-left">
+                            ${secret}
+                        </div>
 
-                            <!-- 🙈 未開封オーバーレイ（日記側準拠） -->
-                            <div class="js-secret-overlay absolute inset-0 bg-rose-50/95 backdrop-blur-xs flex flex-col items-center justify-center gap-1.5 text-stone-700 transition-all select-none">
-                                <div class="w-8 h-8 rounded-full bg-rose-100/90 flex items-center justify-center text-rose-600 text-sm shadow-xs group-hover:scale-110 transition-transform">
-                                    <i class="fa-solid fa-eye-slash"></i>
-                                </div>
-                                <span class="text-xs font-medium text-rose-800">タップしてネタバレを表示</span>
+                        <!-- 🙈 未開封オーバーレイ（不透明化して透けを防止） -->
+                        <div class="js-secret-overlay absolute inset-0 bg-rose-100 flex flex-col items-center justify-center gap-1.5 text-stone-700 transition-all select-none z-10">
+                            <div class="w-8 h-8 rounded-full bg-white/90 flex items-center justify-center text-rose-600 text-sm shadow-xs group-hover:scale-110 transition-transform">
+                                <i class="fa-solid fa-eye-slash"></i>
                             </div>
+                            <span class="text-xs font-medium text-rose-800">タップしてネタバレを表示</span>
                         </div>
                     </div>
-                ` : ''}
+                </div>
+            ` : ''}
             </div>
         `;
     }
