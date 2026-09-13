@@ -624,13 +624,32 @@ window.navigateTo = navigateTo;
     }
     window.renderWeatherSelectOptions = renderWeatherSelectOptions;
 
-    // 🌟 1つ前のページ（直前の履歴）に安全に戻る関数
+    // 🌟 アプリ内の階層（詳細 ➔ ギャラリー ➔ 月一覧）だけで安全に戻る関数
 function goBack() {
-    // ブラウザの履歴を使って「直前の画面」に戻る
-    if (window.history.length > 1) {
-        window.history.back();
-    } else {
-        // 履歴がない（直接リンクなどで来た）場合のフォールバックとして月一覧へ
+    const viewDetail = document.getElementById('view-detail');
+    const viewGallery = document.getElementById('view-gallery');
+
+    // 1. 現在「詳細画面」にいる場合 ➔ ギャラリー画面へ戻る
+    if (viewDetail && !viewDetail.classList.contains('hidden')) {
+        let targetYM = window.selectedYearMonth;
+        
+        // 年月が保持されていない場合は、現在開いている記事のデータから逆算する安全ガード
+        if (!targetYM && window.currentEntry && window.currentEntry.date) {
+            targetYM = window.currentEntry.date.substring(0, 7); // '2026-03-15' から '2026-03' を抽出
+        }
+
+        if (targetYM) {
+            navigateTo('gallery', targetYM);
+        } else {
+            navigateTo('months');
+        }
+    } 
+    // 2. 現在「ギャラリー画面」にいる場合 ➔ 月一覧画面へ戻る
+    else if (viewGallery && !viewGallery.classList.contains('hidden')) {
+        navigateTo('months');
+    } 
+    // 3. すでに月一覧にいる、または不明な場合
+    else {
         navigateTo('months');
     }
 
@@ -638,7 +657,7 @@ function goBack() {
     window.scrollTo({ top: 0, behavior: 'instant' });
 }
 window.goBack = goBack;
-
+        
         function updateBackButtonVisibility() {
             const btn = document.getElementById('floatingBackBtn');
             const textEl = document.getElementById('floatingBackBtnText');
