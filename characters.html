@@ -675,18 +675,20 @@ async function saveCharacter(event) {
     const avatar = images.avatar?.[0]?.url || "";
 
     const customValues = {};
+    
+    // 変数名が重複してエラーにならないよう安全に修正した部分
     document.querySelectorAll('.char-custom-status-input').forEach(inputEl => {
-        const inputId = inputEl.id;
-        if (inputId && inputId.startsWith('custom_status_')) {
-            const fieldId = inputId.replace('custom_status_', '');
+        const sId = inputEl.id;
+        if (sId && sId.startsWith('custom_status_')) {
+            const fieldId = sId.replace('custom_status_', '');
             customValues[fieldId] = inputEl.value ? Number(inputEl.value) : '';
         }
     });
 
     document.querySelectorAll('.char-custom-text-input').forEach(inputEl => {
-        const inputId = inputId.id;
-        if (inputId && inputId.startsWith('custom_text_')) {
-            const fieldId = inputId.replace('custom_text_', '');
+        const tId = inputEl.id;
+        if (tId && tId.startsWith('custom_text_')) {
+            const fieldId = tId.replace('custom_text_', '');
             customValues[fieldId] = inputEl.value;
         }
     });
