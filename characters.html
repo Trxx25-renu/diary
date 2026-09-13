@@ -1312,11 +1312,15 @@ function renderCharacterDetail(characterId) {
                     ${window.isAdmin ? `
                         <button onclick="openEditCharacterModal('${characterId}')" class="flex items-center gap-1.5 text-xs font-bold text-stone-700 bg-white hover:bg-stone-50 border border-stone-300 px-4 py-2 rounded-xl shadow-xs hover:shadow transition-all">
                             <i class="fa-solid fa-pen text-stone-500 text-[11px]"></i>
-                            <span>編集</span>
+                          <span>編集</span>
+                        </button>
+                        <button onclick="exportCharacterJson('${characterId}')" class="flex items-center gap-1.5 text-xs font-bold text-stone-700 bg-white hover:bg-stone-50 border border-stone-300 px-3 py-2 rounded-xl shadow-xs hover:shadow transition-all" title="このキャラのJSONを書き出し">
+                            <i class="fa-solid fa-file-code text-stone-500 text-[11px]"></i>
+                            <span>JSON出力</span>
                         </button>
                         <button onclick="deleteCharacter('${characterId}')" class="flex items-center gap-1.5 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 px-4 py-2 rounded-xl shadow-xs hover:shadow transition-all">
                             <i class="fa-solid fa-trash text-[11px]"></i>
-                            <span>削除</span>
+                          <span>削除</span>
                         </button>
                     ` : ''}
                     <button onclick="navigateTo('characterList', '${ch.systemId}')" class="flex items-center gap-1.5 text-xs font-bold text-stone-700 bg-stone-100 hover:bg-stone-200 px-4 py-2 rounded-xl transition-all">
@@ -2534,11 +2538,11 @@ window.handleAuthSubmit = handleAuthSubmit;
         window.updateHeaderBranding = updateHeaderBranding;
 
        // ==========================================
-// 💡 秘匿メモ（ネタバレ）の表示・非表示を切り替える関数（トグル対応版）
-// ==========================================
-function toggleSecretMemo() {
-    const container = document.getElementById('detailSecretContainer');
-    if (!container) return;
+       // 💡 秘匿メモ（ネタバレ）の表示・非表示を切り替える関数（トグル対応版）
+       // ==========================================
+       function toggleSecretMemo() {
+           const container = document.getElementById('detailSecretContainer');
+           if (!container) return;
 
     // hidden クラスがあれば外し、なければ付ける（これで何度でもパチパチ切り替わります）
     container.classList.toggle('hidden');
@@ -2679,6 +2683,32 @@ window.toggleSecretMemo = toggleSecretMemo;
                 }
             }
             window.renderBreadcrumbAndActions = renderBreadcrumbAndActions;
+
+            // 💡 個別キャラクターのデータをJSONファイルとしてダウンロードする関数
+function exportCharacterJson(characterId) {
+    const ch = window.characters?.find(c => String(c.id) === String(characterId));
+    if (!ch) {
+        alert("キャラクターデータが見つかりませんでした。");
+        return;
+    }
+
+    // ファイル名に使いやすいよう、キャラクター名から安全な文字列を作る
+    const safeName = (ch.name || 'character').replace(/[\/\\?%*:|"<>]/g, '_');
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(ch, null, 2));
+    
+    const downloadAnchor = document.createElement('a');
+    downloadAnchor.setAttribute("href", dataStr);
+    downloadAnchor.setAttribute("download", `${safeName}_data.json`);
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.remove();
+
+    if (typeof showToast === 'function') {
+        showToast("キャラクターのJSONファイルを書き出しました！", "info");
+    }
+}
+window.exportCharacterJson = exportCharacterJson;
+            
         </script>
 
         <!-- 📂 システム別フォルダビュー（ホーム） -->
