@@ -3429,6 +3429,24 @@ function escapeHtml(str) {
             </div>
 
             <form onsubmit="handleAuthSubmit(event)" class="flex flex-col gap-3">
+
+                <!-- 🔑 パスコード入力欄（数字キーパッド対応） -->
+            <div class="flex flex-col gap-1.5">
+                <input type="password" 
+                       id="inputPasscode" 
+                       inputmode="numeric" 
+                       pattern="[0-9]*" 
+                       class="w-full text-center tracking-widest text-lg bg-stone-50 border border-stone-200 rounded-xl px-3 py-2.5 text-stone-800 focus:outline-none focus:border-stone-400 focus:bg-white transition-all" 
+                       placeholder="••••">
+                <p id="authErrorMsg" class="text-[10px] text-rose-500 text-center hidden">パスコードが違います</p>
+            </div>
+
+            <!-- ボタン類 -->
+            <div class="flex gap-2 mt-2">
+                <button type="button" onclick="closeAuthModal()" class="flex-1 bg-stone-100 hover:bg-stone-200 text-stone-600 text-xs font-bold py-2.5 rounded-xl transition-all">キャンセル</button>
+                <button type="submit" class="flex-1 bg-stone-800 hover:bg-stone-900 text-white text-xs font-bold py-2.5 rounded-xl transition-all shadow-sm">決定</button>
+            </div>
+                
     <!-- 💡 ブラウザの警告を消すための隠しユーザー名フィールド -->
     <input type="text" name="username" autocomplete="username" class="hidden" style="display:none;" />
 
