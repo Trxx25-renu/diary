@@ -211,25 +211,29 @@
                 }
             } catch (e) { console.error("Config load error:", e); }
 
-            await loadCharactersFromFirestore();
+            // 💡 Firestoreからのキャラクター一括取得をやめ、ブラウザのローカルストレージから読み込むように変更
+            await loadCharactersFromLocal();
             renderSystemFolders();
             updateAdminUI();
         }); // ← ここできちんと非同期イベントの閉じ括弧を閉じます
 
-        async function loadCharactersFromFirestore() {
+        // ==========================================
+        // 💡 キャラクターデータの読み込み（ローカルストレージ対応版）
+        // ==========================================
+        async function loadCharactersFromLocal() {
             try {
-                const charsRef = collection(db, 'artifacts', window.appId, 'public', 'data', 'characters');
-                const querySnap = await getDocs(charsRef);
-                const loaded = [];
-                querySnap.forEach(d => {
-                    loaded.push({ id: d.id, ...d.data() });
-                });
-                window.characters = loaded;
+                const saved = localStorage.getItem('local_characters');
+                if (saved) {
+                    window.characters = JSON.parse(saved);
+                } else {
+                    window.characters = [];
+                }
             } catch (e) {
                 console.error("Characters load error:", e);
                 window.characters = [];
             }
         }
+        window.loadCharactersFromLocal = loadCharactersFromLocal;
 
         function renderSystemFolders(filterKeyword = "") {
             const container = document.getElementById('systemFoldersContainer');
@@ -285,12 +289,12 @@
                 `;
             }
         }
-window.renderSystemFolders = renderSystemFolders;
+        window.renderSystemFolders = renderSystemFolders;
 
-function handleFolderSearchInput(e) {
-    renderSystemFolders(e.target.value);
-}
-window.handleFolderSearchInput = handleFolderSearchInput;
+        function handleFolderSearchInput(e) {
+            renderSystemFolders(e.target.value);
+        }
+        window.handleFolderSearchInput = handleFolderSearchInput;
 
  // ==========================================
 // 💡 ファビコンファイル選択時のプレビュー＆Base64変換関数
