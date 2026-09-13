@@ -650,7 +650,7 @@ function removeCharacterImage(categoryKey, index) {
 window.removeCharacterImage = removeCharacterImage;
 
 // ==========================================
-// 💡 キャラクター保存関数（JSONファイルダウンロード ＆ ローカル保存対応版）
+// 💡 キャラクター保存関数（自動ダウンロード廃止・ローカル保存完結版）
 // ==========================================
 async function saveCharacter(event) {
     event.preventDefault();
@@ -701,7 +701,7 @@ async function saveCharacter(event) {
         return; 
     }
 
-    // 💡 既存のIDを維持するか、新規ならランダムなIDを生成
+    // 既存のIDを維持するか、新規ならランダムなIDを生成
     let targetCharacterId = window.editingCharacterId || ('char_' + Math.random().toString(36).substring(2, 11));
 
     const charData = {
@@ -726,24 +726,10 @@ async function saveCharacter(event) {
             window.characters.push(charData);
         }
 
-        // 💡 2. ブラウザのlocalStorageにも自動保存して、リロードしても一覧に残るようにする
+        // 2. ブラウザのlocalStorageに保存（これで保存ボタンを押しても勝手にDLされなくなります）
         localStorage.setItem('local_characters', JSON.stringify(window.characters));
 
-        // 3. キャラクターごとの独立したJSONファイルとしてPCにダウンロード保存
-        const jsonString = JSON.stringify(charData, null, 2);
-        const blob = new Blob([jsonString], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        
-        const a = document.createElement('a');
-        a.href = url;
-        const safeFileName = (name || 'character').replace(/[\\/:*?"<>|]/g, '_');
-        a.download = `${safeFileName}_${targetCharacterId}.json`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-
-        showToast("キャラクターを保存し、JSONファイルをダウンロードしました！", "info");
+        showToast("キャラクターを保存しました！", "info");
 
         closeCharacterModal();
         if (typeof renderSystemFolders === 'function') renderSystemFolders();
@@ -757,7 +743,7 @@ async function saveCharacter(event) {
         }
     } catch (e) {
         console.error("Save error:", e);
-        alert("保存（ファイルのダウンロード）に失敗しました。コンソールを確認してください。");
+        alert("保存処理に失敗しました。コンソールを確認してください。");
     }
 }
 window.saveCharacter = saveCharacter;
