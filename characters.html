@@ -1618,6 +1618,9 @@ async function saveCharacter(event) {
     const memo = document.getElementById('charMemo')?.value || '';
     const secret = document.getElementById('charSecret')?.value || '';
     
+    // 🔗 編集モーダルで管理されている複数リンク配列を取得（未定義なら空配列）
+    const links = window.editingCharacterLinks || [];
+    
     const thumbnail = window.currentThumbnailBase64 || "";
     const avatar = window.currentAvatarBase64 || "";
 
@@ -1660,12 +1663,13 @@ async function saveCharacter(event) {
         birthdate,   
         occupation, 
         themeColor,  
-        sheetUrl, 
-        memo,         // 設定／メモ
-        secret,       // 秘匿メモ
+        sheetUrl: links.length > 0 ? links[0].url : sheetUrl, // 互換性考慮：最初のリンクURLを sheetUrl にも反映
+        links,       // 🔗 複数リンク配列を保存
+        memo,        // 設定／メモ
+        secret,      // 秘匿メモ
         thumbnail, 
         avatar,
-        images,       // カテゴリ別ギャラリー画像
+        images,      // カテゴリ別ギャラリー画像
         customValues,
         updatedAt: new Date().toISOString()
     };
@@ -1826,7 +1830,7 @@ function sortCharacters(chars) {
 window.sortCharacters = sortCharacters;
        
 // ==========================================
-// 💡 編集モーダルを開く関数（設定・秘匿メモ・ギャラリー画像復元対応版）
+// 💡 編集モーダルを開く関数（設定・秘匿メモ・ギャラリー画像復元・複数リンク対応版）
 // ==========================================
 function openEditCharacterModal(characterId) {
     const ch = window.characters.find(c => String(c.id) === String(characterId));
@@ -1850,7 +1854,7 @@ function openEditCharacterModal(characterId) {
     const birthdateInput = document.getElementById('charBirthdate');
     const occupationInput = document.getElementById('charOccupation');
     const colorInput = document.getElementById('charThemeColor');
-    const sheetUrlInput = document.getElementById('charSheetUrl');
+    const sheetUrlInput = document.getElementById('charSheetUrl'); // （もし残していれば）
     const systemInput = document.getElementById('charSystemSelect');
 
     // 設定／メモ と 秘匿メモの入力欄を取得して値をセット
@@ -1870,6 +1874,20 @@ function openEditCharacterModal(characterId) {
 
     if (memoInput) memoInput.value = ch.memo || '';
     if (secretInput) secretInput.value = ch.secret || '';
+
+    // 🔗 【追加】複数リンク（links）の復元と初期化・レンダリング
+    if (ch.links && Array.isArray(ch.links)) {
+        window.editingCharacterLinks = JSON.parse(JSON.stringify(ch.links));
+    } else if (ch.sheetUrl) {
+        // 互換性維持：古い sheetUrl が残っている場合は配列に変換
+        window.editingCharacterLinks = [{ label: 'キャラクターシート', url: ch.sheetUrl }];
+    } else {
+        window.editingCharacterLinks = [];
+    }
+
+    if (typeof renderCharacterLinksEditor === 'function') {
+        renderCharacterLinksEditor();
+    }
 
     if (systemInput) {
         systemInput.disabled = false;
