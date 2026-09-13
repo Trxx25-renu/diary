@@ -631,20 +631,26 @@ window.navigateTo = navigateTo;
     }
     window.renderWeatherSelectOptions = renderWeatherSelectOptions;
 
-    function goBack() {
-        if (window.currentView === 'detail') {
-            if (window.selectedYearMonth) {
-                navigateTo('gallery', window.selectedYearMonth);
-            } else {
-                    navigateTo('months');
-                }
-            } else if (window.currentView === 'gallery') {
-                navigateTo('months');
-            } else {
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-            }
+    // 🌟 画面階層や状態に応じて安全に戻るための関数
+function goBack() {
+    // 現在のビュー（階層）または保持している状態に応じて戻る先を分岐
+    if (window.currentView === 'detail') {
+        if (window.selectedYearMonth) {
+            navigateTo('gallery', window.selectedYearMonth);
+        } else {
+            navigateTo('months');
         }
-        window.goBack = goBack;
+    } else if (window.currentView === 'gallery') {
+        navigateTo('months');
+    } else {
+        // デフォルトまたは上位がない場合は月一覧へ安全に戻る
+        navigateTo('months');
+    }
+
+    // 戻った瞬間に画面を確実に最上部に移動させる（ガクつき防止）
+    window.scrollTo({ top: 0, behavior: 'instant' });
+}
+window.goBack = goBack;
 
         function updateBackButtonVisibility() {
             const btn = document.getElementById('floatingBackBtn');
