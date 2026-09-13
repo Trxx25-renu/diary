@@ -646,7 +646,7 @@ function removeCharacterImage(categoryKey, index) {
 window.removeCharacterImage = removeCharacterImage;
 
 // ==========================================
-// 💡 キャラクター保存関数（JSON対応・容量エラーハンドリング付き）
+// 💡 キャラクター保存関数（完全JSONダウンロード対応版）
 // ==========================================
 async function saveCharacter(event) {
     event.preventDefault();
@@ -676,7 +676,6 @@ async function saveCharacter(event) {
 
     const customValues = {};
     
-    // 変数名が重複してエラーにならないよう安全に修正した部分
     document.querySelectorAll('.char-custom-status-input').forEach(inputEl => {
         const sId = inputEl.id;
         if (sId && sId.startsWith('custom_status_')) {
@@ -698,7 +697,11 @@ async function saveCharacter(event) {
         return; 
     }
 
+    // 💡 既存のIDを維持するか、新規ならランダムなIDを生成
+    let targetCharacterId = window.editingCharacterId || ('char_' + Math.random().toString(36).substring(2, 11));
+
     const charData = {
+        id: targetCharacterId,
         systemId, name, nameKana, epithet, epithetKana,
         age: age ? Number(age) : '',
         gender, birthdate, occupation, themeColor, 
@@ -708,28 +711,33 @@ async function saveCharacter(event) {
         updatedAt: new Date().toISOString()
     };
 
-    let targetCharacterId = window.editingCharacterId;
-
     try {
-        const charsRef = collection(db, 'artifacts', window.appId, 'public', 'data', 'characters');
+        // 💡 Firestoreへの保存を廃止し、キャラクターごとの独立したJSONファイルとしてダウンロード保存
+        const jsonString = JSON.stringify(charData, null, 2);
+        const blob = new Blob([jsonString], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        
+        const a = document.createElement('a');
+        a.href = url;
+        // ファイル名にキャラクター名を安全に使用（使えない文字は置換）
+        const safeFileName = (name || 'character').replace(/[\\/:*?"<>|]/g, '_');
+        a.download = `${safeFileName}_${targetCharacterId}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
 
-        if (window.editingCharacterId) {
-            const docRef = doc(db, 'artifacts', window.appId, 'public', 'data', 'characters', window.editingCharacterId);
-            await updateDoc(docRef, charData);
-
-            const index = window.characters.findIndex(c => String(c.id) === String(window.editingCharacterId));
-            if (index !== -1) {
-                window.characters[index] = { id: window.editingCharacterId, ...window.characters[index], ...charData };
-            }
-            showToast("キャラクターを更新しました！", "info");
+        // 画面上のローカルデータ配列も更新（プレビューや一覧用）
+        if (!window.characters) window.characters = [];
+        const index = window.characters.findIndex(c => String(c.id) === String(targetCharacterId));
+        if (index !== -1) {
+            window.characters[index] = { ...window.characters[index], ...charData };
         } else {
             charData.createdAt = new Date().toISOString();
-            const docRef = await addDoc(charsRef, charData);
-            targetCharacterId = docRef.id;
-            
-            window.characters.push({ id: targetCharacterId, ...charData });
-            showToast("キャラクターを登録しました！", "info");
+            window.characters.push(charData);
         }
+
+        showToast("キャラクターのJSONファイルを保存（ダウンロード）しました！", "info");
 
         closeCharacterModal();
         if (typeof renderSystemFolders === 'function') renderSystemFolders();
@@ -743,12 +751,7 @@ async function saveCharacter(event) {
         }
     } catch (e) {
         console.error("Save error:", e);
-        // 💡 1MB制限に引っかかった時に専用のエラーメッセージを出す親切設計
-        if (e.code === 'resource-exhausted' || (e.message && e.message.includes('exceeds the maximum allowed size'))) {
-            alert("⚠️ 保存エラー：キャラクターデータのサイズがFirestoreの制限（1MB）を超えました。\n画像サイズを小さくするか、枚数を減らして再度お試しください。");
-        } else {
-            alert("保存に失敗しました。コンソールを確認してください。");
-        }
+        alert("保存（ファイルのダウンロード）に失敗しました。コンソールを確認してください。");
     }
 }
 window.saveCharacter = saveCharacter;
