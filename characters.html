@@ -374,15 +374,15 @@ function renderCharacterList(systemId, filterKeyword = "") {
         }
 
         // ==========================================
-        // 💡 二つ名と読み仮名を崩れないよう上下にスッキリ配置
+        // 💡 二つ名と読み仮名のバランス調整（詳細画面のトーンに合わせる）
         // ==========================================
         let epithetHtml = '';
         if (ch.epithet && ch.epithet.trim() !== '') {
-            const kana = ch.epithetKana ? `<span class="text-[8px] font-normal text-stone-400 block">${ch.epithetKana}</span>` : '';
+            const kana = ch.epithetKana ? `<span class="text-[9px] font-medium text-stone-400 block mb-0.5 truncate">${ch.epithetKana}</span>` : '';
             epithetHtml = `
-                <div class="mb-[-2px] truncate">
+                <div class="mb-2 truncate">
                     ${kana}
-                    <span class="text-[11px] font-bold tracking-wider" style="color: ${themeColor}">${ch.epithet}</span>
+                    <span class="text-xs font-bold tracking-wider block leading-tight filter drop-shadow-[0_1px_1px_rgba(255,255,255,0.9)]" style="color: ${themeColor}">${ch.epithet}</span>
                 </div>
             `;
         }
