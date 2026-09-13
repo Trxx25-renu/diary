@@ -374,7 +374,7 @@ function renderCharacterList(systemId, filterKeyword = "") {
         }
 
         // ==========================================
-        // 💡 二つ名と読み仮名のバランス調整（詳細画面のトーンに合わせる）
+        // 💡 二つ名と読み仮名のバランス・視認性の調整
         // ==========================================
         let epithetHtml = '';
         if (ch.epithet && ch.epithet.trim() !== '') {
@@ -382,7 +382,8 @@ function renderCharacterList(systemId, filterKeyword = "") {
             epithetHtml = `
                 <div class="mb-2 truncate">
                     ${kana}
-                    <span class="text-xs font-bold tracking-wider block leading-tight filter drop-shadow-[0_1px_1px_rgba(255,255,255,0.9)]" style="color: ${themeColor}">${ch.epithet}</span>
+                    <!-- 💡 アイコンのテーマカラーのニュアンスを残しつつ、白背景で絶対に読める濃さに自動補正 -->
+                    <span class="text-xs font-bold tracking-wider block leading-tight" style="color: color-mix(in srgb, ${themeColor} 70%, #1c1917);">${ch.epithet}</span>
                 </div>
             `;
         }
