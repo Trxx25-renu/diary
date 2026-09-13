@@ -427,18 +427,35 @@ window.editingCharacterImages = {
     doodle: []
 };
 
+// ==========================================
+// 💡 キャラクター画像（アイコン・立ち絵・ギャラリー）統合管理まわり
+// ==========================================
+
+// 現在選択されている画像カテゴリ（初期値: thumb）
+window.currentImageCategory = 'thumb';
+
+// キャラクターごとの画像をカテゴリ別に保持する一時オブジェクト
+window.editingCharacterImages = {
+    thumb: [],   // 一覧用アイコン（原則1枚）
+    avatar: [],  // 立ち絵（原則1枚）
+    base: [],
+    combat: [],
+    sd: [],
+    doodle: []
+};
+
 // 1. 画像カテゴリタブを切り替える関数
 function switchImageCategory(categoryKey) {
     window.currentImageCategory = categoryKey;
 
     // タブの見た目をアクティブ・非アクティブに切り替え
-    ['base', 'combat', 'sd', 'doodle'].forEach(cat => {
+    ['thumb', 'avatar', 'base', 'combat', 'sd', 'doodle'].forEach(cat => {
         const btn = document.getElementById(`imgTab-${cat}`);
         if (!btn) return;
         if (cat === categoryKey) {
-            btn.className = 'flex-1 py-1.5 text-[11px] font-bold rounded-lg bg-white text-stone-800 shadow-sm transition-all';
+            btn.className = 'flex-1 py-1.5 px-2 text-[10px] font-bold rounded-lg bg-white text-stone-800 shadow-sm transition-all whitespace-nowrap';
         } else {
-            btn.className = 'flex-1 py-1.5 text-[11px] font-bold rounded-lg text-stone-500 hover:text-stone-800 transition-all';
+            btn.className = 'flex-1 py-1.5 px-2 text-[10px] font-bold rounded-lg text-stone-500 hover:text-stone-800 transition-all whitespace-nowrap';
         }
     });
 
@@ -449,19 +466,53 @@ function switchImageCategory(categoryKey) {
 }
 window.switchImageCategory = switchImageCategory;
 
-// 2. 画像ファイルが選択されたときの処理（複数対応・透過維持＆WebP自動圧縮）
+// 💡 他のカテゴリの画像を流用・コピーする関数
+function copyImageToCategory(sourceCategory, index, targetCategory) {
+    const sourceList = window.editingCharacterImages?.[sourceCategory];
+    if (!sourceList || !sourceList[index]) return;
+
+    const targetImg = JSON.parse(JSON.stringify(sourceList[index]));
+
+    if (!window.editingCharacterImages[targetCategory]) {
+        window.editingCharacterImages[targetCategory] = [];
+    }
+
+    // アイコンや立ち絵は1枚制限なので置き換え、ギャラリー系は追加
+    if (targetCategory === 'thumb' || targetCategory === 'avatar') {
+        window.editingCharacterImages[targetCategory] = [targetImg];
+        if (typeof showToast === 'function') {
+            showToast(targetCategory === 'thumb' ? 'アイコンに設定しました！' : '立ち絵に設定しました！', 'info');
+        }
+    } else {
+        window.editingCharacterImages[targetCategory].push(targetImg);
+        if (typeof showToast === 'function') {
+            showToast('ギャラリーに追加しました！', 'info');
+        }
+    }
+
+    // もし現在そのタブを開いていれば再描画
+    if (window.currentImageCategory === targetCategory) {
+        renderCharacterImagesPreview();
+    }
+}
+window.copyImageToCategory = copyImageToCategory;
+
+// 2. 画像ファイルが選択されたときの処理（アイコン・立ち絵は1枚制限、他は複数対応・WebP自動圧縮）
 function handleCharacterImagesSelect(event) {
     const files = event.target.files;
     if (!files || files.length === 0) return;
 
-    Array.from(files).forEach(file => {
+    const isSingleSlot = (window.currentImageCategory === 'thumb' || window.currentImageCategory === 'avatar');
+    const targetFiles = isSingleSlot ? [files[0]] : Array.from(files);
+
+    targetFiles.forEach(file => {
         const reader = new FileReader();
         reader.onload = function(e) {
             const img = new Image();
             img.onload = function() {
-                // Canvasを使って画像を縮小（最大幅・高さ 800px に収める）
+                // Canvasを使って画像を縮小（アイコンは最大200px、他は最大800pxに収める）
                 const canvas = document.createElement('canvas');
-                const MAX_SIZE = 800;
+                const MAX_SIZE = (window.currentImageCategory === 'thumb') ? 200 : 800;
                 let width = img.width;
                 let height = img.height;
 
@@ -488,16 +539,27 @@ function handleCharacterImagesSelect(event) {
                 // 💡 透過を維持したままWebP形式（品質0.75）で圧縮してBase64化
                 const compressedBase64 = canvas.toDataURL('image/webp', 0.75);
 
-                const defaultName = file.name.replace(/\.[^/.]+$/, "");
+                const defaultName = isSingleSlot 
+                    ? (window.currentImageCategory === 'thumb' ? '一覧アイコン' : '立ち絵')
+                    : file.name.replace(/\.[^/.]+$/, "");
 
                 if (!window.editingCharacterImages[window.currentImageCategory]) {
                     window.editingCharacterImages[window.currentImageCategory] = [];
                 }
-                window.editingCharacterImages[window.currentImageCategory].push({
-                    url: compressedBase64,
-                    name: defaultName,
-                    uploadedAt: Date.now()
-                });
+
+                if (isSingleSlot) {
+                    window.editingCharacterImages[window.currentImageCategory] = [{
+                        url: compressedBase64,
+                        name: defaultName,
+                        uploadedAt: Date.now()
+                    }];
+                } else {
+                    window.editingCharacterImages[window.currentImageCategory].push({
+                        url: compressedBase64,
+                        name: defaultName,
+                        uploadedAt: Date.now()
+                    });
+                }
 
                 if (typeof renderCharacterImagesPreview === 'function') {
                     renderCharacterImagesPreview();
@@ -520,7 +582,7 @@ function updateImageLabel(categoryKey, index, newName) {
 }
 window.updateImageLabel = updateImageLabel;
 
-// 4. プレビュー領域を描画する関数（タイトル入力欄付き）
+// 4. プレビュー領域を描画する関数（アイコン・立ち絵とギャラリーで表示を切り替え、流用ボタン付き）
 function renderCharacterImagesPreview() {
     const container = document.getElementById('characterImagesPreviewContainer');
     if (!container) return;
@@ -528,30 +590,65 @@ function renderCharacterImagesPreview() {
     const currentList = window.editingCharacterImages[window.currentImageCategory] || [];
 
     if (currentList.length === 0) {
+        const categoryNames = {
+            thumb: '一覧用アイコン',
+            avatar: '立ち絵',
+            base: '基本・成長',
+            combat: '戦闘・衣装',
+            sd: 'SD・その他',
+            doodle: '落書き'
+        };
         container.innerHTML = `
             <div class="col-span-full flex items-center justify-center text-[11px] text-stone-400 py-4">
-                このカテゴリにはまだ画像がありません
+                ${categoryNames[window.currentImageCategory] || 'このカテゴリ'}にはまだ画像がありません
             </div>
         `;
         return;
     }
 
     container.innerHTML = '';
+    const isSingleSlot = (window.currentImageCategory === 'thumb' || window.currentImageCategory === 'avatar');
+
     currentList.forEach((imgObj, index) => {
         const item = document.createElement('div');
-        item.className = 'bg-stone-50 rounded-xl overflow-hidden border border-stone-200 p-2.5 flex flex-col gap-2';
-        item.innerHTML = `
-            <div class="relative group aspect-square bg-white rounded-lg overflow-hidden border border-stone-200">
-                <img src="${imgObj.url}" class="w-full h-full object-cover">
-                <button type="button" onclick="removeCharacterImage('${window.currentImageCategory}', ${index})" class="absolute top-1 right-1 bg-stone-900/70 hover:bg-rose-600 text-white w-5 h-5 rounded-full flex items-center justify-center text-[10px] opacity-0 group-hover:opacity-100 transition-opacity">
-                    <i class="fa-solid fa-xmark"></i>
+        
+        if (isSingleSlot) {
+            item.className = 'col-span-full bg-stone-50 rounded-xl overflow-hidden border border-stone-200 p-3 flex items-center gap-3';
+            item.innerHTML = `
+                <div class="relative group w-16 h-16 bg-white rounded-lg overflow-hidden border border-stone-200 shrink-0 flex items-center justify-center">
+                    <img src="${imgObj.url}" class="w-full h-full object-cover">
+                    <button type="button" onclick="removeCharacterImage('${window.currentImageCategory}', ${index})" class="absolute top-1 right-1 bg-stone-900/70 hover:bg-rose-600 text-white w-5 h-5 rounded-full flex items-center justify-center text-[10px] opacity-0 group-hover:opacity-100 transition-opacity">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <div class="text-xs font-bold text-stone-700 truncate">${imgObj.name}</div>
+                    <div class="text-[10px] text-stone-400 mt-0.5">登録済み（変更する場合は上のファイル選択からアップロードしてください）</div>
+                </div>
+                <button type="button" onclick="removeCharacterImage('${window.currentImageCategory}', ${index})" class="text-stone-400 hover:text-rose-600 p-2 text-xs">
+                    <i class="fa-solid fa-trash-can"></i>
                 </button>
-            </div>
-            <div>
-                <label class="text-[10px] text-stone-400 block mb-0.5">画像タイトル</label>
-                <input type="text" value="${imgObj.name || ''}" oninput="updateImageLabel('${window.currentImageCategory}', ${index}, this.value)" class="w-full text-xs bg-white border border-stone-200 rounded-lg px-2 py-1 text-stone-700 focus:outline-none focus:border-stone-400" placeholder="例: 通常, 笑顔 など">
-            </div>
-        `;
+            `;
+        } else {
+            // ギャラリー系タブではタイトル入力欄と「アイコンにする」「立ち絵にする」ボタンを表示
+            item.className = 'bg-stone-50 rounded-xl overflow-hidden border border-stone-200 p-2.5 flex flex-col gap-2';
+            item.innerHTML = `
+                <div class="relative group aspect-square bg-white rounded-lg overflow-hidden border border-stone-200 flex items-center justify-center">
+                    <img src="${imgObj.url}" class="w-full h-full object-cover">
+                    <button type="button" onclick="removeCharacterImage('${window.currentImageCategory}', ${index})" class="absolute top-1 right-1 bg-stone-900/70 hover:bg-rose-600 text-white w-5 h-5 rounded-full flex items-center justify-center text-[10px] opacity-0 group-hover:opacity-100 transition-opacity">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+                <div>
+                    <label class="text-[10px] text-stone-400 block mb-0.5">画像タイトル</label>
+                    <input type="text" value="${imgObj.name || ''}" oninput="updateImageLabel('${window.currentImageCategory}', ${index}, this.value)" class="w-full text-xs bg-white border border-stone-200 rounded-lg px-2 py-1 text-stone-700 focus:outline-none focus:border-stone-400" placeholder="例: 通常, 笑顔 など">
+                </div>
+                <div class="flex gap-1 pt-1 border-t border-stone-200">
+                    <button type="button" onclick="copyImageToCategory('${window.currentImageCategory}', ${index}, 'thumb')" class="flex-1 bg-white hover:bg-stone-100 border border-stone-200 text-stone-600 text-[10px] py-1 rounded-lg transition-all" title="この画像をアイコンに流用する">アイコンにする</button>
+                    <button type="button" onclick="copyImageToCategory('${window.currentImageCategory}', ${index}, 'avatar')" class="flex-1 bg-white hover:bg-stone-100 border border-stone-200 text-stone-600 text-[10px] py-1 rounded-lg transition-all" title="この画像を立ち絵に流用する">立ち絵にする</button>
+                </div>
+            `;
+        }
         container.appendChild(item);
     });
 }
