@@ -4,7 +4,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="noindex, nofollow">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title id="siteTitleTag">PC一覧 - Character Log</title>
+    <title id="siteTitleTag">PC一覧 - Chara Log</title>
     
     <!-- 動的ファビコン用 -->
     <link id="dynamicFavicon" rel="icon" href="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" type="image/x-icon">
@@ -1255,7 +1255,7 @@ function closeAuthModal() {
 window.closeAuthModal = closeAuthModal;
        
     // ==========================================
-// 💡 サイト設定モーダルを開く関数（全設定・エディタ描画対応版）
+// 💡 HP設定モーダルを開く関数（全設定・エディタ描画対応版）
 // ==========================================
 function handleOpenSettingsModal() {
     checkAdminPermission(() => {
@@ -1309,7 +1309,7 @@ function handleOpenSettingsModal() {
 }
 window.handleOpenSettingsModal = handleOpenSettingsModal;
 
-    // 💡 サイト設定モーダルを閉じる関数
+    // 💡 HP設定モーダルを閉じる関数
     function closeSettingsModal() {
         const modal = document.getElementById('settingsModal');
         if (modal) {
@@ -1319,7 +1319,7 @@ window.handleOpenSettingsModal = handleOpenSettingsModal;
     window.closeSettingsModal = closeSettingsModal;
 
 // ==========================================
-// 💡 サイト設定モーダル内のエディタ（システム順序・カスタム項目）を描画する関数
+// 💡 HP設定モーダル内のエディタ（システム順序・カスタム項目）を描画する関数
 // ==========================================
 function renderSettingsEditors() {
     renderSettingsSystemsEditor();
@@ -1915,14 +1915,14 @@ window.openEditCharacterModal = openEditCharacterModal;
 
 
 // ==========================================
-// 💡 サイト設定を保存する関数（カテゴリ名対応版）
+// 💡 HP設定を保存する関数（カテゴリ名対応版）
 // ==========================================
 async function saveRosterSettings(event) {
     event.preventDefault();
     const title = document.getElementById('settingTitleInput').value.trim();
     const favicon = window.currentFaviconBase64 || window.rosterSettings?.favicon || "";
 
-    // サイト設定モーダルからカスタムカテゴリ名を取得（未入力ならデフォルト名）
+    // HP設定モーダルからカスタムカテゴリ名を取得（未入力ならデフォルト名）
     const galleryCategories = {
         base: document.getElementById('catNameBase')?.value.trim() || '基本・成長',
         combat: document.getElementById('catNameCombat')?.value.trim() || '戦闘・衣装',
@@ -1946,7 +1946,7 @@ async function saveRosterSettings(event) {
         applyRosterSettings(newSettings);
         closeSettingsModal();
         renderSystemFolders();
-        showToast("サイト設定を保存しました！", "info");
+        showToast("HP設定を保存しました！", "info");
     } catch (e) {
         console.error("Settings save error:", e);
         alert("設定の保存に失敗しました。");
@@ -2415,7 +2415,7 @@ window.toggleSecretMemo = toggleSecretMemo;
             <div class="flex items-center gap-2">
                 <button onclick="handleOpenSettingsModal()" class="bg-white hover:bg-stone-50 text-stone-700 text-xs font-bold px-3.5 py-1.5 rounded-full border border-stone-200 shadow-sm transition-all flex items-center gap-1.5">
                     <i class="fa-solid fa-gear text-stone-500"></i>
-                    <span>サイト設定</span>
+                    <span>HP設定</span>
                 </button>
                 <button id="headerKeyBtn" onclick="handleHeaderKeyClick()" class="text-stone-600 hover:text-stone-800 transition-colors p-2 text-base" title="管理者ログイン">
                     <i class="fa-solid fa-lock"></i>
@@ -2581,13 +2581,13 @@ window.toggleSecretMemo = toggleSecretMemo;
         <div id="view-detail" class="hidden"></div>
     </main>
 
-    <!-- ⚙️ サイト設定モーダル -->
+    <!-- ⚙️ HP設定モーダル -->
 <div id="settingsModal" class="hidden fixed inset-0 z-50 bg-stone-900/40 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-xl border border-stone-200 max-h-[90vh] overflow-y-auto">
         <div class="flex items-center justify-between mb-4 pb-2 border-b border-stone-100">
             <h3 class="font-bold text-stone-800 text-sm flex items-center gap-2">
                 <i class="fa-solid fa-gear text-stone-600"></i>
-                <span>サイト設定 ＆ システム順序変更</span>
+                <span>HP設定 ＆ システム順序変更</span>
             </h3>
             <button onclick="closeSettingsModal()" class="text-stone-400 hover:text-stone-700 p-1">
                 <i class="fa-solid fa-xmark text-lg"></i>
