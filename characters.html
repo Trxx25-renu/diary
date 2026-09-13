@@ -1226,7 +1226,17 @@ function updateAdminUI() {
         }
     }
 
-    // 💡 修正：現在キャラクター詳細画面を開いている場合、編集・削除ボタンを即座に消去（再描画）する
+    // 💡 【追加】 .admin-only クラスを持つすべての要素を一括で表示・非表示切り替え
+    const adminElements = document.querySelectorAll('.admin-only');
+    adminElements.forEach(el => {
+        if (window.isAdmin) {
+            el.classList.remove('hidden');
+        } else {
+            el.classList.add('hidden');
+        }
+    });
+
+    // 現在キャラクター詳細画面を開いている場合、編集・削除ボタンを即座に消去（再描画）する
     if (typeof window._currentGalleryState !== 'undefined' && window._currentGalleryState.characterId) {
         if (typeof renderCharacterDetail === 'function') {
             renderCharacterDetail(window._currentGalleryState.characterId);
