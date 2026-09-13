@@ -2818,6 +2818,25 @@ function exportCharacterJson(characterId) {
     }
 }
 window.exportCharacterJson = exportCharacterJson;
+
+            // 💡 初回や設定変更時にトークンとGist IDを登録するための関数
+function setupGistSync() {
+    const currentToken = GIST_CONFIG.token;
+    const currentId = GIST_CONFIG.gistId;
+
+    const inputToken = prompt("GitHubのPersonal Access Token (classic) を入力してください:", currentToken);
+    if (inputToken === null) return; // キャンセルされたら何もしない
+
+    const inputId = prompt("保存先のGist IDを入力してください:", currentId);
+    if (inputId === null) return;
+
+    GIST_CONFIG.setToken(inputToken.trim());
+    GIST_CONFIG.setGistId(inputId.trim());
+
+    alert("Gistの設定を保存しました！ページを再読み込みします。");
+    location.reload();
+}
+window.setupGistSync = setupGistSync;
             
         </script>
 
