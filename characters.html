@@ -945,14 +945,28 @@ function renderCharacterDetail(characterId) {
         </div>
     `;
 
+    // 🔗 複数リンク対応（旧形式の ch.sheetUrl があれば自動でフォールバックして対応）
+    let linksList = [];
+    if (Array.isArray(ch.links) && ch.links.length > 0) {
+        linksList = ch.links;
+    } else if (ch.sheetUrl) {
+        linksList = [{ label: 'キャラクターシートを開く', url: ch.sheetUrl }];
+    }
+
     let sheetLinkHtml = '';
-    if (ch.sheetUrl) {
+    if (linksList.length > 0) {
         sheetLinkHtml = `
             <div class="mt-4 pt-4 border-t border-stone-100">
-                <a href="${ch.sheetUrl}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 text-xs font-bold px-4 py-2 rounded-xl shadow-sm hover:opacity-95 transition-all" style="background-color: ${themeColor}; color: ${badgeTextColor};">
-                    <i class="fa-solid fa-external-link-alt text-[10px]"></i>
-                    <span>キャラクターシートを開く</span>
-                </a>
+                <div class="flex items-center gap-2 flex-wrap">
+                    ${linksList.map(link => `
+                        <a href="${link.url}" target="_blank" rel="noopener noreferrer" 
+                           class="inline-flex items-center gap-2 text-xs font-bold px-3.5 py-2 rounded-xl shadow-sm hover:opacity-95 transition-all" 
+                           style="background-color: ${themeColor}; color: ${badgeTextColor};">
+                            <i class="fa-solid fa-external-link-alt text-[10px]"></i>
+                            <span>${link.label || 'キャラクターシート'}</span>
+                        </a>
+                    `).join('')}
+                </div>
             </div>
         `;
     }
@@ -1025,15 +1039,27 @@ function renderCharacterDetail(characterId) {
                         <h4 class="text-xs font-bold text-rose-500 mb-1.5 flex items-center gap-1.5">
                             <i class="fa-solid fa-user-secret text-rose-400"></i> 秘匿メモ（ネタバレ）
                         </h4>
-                        <div class="bg-rose-50/50 rounded-2xl p-4 border border-rose-100/60 relative overflow-hidden">
-                            <div class="text-xs text-stone-700 whitespace-pre-wrap leading-relaxed filter blur-sm select-none transition-all cursor-pointer hover:opacity-90" onclick="const content = this.nextElementSibling; this.classList.toggle('hidden'); content.classList.toggle('hidden');">
-                                ${secret}
+                        <div class="bg-stone-100/70 rounded-2xl p-6 border border-stone-200/80 relative overflow-hidden text-center">
+                            <!-- 🙈 マスク状態（初期） -->
+                            <div class="secret-masked cursor-pointer py-4" onclick="
+                                this.style.display = 'none';
+                                this.nextElementSibling.style.display = 'block';
+                            ">
+                                <div class="w-12 h-12 rounded-full bg-stone-200/80 flex items-center justify-center mx-auto mb-2 text-stone-500 shadow-xs">
+                                    <i class="fa-solid fa-eye-slash text-base"></i>
+                                </div>
+                                <p class="text-xs font-bold text-stone-600">タップしてネタバレを表示</p>
                             </div>
-                            <div class="text-xs text-stone-700 whitespace-pre-wrap leading-relaxed hidden transition-all cursor-pointer" onclick="const blurEl = this.previousElementSibling; this.classList.toggle('hidden'); blurEl.classList.toggle('hidden');">
+
+                            <!-- 👁️ 閲覧状態（クリック後） -->
+                            <div class="secret-revealed hidden text-left text-xs text-stone-700 whitespace-pre-wrap leading-relaxed cursor-pointer" onclick="
+                                this.style.display = 'none';
+                                this.previousElementSibling.style.display = 'block';
+                            ">
                                 ${secret}
-                            </div>
-                            <div class="text-[10px] text-rose-400 font-bold mt-3 pt-2 border-t border-rose-200/40 text-center select-none pointer-events-none">
-                                👆 クリックして表示 / 非表示
+                                <div class="text-[10px] text-stone-400 font-bold mt-4 pt-2 border-t border-stone-200/60 text-center">
+                                    👆 タップして非表示に戻す
+                                </div>
                             </div>
                         </div>
                     </div>
