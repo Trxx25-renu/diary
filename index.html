@@ -278,6 +278,9 @@
 
 // 🌟 日記アプリ専用：画面切り替え ＆ パンくず・アクション更新を行うルーター関数
 function navigateTo(view, param = null) {
+    // 💡 現在のビューをここで確実に保存！
+    window.currentView = view;
+
     // 日記アプリ用のHTMLのIDを取得
     const viewMonths = document.getElementById('view-months');     // 第1階層：月別アルバム
     const viewGallery = document.getElementById('view-gallery');   // 第2階層：カレンダー・ギャラリー
@@ -303,7 +306,7 @@ function navigateTo(view, param = null) {
             `;
         }
         
-        // 右上のアクションボタン（例: キャラクター一覧へ戻る等）
+        // 右上のアクションボタン
         if (breadcrumbAction) {
             breadcrumbAction.innerHTML = `
                 <a href="characters.html" class="flex items-center gap-1.5 text-xs text-stone-600 hover:text-stone-900 bg-stone-100 hover:bg-stone-200/70 px-3 py-1.5 rounded-xl transition-all">
@@ -313,26 +316,22 @@ function navigateTo(view, param = null) {
             `;
         }
 
-        // 検索窓のクリアなど
+        // 検索窓のクリア
         const searchInput = document.getElementById('searchInput');
         if (searchInput) searchInput.value = '';
 
-        // 月一覧の描画関数を実行
         if (typeof renderMonthFolders === 'function') {
             renderMonthFolders();
         }
-
     } 
     // 2. 第2階層：カレンダー・ギャラリー画面
     else if (view === 'gallery') {
         if (viewGallery) viewGallery.classList.remove('hidden');
 
-        // パラメータ（年月: '2026-03'など）を保存
         if (param) {
             window.selectedYearMonth = param;
         }
 
-        // 年月を「2026年3月」のような表示形式に分解・整形する
         let yearMonthText = 'アルバム';
         if (window.selectedYearMonth) {
             const parts = window.selectedYearMonth.split('-');
@@ -341,7 +340,6 @@ function navigateTo(view, param = null) {
             }
         }
 
-        // パンくずの更新
         if (breadcrumbs) {
             breadcrumbs.innerHTML = `
                 <a href="javascript:void(0)" onclick="navigateTo('months')" class="hover:text-stone-900 transition-colors flex items-center gap-1">
@@ -352,7 +350,6 @@ function navigateTo(view, param = null) {
             `;
         }
 
-        // 右上のアクションボタン（月一覧に戻るボタン）
         if (breadcrumbAction) {
             breadcrumbAction.innerHTML = `
                 <button onclick="navigateTo('months')" class="flex items-center gap-1.5 text-xs text-stone-600 hover:text-stone-900 bg-stone-100 hover:bg-stone-200/70 px-3 py-1.5 rounded-xl transition-all">
@@ -362,17 +359,14 @@ function navigateTo(view, param = null) {
             `;
         }
 
-        // ギャラリー（カレンダー/一覧）の描画関数を実行
         if (typeof renderGalleryView === 'function') {
             renderGalleryView();
         }
-
     } 
     // 3. 詳細画面
     else if (view === 'detail') {
         if (viewDetail) viewDetail.classList.remove('hidden');
 
-        // ★もしparam（記事IDや日付）が渡されていれば一時保存する
         if (param) {
             window.selectedEntryId = param;
         }
@@ -396,7 +390,6 @@ function navigateTo(view, param = null) {
             `;
         }
 
-        // ★ param が無くなっていても、直前に保存した ID があればそれを使って描画するフォールバック
         const targetId = param || window.selectedEntryId;
         if (typeof renderEntryDetail === 'function' && targetId) {
             renderEntryDetail(targetId);
@@ -631,23 +624,29 @@ window.navigateTo = navigateTo;
     }
     window.renderWeatherSelectOptions = renderWeatherSelectOptions;
 
-    // 🌟 画面階層や状態に応じて安全に戻るための関数
+    // 🌟 戻るボタン専用：HTMLの表示状態から確実に判断して戻る関数
 function goBack() {
-    // 現在のビュー（階層）または保持している状態に応じて戻る先を分岐
-    if (window.currentView === 'detail') {
+    const viewDetail = document.getElementById('view-detail');
+    const viewGallery = document.getElementById('view-gallery');
+
+    // 1. もし現在「詳細画面」が表示されていたら、ギャラリー（または月一覧）へ戻る
+    if (viewDetail && !viewDetail.classList.contains('hidden')) {
         if (window.selectedYearMonth) {
             navigateTo('gallery', window.selectedYearMonth);
         } else {
             navigateTo('months');
         }
-    } else if (window.currentView === 'gallery') {
+    } 
+    // 2. もし現在「ギャラリー画面」が表示されていたら、月一覧へ戻る
+    else if (viewGallery && !viewGallery.classList.contains('hidden')) {
         navigateTo('months');
-    } else {
-        // デフォルトまたは上位がない場合は月一覧へ安全に戻る
+    } 
+    // 3. それ以外（予期せぬ状態のとき）は安全のため月一覧へ
+    else {
         navigateTo('months');
     }
 
-    // 戻った瞬間に画面を確実に最上部に移動させる（ガクつき防止）
+    // 戻った瞬間に画面を最上部に移動
     window.scrollTo({ top: 0, behavior: 'instant' });
 }
 window.goBack = goBack;
