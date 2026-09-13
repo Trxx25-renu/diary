@@ -1041,36 +1041,36 @@ function renderCharacterDetail(characterId) {
                         </h4>
                         <!-- トグルボックス全体 -->
                         <div class="bg-rose-50/40 rounded-2xl border border-rose-200/70 overflow-hidden shadow-xs">
-                            <!-- 🙈 閉じている時のヘッダー（ここをタップ） -->
-                            <div class="cursor-pointer px-4 py-3 flex items-center justify-between select-none hover:bg-rose-50/70 transition-colors" onclick="
-                                const container = this.parentNode;
-                                const headerEl = container.querySelector('.js-secret-header');
-                                const bodyEl = container.querySelector('.js-secret-body');
-                                if (headerEl && bodyEl) {
-                                    headerEl.style.display = 'none';
-                                    bodyEl.style.display = 'block';
-                                }
+                            <!-- 🙈 閉じている時の表示 -->
+                            <div class="js-secret-closed cursor-pointer px-4 py-3 flex items-center justify-between select-none hover:bg-rose-50/70 transition-colors" onclick="
+                                const box = this.closest('.bg-rose-50\\/40');
+                                box.querySelector('.js-secret-closed').style.display = 'none';
+                                box.querySelector('.js-secret-opened').style.display = 'block';
                             ">
-                                <div class="flex items-center gap-2 text-rose-800 text-xs font-bold js-secret-header">
+                                <div class="flex items-center gap-2 text-rose-800 text-xs font-bold">
                                     <i class="fa-solid fa-triangle-exclamation text-rose-500"></i>
                                     <span>ネタバレ防止用本文</span>
                                 </div>
                                 <span class="text-[11px] font-medium text-rose-400">タップで切替</span>
                             </div>
 
-                            <!-- 👁️ 展開される本文（初期状態：非表示） -->
-                            <div class="js-secret-body p-4 text-left text-xs text-stone-700 whitespace-pre-wrap leading-relaxed border-t border-rose-100 bg-white/60" style="display: none;">
-                                <div class="text-left">${secret}</div>
-                                <div class="text-[10px] text-rose-400 font-bold mt-3 pt-2 border-t border-rose-100/60 text-center cursor-pointer" onclick="
-                                    const container = this.closest('.bg-rose-50\\/40') || this.parentNode.parentNode.parentNode;
-                                    const headerEl = container.querySelector('.js-secret-header');
-                                    const bodyEl = container.querySelector('.js-secret-body');
-                                    if (headerEl && bodyEl) {
-                                        bodyEl.style.display = 'none';
-                                        headerEl.style.display = 'flex';
-                                    }
+                            <!-- 👁️ 開いた時の表示（上部に閉じる用ヘッダーを置くことでスペースをスッキリ抑制） -->
+                            <div class="js-secret-opened bg-white/60" style="display: none;">
+                                <!-- 開いた状態のヘッダー（ここをタップすると閉じる） -->
+                                <div class="cursor-pointer px-4 py-3 flex items-center justify-between select-none bg-rose-50/60 border-b border-rose-100 hover:bg-rose-50 transition-colors" onclick="
+                                    const box = this.closest('.bg-rose-50\\/40');
+                                    box.querySelector('.js-secret-opened').style.display = 'none';
+                                    box.querySelector('.js-secret-closed').style.display = 'flex';
                                 ">
-                                    👆 タップして非表示に戻す
+                                    <div class="flex items-center gap-2 text-rose-800 text-xs font-bold">
+                                        <i class="fa-solid fa-triangle-exclamation text-rose-500"></i>
+                                        <span>ネタバレ防止用本文</span>
+                                    </div>
+                                    <span class="text-[11px] font-medium text-rose-400">タップして閉じる</span>
+                                </div>
+                                <!-- 本文エリア -->
+                                <div class="p-4 text-left text-xs text-stone-700 whitespace-pre-wrap leading-relaxed">
+                                    ${secret}
                                 </div>
                             </div>
                         </div>
