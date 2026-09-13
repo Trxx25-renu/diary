@@ -2234,6 +2234,20 @@ function openCharacterModal() {
             renderCharacterLinksEditor();
         }
         
+        // 💡 新規作成時：統合画像管理オブジェクトを空で初期化
+        window.editingCharacterImages = {
+            thumb: [],
+            avatar: [],
+            base: [],
+            combat: [],
+            sd: [],
+            doodle: []
+        };
+        // 初期タブ（アイコン）のプレビューを描画・反映
+        if (typeof switchImageCategory === 'function') {
+            switchImageCategory('thumb');
+        }
+        
         // モーダルのタイトルを「新規登録」用に書き戻す
         const modalTitle = document.querySelector('#characterModal h3 span');
         if (modalTitle) modalTitle.textContent = 'キャラクター登録';
