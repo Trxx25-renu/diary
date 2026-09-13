@@ -53,26 +53,26 @@
     </style>
 
    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        // 💡 ここに updateDoc を追加しました！
-        import { getFirestore, collection, getDocs, doc, getDoc, setDoc, addDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    // 💡 deleteDoc を追加しました
+    import { getFirestore, collection, getDocs, doc, getDoc, setDoc, addDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // HTMLエスケープ処理
-        function escapeHtml(str) {
-            if (!str) return '';
-            return str.replace(/[&'`<>""]/g, function(match) {
-                return {
-                    '&': '&amp;',
-                    "'": '&#x27;',
-                    '`': '&#x60;',
-                    '<': '&lt;',
-                    '>': '&gt;',
-                    '"': '&quot;',
-                }[match];
-            });
-        }
-        window.escapeHtml = escapeHtml;
+    // HTMLエスケープ処理
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&'`<>""]/g, function(match) {
+            return {
+                '&': '&amp;',
+                "'": '&#x27;',
+                '`': '&#x60;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+            }[match];
+        });
+    }
+    window.escapeHtml = escapeHtml;
        
         // 🔒 ネタバレパーサー（||で囲まれた部分を目隠しにする。複数行対応）
         function parseSpoilers(text) {
