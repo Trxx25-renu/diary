@@ -411,22 +411,6 @@ function renderCharacterList(systemId, filterKeyword = "") {
 }
 window.renderCharacterList = renderCharacterList;
 
-
-// ==========================================
-// 💡 キャラクター画像（ギャラリー）管理まわり（タイトル入力対応版）
-// ==========================================
-
-// 現在選択されている画像カテゴリ（初期値: base）
-window.currentImageCategory = 'base';
-
-// キャラクターごとの画像をカテゴリ別に保持する一時オブジェクト
-window.editingCharacterImages = {
-    base: [],
-    combat: [],
-    sd: [],
-    doodle: []
-};
-
 // ==========================================
 // 💡 キャラクター画像（アイコン・立ち絵・ギャラリー）統合管理まわり
 // ==========================================
@@ -652,7 +636,7 @@ function renderCharacterImagesPreview() {
     });
 }
 window.renderCharacterImagesPreview = renderCharacterImagesPreview;
-       
+        
 // 5. 登録した画像を削除する関数
 function removeCharacterImage(categoryKey, index) {
     if (window.editingCharacterImages?.[categoryKey]) {
@@ -661,6 +645,107 @@ function removeCharacterImage(categoryKey, index) {
     }
 }
 window.removeCharacterImage = removeCharacterImage;
+
+// ==========================================
+// 💡 キャラクター保存関数
+// ==========================================
+async function saveCharacter(event) {
+    event.preventDefault();
+    const systemId = document.getElementById('charSystemSelect').value;
+    
+    const name = document.getElementById('charName')?.value?.trim() || '';
+    const nameKana = document.getElementById('charNameKana')?.value?.trim() || '';
+    const epithet = document.getElementById('charEpithet')?.value?.trim() || '';
+    const epithetKana = document.getElementById('charEpithetKana')?.value?.trim() || '';
+    const age = document.getElementById('charAge')?.value;
+    const gender = document.getElementById('charGender')?.value?.trim() || '';
+    const birthdate = document.getElementById('charBirthdate')?.value?.trim() || '';
+    const occupation = document.getElementById('charOccupation')?.value?.trim() || '';
+    const themeColor = document.getElementById('charThemeColor')?.value || '#292524';
+    const sheetUrl = document.getElementById('charSheetUrl')?.value?.trim() || '';
+    const memo = document.getElementById('charMemo')?.value || '';
+    const secret = document.getElementById('charSecret')?.value || '';
+    
+    const links = window.editingCharacterLinks || [];
+    
+    const images = JSON.parse(JSON.stringify(window.editingCharacterImages || { 
+        thumb: [], avatar: [], base: [], combat: [], sd: [], doodle: [] 
+    }));
+    
+    const thumbnail = images.thumb?.[0]?.url || "";
+    const avatar = images.avatar?.[0]?.url || "";
+
+    const customValues = {};
+    document.querySelectorAll('.char-custom-status-input').forEach(inputEl => {
+        const inputId = inputEl.id;
+        if (inputId && inputId.startsWith('custom_status_')) {
+            const fieldId = inputId.replace('custom_status_', '');
+            customValues[fieldId] = inputEl.value ? Number(inputEl.value) : '';
+        }
+    });
+
+    document.querySelectorAll('.char-custom-text-input').forEach(inputEl => {
+        const inputId = inputEl.id;
+        if (inputId && inputId.startsWith('custom_text_')) {
+            const fieldId = inputId.replace('custom_text_', '');
+            customValues[fieldId] = inputEl.value;
+        }
+    });
+
+    if (!name) { 
+        alert("キャラクター名は必須です。"); 
+        return; 
+    }
+
+    const charData = {
+        systemId, name, nameKana, epithet, epithetKana,
+        age: age ? Number(age) : '',
+        gender, birthdate, occupation, themeColor, 
+        sheetUrl: links.length > 0 ? links[0].url : sheetUrl,
+        links, memo, secret, thumbnail, avatar, images,
+        customValues,
+        updatedAt: new Date().toISOString()
+    };
+
+    let targetCharacterId = window.editingCharacterId;
+
+    try {
+        const charsRef = collection(db, 'artifacts', window.appId, 'public', 'data', 'characters');
+
+        if (window.editingCharacterId) {
+            const docRef = doc(db, 'artifacts', window.appId, 'public', 'data', 'characters', window.editingCharacterId);
+            await updateDoc(docRef, charData);
+
+            const index = window.characters.findIndex(c => String(c.id) === String(window.editingCharacterId));
+            if (index !== -1) {
+                window.characters[index] = { id: window.editingCharacterId, ...window.characters[index], ...charData };
+            }
+            showToast("キャラクターを更新しました！", "info");
+        } else {
+            charData.createdAt = new Date().toISOString();
+            const docRef = await addDoc(charsRef, charData);
+            targetCharacterId = docRef.id;
+            
+            window.characters.push({ id: targetCharacterId, ...charData });
+            showToast("キャラクターを登録しました！", "info");
+        }
+
+        closeCharacterModal();
+        if (typeof renderSystemFolders === 'function') renderSystemFolders();
+
+        if (targetCharacterId) {
+            if (typeof navigateTo === 'function') {
+                navigateTo('detail', targetCharacterId);
+            } else if (typeof renderCharacterDetail === 'function') {
+                renderCharacterDetail(targetCharacterId);
+            }
+        }
+    } catch (e) {
+        console.error("Save error:", e);
+        alert("保存に失敗しました。画像サイズが大きすぎないか確認してください。");
+    }
+}
+window.saveCharacter = saveCharacter;
        
 // ==========================================
 // 💡 画面やビューを切り替えるルーター関数（一本化・整理版）
@@ -1710,342 +1795,6 @@ function updateCustomTextFieldLabel(sysId, index, val) {
     }
 }
 window.updateCustomTextFieldLabel = updateCustomTextFieldLabel;
-       
-// ==========================================
-// 💡 キャラクター画像（アイコン・立ち絵・ギャラリー）統合管理まわり
-// ==========================================
-
-// 現在選択されている画像カテゴリ（初期値: base、必要に応じて変更可能）
-window.currentImageCategory = 'base';
-
-// キャラクターごとの画像をカテゴリ別に保持する一時オブジェクト
-window.editingCharacterImages = {
-    thumb: [],   // 一覧用アイコン（原則1枚）
-    avatar: [],  // 立ち絵（原則1枚）
-    base: [],    // 基本・成長
-    combat: [],  // 戦闘・衣装
-    sd: [],      // SD・その他
-    doodle: []   // 落書き
-};
-
-// 1. 画像カテゴリタブを切り替える関数
-function switchImageCategory(categoryKey) {
-    window.currentImageCategory = categoryKey;
-
-    // タブの見た目をアクティブ・非アクティブに切り替え
-    ['thumb', 'avatar', 'base', 'combat', 'sd', 'doodle'].forEach(cat => {
-        const btn = document.getElementById(`imgTab-${cat}`);
-        if (!btn) return;
-        if (cat === categoryKey) {
-            btn.className = 'flex-1 py-1.5 px-2 text-[10px] font-bold rounded-lg bg-white text-stone-800 shadow-sm transition-all whitespace-nowrap';
-        } else {
-            btn.className = 'flex-1 py-1.5 px-2 text-[10px] font-bold rounded-lg text-stone-500 hover:text-stone-800 transition-all whitespace-nowrap';
-        }
-    });
-
-    // プレビューを再描画
-    if (typeof renderCharacterImagesPreview === 'function') {
-        renderCharacterImagesPreview();
-    }
-}
-window.switchImageCategory = switchImageCategory;
-
-// 💡 他のカテゴリの画像を流用・コピーする関数
-function copyImageToCategory(sourceCategory, index, targetCategory) {
-    const sourceList = window.editingCharacterImages?.[sourceCategory];
-    if (!sourceList || !sourceList[index]) return;
-
-    const targetImg = JSON.parse(JSON.stringify(sourceList[index]));
-
-    if (!window.editingCharacterImages[targetCategory]) {
-        window.editingCharacterImages[targetCategory] = [];
-    }
-
-    // アイコンや立ち絵は1枚制限なので置き換え、ギャラリー系は追加
-    if (targetCategory === 'thumb' || targetCategory === 'avatar') {
-        window.editingCharacterImages[targetCategory] = [targetImg];
-        if (typeof showToast === 'function') {
-            showToast(targetCategory === 'thumb' ? 'アイコンに設定しました！' : '立ち絵に設定しました！', 'info');
-        }
-    } else {
-        window.editingCharacterImages[targetCategory].push(targetImg);
-        if (typeof showToast === 'function') {
-            showToast('ギャラリーに追加しました！', 'info');
-        }
-    }
-
-    if (typeof renderCharacterImagesPreview === 'function') {
-        renderCharacterImagesPreview();
-    }
-}
-window.copyImageToCategory = copyImageToCategory;
-
-// 2. 画像ファイルが選択されたときの処理（自動軽量化・WebP圧縮付き）
-function handleCharacterImagesSelect(event) {
-    const files = event.target.files;
-    if (!files || files.length === 0) return;
-
-    const isSingleSlot = (window.currentImageCategory === 'thumb' || window.currentImageCategory === 'avatar');
-    const targetFiles = isSingleSlot ? [files[0]] : Array.from(files);
-
-    targetFiles.forEach(file => {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const img = new Image();
-            img.onload = function() {
-                const canvas = document.createElement('canvas');
-                let MAX_SIZE = 600;
-                if (window.currentImageCategory === 'thumb') MAX_SIZE = 180;
-                else if (window.currentImageCategory === 'avatar') MAX_SIZE = 700;
-
-                let width = img.width;
-                let height = img.height;
-
-                if (width > height) {
-                    if (width > MAX_SIZE) {
-                        height *= MAX_SIZE / width;
-                        width = MAX_SIZE;
-                    }
-                } else {
-                    if (height > MAX_SIZE) {
-                        width *= MAX_SIZE / height;
-                        height = MAX_SIZE;
-                    }
-                }
-
-                canvas.width = width;
-                canvas.height = height;
-                const ctx = canvas.getContext('2d');
-                
-                ctx.clearRect(0, 0, width, height);
-                ctx.drawImage(img, 0, 0, width, height);
-
-                const compressedBase64 = canvas.toDataURL('image/webp', 0.65);
-
-                const defaultName = isSingleSlot 
-                    ? (window.currentImageCategory === 'thumb' ? '一覧アイコン' : '立ち絵')
-                    : file.name.replace(/\.[^/.]+$/, "");
-
-                if (!window.editingCharacterImages[window.currentImageCategory]) {
-                    window.editingCharacterImages[window.currentImageCategory] = [];
-                }
-
-                if (isSingleSlot) {
-                    window.editingCharacterImages[window.currentImageCategory] = [{
-                        url: compressedBase64,
-                        name: defaultName,
-                        uploadedAt: Date.now()
-                    }];
-                } else {
-                    window.editingCharacterImages[window.currentImageCategory].push({
-                        url: compressedBase64,
-                        name: defaultName,
-                        uploadedAt: Date.now()
-                    });
-                }
-
-                if (typeof renderCharacterImagesPreview === 'function') {
-                    renderCharacterImagesPreview();
-                }
-            };
-            img.src = e.target.result;
-        };
-        reader.readAsDataURL(file);
-    });
-
-    event.target.value = '';
-}
-window.handleCharacterImagesSelect = handleCharacterImagesSelect;
-
-// 3. 画像のタイトル（名前）をリアルタイムで更新する関数
-function updateImageLabel(categoryKey, index, newName) {
-    if (window.editingCharacterImages?.[categoryKey]?.[index]) {
-        window.editingCharacterImages[categoryKey][index].name = newName;
-    }
-}
-window.updateImageLabel = updateImageLabel;
-
-// 4. プレビュー領域を描画する関数
-function renderCharacterImagesPreview() {
-    const container = document.getElementById('characterImagesPreviewContainer');
-    if (!container) return;
-
-    const currentList = window.editingCharacterImages[window.currentImageCategory] || [];
-
-    const categoryNames = {
-        thumb: 'アイコン',
-        avatar: '立ち絵',
-        base: '基本・成長',
-        combat: '戦闘・衣装',
-        sd: 'SD・その他',
-        doodle: '落書き'
-    };
-
-    if (currentList.length === 0) {
-        container.innerHTML = `
-            <div class="col-span-full flex items-center justify-center text-[11px] text-stone-400 py-4">
-                ${categoryNames[window.currentImageCategory] || 'このカテゴリ'}にはまだ画像が登録されていません
-            </div>
-        `;
-        return;
-    }
-
-    container.innerHTML = '';
-    const isSingleSlot = (window.currentImageCategory === 'thumb' || window.currentImageCategory === 'avatar');
-
-    currentList.forEach((imgObj, index) => {
-        const item = document.createElement('div');
-        
-        if (isSingleSlot) {
-            item.className = 'col-span-full bg-stone-50 rounded-xl overflow-hidden border border-stone-200 p-3 flex items-center gap-3';
-            item.innerHTML = `
-                <div class="relative group w-16 h-16 bg-white rounded-lg overflow-hidden border border-stone-200 shrink-0 flex items-center justify-center">
-                    <img src="${imgObj.url}" class="w-full h-full object-cover object-top">
-                    <button type="button" onclick="removeCharacterImage('${window.currentImageCategory}', ${index})" class="absolute top-1 right-1 bg-stone-900/70 hover:bg-rose-600 text-white w-5 h-5 rounded-full flex items-center justify-center text-[10px] opacity-0 group-hover:opacity-100 transition-opacity">
-                        <i class="fa-solid fa-xmark"></i>
-                    </button>
-                </div>
-                <div class="flex-1 min-w-0">
-                    <div class="text-xs font-bold text-stone-700 truncate">${imgObj.name}</div>
-                    <div class="text-[10px] text-stone-400 mt-0.5">登録済み</div>
-                </div>
-                <button type="button" onclick="removeCharacterImage('${window.currentImageCategory}', ${index})" class="text-stone-400 hover:text-rose-600 p-2 text-xs" title="削除する">
-                    <i class="fa-solid fa-trash-can"></i>
-                </button>
-            `;
-        } else {
-            item.className = 'bg-stone-50 rounded-xl overflow-hidden border border-stone-200 p-2.5 flex flex-col gap-2';
-            item.innerHTML = `
-                <div class="relative group aspect-square bg-white rounded-lg overflow-hidden border border-stone-200 flex items-center justify-center">
-                    <img src="${imgObj.url}" class="w-full h-full object-cover object-top">
-                    <button type="button" onclick="removeCharacterImage('${window.currentImageCategory}', ${index})" class="absolute top-1 right-1 bg-stone-900/70 hover:bg-rose-600 text-white w-5 h-5 rounded-full flex items-center justify-center text-[10px] opacity-0 group-hover:opacity-100 transition-opacity">
-                        <i class="fa-solid fa-xmark"></i>
-                    </button>
-                </div>
-                <div>
-                    <label class="text-[10px] text-stone-400 block mb-0.5">画像タイトル</label>
-                    <input type="text" value="${imgObj.name || ''}" oninput="updateImageLabel('${window.currentImageCategory}', ${index}, this.value)" class="w-full text-xs bg-white border border-stone-200 rounded-lg px-2 py-1 text-stone-700 focus:outline-none focus:border-stone-400" placeholder="例: 通常, 笑顔 など">
-                </div>
-                <div class="flex gap-1 pt-1 border-t border-stone-200">
-                    <button type="button" onclick="copyImageToCategory('${window.currentImageCategory}', ${index}, 'thumb')" class="flex-1 bg-white hover:bg-stone-100 border border-stone-200 text-stone-600 text-[10px] py-1 rounded-lg transition-all" title="アイコンに流用">アイコン</button>
-                    <button type="button" onclick="copyImageToCategory('${window.currentImageCategory}', ${index}, 'avatar')" class="flex-1 bg-white hover:bg-stone-100 border border-stone-200 text-stone-600 text-[10px] py-1 rounded-lg transition-all" title="立ち絵に流用">立ち絵</button>
-                </div>
-            `;
-        }
-        container.appendChild(item);
-    });
-}
-window.renderCharacterImagesPreview = renderCharacterImagesPreview;
-       
-// 5. 登録した画像を削除する関数
-function removeCharacterImage(categoryKey, index) {
-    if (window.editingCharacterImages?.[categoryKey]) {
-        window.editingCharacterImages[categoryKey].splice(index, 1);
-        renderCharacterImagesPreview();
-    }
-}
-window.removeCharacterImage = removeCharacterImage;
-
-// ==========================================
-// 💡 キャラクター保存関数
-// ==========================================
-async function saveCharacter(event) {
-    event.preventDefault();
-    const systemId = document.getElementById('charSystemSelect').value;
-    
-    const name = document.getElementById('charName')?.value?.trim() || '';
-    const nameKana = document.getElementById('charNameKana')?.value?.trim() || '';
-    const epithet = document.getElementById('charEpithet')?.value?.trim() || '';
-    const epithetKana = document.getElementById('charEpithetKana')?.value?.trim() || '';
-    const age = document.getElementById('charAge')?.value;
-    const gender = document.getElementById('charGender')?.value?.trim() || '';
-    const birthdate = document.getElementById('charBirthdate')?.value?.trim() || '';
-    const occupation = document.getElementById('charOccupation')?.value?.trim() || '';
-    const themeColor = document.getElementById('charThemeColor')?.value || '#292524';
-    const sheetUrl = document.getElementById('charSheetUrl')?.value?.trim() || '';
-    const memo = document.getElementById('charMemo')?.value || '';
-    const secret = document.getElementById('charSecret')?.value || '';
-    
-    const links = window.editingCharacterLinks || [];
-    
-    const images = JSON.parse(JSON.stringify(window.editingCharacterImages || { 
-        thumb: [], avatar: [], base: [], combat: [], sd: [], doodle: [] 
-    }));
-    
-    const thumbnail = images.thumb?.[0]?.url || "";
-    const avatar = images.avatar?.[0]?.url || "";
-
-    const customValues = {};
-    document.querySelectorAll('.char-custom-status-input').forEach(inputEl => {
-        const inputId = inputEl.id;
-        if (inputId && inputId.startsWith('custom_status_')) {
-            const fieldId = inputId.replace('custom_status_', '');
-            customValues[fieldId] = inputEl.value ? Number(inputEl.value) : '';
-        }
-    });
-
-    document.querySelectorAll('.char-custom-text-input').forEach(inputEl => {
-        const inputId = inputEl.id;
-        if (inputId && inputId.startsWith('custom_text_')) {
-            const fieldId = inputId.replace('custom_text_', '');
-            customValues[fieldId] = inputEl.value;
-        }
-    });
-
-    if (!name) { 
-        alert("キャラクター名は必須です。"); 
-        return; 
-    }
-
-    const charData = {
-        systemId, name, nameKana, epithet, epithetKana,
-        age: age ? Number(age) : '',
-        gender, birthdate, occupation, themeColor, 
-        sheetUrl: links.length > 0 ? links[0].url : sheetUrl,
-        links, memo, secret, thumbnail, avatar, images,
-        customValues,
-        updatedAt: new Date().toISOString()
-    };
-
-    let targetCharacterId = window.editingCharacterId;
-
-    try {
-        const charsRef = collection(db, 'artifacts', window.appId, 'public', 'data', 'characters');
-
-        if (window.editingCharacterId) {
-            const docRef = doc(db, 'artifacts', window.appId, 'public', 'data', 'characters', window.editingCharacterId);
-            await updateDoc(docRef, charData);
-
-            const index = window.characters.findIndex(c => String(c.id) === String(window.editingCharacterId));
-            if (index !== -1) {
-                window.characters[index] = { id: window.editingCharacterId, ...window.characters[index], ...charData };
-            }
-            showToast("キャラクターを更新しました！", "info");
-        } else {
-            charData.createdAt = new Date().toISOString();
-            const docRef = await addDoc(charsRef, charData);
-            targetCharacterId = docRef.id;
-            
-            window.characters.push({ id: targetCharacterId, ...charData });
-            showToast("キャラクターを登録しました！", "info");
-        }
-
-        closeCharacterModal();
-        if (typeof renderSystemFolders === 'function') renderSystemFolders();
-
-        if (targetCharacterId) {
-            if (typeof navigateTo === 'function') {
-                navigateTo('detail', targetCharacterId);
-            } else if (typeof renderCharacterDetail === 'function') {
-                renderCharacterDetail(targetCharacterId);
-            }
-        }
-    } catch (e) {
-        console.error("Save error:", e);
-        alert("保存に失敗しました。画像サイズが大きすぎないか確認してください。");
-    }
-}
-window.saveCharacter = saveCharacter;
        
 // ==========================================
 // 💡 キャラクターの並び替え機能（更新順・五十音順・誕生日順）
