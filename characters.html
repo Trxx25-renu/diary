@@ -412,7 +412,7 @@ function renderCharacterList(systemId, filterKeyword = "") {
 window.renderCharacterList = renderCharacterList;
 
 // ==========================================
-// 💡 キャラクター画像・データ管理まわり（JSON形式対応版）
+// 💡 キャラクター画像（アイコン・立ち絵・ギャラリー）統合管理まわり
 // ==========================================
 
 // 現在選択されている画像カテゴリ（初期値: thumb）
@@ -420,18 +420,19 @@ window.currentImageCategory = 'thumb';
 
 // キャラクターごとの画像をカテゴリ別に保持する一時オブジェクト
 window.editingCharacterImages = {
-    thumb: [],   // 一覧用アイコン
-    avatar: [],  // 立ち絵
-    base: [],    // 基本・成長
-    combat: [],  // 戦闘・衣装
-    sd: [],      // SD・その他
-    doodle: []   // 落書き
+    thumb: [],   // 一覧用アイコン（原則1枚）
+    avatar: [],  // 立ち絵（原則1枚）
+    base: [],
+    combat: [],
+    sd: [],
+    doodle: []
 };
 
 // 1. 画像カテゴリタブを切り替える関数
 function switchImageCategory(categoryKey) {
     window.currentImageCategory = categoryKey;
 
+    // タブの見た目をアクティブ・非アクティブに切り替え
     ['thumb', 'avatar', 'base', 'combat', 'sd', 'doodle'].forEach(cat => {
         const btn = document.getElementById(`imgTab-${cat}`);
         if (!btn) return;
@@ -442,13 +443,14 @@ function switchImageCategory(categoryKey) {
         }
     });
 
+    // プレビューを再描画
     if (typeof renderCharacterImagesPreview === 'function') {
         renderCharacterImagesPreview();
     }
 }
 window.switchImageCategory = switchImageCategory;
 
-// 💡 他のカテゴリの画像を流用・コピーする関数
+// 💡 他のカテゴリの画像を流用・コピーする関数（即時再描画対応）
 function copyImageToCategory(sourceCategory, index, targetCategory) {
     const sourceList = window.editingCharacterImages?.[sourceCategory];
     if (!sourceList || !sourceList[index]) return;
@@ -459,6 +461,7 @@ function copyImageToCategory(sourceCategory, index, targetCategory) {
         window.editingCharacterImages[targetCategory] = [];
     }
 
+    // アイコンや立ち絵は1枚制限なので置き換え、ギャラリー系は追加
     if (targetCategory === 'thumb' || targetCategory === 'avatar') {
         window.editingCharacterImages[targetCategory] = [targetImg];
         if (typeof showToast === 'function') {
@@ -471,13 +474,14 @@ function copyImageToCategory(sourceCategory, index, targetCategory) {
         }
     }
 
+    // プレビューを即時再描画
     if (typeof renderCharacterImagesPreview === 'function') {
         renderCharacterImagesPreview();
     }
 }
 window.copyImageToCategory = copyImageToCategory;
 
-// 2. 画像ファイル選択時の処理（JSON構造を汚さないよう適度に最適化）
+// 2. 画像ファイルが選択されたときの処理（JSONインポートを見据えて適度に最適化）
 function handleCharacterImagesSelect(event) {
     const files = event.target.files;
     if (!files || files.length === 0) return;
@@ -490,6 +494,7 @@ function handleCharacterImagesSelect(event) {
         reader.onload = function(e) {
             const img = new Image();
             img.onload = function() {
+                // Canvasを使って画像を縮小（アイコンは最大200px、他は最大800pxに収める）
                 const canvas = document.createElement('canvas');
                 const MAX_SIZE = (window.currentImageCategory === 'thumb') ? 200 : 800;
                 let width = img.width;
@@ -514,7 +519,7 @@ function handleCharacterImagesSelect(event) {
                 ctx.clearRect(0, 0, width, height);
                 ctx.drawImage(img, 0, 0, width, height);
 
-                // 画質を適度に調整し、JSONインポート時も重くなりすぎないようにする
+                // 💡 透過を維持したままWebP形式（品質0.65）で圧縮して容量を調整
                 const compressedBase64 = canvas.toDataURL('image/webp', 0.65);
 
                 const defaultName = isSingleSlot 
@@ -552,7 +557,7 @@ function handleCharacterImagesSelect(event) {
 }
 window.handleCharacterImagesSelect = handleCharacterImagesSelect;
 
-// 3. 画像タイトルのリアルタイム更新
+// 💡 3. 画像のタイトル（名前）をリアルタイムで更新する関数
 function updateImageLabel(categoryKey, index, newName) {
     if (window.editingCharacterImages?.[categoryKey]?.[index]) {
         window.editingCharacterImages[categoryKey][index].name = newName;
@@ -560,7 +565,7 @@ function updateImageLabel(categoryKey, index, newName) {
 }
 window.updateImageLabel = updateImageLabel;
 
-// 4. プレビュー描画
+// 4. プレビュー領域を描画する関数
 function renderCharacterImagesPreview() {
     const container = document.getElementById('characterImagesPreviewContainer');
     if (!container) return;
@@ -631,7 +636,7 @@ function renderCharacterImagesPreview() {
 }
 window.renderCharacterImagesPreview = renderCharacterImagesPreview;
         
-// 5. 画像削除
+// 5. 登録した画像を削除する関数
 function removeCharacterImage(categoryKey, index) {
     if (window.editingCharacterImages?.[categoryKey]) {
         window.editingCharacterImages[categoryKey].splice(index, 1);
@@ -641,7 +646,7 @@ function removeCharacterImage(categoryKey, index) {
 window.removeCharacterImage = removeCharacterImage;
 
 // ==========================================
-// 💡 キャラクター保存関数（JSONスキーマ準拠）
+// 💡 キャラクター保存関数（JSON対応・容量エラーハンドリング付き）
 // ==========================================
 async function saveCharacter(event) {
     event.preventDefault();
@@ -662,7 +667,6 @@ async function saveCharacter(event) {
     
     const links = window.editingCharacterLinks || [];
     
-    // 💡 JSONエクスポート時に綺麗にシリアライズできる構造で画像を保持
     const images = JSON.parse(JSON.stringify(window.editingCharacterImages || { 
         thumb: [], avatar: [], base: [], combat: [], sd: [], doodle: [] 
     }));
@@ -680,7 +684,7 @@ async function saveCharacter(event) {
     });
 
     document.querySelectorAll('.char-custom-text-input').forEach(inputEl => {
-        const inputId = inputEl.id;
+        const inputId = inputId.id;
         if (inputId && inputId.startsWith('custom_text_')) {
             const fieldId = inputId.replace('custom_text_', '');
             customValues[fieldId] = inputEl.value;
@@ -692,7 +696,6 @@ async function saveCharacter(event) {
         return; 
     }
 
-    // まとめてJSONとして扱いやすいオブジェクト構造
     const charData = {
         systemId, name, nameKana, epithet, epithetKana,
         age: age ? Number(age) : '',
@@ -738,9 +741,9 @@ async function saveCharacter(event) {
         }
     } catch (e) {
         console.error("Save error:", e);
-        // 万が一1MB制限を超えそうな場合の親切な案内
+        // 💡 1MB制限に引っかかった時に専用のエラーメッセージを出す親切設計
         if (e.code === 'resource-exhausted' || (e.message && e.message.includes('exceeds the maximum allowed size'))) {
-            alert("キャラクターデータのサイズがFirestoreの制限（1MB）を超えました。画像が多すぎるかファイルサイズが大きすぎます。容量を減らすか、管理者モードのJSON機能をご活用ください。");
+            alert("⚠️ 保存エラー：キャラクターデータのサイズがFirestoreの制限（1MB）を超えました。\n画像サイズを小さくするか、枚数を減らして再度お試しください。");
         } else {
             alert("保存に失敗しました。コンソールを確認してください。");
         }
