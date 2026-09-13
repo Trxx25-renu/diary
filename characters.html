@@ -616,7 +616,7 @@ function renderCharacterImagesPreview() {
             item.className = 'col-span-full bg-stone-50 rounded-xl overflow-hidden border border-stone-200 p-3 flex items-center gap-3';
             item.innerHTML = `
                 <div class="relative group w-16 h-16 bg-white rounded-lg overflow-hidden border border-stone-200 shrink-0 flex items-center justify-center">
-                    <img src="${imgObj.url}" class="w-full h-full object-cover">
+                    <img src="${imgObj.url}" class="w-full h-full object-cover object-top">
                     <button type="button" onclick="removeCharacterImage('${window.currentImageCategory}', ${index})" class="absolute top-1 right-1 bg-stone-900/70 hover:bg-rose-600 text-white w-5 h-5 rounded-full flex items-center justify-center text-[10px] opacity-0 group-hover:opacity-100 transition-opacity">
                         <i class="fa-solid fa-xmark"></i>
                     </button>
@@ -633,7 +633,7 @@ function renderCharacterImagesPreview() {
             item.className = 'bg-stone-50 rounded-xl overflow-hidden border border-stone-200 p-2.5 flex flex-col gap-2';
             item.innerHTML = `
                 <div class="relative group aspect-square bg-white rounded-lg overflow-hidden border border-stone-200 flex items-center justify-center">
-                    <img src="${imgObj.url}" class="w-full h-full object-cover">
+                    <img src="${imgObj.url}" class="w-full h-full object-cover object-top">
                     <button type="button" onclick="removeCharacterImage('${window.currentImageCategory}', ${index})" class="absolute top-1 right-1 bg-stone-900/70 hover:bg-rose-600 text-white w-5 h-5 rounded-full flex items-center justify-center text-[10px] opacity-0 group-hover:opacity-100 transition-opacity">
                         <i class="fa-solid fa-xmark"></i>
                     </button>
@@ -652,7 +652,7 @@ function renderCharacterImagesPreview() {
     });
 }
 window.renderCharacterImagesPreview = renderCharacterImagesPreview;
-
+       
 // 5. 登録した画像を削除する関数
 function removeCharacterImage(categoryKey, index) {
     if (window.editingCharacterImages?.[categoryKey]) {
