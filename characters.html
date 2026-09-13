@@ -2383,7 +2383,7 @@ function handleAvatarFileSelect(event) {
 window.handleAvatarFileSelect = handleAvatarFileSelect;
 
        // ==========================================
-// 💡 キャラクターを削除する関数（Firestore対応版）
+// 💡 キャラクターを削除する関数（Firestore対応版・修正版）
 // ==========================================
 async function deleteCharacter(characterId) {
     // 削除の確認ダイアログ
@@ -2391,32 +2391,36 @@ async function deleteCharacter(characterId) {
         return;
     }
 
+    // 🌟 1. 削除するキャラクターがどのシステムに所属していたかを、削除処理の「前」に控えておく
+    const targetChar = window.characters.find(c => String(c.id) === String(characterId));
+    const systemId = targetChar ? targetChar.systemId : null;
+
     try {
-        // 1. 🔥 Firestore（データベース）上の該当ドキュメントを完全に削除
+        // 2. 🔥 Firestore（データベース）上の該当ドキュメントを完全に削除
         const docRef = doc(db, 'artifacts', window.appId, 'public', 'data', 'characters', characterId);
         await deleteDoc(docRef);
 
-        // 2. 文字列・数値を揃えて該当キャラクターを配列から除外
+        // 3. 文字列・数値を揃えて該当キャラクターを配列から除外
         window.characters = window.characters.filter(c => String(c.id) !== String(characterId));
 
-        // 3. ローカルストレージ等に保存する関数があればここで呼ぶ
+        // 4. ローカルストレージ等に保存する関数があればここで呼ぶ
         if (typeof saveCharactersToStorage === 'function') {
             saveCharactersToStorage();
         }
 
-        // 4. サイドバーやフォルダの表示を更新
+        // 5. サイドバーやフォルダの表示を更新
         if (typeof renderSystemFolders === 'function') {
             renderSystemFolders();
         }
 
-        // 5. 詳細画面が開いていた場合はトップページや一覧へ戻す
-        if (typeof goToTopPage === 'function') {
+        // 6. 🌟 控えておいた systemId を使って、削除されたシステムの「キャラクター一覧画面」に確実に戻る
+        if (systemId && typeof navigateTo === 'function') {
+            navigateTo('characterList', systemId);
+        } else if (typeof goToTopPage === 'function') {
             goToTopPage();
-        } else if (typeof renderCharacterList === 'function') {
-            renderCharacterList();
         }
 
-        // 6. 削除成功のトースト通知
+        // 7. 削除成功のトースト通知
         if (typeof showToast === 'function') {
             showToast('キャラクターを削除しました', 'success');
         }
