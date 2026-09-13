@@ -1043,7 +1043,7 @@ function renderCharacterDetail(characterId) {
                         <div class="bg-rose-50/40 rounded-2xl border border-rose-200/70 overflow-hidden shadow-xs">
                             <!-- 🙈 閉じている時の表示 -->
                             <div class="js-secret-closed cursor-pointer px-4 py-3 flex items-center justify-between select-none hover:bg-rose-50/70 transition-colors" onclick="
-                                const box = this.closest('.bg-rose-50\\/40');
+                                const box = this.parentNode;
                                 box.querySelector('.js-secret-closed').style.display = 'none';
                                 box.querySelector('.js-secret-opened').style.display = 'block';
                             ">
@@ -1054,11 +1054,11 @@ function renderCharacterDetail(characterId) {
                                 <span class="text-[11px] font-medium text-rose-400">タップで切替</span>
                             </div>
 
-                            <!-- 👁️ 開いた時の表示（上部に閉じる用ヘッダーを置くことでスペースをスッキリ抑制） -->
+                            <!-- 👁️ 開いた時の表示 -->
                             <div class="js-secret-opened bg-white/60" style="display: none;">
                                 <!-- 開いた状態のヘッダー（ここをタップすると閉じる） -->
                                 <div class="cursor-pointer px-4 py-3 flex items-center justify-between select-none bg-rose-50/60 border-b border-rose-100 hover:bg-rose-50 transition-colors" onclick="
-                                    const box = this.closest('.bg-rose-50\\/40');
+                                    const box = this.parentNode.parentNode;
                                     box.querySelector('.js-secret-opened').style.display = 'none';
                                     box.querySelector('.js-secret-closed').style.display = 'flex';
                                 ">
