@@ -2838,7 +2838,7 @@ window.exportCharacterJson = exportCharacterJson;
     </div>
 </div>
 
-  <!-- 📝 キャラクター登録モーダル -->
+<!-- 📝 キャラクター登録モーダル -->
 <div id="characterModal" class="hidden fixed inset-0 z-50 bg-stone-900/40 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-xl border border-stone-200 max-h-[90vh] overflow-y-auto">
         <div class="flex items-center justify-between mb-4 pb-2 border-b border-stone-100">
@@ -2849,6 +2849,18 @@ window.exportCharacterJson = exportCharacterJson;
             <button onclick="closeCharacterModal()" class="text-stone-400 hover:text-stone-700 p-1">
                 <i class="fa-solid fa-xmark text-lg"></i>
             </button>
+        </div>
+
+        <!-- 💡 追加：JSONファイルからの一括インポートエリア -->
+        <div class="bg-stone-50 p-3 rounded-2xl border border-stone-200/80 mb-4 flex items-center justify-between shadow-xs">
+            <div class="text-xs font-bold text-stone-600 flex items-center gap-1.5">
+                <i class="fa-solid fa-file-code text-stone-500"></i>
+                <span>JSONから一括読み込み</span>
+            </div>
+            <label class="cursor-pointer bg-white hover:bg-stone-50 text-stone-700 text-xs font-bold px-3 py-1.5 rounded-xl border border-stone-300 shadow-xs transition-all flex items-center gap-1.5">
+                <i class="fa-solid fa-upload text-stone-500"></i> ファイル選択
+                <input type="file" accept=".json" class="hidden" onchange="importCharacterFromJson(event)">
+            </label>
         </div>
 
         <form id="characterForm" onsubmit="saveCharacter(event)" class="space-y-4">
