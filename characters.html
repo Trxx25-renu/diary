@@ -215,7 +215,7 @@
             await loadCharactersFromFirestore();
             renderSystemFolders();
             updateAdminUI();
-        });
+        }); // ← ここできちんと非同期イベントの閉じ括弧を閉じます
 
         async function loadCharactersFromFirestore() {
             try {
@@ -233,59 +233,59 @@
         }
 
         function renderSystemFolders(filterKeyword = "") {
-    const container = document.getElementById('systemFoldersContainer');
-    if (!container) return;
+            const container = document.getElementById('systemFoldersContainer');
+            if (!container) return;
 
-    container.innerHTML = '';
-    const keyword = filterKeyword.toLowerCase().trim();
-    
-    // 💡 window.characters が未定義（undefined）の場合に備えて空配列をデフォルトにする
-    const allChars = window.characters || [];
+            container.innerHTML = '';
+            const keyword = filterKeyword.toLowerCase().trim();
+            
+            // 💡 window.characters が未定義（undefined）の場合に備えて空配列をデフォルトにする
+            const allChars = window.characters || [];
 
-    window.systems.forEach(sys => {
-        const sysChars = allChars.filter(c => c.systemId === sys.id);
-        const matchesSystem = sys.name.toLowerCase().includes(keyword) || sys.desc.toLowerCase().includes(keyword);
-        const matchedChars = sysChars.filter(c => 
-            (c.name && c.name.toLowerCase().includes(keyword)) ||
-            (c.epithet && c.epithet.toLowerCase().includes(keyword)) ||
-            (c.occupation && c.occupation.toLowerCase().includes(keyword))
-        );
+            window.systems.forEach(sys => {
+                const sysChars = allChars.filter(c => c.systemId === sys.id);
+                const matchesSystem = sys.name.toLowerCase().includes(keyword) || sys.desc.toLowerCase().includes(keyword);
+                const matchedChars = sysChars.filter(c => 
+                    (c.name && c.name.toLowerCase().includes(keyword)) ||
+                    (c.epithet && c.epithet.toLowerCase().includes(keyword)) ||
+                    (c.occupation && c.occupation.toLowerCase().includes(keyword))
+                );
 
-        if (keyword && !matchesSystem && matchedChars.length === 0) {
-            return;
+                if (keyword && !matchesSystem && matchedChars.length === 0) {
+                    return;
+                }
+
+                const card = document.createElement('div');
+                card.className = 'bg-white rounded-2xl p-5 border border-stone-200/80 shadow-sm hover:border-stone-400 transition-all cursor-pointer flex flex-col justify-between gap-4 group';
+                card.onclick = () => navigateTo('characterList', sys.id);
+
+                card.innerHTML = `
+                    <div>
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-[10px] font-medium text-white px-2.5 py-1 rounded-lg ${sys.badgeColor || 'bg-stone-700'}">${sys.desc}</span>
+                            <i class="fa-solid fa-folder-open text-stone-300 group-hover:text-stone-600 transition-colors"></i>
+                        </div>
+                        <h3 class="font-bold text-base text-stone-800 group-hover:text-stone-900">${sys.name}</h3>
+                        <p class="text-xs text-stone-400 mt-1">登録キャラクター: <span class="font-bold text-stone-600">${sysChars.length}</span> 名</p>
+                        ${keyword && matchedChars.length > 0 ? `<p class="text-[11px] text-amber-700 bg-amber-50 px-2 py-1 rounded-md mt-2">一致キャラ: ${matchedChars.map(c => c.name).join(', ')}</p>` : ''}
+                    </div>
+                    <div class="flex items-center justify-between pt-3 border-t border-stone-100 text-xs text-stone-500 font-medium">
+                        <span>一覧を見る</span>
+                        <i class="fa-solid fa-arrow-right text-[10px] group-hover:translate-x-1 transition-transform"></i>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+
+            if (container.children.length === 0) {
+                container.innerHTML = `
+                    <div class="col-span-full text-center py-12 text-stone-400 text-xs">
+                        <i class="fa-solid fa-search text-2xl mb-2"></i>
+                        <p>一致するシステム・キャラクターが見つかりませんでした。</p>
+                    </div>
+                `;
+            }
         }
-
-        const card = document.createElement('div');
-        card.className = 'bg-white rounded-2xl p-5 border border-stone-200/80 shadow-sm hover:border-stone-400 transition-all cursor-pointer flex flex-col justify-between gap-4 group';
-        card.onclick = () => navigateTo('characterList', sys.id);
-
-        card.innerHTML = `
-            <div>
-                <div class="flex items-center justify-between mb-3">
-                    <span class="text-[10px] font-medium text-white px-2.5 py-1 rounded-lg ${sys.badgeColor || 'bg-stone-700'}">${sys.desc}</span>
-                    <i class="fa-solid fa-folder-open text-stone-300 group-hover:text-stone-600 transition-colors"></i>
-                </div>
-                <h3 class="font-bold text-base text-stone-800 group-hover:text-stone-900">${sys.name}</h3>
-                <p class="text-xs text-stone-400 mt-1">登録キャラクター: <span class="font-bold text-stone-600">${sysChars.length}</span> 名</p>
-                ${keyword && matchedChars.length > 0 ? `<p class="text-[11px] text-amber-700 bg-amber-50 px-2 py-1 rounded-md mt-2">一致キャラ: ${matchedChars.map(c => c.name).join(', ')}</p>` : ''}
-            </div>
-            <div class="flex items-center justify-between pt-3 border-t border-stone-100 text-xs text-stone-500 font-medium">
-                <span>一覧を見る</span>
-                <i class="fa-solid fa-arrow-right text-[10px] group-hover:translate-x-1 transition-transform"></i>
-            </div>
-        `;
-        container.appendChild(card);
-    });
-
-    if (container.children.length === 0) {
-        container.innerHTML = `
-            <div class="col-span-full text-center py-12 text-stone-400 text-xs">
-                <i class="fa-solid fa-search text-2xl mb-2"></i>
-                <p>一致するシステム・キャラクターが見つかりませんでした。</p>
-            </div>
-        `;
-    }
-}
 window.renderSystemFolders = renderSystemFolders;
 
 function handleFolderSearchInput(e) {
