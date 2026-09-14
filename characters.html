@@ -7,9 +7,12 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
         <title id="siteTitleTag">PC一覧 - Character Log</title>
     
-    <!-- 動的ファビコン用 -->
-    <link id="dynamicFavicon" rel="icon" href="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" type="image/x-icon">
+   <!-- 動的ファビコン用（PCやAndroidなど） -->
+<link id="dynamicFavicon" rel="icon" href="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" type="image/x-icon">
 
+<!-- 👇 スマホ（iPhone/iPad）のホーム画面・ブックマーク用に追加 -->
+<link id="dynamicAppleTouchIcon" rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/1077/1077114.png">
+        
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -355,7 +358,7 @@ function handleFolderSearchInput(e) {
 }
 window.handleFolderSearchInput = handleFolderSearchInput;
        
- // ==========================================
+// ==========================================
 // 💡 ファビコンファイル選択時のプレビュー＆Base64変換関数
 // ==========================================
 function handleFaviconFileSelect(event) {
@@ -373,6 +376,28 @@ function handleFaviconFileSelect(event) {
             preview.src = base64String;
             preview.classList.remove('hidden');
         }
+
+        // ⭐ 【追加】選んだ画像をその場でリアルタイムにファビコンとして適用する！
+        // 1. 通常のファビコン（PC・Androidなど）を更新
+        let faviconTag = document.getElementById('dynamicFavicon');
+        if (!faviconTag) {
+            // もしHTMLになければ動的に作ってしまう
+            faviconTag = document.createElement('link');
+            faviconTag.id = 'dynamicFavicon';
+            faviconTag.rel = 'icon';
+            document.head.appendChild(faviconTag);
+        }
+        faviconTag.href = base64String;
+
+        // 2. スマホ（iPhone/iPad）用のアップルタッチアイコンも同時に更新
+        let appleIconTag = document.getElementById('dynamicAppleTouchIcon');
+        if (!appleIconTag) {
+            appleIconTag = document.createElement('link');
+            appleIconTag.id = 'dynamicAppleTouchIcon';
+            appleIconTag.rel = 'apple-touch-icon';
+            document.head.appendChild(appleIconTag);
+        }
+        appleIconTag.href = base64String;
     };
     reader.readAsDataURL(file);
 }
