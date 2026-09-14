@@ -228,13 +228,7 @@ const GIST_CONFIG = {
                 }
             } catch (e) { console.error("Config load error:", e); }
 
-            // 💡 Firestoreからのキャラクター一括取得をやめ、ブラウザのローカルストレージから読み込むように変更
-            await loadCharactersFromLocal();
-            renderSystemFolders();
-            updateAdminUI();
-        }); // ← ここできちんと非同期イベントの閉じ括弧を閉じます
-
-        // ==========================================
+           // ==========================================
 // 💡 キャラクターデータの読み込み（GitHub Gist同期・フォールバック対応版）
 // ==========================================
 async function loadCharactersFromLocal() {
@@ -250,10 +244,31 @@ async function loadCharactersFromLocal() {
                 const gistData = await response.json();
                 const file = gistData.files['characters.json'];
                 if (file && file.content) {
-                    window.characters = JSON.parse(file.content);
-                    // バックアップとしてローカルにも保存しておく
-                    localStorage.setItem('local_characters', file.content);
-                    console.log('GitHub Gistからデータをロードしました');
+                    const gistCharacters = JSON.parse(file.content);
+
+                    // 💡 手元のブラウザ（localStorage）に保存されている「画像付きのデータ」を保護してマージする
+                    const savedLocal = localStorage.getItem('local_characters');
+                    if (savedLocal) {
+                        try {
+                            const localCharacters = JSON.parse(savedLocal);
+                            gistCharacters.forEach(gChar => {
+                                const foundLocal = localCharacters.find(l => String(l.id) === String(gChar.id));
+                                if (foundLocal && foundLocal.images) {
+                                    // Gist側の空っぽの画像を、手元にあった画像データで上書きして復元する
+                                    gChar.images = foundLocal.images;
+                                    gChar.thumbnail = foundLocal.thumbnail || "";
+                                    gChar.avatar = foundLocal.avatar || "";
+                                }
+                            });
+                        } catch (err) {
+                            console.warn("Local image merge warning:", err);
+                        }
+                    }
+
+                    window.characters = gistCharacters;
+                    // ローカルには「画像付きの完全版データ」として保存し直す
+                    localStorage.setItem('local_characters', JSON.stringify(window.characters));
+                    console.log('GitHub Gistからデータをロードし、ローカルの画像と統合しました');
                     return;
                 }
             }
