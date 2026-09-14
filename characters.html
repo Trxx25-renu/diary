@@ -756,7 +756,7 @@ async function saveCharacter(event) {
     linkRows.forEach(row => {
         const inputs = row.querySelectorAll('input');
         const labelInput = inputs[0]; 
-        const urlInput = inputs[1];   
+        const urlInput = inputs[1];    
         if (urlInput && urlInput.value.trim() !== '') {
             links.push({
                 label: labelInput ? labelInput.value.trim() : '',
@@ -818,12 +818,24 @@ async function saveCharacter(event) {
             window.characters.push(charData);
         }
 
+        // 💡 ① 手元のブラウザ（localStorage）には画像付きで保存（画面に表示させるため）
         const jsonString = JSON.stringify(window.characters);
         localStorage.setItem('local_characters', jsonString);
 
         if (window.GIST_CONFIG && window.GIST_CONFIG.token) {
             if (typeof showToast === 'function') showToast("クラウドへ同期中...", "info");
             
+            // 💡 ② GitHub Gistへ送信する時だけ、画像データを空にした「軽量版データ」を作成する
+            const gistCharacters = JSON.parse(JSON.stringify(window.characters)).map(c => {
+                if (c.images) {
+                    c.images = { thumb: [], avatar: [], base: [], combat: [], sd: [], doodle: [] };
+                }
+                c.thumbnail = "";
+                c.avatar = "";
+                return c;
+            });
+            const gistJsonString = JSON.stringify(gistCharacters);
+
             let currentGistId = window.GIST_CONFIG.gistId;
             
             if (currentGistId) {
@@ -835,7 +847,7 @@ async function saveCharacter(event) {
                     },
                     body: JSON.stringify({
                         description: "Character Data Auto Sync",
-                        files: { "characters.json": { content: jsonString } }
+                        files: { "characters.json": { content: gistJsonString } }
                     })
                 });
 
@@ -858,7 +870,7 @@ async function saveCharacter(event) {
                     body: JSON.stringify({
                         description: "Character Management App Data",
                         public: false,
-                        files: { "characters.json": { content: jsonString } }
+                        files: { "characters.json": { content: gistJsonString } }
                     })
                 });
 
