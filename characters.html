@@ -3283,6 +3283,16 @@ function escapeHtml(str) {
                 <div id="settingsFieldsEditorContainer" class="space-y-3"></div>
             </div>
 
+            <!-- 💡 Gist同期設定ボタン（追加） -->
+            <div class="pt-2 border-t border-stone-100">
+                <h4 class="text-xs font-bold text-stone-700 mb-1">データ同期・バックアップ</h4>
+                <p class="text-[11px] text-stone-400 mb-2">GitHub Gistを用いたクラウド保存の設定を行います</p>
+                <button type="button" onclick="setupGistSync()" class="w-full py-2.5 px-4 rounded-xl text-xs font-bold text-white bg-pink-500 hover:bg-pink-600 transition-all shadow-sm flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-cloud-arrow-up"></i>
+                    <span>Gistトークンを設定する</span>
+                </button>
+            </div>
+
             <div class="pt-3 flex items-center justify-end gap-2 border-t border-stone-100">
                 <button type="button" onclick="closeSettingsModal()" class="px-4 py-2 rounded-xl text-xs font-medium text-stone-600 hover:bg-stone-100 transition-all">キャンセル</button>
                 <button type="submit" class="bg-stone-800 text-white px-5 py-2 rounded-xl text-xs font-medium shadow-sm hover:bg-stone-700 transition-all">設定を保存</button>
