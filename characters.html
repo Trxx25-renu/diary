@@ -1212,7 +1212,7 @@ function renderCharacterDetail(characterId) {
             if (currentImgs.length > 1) {
                 thumbContainer.innerHTML = currentImgs.map((img, idx) => `
                     <button onclick="selectGalleryIndex(${idx})" class="relative w-14 h-14 rounded-xl overflow-hidden border-2 transition-all shrink-0 bg-white ${idx === state.index ? 'scale-105 shadow-md' : 'border-stone-200 opacity-60 hover:opacity-100'}" style="${idx === state.index ? `border-color: ${themeColor};` : ''}">
-                        <img src="${img.url}" class="w-full h-full object-cover">
+                        <img src="${img.url}" class="w-full h-full object-cover object-top">
                     </button>
                 `).join('');
                 thumbWrapper.style.display = 'block';
