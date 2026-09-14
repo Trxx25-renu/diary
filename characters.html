@@ -3441,26 +3441,36 @@ function escapeHtml(str) {
     </div>
 </div>
 
-    <!-- 🔑 パスコード入力モーダル -->
+   <!-- 🔑 パスコード入力モーダル -->
 <div id="authModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/40 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-200">
-    <!-- 🌟 この「内側のdiv」はモーダルごとに必ず1つだけ！ -->
     <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-xl border border-stone-200 scale-95 transition-transform duration-200 flex flex-col gap-4">
-        
-        <!-- タイトルやアイコン -->
-        <div class="text-center">...</div>
-
-        <!-- フォーム（inputやボタン） -->
-        <form onsubmit="handleAuthSubmit(event)" class="flex flex-col gap-3">
-            <div class="flex flex-col gap-1.5">
-                <input type="password" id="inputPasscode" ...>
-                <p id="authErrorMsg" ...>...</p>
+        <div class="text-center">
+            <div class="w-12 h-12 rounded-2xl bg-stone-50 text-stone-600 flex items-center justify-center mx-auto text-xl mb-2">
+                <i class="fa-solid fa-key"></i>
             </div>
+            <h3 id="authModalTitle" class="text-base font-bold text-stone-800">管理者ログイン</h3>
+            <p id="authModalDesc" class="text-xs text-stone-500 mt-1">キャラクターの追加や設定変更をするにはパスコードが必要です。</p>
+        </div>
+
+        <form onsubmit="handleAuthSubmit(event)" class="flex flex-col gap-3">
+            
+            <!-- 🔑 パスコード入力欄（数字キーパッド対応） -->
+            <div class="flex flex-col gap-1.5">
+                <input type="password" 
+                       id="inputPasscode" 
+                       inputmode="numeric" 
+                       pattern="[0-9]*" 
+                       class="w-full text-center tracking-widest text-lg bg-stone-50 border border-stone-200 rounded-xl px-3 py-2.5 text-stone-800 focus:outline-none focus:border-stone-400 focus:bg-white transition-all" 
+                       placeholder="••••">
+                <p id="authErrorMsg" class="text-[10px] text-rose-500 text-center hidden">パスコードが違います</p>
+            </div>
+
+            <!-- ボタン類 -->
             <div class="flex gap-2 mt-2">
-                <button type="button" onclick="closeAuthModal()" ...>キャンセル</button>
-                <button type="submit" ...>決定 / 認証する</button>
+                <button type="button" onclick="closeAuthModal()" class="flex-1 bg-stone-100 hover:bg-stone-200 text-stone-600 text-xs font-bold py.2.5 rounded-xl transition-all">キャンセル</button>
+                <button type="submit" class="flex-1 bg-stone-800 hover:bg-stone-900 text-white text-xs font-bold py-2.5 rounded-xl transition-all shadow-sm">決定</button>
             </div>
         </form>
-
     </div>
 </div>
                 
