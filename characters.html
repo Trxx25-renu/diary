@@ -2939,59 +2939,9 @@ document.addEventListener('DOMContentLoaded', () => {
 });
        
     </script>
-</head>
-    
-<body class="min-h-screen flex flex-col bg-stone-50 text-stone-800">
 
-    <!-- プル・トゥ・リフレッシュ用インジケーター -->
-<div id="pullToRefreshIndicator" class="fixed top-0 left-0 w-full h-16 bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-200 flex items-center justify-center gap-2 shadow-md transition-transform duration-200 z-50" style="transform: translateY(-100%);">
-    <i id="pullIcon" class="fa-solid fa-arrow-down"></i>
-    <span id="pullText" class="text-sm font-medium">下に引っ張って更新</span>
-</div>
-
-    <!-- ヘッダー -->
-    <header class="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-stone-200/80 px-4 py-3">
-        <div class="max-w-5xl mx-auto flex items-center justify-between">
-            <!-- 左側：アイコン ＆ タイトル・サブタイトル -->
-            <div class="flex items-center gap-3">
-                <img id="headerFaviconImg" class="w-8 h-8 rounded-lg object-cover border border-stone-200 shadow-sm hidden" alt="Icon">
-                <div>
-                    <h1 id="siteHeaderTitle" onclick="navigateTo('home')" class="text-base font-bold tracking-tight text-stone-800 transition-colors cursor-pointer hover:text-stone-600">PC一覧</h1>
-                    <p id="siteHeaderSubtitle" class="text-[10px] text-stone-400 font-serif-title tracking-wider uppercase">CHARACTER LOG</p>
-                </div>
-            </div>
-
-           <!-- 右側：各種ボタン群 -->
-    <div class="flex items-center gap-2">
-        <!-- 💡 「HP設定」も管理者専用であれば admin-only を追加します -->
-        <button onclick="handleOpenSettingsModal()" class="admin-only bg-white hover:bg-stone-50 text-stone-700 text-xs font-bold px-3.5 py-1.5 rounded-full border border-stone-200 shadow-sm transition-all flex items-center gap-1.5">
-            <i class="fa-solid fa-gear text-stone-500"></i>
-            <span>HP設定</span>
-        </button>
-
-        <button id="headerKeyBtn" onclick="handleHeaderKeyClick()" class="text-stone-600 hover:text-stone-800 transition-colors p-2 text-base" title="管理者ログイン">
-            <i class="fa-solid fa-lock"></i>
-        </button>
-        
-        <!-- 管理者ログイン時のみ表示されるPC追加ボタン -->
-        <button id="headerAddBtn" onclick="openCharacterModal()" class="admin-only bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold px-3.5 py-1.5 rounded-full shadow-sm transition-all flex items-center gap-1.5 hidden">
-            <i class="fa-solid fa-plus"></i>
-            <span>PC追加</span>
-        </button>
-    　  <!-- <button onclick="setupGistSync()" style="padding: 10px; background: #ff69b4; color: white; border: none; border-radius: 5px; font-weight: bold;">Gistトークンを設定する</button>　 -->
-    </div>
-</header>
-    
-    <!-- メインコンテンツ -->
-    <main class="max-w-5xl mx-auto w-full px-4 pt-3 pb-4 flex-1">
-        
-        <!-- 階層に応じて自動で切り替わるパンくず＆ヘッダーアクションのプレースホルダー -->
-        <div id="headerBreadcrumbArea"></div>
-
-        <script>
-            
+                <script>
             // 🌟 階層ごとに安全にHTMLを生成・切り替える関数
-// 🌟 階層ごとに安全にHTMLを生成・切り替える関数
             function renderBreadcrumbAndActions(viewType, param) {
                 const container = document.getElementById('headerBreadcrumbArea');
                 if (!container) return;
@@ -3178,6 +3128,55 @@ function escapeHtml(str) {
 }
             
         </script>
+        
+</head>
+    
+<body class="min-h-screen flex flex-col bg-stone-50 text-stone-800">
+
+    <!-- プル・トゥ・リフレッシュ用インジケーター -->
+<div id="pullToRefreshIndicator" class="fixed top-0 left-0 w-full h-16 bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-200 flex items-center justify-center gap-2 shadow-md transition-transform duration-200 z-50" style="transform: translateY(-100%);">
+    <i id="pullIcon" class="fa-solid fa-arrow-down"></i>
+    <span id="pullText" class="text-sm font-medium">下に引っ張って更新</span>
+</div>
+
+    <!-- ヘッダー -->
+    <header class="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-stone-200/80 px-4 py-3">
+        <div class="max-w-5xl mx-auto flex items-center justify-between">
+            <!-- 左側：アイコン ＆ タイトル・サブタイトル -->
+            <div class="flex items-center gap-3">
+                <img id="headerFaviconImg" class="w-8 h-8 rounded-lg object-cover border border-stone-200 shadow-sm hidden" alt="Icon">
+                <div>
+                    <h1 id="siteHeaderTitle" onclick="navigateTo('home')" class="text-base font-bold tracking-tight text-stone-800 transition-colors cursor-pointer hover:text-stone-600">PC一覧</h1>
+                    <p id="siteHeaderSubtitle" class="text-[10px] text-stone-400 font-serif-title tracking-wider uppercase">CHARACTER LOG</p>
+                </div>
+            </div>
+
+           <!-- 右側：各種ボタン群 -->
+    <div class="flex items-center gap-2">
+        <!-- 💡 「HP設定」も管理者専用であれば admin-only を追加します -->
+        <button onclick="handleOpenSettingsModal()" class="admin-only bg-white hover:bg-stone-50 text-stone-700 text-xs font-bold px-3.5 py-1.5 rounded-full border border-stone-200 shadow-sm transition-all flex items-center gap-1.5">
+            <i class="fa-solid fa-gear text-stone-500"></i>
+            <span>HP設定</span>
+        </button>
+
+        <button id="headerKeyBtn" onclick="handleHeaderKeyClick()" class="text-stone-600 hover:text-stone-800 transition-colors p-2 text-base" title="管理者ログイン">
+            <i class="fa-solid fa-lock"></i>
+        </button>
+        
+        <!-- 管理者ログイン時のみ表示されるPC追加ボタン -->
+        <button id="headerAddBtn" onclick="openCharacterModal()" class="admin-only bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold px-3.5 py-1.5 rounded-full shadow-sm transition-all flex items-center gap-1.5 hidden">
+            <i class="fa-solid fa-plus"></i>
+            <span>PC追加</span>
+        </button>
+    　  <!-- <button onclick="setupGistSync()" style="padding: 10px; background: #ff69b4; color: white; border: none; border-radius: 5px; font-weight: bold;">Gistトークンを設定する</button>　 -->
+    </div>
+</header>
+    
+    <!-- メインコンテンツ -->
+    <main class="max-w-5xl mx-auto w-full px-4 pt-3 pb-4 flex-1">
+        
+        <!-- 階層に応じて自動で切り替わるパンくず＆ヘッダーアクションのプレースホルダー -->
+        <div id="headerBreadcrumbArea"></div>
 
         <!-- 📂 システム別フォルダビュー（ホーム） -->
         <div id="view-folders">
