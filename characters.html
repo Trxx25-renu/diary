@@ -65,10 +65,9 @@
 }
     </style>
 
-   <script type="module">
+<script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
     import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    // 💡 deleteDoc を追加しました
     import { getFirestore, collection, getDocs, doc, getDoc, setDoc, addDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
     // HTMLエスケープ処理
@@ -86,442 +85,445 @@
         });
     }
     window.escapeHtml = escapeHtml;
-       
-        // 🔒 ネタバレパーサー（||で囲まれた部分を目隠しにする。複数行対応）
-        function parseSpoilers(text) {
-            if (!text) return '';
-            const escaped = escapeHtml(text);
-            return escaped.replace(/\|\|([\s\S]*?)\|\|/g, (match, p1) => {
-                return `<span class="spoiler-text" onclick="this.classList.toggle('revealed')" title="タップでネタバレを表示">${p1}</span>`;
-            });
-        }
-        window.parseSpoilers = parseSpoilers;
-
-        document.addEventListener("DOMContentLoaded", async () => {
-    console.log("🚀 キャラクター管理ページ初期化開始...");
-
-    try {
-        if (sessionStorage.getItem('isAdminSession') === 'true') {
-            window.isAdmin = true;
-        }
-    } catch (e) { console.error(e); }
-
-    window.appId = "photo-journal-app";
-
-    const GIST_CONFIG = {
-        get token() { return localStorage.getItem('github_gist_token') || ''; },
-        gistId: 'd8834bf3de436a821be2baca5ed63c93',
-        setToken(t) { localStorage.setItem('github_gist_token', t); },
-        setGistId(id) { localStorage.setItem('github_gist_id', id); }
-    };
-    window.GIST_CONFIG = GIST_CONFIG;
-
-    const firebaseConfig = {
-        apiKey: "AIzaSyA2ctX9sUpJmLSVJomU9cbMzrUX_AXNjuE",
-        authDomain: "diary-36d77.firebaseapp.com",
-        projectId: "diary-36d77",
-        storageBucket: "diary-36d77.firebasestorage.app",
-        messagingSenderId: "1060563209082",
-        appId: "1:1060563209082:web:1c6cfc21a496548309e4c3",
-        measurementId: "G-RBK7ZN6NF1"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
-    window.db = db;
-
-    await signInAnonymously(auth);
-
-    // ⭐ ここに初期表示用のパンくず呼び出しを追加！
-    if (typeof renderBreadcrumbAndActions === 'function') {
-        renderBreadcrumbAndActions('home');
+        
+    // 🔒 ネタバレパーサー
+    function parseSpoilers(text) {
+        if (!text) return '';
+        const escaped = escapeHtml(text);
+        return escaped.replace(/\|\|([\s\S]*?)\|\|/g, (match, p1) => {
+            return `<span class="spoiler-text" onclick="this.classList.toggle('revealed')" title="タップでネタバレを表示">${p1}</span>`;
+        });
     }
+    window.parseSpoilers = parseSpoilers;
 
-    // デフォルトのシステムリスト（ご指定のひな型順）
-    window.systems = [
-        { id: 'coc', name: 'クトゥルフ神話TRPG (6版)', desc: 'CoC 6版', badgeColor: 'bg-amber-900/80' },
-        { id: 'dx3', name: 'ダブルクロス The 3rd Edition', desc: 'DX3rd', badgeColor: 'bg-rose-900/80' },
-        { id: 'shinobigami', name: 'シノビガミ', desc: '現代忍法アクション', badgeColor: 'bg-cyan-900/80' },
-        { id: 'insane', name: 'インセイン', desc: 'マルチジャンルホラー', badgeColor: 'bg-purple-900/80' },
-        { id: 'magica', name: 'マギカロギア', desc: '魔法使いRPG', badgeColor: 'bg-indigo-900/80' },
-        { id: 'sw25', name: 'ソード・ワールド2.5', desc: 'SW2.5', badgeColor: 'bg-emerald-800/80' }
-    ];
+    document.addEventListener("DOMContentLoaded", async () => {
+        console.log("🚀 キャラクター管理ページ初期化開始...");
 
-    // デフォルトのシステム別カスタムフィールド
-    window.systemCustomFields = {
-        coc: {
-            status: [
-                { id: 'san', label: 'SAN (正気度)', max: 99 },
-                { id: 'hp', label: 'HP', max: 12 }
-            ],
-            text: [
-                { id: 'mythos', label: 'クトゥルフ神話技能' },
-                { id: 'artifact', label: '所持アーティファクト / 呪文' }
-            ]
-        },
-        dx3: {
-            status: [
-                { id: 'hp', label: 'HP', max: 35 },
-                { id: '侵蝕率', label: '侵蝕率', max: 150 }
-            ],
-            text: [
-                { id: 'syndrome', label: 'シンドローム' },
-                { id: 'ror', label: 'ロイス' }
-            ]
-        },
-        shinobigami: {
-            status: [
-                { id: 'hp', label: '生命力', max: 6 }
-            ],
-            text: [
-                { id: 'ryuha', label: '流派 / 階級' },
-                { id: 'secret', label: '秘密 / 使命' }
-            ]
-        },
-        insane: {
-            status: [
-                { id: 'hp', label: '狂気点', max: 6 }
-            ],
-            text: [
-                { id: 'secret', label: '秘密 / 使命' },
-                { id: 'horror', label: 'ホラー / ゾンビなど' }
-            ]
-        },
-        magica: {
-            status: [
-                { id: 'hp', label: '生命力', max: 5 }
-            ],
-            text: [
-                { id: 'kanei', label: '経緯 / 位階' },
-                { id: 'mahou', label: '魔法 / 使命' }
-            ]
-        },
-        sw25: {
-            status: [
-                { id: 'hp', label: 'HP', max: 30 },
-                { id: 'mp', label: 'MP', max: 30 }
-            ],
-            text: [
-                { id: 'race', label: '種族 / レベル' }
-            ]
-        }
-    };
-
-    try {
-        const configRef = doc(db, 'artifacts', window.appId, 'public', 'data', 'config', 'settings');
-        const configSnap = await getDoc(configRef);
-        if (configSnap.exists()) {
-            window.storedPasscode = configSnap.data().passcode;
-        }
-
-        const rosterConfigRef = doc(db, 'artifacts', window.appId, 'public', 'data', 'config', 'characterRosterSettings');
-        const rosterSnap = await getDoc(rosterConfigRef);
-        if (rosterSnap.exists()) {
-            const data = rosterSnap.data();
-            window.rosterSettings = data;
-            applyRosterSettings(data);
-            if (data.systems) {
-                window.systems = data.systems; // 保存された並び順を反映
+        try {
+            if (sessionStorage.getItem('isAdminSession') === 'true') {
+                window.isAdmin = true;
+                console.log("🔒 管理者セッションを検出しました（操作権限有効）");
             }
-            if (data.customFields) {
-                window.systemCustomFields = data.customFields;
-            }
-        } else {
-            window.rosterSettings = { title: "", favicon: "" };
-        }
-    } catch (e) { console.error("Config load error:", e); }
-}); // 💡 ← ここに DOMContentLoaded を閉じるカッコが絶対必要です！
+        } catch (e) { console.error(e); }
 
-// ==========================================
-// 💡 キャラクターデータの読み込み（GitHub Gist同期・フォールバック対応版）
-// ==========================================
-async function loadCharactersFromLocal() {
-    try {
-        // GitHub Gistの設定がある場合はクラウドから最新データを取得
-        if (window.GIST_CONFIG && window.GIST_CONFIG.token && window.GIST_CONFIG.gistId) {
-            const response = await fetch(`https://api.github.com/gists/${window.GIST_CONFIG.gistId}`, {
-                headers: {
-                    'Authorization': `token ${window.GIST_CONFIG.token}`
-                }
-            });
-            if (response.ok) {
-                const gistData = await response.json();
-                const file = gistData.files['characters.json'];
-                if (file && file.content) {
-                    const gistCharacters = JSON.parse(file.content);
+        window.appId = "photo-journal-app";
 
-                    // 💡 手元のブラウザ（localStorage）に保存されている「画像付きのデータ」を保護してマージする
-                    const savedLocal = localStorage.getItem('local_characters');
-                    if (savedLocal) {
-                        try {
-                            const localCharacters = JSON.parse(savedLocal);
-                            gistCharacters.forEach(gChar => {
-                                const foundLocal = localCharacters.find(l => String(l.id) === String(gChar.id));
-                                if (foundLocal && foundLocal.images) {
-                                    // Gist側の空っぽの画像を、手元にあった画像データで上書きして復元する
-                                    gChar.images = foundLocal.images;
-                                    gChar.thumbnail = foundLocal.thumbnail || "";
-                                    gChar.avatar = foundLocal.avatar || "";
-                                }
-                            });
-                        } catch (err) {
-                            console.warn("Local image merge warning:", err);
-                        }
-                    }
+        const GIST_CONFIG = {
+            get token() { return localStorage.getItem('github_gist_token') || ''; },
+            gistId: 'd8834bf3de436a821be2baca5ed63c93',
+            setToken(t) { localStorage.setItem('github_gist_token', t); },
+            setGistId(id) { localStorage.setItem('github_gist_id', id); }
+        };
+        window.GIST_CONFIG = GIST_CONFIG;
 
-                    window.characters = gistCharacters;
-                    // ローカルには「画像付きの完全版データ」として保存し直す
-                    localStorage.setItem('local_characters', JSON.stringify(window.characters));
-                    console.log('GitHub Gistからデータをロードし、ローカルの画像と統合しました');
-                    return;
-                }
-            }
-        }
-    } catch (e) {
-        console.warn('Gistからのロードに失敗しました。ローカルデータを使用します', e);
-    }
+        const firebaseConfig = {
+            apiKey: "AIzaSyA2ctX9sUpJmLSVJomU9cbMzrUX_AXNjuE",
+            authDomain: "diary-36d77.firebaseapp.com",
+            projectId: "diary-36d77",
+            storageBucket: "diary-36d77.firebasestorage.app",
+            messagingSenderId: "1060563209082",
+            appId: "1:1060563209082:web:1c6cfc21a496548309e4c3",
+            measurementId: "G-RBK7ZN6NF1"
+        };
 
-    // Gistから取得できなかった場合は従来のローカルストレージを使用
-    try {
-        const saved = localStorage.getItem('local_characters');
-        if (saved) {
-            window.characters = JSON.parse(saved);
-        } else {
-            window.characters = [];
-        }
-    } catch (e) {
-        console.error("Characters load error:", e);
-        window.characters = [];
-    }
-}
-window.loadCharactersFromLocal = loadCharactersFromLocal;
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        window.db = db;
 
-function renderSystemFolders(filterKeyword = "") {
-    const container = document.getElementById('systemFoldersContainer');
-    if (!container) return;
+        await signInAnonymously(auth);
+        console.log("✅ Firebase 匿名認証完了");
 
-    container.innerHTML = '';
-    const keyword = filterKeyword.toLowerCase().trim();
-    
-    // 💡 window.characters が未定義（undefined）の場合に備えて空配列をデフォルトにする
-    const allChars = window.characters || [];
-
-    window.systems.forEach(sys => {
-        const sysChars = allChars.filter(c => c.systemId === sys.id);
-        const matchesSystem = sys.name.toLowerCase().includes(keyword) || sys.desc.toLowerCase().includes(keyword);
-        const matchedChars = sysChars.filter(c => 
-            (c.name && c.name.toLowerCase().includes(keyword)) ||
-            (c.epithet && c.epithet.toLowerCase().includes(keyword)) ||
-            (c.occupation && c.occupation.toLowerCase().includes(keyword))
-        );
-
-        if (keyword && !matchesSystem && matchedChars.length === 0) {
-            return;
+        // 初期表示用のパンくず呼び出し
+        if (typeof renderBreadcrumbAndActions === 'function') {
+            renderBreadcrumbAndActions('home');
         }
 
-        const card = document.createElement('div');
-        card.className = 'bg-white rounded-2xl p-5 border border-stone-200/80 shadow-sm hover:border-stone-400 transition-all cursor-pointer flex flex-col justify-between gap-4 group';
-        card.onclick = () => navigateTo('characterList', sys.id);
-
-        card.innerHTML = `
-            <div>
-                <div class="flex items-center justify-between mb-3">
-                    <span class="text-[10px] font-medium text-white px-2.5 py-1 rounded-lg ${sys.badgeColor || 'bg-stone-700'}">${sys.desc}</span>
-                    <i class="fa-solid fa-folder-open text-stone-300 group-hover:text-stone-600 transition-colors"></i>
-                </div>
-                <h3 class="font-bold text-base text-stone-800 group-hover:text-stone-900">${sys.name}</h3>
-                <p class="text-xs text-stone-400 mt-1">登録キャラクター: <span class="font-bold text-stone-600">${sysChars.length}</span> 名</p>
-                ${keyword && matchedChars.length > 0 ? `<p class="text-[11px] text-amber-700 bg-amber-50 px-2 py-1 rounded-md mt-2">一致キャラ: ${matchedChars.map(c => c.name).join(', ')}</p>` : ''}
-            </div>
-            <div class="flex items-center justify-between pt-3 border-t border-stone-100 text-xs text-stone-500 font-medium">
-                <span>一覧を見る</span>
-                <i class="fa-solid fa-arrow-right text-[10px] group-hover:translate-x-1 transition-transform"></i>
-            </div>
-        `;
-        container.appendChild(card);
-    });
-
-    if (container.children.length === 0) {
-        container.innerHTML = `
-            <div class="col-span-full text-center py-12 text-stone-400 text-xs">
-                <i class="fa-solid fa-search text-2xl mb-2"></i>
-                <p>一致するシステム・キャラクターが見つかりませんでした。</p>
-            </div>
-        `;
-    }
-}
-window.renderSystemFolders = renderSystemFolders;
-
-function handleFolderSearchInput(e) {
-    renderSystemFolders(e.target.value);
-}
-window.handleFolderSearchInput = handleFolderSearchInput;
-       
-// ==========================================
-// 💡 ファビコンファイル選択時のプレビュー＆Base64変換関数
-// ==========================================
-function handleFaviconFileSelect(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        const base64String = e.target.result;
-        window.currentFaviconBase64 = base64String;
-
-        // プレビュー画像を表示
-        const preview = document.getElementById('settingFaviconPreview');
-        if (preview) {
-            preview.src = base64String;
-            preview.classList.remove('hidden');
-        }
-
-        // ⭐ 【追加】選んだ画像をその場でリアルタイムにファビコンとして適用する！
-        // 1. 通常のファビコン（PC・Androidなど）を更新
-        let faviconTag = document.getElementById('dynamicFavicon');
-        if (!faviconTag) {
-            // もしHTMLになければ動的に作ってしまう
-            faviconTag = document.createElement('link');
-            faviconTag.id = 'dynamicFavicon';
-            faviconTag.rel = 'icon';
-            document.head.appendChild(faviconTag);
-        }
-        faviconTag.href = base64String;
-
-        // 2. スマホ（iPhone/iPad）用のアップルタッチアイコンも同時に更新
-        let appleIconTag = document.getElementById('dynamicAppleTouchIcon');
-        if (!appleIconTag) {
-            appleIconTag = document.createElement('link');
-            appleIconTag.id = 'dynamicAppleTouchIcon';
-            appleIconTag.rel = 'apple-touch-icon';
-            document.head.appendChild(appleIconTag);
-        }
-        appleIconTag.href = base64String;
-    };
-    reader.readAsDataURL(file);
-}
-window.handleFaviconFileSelect = handleFaviconFileSelect;
-
-// 💡 ひらがな・カタカナを統一して、大文字小文字や空白を無視する便利関数
-function normalizeText(str) {
-    if (!str) return '';
-    return String(str)
-        .toLowerCase()
-        // カタカナをひらがなに統一
-        .replace(/[\u30a1-\u30f6]/g, match => {
-            const chr = match.charCodeAt(0) - 0x60;
-            return String.fromCharCode(chr);
-        })
-        // 空白を除去
-        .replace(/\s+/g, '');
-}
-
-// ==========================================
-// 💡 完成版: キャラクター一覧描画関数（テーマカラー・よみがな・安全対策版）
-// ==========================================
-function renderCharacterList(systemId, filterKeyword = "") {
-    window.selectedSystemId = systemId;
-    
-    const sys = (window.systems || []).find(s => s.id === systemId);
-    const titleEl = document.getElementById('currentSystemTitle');
-    if (titleEl) {
-        titleEl.textContent = sys ? sys.name : 'キャラクター一覧';
-    }
-
-    const grid = document.getElementById('characterGrid');
-    if (!grid) return;
-
-    grid.innerHTML = '';
-    
-    const keyword = normalizeText(filterKeyword);
-    const systemChars = (window.characters || []).filter(c => c.systemId === systemId);
-    
-    const filteredChars = systemChars.filter(c => {
-        if (!keyword) return true;
-
-        const searchTargets = [
-            c.name,          // 名前
-            c.yomigana,      // よみがな
-            c.epithet,       // 二つ名
-            c.epithetKana,   // 二つ名のよみがな
-            c.occupation,    // 職業
-            c.age,           // 年齢
-            c.birthdate      // 誕生日
+        // デフォルトのシステムリスト
+        window.systems = [
+            { id: 'coc', name: 'クトゥルフ神話TRPG (6版)', desc: 'CoC 6版', badgeColor: 'bg-amber-900/80' },
+            { id: 'dx3', name: 'ダブルクロス The 3rd Edition', desc: 'DX3rd', badgeColor: 'bg-rose-900/80' },
+            { id: 'shinobigami', name: 'シノビガミ', desc: '現代忍法アクション', badgeColor: 'bg-cyan-900/80' },
+            { id: 'insane', name: 'インセイン', desc: 'マルチジャンルホラー', badgeColor: 'bg-purple-900/80' },
+            { id: 'magica', name: 'マギカロギア', desc: '魔法使いRPG', badgeColor: 'bg-indigo-900/80' },
+            { id: 'sw25', name: 'ソード・ワールド2.5', desc: 'SW2.5', badgeColor: 'bg-emerald-800/80' }
         ];
 
-        return searchTargets.some(target => {
-            if (target == null) return false;
-            return normalizeText(target).includes(keyword);
-        });
-    });
+        // デフォルトのシステム別カスタムフィールド
+        window.systemCustomFields = {
+            coc: {
+                status: [
+                    { id: 'san', label: 'SAN (正気度)', max: 99 },
+                    { id: 'hp', label: 'HP', max: 12 }
+                ],
+                text: [
+                    { id: 'mythos', label: 'クトゥルフ神話技能' },
+                    { id: 'artifact', label: '所持アーティファクト / 呪文' }
+                ]
+            },
+            dx3: {
+                status: [
+                    { id: 'hp', label: 'HP', max: 35 },
+                    { id: '侵蝕率', label: '侵蝕率', max: 150 }
+                ],
+                text: [
+                    { id: 'syndrome', label: 'シンドローム' },
+                    { id: 'ror', label: 'ロイス' }
+                ]
+            },
+            shinobigami: {
+                status: [
+                    { id: 'hp', label: '生命力', max: 6 }
+                ],
+                text: [
+                    { id: 'ryuha', label: '流派 / 階級' },
+                    { id: 'secret', label: '秘密 / 使命' }
+                ]
+            },
+            insane: {
+                status: [
+                    { id: 'hp', label: '狂気点', max: 6 }
+                ],
+                text: [
+                    { id: 'secret', label: '秘密 / 使命' },
+                    { id: 'horror', label: 'ホラー / ゾンビなど' }
+                ]
+            },
+            magica: {
+                status: [
+                    { id: 'hp', label: '生命力', max: 5 }
+                ],
+                text: [
+                    { id: 'kanei', label: '経緯 / 位階' },
+                    { id: 'mahou', label: '魔法 / 使命' }
+                ]
+            },
+            sw25: {
+                status: [
+                    { id: 'hp', label: 'HP', max: 30 },
+                    { id: 'mp', label: 'MP', max: 30 }
+                ],
+                text: [
+                    { id: 'race', label: '種族 / レベル' }
+                ]
+            }
+        };
 
-    const sortedChars = (typeof sortCharacters === 'function') ? sortCharacters(filteredChars) : filteredChars;
+        try {
+            const configRef = doc(db, 'artifacts', window.appId, 'public', 'data', 'config', 'settings');
+            const configSnap = await getDoc(configRef);
+            if (configSnap.exists()) {
+                window.storedPasscode = configSnap.data().passcode;
+            }
 
-    if (sortedChars.length === 0) {
-        grid.innerHTML = `
-            <div class="col-span-full text-center py-12 text-stone-400 text-xs">
-                <i class="fa-solid fa-user-slash text-2xl mb-2"></i>
-                <p>${systemChars.length === 0 ? 'このシステムに登録されているキャラクターはまだいません。' : '条件に一致するキャラクターがいません。'}</p>
-            </div>
-        `;
-        return;
-    }
+            const rosterConfigRef = doc(db, 'artifacts', window.appId, 'public', 'data', 'config', 'characterRosterSettings');
+            const rosterSnap = await getDoc(rosterConfigRef);
+            if (rosterSnap.exists()) {
+                const data = rosterSnap.data();
+                window.rosterSettings = data;
+                applyRosterSettings(data);
+                if (data.systems) {
+                    window.systems = data.systems;
+                }
+                if (data.customFields) {
+                    window.systemCustomFields = data.customFields;
+                }
+            } else {
+                window.rosterSettings = { title: "", favicon: "" };
+            }
+            console.log("✅ Firestore設定データの読み込み完了");
+        } catch (e) { console.error("Config load error:", e); }
 
-    sortedChars.forEach(ch => {
-        // 💡★ここで最初に themeColor を定義するのがポイントです！
-        const themeColor = ch.themeColor || '#78716c';
-
-        const card = document.createElement('div');
-        card.className = 'bg-white rounded-3xl p-4 border border-stone-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer flex flex-col gap-3 relative overflow-hidden group';
-        card.onclick = () => navigateTo('detail', ch.id);
-
-        let thumbHtml = `<div class="w-full h-full flex items-center justify-center text-stone-300 bg-stone-50"><i class="fa-solid fa-user text-3xl"></i></div>`;
-        
-        if (ch.thumbnail && ch.thumbnail.trim() !== "") {
-            thumbHtml = `<img src="${ch.thumbnail}" class="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500">`;
-        } else if (ch.avatar && ch.avatar.trim() !== "") {
-            thumbHtml = `<img src="${ch.avatar}" class="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500">`;
-        } else if (ch.images && ch.images.base && ch.images.base.length > 0 && ch.images.base[0].url) {
-            thumbHtml = `<img src="${ch.images.base[0].url}" class="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500">`;
+        // ⭐ キャラクターデータの読み込み完了を確実に待つ
+        if (typeof loadCharactersFromLocal === 'function') {
+            await loadCharactersFromLocal();
         }
 
-        let epithetHtml = '';
-        if (ch.epithet && ch.epithet.trim() !== '') {
-            const kana = ch.epithetKana ? `<span class="text-[9px] font-medium text-stone-400 block mb-0.5 truncate">${ch.epithetKana}</span>` : '';
-            epithetHtml = `
-                <div class="mb-2 truncate">
-                    ${kana}
-                    <span class="text-xs font-bold tracking-wider block leading-tight" style="color: color-mix(in srgb, ${themeColor} 70%, #1c1917);">${ch.epithet}</span>
+        // ⭐ すべての準備が整ったのでシステムフォルダを描画
+        if (typeof renderSystemFolders === 'function') {
+            renderSystemFolders();
+        }
+
+        console.log("🎉 キャラクター管理ページの初期化がすべて完了しました！");
+    });
+
+    // ==========================================
+    // 💡 キャラクターデータの読み込み
+    // ==========================================
+    async function loadCharactersFromLocal() {
+        try {
+            if (window.GIST_CONFIG && window.GIST_CONFIG.token && window.GIST_CONFIG.gistId) {
+                const response = await fetch(`https://api.github.com/gists/${window.GIST_CONFIG.gistId}`, {
+                    headers: {
+                        'Authorization': `token ${window.GIST_CONFIG.token}`
+                    }
+                });
+                if (response.ok) {
+                    const gistData = await response.json();
+                    const file = gistData.files['characters.json'];
+                    if (file && file.content) {
+                        const gistCharacters = JSON.parse(file.content);
+
+                        const savedLocal = localStorage.getItem('local_characters');
+                        if (savedLocal) {
+                            try {
+                                const localCharacters = JSON.parse(savedLocal);
+                                gistCharacters.forEach(gChar => {
+                                    const foundLocal = localCharacters.find(l => String(l.id) === String(gChar.id));
+                                    if (foundLocal && foundLocal.images) {
+                                        gChar.images = foundLocal.images;
+                                        gChar.thumbnail = foundLocal.thumbnail || "";
+                                        gChar.avatar = foundLocal.avatar || "";
+                                    }
+                                });
+                            } catch (err) {
+                                console.warn("Local image merge warning:", err);
+                            }
+                        }
+
+                        window.characters = gistCharacters;
+                        localStorage.setItem('local_characters', JSON.stringify(window.characters));
+                        console.log('📂 GitHub Gistからキャラクターデータをロードし、ローカルの画像と統合しました');
+                        return;
+                    }
+                }
+            }
+        } catch (e) {
+            console.warn('⚠️ Gistからのロードに失敗しました。ローカルデータを使用します', e);
+        }
+
+        try {
+            const saved = localStorage.getItem('local_characters');
+            if (saved) {
+                window.characters = JSON.parse(saved);
+                console.log('📂 ローカルストレージからキャラクターデータをロードしました');
+            } else {
+                window.characters = [];
+                console.log('ℹ️ キャラクターデータが空です');
+            }
+        } catch (e) {
+            console.error("Characters load error:", e);
+            window.characters = [];
+        }
+    }
+    window.loadCharactersFromLocal = loadCharactersFromLocal;
+
+    function renderSystemFolders(filterKeyword = "") {
+        const container = document.getElementById('systemFoldersContainer');
+        if (!container) return;
+
+        container.innerHTML = '';
+        const keyword = filterKeyword.toLowerCase().trim();
+        
+        const allChars = window.characters || [];
+
+        window.systems.forEach(sys => {
+            const sysChars = allChars.filter(c => c.systemId === sys.id);
+            const matchesSystem = sys.name.toLowerCase().includes(keyword) || sys.desc.toLowerCase().includes(keyword);
+            const matchedChars = sysChars.filter(c => 
+                (c.name && c.name.toLowerCase().includes(keyword)) ||
+                (c.epithet && c.epithet.toLowerCase().includes(keyword)) ||
+                (c.occupation && c.occupation.toLowerCase().includes(keyword))
+            );
+
+            if (keyword && !matchesSystem && matchedChars.length === 0) {
+                return;
+            }
+
+            const card = document.createElement('div');
+            card.className = 'bg-white rounded-2xl p-5 border border-stone-200/80 shadow-sm hover:border-stone-400 transition-all cursor-pointer flex flex-col justify-between gap-4 group';
+            card.onclick = () => navigateTo('characterList', sys.id);
+
+            card.innerHTML = `
+                <div>
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="text-[10px] font-medium text-white px-2.5 py-1 rounded-lg ${sys.badgeColor || 'bg-stone-700'}">${sys.desc}</span>
+                        <i class="fa-solid fa-folder-open text-stone-300 group-hover:text-stone-600 transition-colors"></i>
+                    </div>
+                    <h3 class="font-bold text-base text-stone-800 group-hover:text-stone-900">${sys.name}</h3>
+                    <p class="text-xs text-stone-400 mt-1">登録キャラクター: <span class="font-bold text-stone-600">${sysChars.length}</span> 名</p>
+                    ${keyword && matchedChars.length > 0 ? `<p class="text-[11px] text-amber-700 bg-amber-50 px-2 py-1 rounded-md mt-2">一致キャラ: ${matchedChars.map(c => c.name).join(', ')}</p>` : ''}
+                </div>
+                <div class="flex items-center justify-between pt-3 border-t border-stone-100 text-xs text-stone-500 font-medium">
+                    <span>一覧を見る</span>
+                    <i class="fa-solid fa-arrow-right text-[10px] group-hover:translate-x-1 transition-transform"></i>
+                </div>
+            `;
+            container.appendChild(card);
+        });
+
+        if (container.children.length === 0) {
+            container.innerHTML = `
+                <div class="col-span-full text-center py-12 text-stone-400 text-xs">
+                    <i class="fa-solid fa-search text-2xl mb-2"></i>
+                    <p>一致するシステム・キャラクターが見つかりませんでした。</p>
                 </div>
             `;
         }
+    }
+    window.renderSystemFolders = renderSystemFolders;
 
-        let ageAndBirthText = '';
-        if (ch.age) ageAndBirthText += `${ch.age}歳`;
-        if (ch.birthdate) {
-            ageAndBirthText += ageAndBirthText ? ` <span class="text-stone-300 font-normal">/</span> ${ch.birthdate}` : ch.birthdate;
+    function handleFolderSearchInput(e) {
+        renderSystemFolders(e.target.value);
+    }
+    window.handleFolderSearchInput = handleFolderSearchInput;
+        
+    // ==========================================
+    // 💡 ファビコンファイル選択時のプレビュー＆Base64変換関数
+    // ==========================================
+    function handleFaviconFileSelect(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const base64String = e.target.result;
+            window.currentFaviconBase64 = base64String;
+
+            const preview = document.getElementById('settingFaviconPreview');
+            if (preview) {
+                preview.src = base64String;
+                preview.classList.remove('hidden');
+            }
+
+            let faviconTag = document.getElementById('dynamicFavicon');
+            if (!faviconTag) {
+                faviconTag = document.createElement('link');
+                faviconTag.id = 'dynamicFavicon';
+                faviconTag.rel = 'icon';
+                document.head.appendChild(faviconTag);
+            }
+            faviconTag.href = base64String;
+
+            let appleIconTag = document.getElementById('dynamicAppleTouchIcon');
+            if (!appleIconTag) {
+                appleIconTag = document.createElement('link');
+                appleIconTag.id = 'dynamicAppleTouchIcon';
+                appleIconTag.rel = 'apple-touch-icon';
+                document.head.appendChild(appleIconTag);
+            }
+            appleIconTag.href = base64String;
+            console.log("🎨 ファビコンがリアルタイムに更新されました");
+        };
+        reader.readAsDataURL(file);
+    }
+    window.handleFaviconFileSelect = handleFaviconFileSelect;
+
+    function normalizeText(str) {
+        if (!str) return '';
+        return String(str)
+            .toLowerCase()
+            .replace(/[\u30a1-\u30f6]/g, match => {
+                const chr = match.charCodeAt(0) - 0x60;
+                return String.fromCharCode(chr);
+            })
+            .replace(/\s+/g, '');
+    }
+
+    // ==========================================
+    // 💡 キャラクター一覧描画関数
+    // ==========================================
+    function renderCharacterList(systemId, filterKeyword = "") {
+        window.selectedSystemId = systemId;
+        
+        const sys = (window.systems || []).find(s => s.id === systemId);
+        const titleEl = document.getElementById('currentSystemTitle');
+        if (titleEl) {
+            titleEl.textContent = sys ? sys.name : 'キャラクター一覧';
         }
-        const subInfoText = ageAndBirthText || ch.occupation || '';
 
-        card.innerHTML = `
-            <div class="aspect-square w-full rounded-2xl overflow-hidden relative border-2 border-stone-200 shadow-inner flex items-center justify-center" style="background-color: ${themeColor};">
-                ${thumbHtml}
-            </div>
-            <div class="flex flex-col gap-0.5 px-1">
-                ${epithetHtml}
-                <div class="flex items-center justify-between">
-                    <h3 class="text-sm font-bold text-stone-800 tracking-wide truncate group-hover:text-stone-600 transition-colors">${ch.name}</h3>
-                    ${ch.yomigana ? `<span class="text-[10px] text-stone-400 font-light truncate ml-1">${ch.yomigana}</span>` : ''}
+        const grid = document.getElementById('characterGrid');
+        if (!grid) return;
+
+        grid.innerHTML = '';
+        
+        const keyword = normalizeText(filterKeyword);
+        const systemChars = (window.characters || []).filter(c => c.systemId === systemId);
+        
+        const filteredChars = systemChars.filter(c => {
+            if (!keyword) return true;
+
+            const searchTargets = [
+                c.name,
+                c.yomigana,
+                c.epithet,
+                c.epithetKana,
+                c.occupation,
+                c.age,
+                c.birthdate
+            ];
+
+            return searchTargets.some(target => {
+                if (target == null) return false;
+                return normalizeText(target).includes(keyword);
+            });
+        });
+
+        const sortedChars = (typeof sortCharacters === 'function') ? sortCharacters(filteredChars) : filteredChars;
+
+        if (sortedChars.length === 0) {
+            grid.innerHTML = `
+                <div class="col-span-full text-center py-12 text-stone-400 text-xs">
+                    <i class="fa-solid fa-user-slash text-2xl mb-2"></i>
+                    <p>${systemChars.length === 0 ? 'このシステムに登録されているキャラクターはまだいません。' : '条件に一致するキャラクターがいません。'}</p>
                 </div>
-                <p class="text-[11px] text-stone-500 font-medium truncate mt-1">${subInfoText}</p>
-            </div>
-        `;
+            `;
+            return;
+        }
 
-        grid.appendChild(card);
-    });
-}
-window.renderCharacterList = renderCharacterList;
+        sortedChars.forEach(ch => {
+            const themeColor = ch.themeColor || '#78716c';
+
+            const card = document.createElement('div');
+            card.className = 'bg-white rounded-3xl p-4 border border-stone-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer flex flex-col gap-3 relative overflow-hidden group';
+            card.onclick = () => navigateTo('detail', ch.id);
+
+            let thumbHtml = `<div class="w-full h-full flex items-center justify-center text-stone-300 bg-stone-50"><i class="fa-solid fa-user text-3xl"></i></div>`;
+            
+            if (ch.thumbnail && ch.thumbnail.trim() !== "") {
+                thumbHtml = `<img src="${ch.thumbnail}" class="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500">`;
+            } else if (ch.avatar && ch.avatar.trim() !== "") {
+                thumbHtml = `<img src="${ch.avatar}" class="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500">`;
+            } else if (ch.images && ch.images.base && ch.images.base.length > 0 && ch.images.base[0].url) {
+                thumbHtml = `<img src="${ch.images.base[0].url}" class="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500">`;
+            }
+
+            let epithetHtml = '';
+            if (ch.epithet && ch.epithet.trim() !== '') {
+                const kana = ch.epithetKana ? `<span class="text-[9px] font-medium text-stone-400 block mb-0.5 truncate">${ch.epithetKana}</span>` : '';
+                epithetHtml = `
+                    <div class="mb-2 truncate">
+                        ${kana}
+                        <span class="text-xs font-bold tracking-wider block leading-tight" style="color: color-mix(in srgb, ${themeColor} 70%, #1c1917);">${ch.epithet}</span>
+                    </div>
+                `;
+            }
+
+            let ageAndBirthText = '';
+            if (ch.age) ageAndBirthText += `${ch.age}歳`;
+            if (ch.birthdate) {
+                ageAndBirthText += ageAndBirthText ? ` <span class="text-stone-300 font-normal">/</span> ${ch.birthdate}` : ch.birthdate;
+            }
+            const subInfoText = ageAndBirthText || ch.occupation || '';
+
+            card.innerHTML = `
+                <div class="aspect-square w-full rounded-2xl overflow-hidden relative border-2 border-stone-200 shadow-inner flex items-center justify-center" style="background-color: ${themeColor};">
+                    ${thumbHtml}
+                </div>
+                <div class="flex flex-col gap-0.5 px-1">
+                    ${epithetHtml}
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-sm font-bold text-stone-800 tracking-wide truncate group-hover:text-stone-600 transition-colors">${ch.name}</h3>
+                        ${ch.yomigana ? `<span class="text-[10px] text-stone-400 font-light truncate ml-1">${ch.yomigana}</span>` : ''}
+                    </div>
+                    <p class="text-[11px] text-stone-500 font-medium truncate mt-1">${subInfoText}</p>
+                </div>
+            `;
+
+            grid.appendChild(card);
+        });
+    }
+    window.renderCharacterList = renderCharacterList;
 
 // ==========================================
 // 💡 キャラクター画像（アイコン・立ち絵・ギャラリー）統合管理まわり
