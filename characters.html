@@ -71,326 +71,279 @@
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { getFirestore, collection, getDocs, doc, getDoc, setDoc, addDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { getFirestore, collection, getDocs, doc, getDoc, setDoc, addDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-    // HTMLエスケープ処理
-    function escapeHtml(str) {
-        if (!str) return '';
-        return str.replace(/[&'`<>""]/g, function(match) {
-            return {
-                '&': '&amp;',
-                "'": '&#x27;',
-                '`': '&#x60;',
-                '<': '&lt;',
-                '>': '&gt;',
-                '"': '&quot;',
-            }[match];
-        });
-    }
-    window.escapeHtml = escapeHtml;
-        
-    // 🔒 ネタバレパーサー
-    function parseSpoilers(text) {
-        if (!text) return '';
-        const escaped = escapeHtml(text);
-        return escaped.replace(/\|\|([\s\S]*?)\|\|/g, (match, p1) => {
-            return `<span class="spoiler-text" onclick="this.classList.toggle('revealed')" title="タップでネタバレを表示">${p1}</span>`;
-        });
-    }
-    window.parseSpoilers = parseSpoilers;
-
-    document.addEventListener("DOMContentLoaded", async () => {
-        console.log("🚀 キャラクター管理ページ初期化開始...");
-
-        try {
-            if (sessionStorage.getItem('isAdminSession') === 'true') {
-                window.isAdmin = true;
-                console.log("🔒 管理者セッションを検出しました（操作権限有効）");
-            }
-        } catch (e) { console.error(e); }
-
-        window.appId = "photo-journal-app";
-
-        const GIST_CONFIG = {
-            get token() { return localStorage.getItem('github_gist_token') || ''; },
-            gistId: 'd8834bf3de436a821be2baca5ed63c93',
-            setToken(t) { localStorage.setItem('github_gist_token', t); },
-            setGistId(id) { localStorage.setItem('github_gist_id', id); }
-        };
-        window.GIST_CONFIG = GIST_CONFIG;
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyA2ctX9sUpJmLSVJomU9cbMzrUX_AXNjuE",
-            authDomain: "diary-36d77.firebaseapp.com",
-            projectId: "diary-36d77",
-            storageBucket: "diary-36d77.firebasestorage.app",
-            messagingSenderId: "1060563209082",
-            appId: "1:1060563209082:web:1c6cfc21a496548309e4c3",
-            measurementId: "G-RBK7ZN6NF1"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-        window.db = db;
-
-        await signInAnonymously(auth);
-        console.log("✅ Firebase 匿名認証完了");
-
-        // 初期表示用のパンくず呼び出し
-        if (typeof renderBreadcrumbAndActions === 'function') {
-            renderBreadcrumbAndActions('home');
-        }
-
-        // デフォルトのシステムリスト
-        window.systems = [
-            { id: 'coc', name: 'クトゥルフ神話TRPG (6版)', desc: 'CoC 6版', badgeColor: 'bg-amber-900/80' },
-            { id: 'dx3', name: 'ダブルクロス The 3rd Edition', desc: 'DX3rd', badgeColor: 'bg-rose-900/80' },
-            { id: 'shinobigami', name: 'シノビガミ', desc: '現代忍法アクション', badgeColor: 'bg-cyan-900/80' },
-            { id: 'insane', name: 'インセイン', desc: 'マルチジャンルホラー', badgeColor: 'bg-purple-900/80' },
-            { id: 'magica', name: 'マギカロギア', desc: '魔法使いRPG', badgeColor: 'bg-indigo-900/80' },
-            { id: 'sw25', name: 'ソード・ワールド2.5', desc: 'SW2.5', badgeColor: 'bg-emerald-800/80' }
-        ];
-
-        // デフォルトのシステム別カスタムフィールド
-        window.systemCustomFields = {
-            coc: {
-                status: [
-                    { id: 'san', label: 'SAN (正気度)', max: 99 },
-                    { id: 'hp', label: 'HP', max: 12 }
-                ],
-                text: [
-                    { id: 'mythos', label: 'クトゥルフ神話技能' },
-                    { id: 'artifact', label: '所持アーティファクト / 呪文' }
-                ]
-            },
-            dx3: {
-                status: [
-                    { id: 'hp', label: 'HP', max: 35 },
-                    { id: '侵蝕率', label: '侵蝕率', max: 150 }
-                ],
-                text: [
-                    { id: 'syndrome', label: 'シンドローム' },
-                    { id: 'ror', label: 'ロイス' }
-                ]
-            },
-            shinobigami: {
-                status: [
-                    { id: 'hp', label: '生命力', max: 6 }
-                ],
-                text: [
-                    { id: 'ryuha', label: '流派 / 階級' },
-                    { id: 'secret', label: '秘密 / 使命' }
-                ]
-            },
-            insane: {
-                status: [
-                    { id: 'hp', label: '狂気点', max: 6 }
-                ],
-                text: [
-                    { id: 'secret', label: '秘密 / 使命' },
-                    { id: 'horror', label: 'ホラー / ゾンビなど' }
-                ]
-            },
-            magica: {
-                status: [
-                    { id: 'hp', label: '生命力', max: 5 }
-                ],
-                text: [
-                    { id: 'kanei', label: '経緯 / 位階' },
-                    { id: 'mahou', label: '魔法 / 使命' }
-                ]
-            },
-            sw25: {
-                status: [
-                    { id: 'hp', label: 'HP', max: 30 },
-                    { id: 'mp', label: 'MP', max: 30 }
-                ],
-                text: [
-                    { id: 'race', label: '種族 / レベル' }
-                ]
-            }
-        };
-
-        try {
-            const configRef = doc(db, 'artifacts', window.appId, 'public', 'data', 'config', 'settings');
-            const configSnap = await getDoc(configRef);
-            if (configSnap.exists()) {
-                window.storedPasscode = configSnap.data().passcode;
-            }
-
-            const rosterConfigRef = doc(db, 'artifacts', window.appId, 'public', 'data', 'config', 'characterRosterSettings');
-            const rosterSnap = await getDoc(rosterConfigRef);
-            if (rosterSnap.exists()) {
-                const data = rosterSnap.data();
-                window.rosterSettings = data;
-                applyRosterSettings(data);
-                if (data.systems) {
-                    window.systems = data.systems;
-                }
-                if (data.customFields) {
-                    window.systemCustomFields = data.customFields;
-                }
-            } else {
-                window.rosterSettings = { title: "", favicon: "" };
-            }
-            console.log("✅ Firestore設定データの読み込み完了");
-        } catch (e) { console.error("Config load error:", e); }
-
-        // ⭐ キャラクターデータの読み込み完了を確実に待つ
-        if (typeof loadCharactersFromLocal === 'function') {
-            await loadCharactersFromLocal();
-        }
-
-        // ⭐ すべての準備が整ったのでシステムフォルダを描画
-        if (typeof renderSystemFolders === 'function') {
-            renderSystemFolders();
-        }
-
-       // 💡 【追加】リロード時でもログイン状態（トークン有無）を判定してUIを再描画・復元する
-        if (window.GIST_CONFIG && window.GIST_CONFIG.token) {
-            console.log("🔓 保存されたトークンを検出しました。ログイン状態のUIを復元します");
-            
-            // ⭐ PC追加ボタン（headerAddBtn）の hidden を外す
-            const headerAddBtn = document.getElementById('headerAddBtn');
-            if (headerAddBtn) {
-                headerAddBtn.classList.remove('hidden');
-            }
-
-            if (typeof updateLoginUI === 'function') {
-                updateLoginUI(true); 
-            } else if (typeof checkLoginState === 'function') {
-                checkLoginState();
-            } else if (typeof renderBreadcrumbAndActions === 'function') {
-                // パンくずや各種アクションボタンにログイン状態を反映させるための再描画
-                renderBreadcrumbAndActions(window.currentView || 'home', window.selectedSystemId || window.selectedCharacterId);
-            }
-        }
-
-        console.log("🎉 キャラクター管理ページの初期化がすべて完了しました！");
+// HTMLエスケープ処理
+function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/[&'`<>""]/g, function(match) {
+        return {
+            '&': '&amp;',
+            "'": '&#x27;',
+            '`': '&#x60;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+        }[match];
     });
+}
+window.escapeHtml = escapeHtml;
     
-    // ==========================================
-    // 💡 キャラクターデータの読み込み
-    // ==========================================
-    async function loadCharactersFromLocal() {
-        try {
-            if (window.GIST_CONFIG && window.GIST_CONFIG.token && window.GIST_CONFIG.gistId) {
-                const response = await fetch(`https://api.github.com/gists/${window.GIST_CONFIG.gistId}`, {
-                    headers: {
-                        'Authorization': `token ${window.GIST_CONFIG.token}`
-                    }
-                });
-                if (response.ok) {
-                    const gistData = await response.json();
-                    const file = gistData.files['characters.json'];
-                    if (file && file.content) {
-                        const gistCharacters = JSON.parse(file.content);
+// 🔒 ネタバレパーサー
+function parseSpoilers(text) {
+    if (!text) return '';
+    const escaped = escapeHtml(text);
+    return escaped.replace(/\|\|([\s\S]*?)\|\|/g, (match, p1) => {
+        return `<span class="spoiler-text" onclick="this.classList.toggle('revealed')" title="タップでネタバレを表示">${p1}</span>`;
+    });
+}
+window.parseSpoilers = parseSpoilers;
 
-                        const savedLocal = localStorage.getItem('local_characters');
-                        if (savedLocal) {
-                            try {
-                                const localCharacters = JSON.parse(savedLocal);
-                                gistCharacters.forEach(gChar => {
-                                    const foundLocal = localCharacters.find(l => String(l.id) === String(gChar.id));
-                                    if (foundLocal && foundLocal.images) {
-                                        gChar.images = foundLocal.images;
-                                        gChar.thumbnail = foundLocal.thumbnail || "";
-                                        gChar.avatar = foundLocal.avatar || "";
-                                    }
-                                });
-                            } catch (err) {
-                                console.warn("Local image merge warning:", err);
-                            }
-                        }
+document.addEventListener("DOMContentLoaded", async () => {
+    console.log("🚀 キャラクター管理ページ初期化開始...");
 
-                        window.characters = gistCharacters;
-                        localStorage.setItem('local_characters', JSON.stringify(window.characters));
-                        console.log('📂 GitHub Gistからキャラクターデータをロードし、ローカルの画像と統合しました');
-                        return;
-                    }
-                }
-            }
-        } catch (e) {
-            console.warn('⚠️ Gistからのロードに失敗しました。ローカルデータを使用します', e);
+    try {
+        if (sessionStorage.getItem('isAdminSession') === 'true') {
+            window.isAdmin = true;
+            console.log("🔒 管理者セッションを検出しました（操作権限有効）");
+        }
+    } catch (e) { console.error(e); }
+
+    window.appId = "photo-journal-app";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyA2ctX9sUpJmLSVJomU9cbMzrUX_AXNjuE",
+        authDomain: "diary-36d77.firebaseapp.com",
+        projectId: "diary-36d77",
+        storageBucket: "diary-36d77.firebasestorage.app",
+        messagingSenderId: "1060563209082",
+        appId: "1:1060563209082:web:1c6cfc21a496548309e4c3",
+        measurementId: "G-RBK7ZN6NF1"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    window.db = db;
+
+    await signInAnonymously(auth);
+    console.log("✅ Firebase 匿名認証完了");
+
+    // 初期表示用のパンくず呼び出し
+    if (typeof renderBreadcrumbAndActions === 'function') {
+        renderBreadcrumbAndActions('home');
+    }
+
+    // デフォルトのシステムリスト
+    window.systems = [
+        { id: 'coc', name: 'クトゥルフ神話TRPG (6版)', desc: 'CoC 6版', badgeColor: 'bg-amber-900/80' },
+        { id: 'dx3', name: 'ダブルクロス The 3rd Edition', desc: 'DX3rd', badgeColor: 'bg-rose-900/80' },
+        { id: 'shinobigami', name: 'シノビガミ', desc: '現代忍法アクション', badgeColor: 'bg-cyan-900/80' },
+        { id: 'insane', name: 'インセイン', desc: 'マルチジャンルホラー', badgeColor: 'bg-purple-900/80' },
+        { id: 'magica', name: 'マギカロギア', desc: '魔法使いRPG', badgeColor: 'bg-indigo-900/80' },
+        { id: 'sw25', name: 'ソード・ワールド2.5', desc: 'SW2.5', badgeColor: 'bg-emerald-800/80' }
+    ];
+
+    // デフォルトのシステム別カスタムフィールド
+    window.systemCustomFields = {
+        coc: {
+            status: [
+                { id: 'san', label: 'SAN (正気度)', max: 99 },
+                { id: 'hp', label: 'HP', max: 12 }
+            ],
+            text: [
+                { id: 'mythos', label: 'クトゥルフ神話技能' },
+                { id: 'artifact', label: '所持アーティファクト / 呪文' }
+            ]
+        },
+        dx3: {
+            status: [
+                { id: 'hp', label: 'HP', max: 35 },
+                { id: '侵蝕率', label: '侵蝕率', max: 150 }
+            ],
+            text: [
+                { id: 'syndrome', label: 'シンドローム' },
+                { id: 'ror', label: 'ロイス' }
+            ]
+        },
+        shinobigami: {
+            status: [
+                { id: 'hp', label: '生命力', max: 6 }
+            ],
+            text: [
+                { id: 'ryuha', label: '流派 / 階級' },
+                { id: 'secret', label: '秘密 / 使命' }
+            ]
+        },
+        insane: {
+            status: [
+                { id: 'hp', label: '狂気点', max: 6 }
+            ],
+            text: [
+                { id: 'secret', label: '秘密 / 使命' },
+                { id: 'horror', label: 'ホラー / ゾンビなど' }
+            ]
+        },
+        magica: {
+            status: [
+                { id: 'hp', label: '生命力', max: 5 }
+            ],
+            text: [
+                { id: 'kanei', label: '経緯 / 位階' },
+                { id: 'mahou', label: '魔法 / 使命' }
+            ]
+        },
+        sw25: {
+            status: [
+                { id: 'hp', label: 'HP', max: 30 },
+                { id: 'mp', label: 'MP', max: 30 }
+            ],
+            text: [
+                { id: 'race', label: '種族 / レベル' }
+            ]
+        }
+    };
+
+    try {
+        const configRef = doc(db, 'artifacts', window.appId, 'public', 'data', 'config', 'settings');
+        const configSnap = await getDoc(configRef);
+        if (configSnap.exists()) {
+            window.storedPasscode = configSnap.data().passcode;
         }
 
-        try {
-            const saved = localStorage.getItem('local_characters');
-            if (saved) {
-                window.characters = JSON.parse(saved);
-                console.log('📂 ローカルストレージからキャラクターデータをロードしました');
-            } else {
-                window.characters = [];
-                console.log('ℹ️ キャラクターデータが空です');
+        const rosterConfigRef = doc(db, 'artifacts', window.appId, 'public', 'data', 'config', 'characterRosterSettings');
+        const rosterSnap = await getDoc(rosterConfigRef);
+        if (rosterSnap.exists()) {
+            const data = rosterSnap.data();
+            window.rosterSettings = data;
+            applyRosterSettings(data);
+            if (data.systems) {
+                window.systems = data.systems;
             }
-        } catch (e) {
-            console.error("Characters load error:", e);
-            window.characters = [];
+            if (data.customFields) {
+                window.systemCustomFields = data.customFields;
+            }
+        } else {
+            window.rosterSettings = { title: "", favicon: "" };
+        }
+        console.log("✅ Firestore設定データの読み込み完了");
+    } catch (e) { console.error("Config load error:", e); }
+
+    // ⭐ キャラクターデータの読み込み（Firestoreから直接取得）
+    if (typeof loadCharactersFromLocal === 'function') {
+        await loadCharactersFromLocal();
+    }
+
+    // ⭐ すべての準備が整ったのでシステムフォルダを描画
+    if (typeof renderSystemFolders === 'function') {
+        renderSystemFolders();
+    }
+
+    // 💡 管理者としてログイン済みの場合は追加ボタンを表示
+    if (window.isAdmin) {
+        const headerAddBtn = document.getElementById('headerAddBtn');
+        if (headerAddBtn) {
+            headerAddBtn.classList.remove('hidden');
         }
     }
-    window.loadCharactersFromLocal = loadCharactersFromLocal;
 
-    function renderSystemFolders(filterKeyword = "") {
-        const container = document.getElementById('systemFoldersContainer');
-        if (!container) return;
-
-        container.innerHTML = '';
-        const keyword = filterKeyword.toLowerCase().trim();
+    console.log("🎉 キャラクター管理ページの初期化がすべて完了しました！");
+});
+    
+// ==========================================
+// 💡 キャラクターデータの読み込み（Firestore版）
+// ==========================================
+async function loadCharactersFromLocal() {
+    try {
+        const charDocRef = doc(db, 'artifacts', window.appId, 'public', 'data', 'characters', 'master');
+        const charSnap = await getDoc(charDocRef);
         
-        const allChars = window.characters || [];
-
-        window.systems.forEach(sys => {
-            const sysChars = allChars.filter(c => c.systemId === sys.id);
-            const matchesSystem = sys.name.toLowerCase().includes(keyword) || sys.desc.toLowerCase().includes(keyword);
-            const matchedChars = sysChars.filter(c => 
-                (c.name && c.name.toLowerCase().includes(keyword)) ||
-                (c.epithet && c.epithet.toLowerCase().includes(keyword)) ||
-                (c.occupation && c.occupation.toLowerCase().includes(keyword))
-            );
-
-            if (keyword && !matchesSystem && matchedChars.length === 0) {
-                return;
-            }
-
-            const card = document.createElement('div');
-            card.className = 'bg-white rounded-2xl p-5 border border-stone-200/80 shadow-sm hover:border-stone-400 transition-all cursor-pointer flex flex-col justify-between gap-4 group';
-            card.onclick = () => navigateTo('characterList', sys.id);
-
-            card.innerHTML = `
-                <div>
-                    <div class="flex items-center justify-between mb-3">
-                        <span class="text-[10px] font-medium text-white px-2.5 py-1 rounded-lg ${sys.badgeColor || 'bg-stone-700'}">${sys.desc}</span>
-                        <i class="fa-solid fa-folder-open text-stone-300 group-hover:text-stone-600 transition-colors"></i>
-                    </div>
-                    <h3 class="font-bold text-base text-stone-800 group-hover:text-stone-900">${sys.name}</h3>
-                    <p class="text-xs text-stone-400 mt-1">登録キャラクター: <span class="font-bold text-stone-600">${sysChars.length}</span> 名</p>
-                    ${keyword && matchedChars.length > 0 ? `<p class="text-[11px] text-amber-700 bg-amber-50 px-2 py-1 rounded-md mt-2">一致キャラ: ${matchedChars.map(c => c.name).join(', ')}</p>` : ''}
-                </div>
-                <div class="flex items-center justify-between pt-3 border-t border-stone-100 text-xs text-stone-500 font-medium">
-                    <span>一覧を見る</span>
-                    <i class="fa-solid fa-arrow-right text-[10px] group-hover:translate-x-1 transition-transform"></i>
-                </div>
-            `;
-            container.appendChild(card);
-        });
-
-        if (container.children.length === 0) {
-            container.innerHTML = `
-                <div class="col-span-full text-center py-12 text-stone-400 text-xs">
-                    <i class="fa-solid fa-search text-2xl mb-2"></i>
-                    <p>一致するシステム・キャラクターが見つかりませんでした。</p>
-                </div>
-            `;
+        if (charSnap.exists() && charSnap.data().list) {
+            window.characters = charSnap.data().list;
+            localStorage.setItem('local_characters', JSON.stringify(window.characters));
+            console.log('📂 Firestoreからキャラクターデータをロードしました（画像・データ完全同期）');
+            return;
         }
+    } catch (e) {
+        console.warn('⚠️ Firestoreからのロードに失敗しました。ローカルストレージを使用します', e);
     }
-    window.renderSystemFolders = renderSystemFolders;
 
-    function handleFolderSearchInput(e) {
-        renderSystemFolders(e.target.value);
+    try {
+        const saved = localStorage.getItem('local_characters');
+        if (saved) {
+            window.characters = JSON.parse(saved);
+            console.log('📂 ローカルストレージからキャラクターデータをロードしました');
+        } else {
+            window.characters = [];
+            console.log('ℹ️ キャラクターデータが空です');
+        }
+    } catch (e) {
+        console.error("Characters load error:", e);
+        window.characters = [];
     }
-    window.handleFolderSearchInput = handleFolderSearchInput;
+}
+window.loadCharactersFromLocal = loadCharactersFromLocal;
+
+function renderSystemFolders(filterKeyword = "") {
+    const container = document.getElementById('systemFoldersContainer');
+    if (!container) return;
+
+    container.innerHTML = '';
+    const keyword = filterKeyword.toLowerCase().trim();
+    
+    const allChars = window.characters || [];
+
+    window.systems.forEach(sys => {
+        const sysChars = allChars.filter(c => c.systemId === sys.id);
+        const matchesSystem = sys.name.toLowerCase().includes(keyword) || sys.desc.toLowerCase().includes(keyword);
+        const matchedChars = sysChars.filter(c => 
+            (c.name && c.name.toLowerCase().includes(keyword)) ||
+            (c.epithet && c.epithet.toLowerCase().includes(keyword)) ||
+            (c.occupation && c.occupation.toLowerCase().includes(keyword))
+        );
+
+        if (keyword && !matchesSystem && matchedChars.length === 0) {
+            return;
+        }
+
+        const card = document.createElement('div');
+        card.className = 'bg-white rounded-2xl p-5 border border-stone-200/80 shadow-sm hover:border-stone-400 transition-all cursor-pointer flex flex-col justify-between gap-4 group';
+        card.onclick = () => navigateTo('characterList', sys.id);
+
+        card.innerHTML = `
+            <div>
+                <div class="flex items-center justify-between mb-3">
+                    <span class="text-[10px] font-medium text-white px-2.5 py-1 rounded-lg ${sys.badgeColor || 'bg-stone-700'}">${sys.desc}</span>
+                    <i class="fa-solid fa-folder-open text-stone-300 group-hover:text-stone-600 transition-colors"></i>
+                </div>
+                <h3 class="font-bold text-base text-stone-800 group-hover:text-stone-900">${sys.name}</h3>
+                <p class="text-xs text-stone-400 mt-1">登録キャラクター: <span class="font-bold text-stone-600">${sysChars.length}</span> 名</p>
+                ${keyword && matchedChars.length > 0 ? `<p class="text-[11px] text-amber-700 bg-amber-50 px-2 py-1 rounded-md mt-2">一致キャラ: ${matchedChars.map(c => c.name).join(', ')}</p>` : ''}
+            </div>
+            <div class="flex items-center justify-between pt-3 border-t border-stone-100 text-xs text-stone-500 font-medium">
+                <span>一覧を見る</span>
+                <i class="fa-solid fa-arrow-right text-[10px] group-hover:translate-x-1 transition-transform"></i>
+            </div>
+        `;
+        container.appendChild(card);
+    });
+
+    if (container.children.length === 0) {
+        container.innerHTML = `
+            <div class="col-span-full text-center py-12 text-stone-400 text-xs">
+                <i class="fa-solid fa-search text-2xl mb-2"></i>
+                <p>一致するシステム・キャラクターが見つかりませんでした。</p>
+            </div>
+        `;
+    }
+}
+window.renderSystemFolders = renderSystemFolders;
+
+function handleFolderSearchInput(e) {
+    renderSystemFolders(e.target.value);
+}
+window.handleFolderSearchInput = handleFolderSearchInput;
         
     // ==========================================
     // 💡 ファビコンファイル選択時のプレビュー＆Base64変換関数
@@ -798,7 +751,7 @@ function removeCharacterImage(categoryKey, index) {
 window.removeCharacterImage = removeCharacterImage;
 
 // ==========================================
-// 💡 キャラクター保存関数（管理者専用ガード付き）
+// 💡 キャラクター保存関数（Firestore完全同期版）
 // ==========================================
 async function saveCharacter(event) {
     event.preventDefault();
@@ -889,76 +842,26 @@ async function saveCharacter(event) {
         if (!window.characters) window.characters = [];
         const index = window.characters.findIndex(c => String(c.id) === String(targetCharacterId));
         if (index !== -1) {
+            // 既存キャラの更新時は createdAt を保持
+            charData.createdAt = window.characters[index].createdAt || new Date().toISOString();
             window.characters[index] = { ...window.characters[index], ...charData };
         } else {
             charData.createdAt = new Date().toISOString();
             window.characters.push(charData);
         }
 
-        // 💡 ① 手元のブラウザ（localStorage）には画像付きで保存
+        // 💡 ① 手元のブラウザ（localStorage）に保存
         const jsonString = JSON.stringify(window.characters);
         localStorage.setItem('local_characters', jsonString);
 
-        if (window.GIST_CONFIG && window.GIST_CONFIG.token) {
-            if (typeof showToast === 'function') showToast("クラウドへ同期中...", "info");
-            
-            // 💡 ② GitHub Gistへ送信する時だけ、画像データを空にした「軽量版データ」を作成する
-            const gistCharacters = JSON.parse(JSON.stringify(window.characters)).map(c => {
-                if (c.images) {
-                    c.images = { thumb: [], avatar: [], base: [], combat: [], sd: [], doodle: [] };
-                }
-                c.thumbnail = "";
-                c.avatar = "";
-                return c;
-            });
-            const gistJsonString = JSON.stringify(gistCharacters);
+        // 💡 ② Firestore（クラウド）へ画像も含めて一括保存・同期
+        if (typeof showToast === 'function') showToast("Firestoreへ同期中...", "info");
 
-            let currentGistId = window.GIST_CONFIG.gistId;
-            
-            if (currentGistId) {
-                const response = await fetch(`https://api.github.com/gists/${currentGistId}`, {
-                    method: 'PATCH',
-                    headers: {
-                        'Authorization': `token ${window.GIST_CONFIG.token}`,
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        description: "Character Data Auto Sync",
-                        files: { "characters.json": { content: gistJsonString } }
-                    })
-                });
-
-                if (!response.ok) {
-                    if (response.status === 404) {
-                        currentGistId = ''; 
-                    } else {
-                        throw new Error('Gistへの同期に失敗しました');
-                    }
-                }
-            }
-            
-            if (!currentGistId) {
-                const createResponse = await fetch('https://api.github.com/gists', {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `token ${window.GIST_CONFIG.token}`,
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        description: "Character Management App Data",
-                        public: false,
-                        files: { "characters.json": { content: gistJsonString } }
-                    })
-                });
-
-                if (!createResponse.ok) {
-                    throw new Error('新規Gistの作成に失敗しました');
-                }
-
-                const gistData = await createResponse.json();
-                window.GIST_CONFIG.setGistId(gistData.id);
-            }
-        }
+        const charDocRef = doc(window.db, 'artifacts', window.appId, 'public', 'data', 'characters', 'master');
+        await setDoc(charDocRef, {
+            list: window.characters,
+            updatedAt: new Date().toISOString()
+        });
 
         if (typeof showToast === 'function') {
             showToast("キャラクターを保存・同期しました！", "info");
@@ -976,7 +879,7 @@ async function saveCharacter(event) {
         }
     } catch (e) {
         console.error("Save & Sync error:", e);
-        alert("保存またはクラウド同期に失敗しました。コンソールを確認してください。");
+        alert("保存またはFirestore同期に失敗しました。コンソールを確認してください。");
     }
 }
 window.saveCharacter = saveCharacter;
@@ -2698,9 +2601,11 @@ function handleAvatarFileSelect(event) {
 }
 window.handleAvatarFileSelect = handleAvatarFileSelect;
 
-// キャラクターを削除する関数
+// ==========================================
+// 💡 キャラクター削除関数（Firestore完全同期版）
+// ==========================================
 async function deleteCharacter(characterId) {
-    if (!confirm('本当にこのキャラクターを削除しますか？\n（※ローカル一覧から削除されます。必要に応じて個別のJSONファイルも手動で削除してください）')) {
+    if (!confirm('本当にこのキャラクターを削除しますか？')) {
         return;
     }
 
@@ -2712,7 +2617,17 @@ async function deleteCharacter(characterId) {
             window.characters = window.characters.filter(c => String(c.id) !== String(characterId));
         }
 
+        // 💡 1. 手元のブラウザ（localStorage）を更新
         localStorage.setItem('local_characters', JSON.stringify(window.characters || []));
+
+        // 💡 2. Firestore（クラウド）側へも削除後のリストを即座に同期・保存
+        if (typeof showToast === 'function') showToast("Firestoreへ同期中...", "info");
+
+        const charDocRef = doc(window.db, 'artifacts', window.appId, 'public', 'data', 'characters', 'master');
+        await setDoc(charDocRef, {
+            list: window.characters,
+            updatedAt: new Date().toISOString()
+        });
 
         if (typeof renderSystemFolders === 'function') {
             renderSystemFolders();
@@ -2729,8 +2644,8 @@ async function deleteCharacter(characterId) {
         }
 
     } catch (e) {
-        console.error("Delete error:", e);
-        alert("削除処理に失敗しました。コンソールを確認してください。");
+        console.error("Delete & Sync error:", e);
+        alert("削除またはFirestore同期に失敗しました。コンソールを確認してください。");
     }
 }
 window.deleteCharacter = deleteCharacter;
@@ -3122,25 +3037,6 @@ function exportCharacterJson(characterId) {
 }
 window.exportCharacterJson = exportCharacterJson;
 
-            // 💡 初回や設定変更時にトークンとGist IDを登録するための関数
-function setupGistSync() {
-    const currentToken = GIST_CONFIG.token;
-    const currentId = GIST_CONFIG.gistId;
-
-    const inputToken = prompt("GitHubのPersonal Access Token (classic) を入力してください:", currentToken);
-    if (inputToken === null) return; // キャンセルされたら何もしない
-
-    const inputId = prompt("保存先のGist IDを入力してください:", currentId);
-    if (inputId === null) return;
-
-    GIST_CONFIG.setToken(inputToken.trim());
-    GIST_CONFIG.setGistId(inputId.trim());
-
-    alert("Gistの設定を保存しました！ページを再読み込みします。");
-    location.reload();
-}
-window.setupGistSync = setupGistSync;
-
 // ==========================================
 // 🔗 リンク入力エリアを描画する関数（スマホ対応・はみ出し防止版）
 // ==========================================
@@ -3214,6 +3110,63 @@ function escapeHtml(str) {
         return escapeTable[match];
     });
 }
+
+                    // 📦 データをJSONファイルとしてダウンロード（書き出し）
+function exportCharactersJSON() {
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(window.characters || [], null, 2));
+    const downloadAnchor = document.createElement('a');
+    downloadAnchor.setAttribute("href", dataStr);
+    downloadAnchor.setAttribute("download", `characters_backup_${new Date().toISOString().slice(0, 10)}.json`);
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.remove();
+    if (typeof showToast === 'function') showToast("バックアップを書き出しました", "success");
+}
+window.exportCharactersJSON = exportCharactersJSON;
+
+// 📂 JSONファイルを読み込んでFirestore＆ローカルに反映（読み込み）
+async function importCharactersJSON(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    if (!confirm("バックアップファイルを読み込みますか？\n（現在のデータに上書き、または統合されます）")) {
+        event.target.value = '';
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = async function(e) {
+        try {
+            const importedData = JSON.parse(e.target.result);
+            if (!Array.isArray(importedData)) {
+                throw new Error("ファイルの形式が正しくありません");
+            }
+
+            window.characters = importedData;
+            localStorage.setItem('local_characters', JSON.stringify(window.characters));
+
+            // Firestoreへも即座に同期
+            if (typeof showToast === 'function') showToast("Firestoreへ同期中...", "info");
+            const charDocRef = doc(window.db, 'artifacts', window.appId, 'public', 'data', 'characters', 'master');
+            await setDoc(charDocRef, {
+                list: window.characters,
+                updatedAt: new Date().toISOString()
+            });
+
+            if (typeof renderSystemFolders === 'function') renderSystemFolders();
+            if (typeof goToTopPage === 'function') goToTopPage();
+
+            if (typeof showToast === 'function') showToast("バックアップの読み込みが完了しました！", "success");
+        } catch (err) {
+            console.error(err);
+            alert("ファイルの読み込みに失敗しました。正しいJSONファイルか確認してください。");
+        } finally {
+            event.target.value = '';
+        }
+    };
+    reader.readAsText(file);
+}
+window.importCharactersJSON = importCharactersJSON;
             
         </script>
         
@@ -3256,7 +3209,6 @@ function escapeHtml(str) {
             <i class="fa-solid fa-plus"></i>
             <span>PC追加</span>
         </button>
-    　  <!-- <button onclick="setupGistSync()" style="padding: 10px; background: #ff69b4; color: white; border: none; border-radius: 5px; font-weight: bold;">Gistトークンを設定する</button>　 -->
     </div>
 </header>
     
@@ -3383,15 +3335,23 @@ function escapeHtml(str) {
                 <div id="settingsFieldsEditorContainer" class="space-y-3"></div>
             </div>
 
-            <!-- 💡 Gist同期設定ボタン（追加） -->
-            <div class="pt-2 border-t border-stone-100">
-                <h4 class="text-xs font-bold text-stone-700 mb-1">データ同期・バックアップ</h4>
-                <p class="text-[11px] text-stone-400 mb-2">GitHub Gistを用いたクラウド保存の設定を行います</p>
-                <button type="button" onclick="setupGistSync()" class="w-full py-2.5 px-4 rounded-xl text-xs font-bold text-white bg-pink-500 hover:bg-pink-600 transition-all shadow-sm flex items-center justify-center gap-2">
-                    <i class="fa-solid fa-cloud-arrow-up"></i>
-                    <span>Gistトークンを設定する</span>
-                </button>
-            </div>
+           <!-- 💡 データバックアップ（エクスポート・インポート） -->
+<div class="pt-2 border-t border-stone-100">
+    <h4 class="text-xs font-bold text-stone-700 mb-1">データバックアップ</h4>
+    <p class="text-[11px] text-stone-400 mb-2">キャラクターデータをファイルとして保存・復元します</p>
+    <div class="flex gap-2">
+        <button type="button" onclick="exportCharactersJSON()" class="flex-1 py-2 px-3 rounded-xl text-xs font-bold text-stone-700 bg-stone-100 hover:bg-stone-200 transition-all flex items-center justify-center gap-1.5">
+            <i class="fa-solid fa-download"></i>
+            <span>書き出し</span>
+        </button>
+        <button type="button" onclick="document.getElementById('importFileJson').click()" class="flex-1 py-2 px-3 rounded-xl text-xs font-bold text-white bg-stone-700 hover:bg-stone-800 transition-all flex items-center justify-center gap-1.5">
+            <i class="fa-solid fa-upload"></i>
+            <span>読み込み</span>
+        </button>
+        <!-- ファイル選択用の隠しinput -->
+        <input type="file" id="importFileJson" accept=".json" class="hidden" onchange="importCharactersJSON(event)">
+    </div>
+</div>
 
             <div class="pt-3 flex items-center justify-end gap-2 border-t border-stone-100">
                 <button type="button" onclick="closeSettingsModal()" class="px-4 py-2 rounded-xl text-xs font-medium text-stone-600 hover:bg-stone-100 transition-all">キャンセル</button>
