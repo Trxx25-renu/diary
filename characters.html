@@ -3124,12 +3124,12 @@ function exportCharactersJSON() {
 }
 window.exportCharactersJSON = exportCharactersJSON;
 
-// 📂 JSONファイルを読み込んでFirestore＆ローカルに反映（読み込み）
+// 📂 JSONファイルを読み込んでFirestore＆ローカルに反映（柔軟対応版）
 async function importCharactersJSON(event) {
     const file = event.target.files[0];
     if (!file) return;
 
-    if (!confirm("バックアップファイルを読み込みますか？\n（現在のデータに上書き、または統合されます）")) {
+    if (!confirm("バックアップファイルを読み込みますか？\n（現在のデータに上書きされます）")) {
         event.target.value = '';
         return;
     }
@@ -3137,12 +3137,19 @@ async function importCharactersJSON(event) {
     const reader = new FileReader();
     reader.onload = async function(e) {
         try {
-            const importedData = JSON.parse(e.target.result);
-            if (!Array.isArray(importedData)) {
-                throw new Error("ファイルの形式が正しくありません");
+            const rawData = JSON.parse(e.target.result);
+            
+            let importedList = [];
+            // 💡 配列そのものか、{ list: [...] } のオブジェクト形式かの両方に対応
+            if (Array.isArray(rawData)) {
+                importedList = rawData;
+            } else if (rawData && Array.isArray(rawData.list)) {
+                importedList = rawData.list;
+            } else {
+                throw new Error("ファイルの構造が認識できません");
             }
 
-            window.characters = importedData;
+            window.characters = importedList;
             localStorage.setItem('local_characters', JSON.stringify(window.characters));
 
             // Firestoreへも即座に同期
@@ -3159,7 +3166,7 @@ async function importCharactersJSON(event) {
             if (typeof showToast === 'function') showToast("バックアップの読み込みが完了しました！", "success");
         } catch (err) {
             console.error(err);
-            alert("ファイルの読み込みに失敗しました。正しいJSONファイルか確認してください。");
+            alert("ファイルの読み込みに失敗しました。正しい形式のJSONファイルか確認してください。");
         } finally {
             event.target.value = '';
         }
