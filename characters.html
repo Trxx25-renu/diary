@@ -66,7 +66,7 @@
     </style>
 
 <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
     import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
     import { getFirestore, collection, getDocs, doc, getDoc, setDoc, addDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
@@ -242,6 +242,19 @@
         // ⭐ すべての準備が整ったのでシステムフォルダを描画
         if (typeof renderSystemFolders === 'function') {
             renderSystemFolders();
+        }
+
+        // 💡 【追加】リロード時でもログイン状態（トークン有無）を判定してUIを再描画・復元する
+        if (window.GIST_CONFIG && window.GIST_CONFIG.token) {
+            console.log("🔓 保存されたトークンを検出しました。ログイン状態のUIを復元します");
+            if (typeof updateLoginUI === 'function') {
+                updateLoginUI(true); 
+            } else if (typeof checkLoginState === 'function') {
+                checkLoginState();
+            } else if (typeof renderBreadcrumbAndActions === 'function') {
+                // パンくずや各種アクションボタンにログイン状態を反映させるための再描画
+                renderBreadcrumbAndActions(window.currentView || 'home', window.selectedSystemId || window.selectedCharacterId);
+            }
         }
 
         console.log("🎉 キャラクター管理ページの初期化がすべて完了しました！");
