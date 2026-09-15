@@ -244,9 +244,16 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebas
             renderSystemFolders();
         }
 
-        // 💡 【追加】リロード時でもログイン状態（トークン有無）を判定してUIを再描画・復元する
+       // 💡 【追加】リロード時でもログイン状態（トークン有無）を判定してUIを再描画・復元する
         if (window.GIST_CONFIG && window.GIST_CONFIG.token) {
             console.log("🔓 保存されたトークンを検出しました。ログイン状態のUIを復元します");
+            
+            // ⭐ PC追加ボタン（headerAddBtn）の hidden を外す
+            const headerAddBtn = document.getElementById('headerAddBtn');
+            if (headerAddBtn) {
+                headerAddBtn.classList.remove('hidden');
+            }
+
             if (typeof updateLoginUI === 'function') {
                 updateLoginUI(true); 
             } else if (typeof checkLoginState === 'function') {
@@ -259,7 +266,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebas
 
         console.log("🎉 キャラクター管理ページの初期化がすべて完了しました！");
     });
-
+    
     // ==========================================
     // 💡 キャラクターデータの読み込み
     // ==========================================
