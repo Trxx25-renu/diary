@@ -23,15 +23,20 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Playfair+Display:ital,wght@0,600;1,400&display=swap" rel="stylesheet">
     
-    <style>
+   <style>
+        /* 💡 スマホ表示などで画像がガビガビになるのを防ぎ、輪郭をシャープに保つ設定 */
+        img {
+            image-rendering: -webkit-optimize-contrast;
+            image-rendering: crisp-edges;
+        }
 
         /* 自由変形型のテキストエリア（textarea）の文字位置を整えるCSS */
-#characterModal textarea,
-.character-form textarea {
-    padding: 0.6rem 0.75rem !important; /* 上下左右に適度な余白を持たせる */
-    line-height: 1.6 !important;       /* 行の高さを少し持たせて詰まり感をなくす */
-    box-sizing: border-box !important;
-}
+        #characterModal textarea,
+        .character-form textarea {
+            padding: 0.6rem 0.75rem !important; /* 上下左右に適度な余白を持たせる */
+            line-height: 1.6 !important;        /* 行の高さを少し持たせて詰まり感をなくす */
+            box-sizing: border-box !important;
+        }
         
         body {
             font-family: 'Noto Sans JP', sans-serif;
@@ -46,27 +51,27 @@
         }
 
         /* 🔒 ネタバレ隠し（伏せ字）スタイル（日記サイト準拠） */
-.spoiler-text {
-    background-color: #292524 !important;
-    color: transparent !important;
-    border-radius: 0.25rem;
-    padding: 0 0.35rem;
-    margin: 0 0.1rem;
-    cursor: pointer;
-    user-select: none;
-    transition: all 0.2s ease;
-    display: inline-block;
-    vertical-align: baseline;
-}
-.spoiler-text:hover {
-    background-color: #44403c !important;
-}
-.spoiler-text.revealed {
-    background-color: #f3f4f6 !important;
-    color: #292524 !important;
-    user-select: text;
-    border: 1px solid #e7e5e4;
-}
+        .spoiler-text {
+            background-color: #292524 !important;
+            color: transparent !important;
+            border-radius: 0.25rem;
+            padding: 0 0.35rem;
+            margin: 0 0.1rem;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.2s ease;
+            display: inline-block;
+            vertical-align: baseline;
+        }
+        .spoiler-text:hover {
+            background-color: #44403c !important;
+        }
+        .spoiler-text.revealed {
+            background-color: #f3f4f6 !important;
+            color: #292524 !important;
+            user-select: text;
+            border: 1px solid #e7e5e4;
+        }
     </style>
 
 <script type="module">
