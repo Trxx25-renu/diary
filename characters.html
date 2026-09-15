@@ -1611,7 +1611,7 @@ function checkAdminPermission(callback) {
 }
 window.checkAdminPermission = checkAdminPermission;
 
-// 管理者ステータスに応じてヘッダーの鍵アイコンや追加ボタンを切り替える関数
+// 管理者ステータスに応じてヘッダーの鍵アイコンや追加ボタン、各種管理UIを一括切り替えする関数
 function updateAdminUI() {
     const keyBtn = document.getElementById('headerKeyBtn');
     if (keyBtn) {
@@ -1626,16 +1626,7 @@ function updateAdminUI() {
         }
     }
 
-    const addBtn = document.getElementById('headerAddBtn');
-    if (addBtn) {
-        if (window.isAdmin) {
-            addBtn.classList.remove('hidden');
-        } else {
-            addBtn.classList.add('hidden');
-        }
-    }
-
-    // 💡 【追加】 .admin-only クラスを持つすべての要素を一括で表示・非表示切り替え
+    // 💡 .admin-only クラスを持つすべての要素（PC追加、編集・削除、HP設定ボタン等）を一括で表示・非表示切り替え
     const adminElements = document.querySelectorAll('.admin-only');
     adminElements.forEach(el => {
         if (window.isAdmin) {
@@ -1645,7 +1636,7 @@ function updateAdminUI() {
         }
     });
 
-    // 現在キャラクター詳細画面を開いている場合、編集・削除ボタンを即座に消去（再描画）する
+    // 現在キャラクター詳細画面を開いている場合、管理ボタンを即座に再描画する
     if (typeof window._currentGalleryState !== 'undefined' && window._currentGalleryState.characterId) {
         if (typeof renderCharacterDetail === 'function') {
             renderCharacterDetail(window._currentGalleryState.characterId);
@@ -1673,6 +1664,10 @@ function openAuthModal() {
         showConfirm('ログアウト', '管理者モードからログアウトしますか？', () => {
             window.isAdmin = false;
             sessionStorage.removeItem('isAdminSession');
+            // セッションストレージ等からGistトークンを消去している場合はここで合わせて削除
+            if (window.GIST_CONFIG) {
+                window.GIST_CONFIG.token = '';
+            }
             updateAdminUI();
             showToast('ログアウトしました', 'info');
         });
@@ -1709,73 +1704,76 @@ function closeAuthModal() {
             innerDiv.classList.add('scale-95');
         }
     }
-    pendingAction = null;
+    // pendingAction = null; // 必要に応じて残す
 }
 window.closeAuthModal = closeAuthModal;
        
     // ==========================================
-// 💡 HP設定モーダルを開く関数（全設定・エディタ描画対応版）
+// 💡 設定モーダルを開く関数（完全管理者専用ガード付き）
 // ==========================================
 function handleOpenSettingsModal() {
-    checkAdminPermission(() => {
-        // 1. ページタイトルのセット
-        const titleInput = document.getElementById('settingTitleInput');
-        if (titleInput && window.rosterSettings) {
-            titleInput.value = window.rosterSettings.title || '';
+    // 🔒 ログインしていなければ強制的に処理を中断（パス入力を出さずにブロック）
+    if (!window.isAdmin) {
+        console.warn('管理者権限がないため設定を開けません。');
+        return; 
+    }
+
+    // 1. ページタイトルのセット
+    const titleInput = document.getElementById('settingTitleInput');
+    if (titleInput && window.rosterSettings) {
+        titleInput.value = window.rosterSettings.title || '';
+    }
+
+    // 2. ファビコンプレビューの復元
+    const faviconPreview = document.getElementById('settingFaviconPreview');
+    if (faviconPreview) {
+        if (window.rosterSettings?.favicon) {
+            faviconPreview.src = window.rosterSettings.favicon;
+            faviconPreview.classList.remove('hidden');
+            window.currentFaviconBase64 = window.rosterSettings.favicon;
+        } else {
+            faviconPreview.src = '';
+            faviconPreview.classList.add('hidden');
+            window.currentFaviconBase64 = '';
         }
+    }
 
-        // 2. ファビコンプレビューの復元
-        const faviconPreview = document.getElementById('settingFaviconPreview');
-        if (faviconPreview) {
-            if (window.rosterSettings?.favicon) {
-                faviconPreview.src = window.rosterSettings.favicon;
-                faviconPreview.classList.remove('hidden');
-                window.currentFaviconBase64 = window.rosterSettings.favicon;
-            } else {
-                faviconPreview.src = '';
-                faviconPreview.classList.add('hidden');
-                window.currentFaviconBase64 = '';
-            }
-        }
+    // 3. ギャラリーカテゴリ名の復元
+    const cats = window.rosterSettings?.galleryCategories || {};
+    const catBase = document.getElementById('catNameBase');
+    const catCombat = document.getElementById('catNameCombat');
+    const catSd = document.getElementById('catNameSd');
+    const catDoodle = document.getElementById('catNameDoodle');
 
-        // 3. ギャラリーカテゴリ名の復元
-        const cats = window.rosterSettings?.galleryCategories || {};
-        const catBase = document.getElementById('catNameBase');
-        const catCombat = document.getElementById('catNameCombat');
-        const catSd = document.getElementById('catNameSd');
-        const catDoodle = document.getElementById('catNameDoodle');
+    if (catBase) catBase.value = cats.base || '';
+    if (catCombat) catCombat.value = cats.combat || '';
+    if (catSd) catSd.value = cats.sd || '';
+    if (catDoodle) catDoodle.value = cats.doodle || '';
 
-        if (catBase) catBase.value = cats.base || '';
-        if (catCombat) catCombat.value = cats.combat || '';
-        if (catSd) catSd.value = cats.sd || '';
-        if (catDoodle) catDoodle.value = cats.doodle || '';
+    // 4. システムの並び順・カスタム項目エディタの描画を実行
+    if (typeof renderSettingsEditors === 'function') {
+        renderSettingsEditors();
+    } else if (typeof renderSettingsSystemsEditor === 'function' && typeof renderSettingsFieldsEditor === 'function') {
+        renderSettingsSystemsEditor();
+        renderSettingsFieldsEditor();
+    }
 
-        // 4. システムの並び順・カスタム項目エディタの描画を実行
-        // （※お持ちの環境にあるエディタ描画関数の名称に合わせて呼び出します）
-        if (typeof renderSettingsEditors === 'function') {
-            renderSettingsEditors();
-        } else if (typeof renderSettingsSystemsEditor === 'function' && typeof renderSettingsFieldsEditor === 'function') {
-            renderSettingsSystemsEditor();
-            renderSettingsFieldsEditor();
-        }
-
-        // 5. モーダルを表示
-        const modal = document.getElementById('settingsModal');
-        if (modal) {
-            modal.classList.remove('hidden');
-        }
-    });
+    // 5. モーダルを表示
+    const modal = document.getElementById('settingsModal');
+    if (modal) {
+        modal.classList.remove('hidden');
+    }
 }
 window.handleOpenSettingsModal = handleOpenSettingsModal;
 
-    // 💡 HP設定モーダルを閉じる関数
-    function closeSettingsModal() {
-        const modal = document.getElementById('settingsModal');
-        if (modal) {
-            modal.classList.add('hidden');
-        }
+// 💡 設定モーダルを閉じる関数
+function closeSettingsModal() {
+    const modal = document.getElementById('settingsModal');
+    if (modal) {
+        modal.classList.add('hidden');
     }
-    window.closeSettingsModal = closeSettingsModal;
+}
+window.closeSettingsModal = closeSettingsModal;
 
 // ==========================================
 // 💡 HP設定モーダル内のエディタ（システム順序・カスタム項目）を描画する関数
@@ -2361,10 +2359,17 @@ window.openEditCharacterModal = openEditCharacterModal;
 
 
 // ==========================================
-// 💡 HP設定を保存する関数（カテゴリ名対応版）
+// 💡 HP設定を保存する関数（管理者専用ガード付き）
 // ==========================================
 async function saveRosterSettings(event) {
     event.preventDefault();
+
+    // 🔒 ログインしていなければ即座に処理を中断
+    if (!window.isAdmin) {
+        showToast("管理者権限がありません。", "error");
+        return;
+    }
+
     const title = document.getElementById('settingTitleInput').value.trim();
     const favicon = window.currentFaviconBase64 || window.rosterSettings?.favicon || "";
 
@@ -2398,7 +2403,6 @@ async function saveRosterSettings(event) {
     }
 }
 window.saveRosterSettings = saveRosterSettings;
-
 
 // ==========================================
 // 💡 1. キャラクター登録モーダルのシステムセレクトボックスを構築する関数
