@@ -751,7 +751,7 @@ function removeCharacterImage(categoryKey, index) {
 window.removeCharacterImage = removeCharacterImage;
 
 // ==========================================
-// 💡 キャラクター保存関数（Firestore完全同期版）
+// 💡 キャラクター保存関数（Firestore完全同期版・Base64完全排除仕様）
 // ==========================================
 async function saveCharacter(event) {
     event.preventDefault();
@@ -795,12 +795,32 @@ async function saveCharacter(event) {
         }
     });
     
-    const images = JSON.parse(JSON.stringify(window.editingCharacterImages || { 
+    // 🌟 画像データの処理（Base64の混入を完全に防止・排除）
+    const rawImages = window.editingCharacterImages || { 
         thumb: [], avatar: [], base: [], combat: [], sd: [], doodle: [] 
-    }));
+    };
+
+    const images = {};
+    for (const [category, list] of Object.entries(rawImages)) {
+        images[category] = Array.isArray(list) ? list.map(item => {
+            let url = item.url || '';
+            // 🛑 Base64形式（data:image/...）が紛れ込んでいたら強制的に空にする
+            if (url.startsWith('data:image/')) {
+                console.warn(`[Security Guard] Base64 image detected in category '${category}' and blocked.`);
+                url = ''; 
+            }
+            return {
+                ...item,
+                url: url // パスや通常URLのみ保持
+            };
+        }) : [];
+    }
     
-    const thumbnail = images.thumb?.[0]?.url || "";
-    const avatar = images.avatar?.[0]?.url || "";
+    let thumbnail = images.thumb?.[0]?.url || "";
+    if (thumbnail.startsWith('data:image/')) thumbnail = "";
+
+    let avatar = images.avatar?.[0]?.url || "";
+    if (avatar.startsWith('data:image/')) avatar = "";
 
     const customValues = {};
     
@@ -842,7 +862,6 @@ async function saveCharacter(event) {
         if (!window.characters) window.characters = [];
         const index = window.characters.findIndex(c => String(c.id) === String(targetCharacterId));
         if (index !== -1) {
-            // 既存キャラの更新時は createdAt を保持
             charData.createdAt = window.characters[index].createdAt || new Date().toISOString();
             window.characters[index] = { ...window.characters[index], ...charData };
         } else {
@@ -854,7 +873,7 @@ async function saveCharacter(event) {
         const jsonString = JSON.stringify(window.characters);
         localStorage.setItem('local_characters', jsonString);
 
-        // 💡 ② Firestore（クラウド）へ画像も含めて一括保存・同期
+        // 💡 ② Firestore（クラウド）へ一括保存・同期
         if (typeof showToast === 'function') showToast("Firestoreへ同期中...", "info");
 
         const charDocRef = doc(window.db, 'artifacts', window.appId, 'public', 'data', 'characters', 'master');
