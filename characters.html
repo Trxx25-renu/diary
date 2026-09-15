@@ -165,6 +165,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     await signInAnonymously(auth);
     console.log("✅ Firebase 匿名認証完了");
 
+    // 💡 表示モードの初期値（デフォルトはシステム別）
+    window.currentViewMode = window.currentViewMode || 'systems';
+
     // 初期表示用のパンくず呼び出し
     if (typeof renderBreadcrumbAndActions === 'function') {
         renderBreadcrumbAndActions('home');
@@ -253,7 +256,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             const data = rosterSnap.data();
             window.rosterSettings = data;
             applyRosterSettings(data);
-            if (data.systems) {
+            if (data.systems && Array.isArray(data.systems)) {
                 window.systems = data.systems;
             }
             if (data.customFields) {
@@ -270,8 +273,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         await loadCharactersFromLocal();
     }
 
-    // ⭐ システムフォルダを描画
-    if (typeof renderSystemFolders === 'function') {
+    // ⭐ 1階層目の初期描画（後々3モード対応に拡張しやすいよう関数化）
+    if (typeof renderRootHierarchy === 'function') {
+        renderRootHierarchy();
+    } else if (typeof renderSystemFolders === 'function') {
         renderSystemFolders();
     }
 
