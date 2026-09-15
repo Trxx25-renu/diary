@@ -798,10 +798,21 @@ function removeCharacterImage(categoryKey, index) {
 window.removeCharacterImage = removeCharacterImage;
 
 // ==========================================
-// 💡 キャラクター保存関数（GitHub Gist自動同期・リンク直取得版）
+// 💡 キャラクター保存関数（管理者専用ガード付き）
 // ==========================================
 async function saveCharacter(event) {
     event.preventDefault();
+
+    // 🔒 ログインしていなければ強制的に中断
+    if (!window.isAdmin) {
+        if (typeof showToast === 'function') {
+            showToast("管理者権限がありません。", "error");
+        } else {
+            alert("管理者権限がありません。");
+        }
+        return;
+    }
+
     const systemId = document.getElementById('charSystemSelect').value;
     
     const name = document.getElementById('charName')?.value?.trim() || '';
@@ -884,7 +895,7 @@ async function saveCharacter(event) {
             window.characters.push(charData);
         }
 
-        // 💡 ① 手元のブラウザ（localStorage）には画像付きで保存（画面に表示させるため）
+        // 💡 ① 手元のブラウザ（localStorage）には画像付きで保存
         const jsonString = JSON.stringify(window.characters);
         localStorage.setItem('local_characters', jsonString);
 
@@ -3147,7 +3158,6 @@ function renderCharacterLinksEditor() {
 
     links.forEach((link, index) => {
         const row = document.createElement('div');
-        // 🌟 スマホでは縦並び（flex-col）、PCなどのある程度広い画面では横並び（sm:flex-row）にするクラスに調整
         row.className = 'flex flex-col sm:flex-row items-stretch sm:items-center gap-2 mb-3 p-2.5 bg-stone-50/80 border border-stone-200/80 rounded-2xl';
         
         row.innerHTML = `
@@ -3171,6 +3181,30 @@ function renderCharacterLinksEditor() {
     });
 }
 window.renderCharacterLinksEditor = renderCharacterLinksEditor;
+
+// ==========================================
+// 💡 編集モーダル内：リンクの追加・削除用関数（ここに追加！）
+// ==========================================
+function addEditingLink(label = '', url = '') {
+    if (!window.editingCharacterLinks) {
+        window.editingCharacterLinks = [];
+    }
+    window.editingCharacterLinks.push({ label: label, url: url });
+    if (typeof renderCharacterLinksEditor === 'function') {
+        renderCharacterLinksEditor();
+    }
+}
+window.addEditingLink = addEditingLink;
+
+function removeEditingLink(index) {
+    if (window.editingCharacterLinks && window.editingCharacterLinks.length > index) {
+        window.editingCharacterLinks.splice(index, 1);
+        if (typeof renderCharacterLinksEditor === 'function') {
+            renderCharacterLinksEditor();
+        }
+    }
+}
+window.removeEditingLink = removeEditingLink;
 
 // 4. HTMLエスケープの補助関数（安全のため）
 function escapeHtml(str) {
