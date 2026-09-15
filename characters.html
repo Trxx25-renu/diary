@@ -3166,7 +3166,7 @@ function exportCharactersJSON() {
 window.exportCharactersJSON = exportCharactersJSON;
 
 // ==========================================
-// 💡 JSONファイルを読み込んでFirestore＆ローカルに反映（柔軟対応版・グローバル関数対応）
+// 💡 JSONファイルを読み込んでFirestore＆ローカルに反映（軽量化・非同期対応版）
 // ==========================================
 async function importCharactersJSON(event) {
     const file = event.target.files[0];
@@ -3176,6 +3176,10 @@ async function importCharactersJSON(event) {
         event.target.value = '';
         return;
     }
+
+    // 🌟 処理の最初にトーストを出して、ブラウザに描画の猶予を与える
+    if (typeof showToast === 'function') showToast("ファイルを読み込んでいます...", "info");
+    await new Promise(resolve => setTimeout(resolve, 50));
 
     const reader = new FileReader();
     reader.onload = async function(e) {
@@ -3194,6 +3198,9 @@ async function importCharactersJSON(event) {
 
             window.characters = importedList;
             localStorage.setItem('local_characters', JSON.stringify(window.characters));
+
+            // 少し息継ぎ
+            await new Promise(resolve => setTimeout(resolve, 10));
 
             // Firestoreへも即座に同期（window.doc / window.setDoc を使用）
             if (typeof showToast === 'function') showToast("Firestoreへ同期中...", "info");
