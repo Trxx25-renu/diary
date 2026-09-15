@@ -74,6 +74,16 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebas
 import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { getFirestore, collection, getDocs, doc, getDoc, setDoc, addDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
+// 🌟 他のスクリプト（通常タグなど）から呼び出せるようにグローバルへ登録
+window.doc = doc;
+window.setDoc = setDoc;
+window.getDoc = getDoc;
+window.collection = collection;
+window.getDocs = getDocs;
+window.addDoc = addDoc;
+window.updateDoc = updateDoc;
+window.deleteDoc = deleteDoc;
+
 // HTMLエスケープ処理
 function escapeHtml(str) {
     if (!str) return '';
@@ -206,14 +216,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     };
 
     try {
-        const configRef = doc(db, 'artifacts', window.appId, 'public', 'data', 'config', 'settings');
-        const configSnap = await getDoc(configRef);
+        const configRef = window.doc(db, 'artifacts', window.appId, 'public', 'data', 'config', 'settings');
+        const configSnap = await window.getDoc(configRef);
         if (configSnap.exists()) {
             window.storedPasscode = configSnap.data().passcode;
         }
 
-        const rosterConfigRef = doc(db, 'artifacts', window.appId, 'public', 'data', 'config', 'characterRosterSettings');
-        const rosterSnap = await getDoc(rosterConfigRef);
+        const rosterConfigRef = window.doc(db, 'artifacts', window.appId, 'public', 'data', 'config', 'characterRosterSettings');
+        const rosterSnap = await window.getDoc(rosterConfigRef);
         if (rosterSnap.exists()) {
             const data = rosterSnap.data();
             window.rosterSettings = data;
@@ -230,12 +240,12 @@ document.addEventListener("DOMContentLoaded", async () => {
         console.log("✅ Firestore設定データの読み込み完了");
     } catch (e) { console.error("Config load error:", e); }
 
-    // ⭐ キャラクターデータの読み込み（Firestoreから直接取得）
+    // ⭐ キャラクターデータの読み込み
     if (typeof loadCharactersFromLocal === 'function') {
         await loadCharactersFromLocal();
     }
 
-    // ⭐ すべての準備が整ったのでシステムフォルダを描画
+    // ⭐ システムフォルダを描画
     if (typeof renderSystemFolders === 'function') {
         renderSystemFolders();
     }
@@ -250,6 +260,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     console.log("🎉 キャラクター管理ページの初期化がすべて完了しました！");
 });
+
     
 // ==========================================
 // 💡 キャラクターデータの読み込み（Firestore版）
@@ -751,7 +762,7 @@ function removeCharacterImage(categoryKey, index) {
 window.removeCharacterImage = removeCharacterImage;
 
 // ==========================================
-// 💡 キャラクター保存関数（Firestore完全同期版・Base64完全排除仕様）
+// 💡 キャラクター保存関数（Base64完全ブロック・Firestore同期版）
 // ==========================================
 async function saveCharacter(event) {
     event.preventDefault();
@@ -873,11 +884,11 @@ async function saveCharacter(event) {
         const jsonString = JSON.stringify(window.characters);
         localStorage.setItem('local_characters', jsonString);
 
-        // 💡 ② Firestore（クラウド）へ一括保存・同期
+        // 💡 ② Firestore（クラウド）へ一括保存・同期（window.doc / window.setDoc を使用）
         if (typeof showToast === 'function') showToast("Firestoreへ同期中...", "info");
 
-        const charDocRef = doc(window.db, 'artifacts', window.appId, 'public', 'data', 'characters', 'master');
-        await setDoc(charDocRef, {
+        const charDocRef = window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'characters', 'master');
+        await window.setDoc(charDocRef, {
             list: window.characters,
             updatedAt: new Date().toISOString()
         });
@@ -2292,18 +2303,23 @@ window.openEditCharacterModal = openEditCharacterModal;
 
 
 // ==========================================
-// 💡 HP設定を保存する関数（管理者専用ガード付き）
+// 💡 HP設定（全体設定）を保存する関数（管理者専用ガード・グローバル関数対応版）
 // ==========================================
 async function saveRosterSettings(event) {
     event.preventDefault();
 
     // 🔒 ログインしていなければ即座に処理を中断
     if (!window.isAdmin) {
-        showToast("管理者権限がありません。", "error");
+        if (typeof showToast === 'function') {
+            showToast("管理者権限がありません。", "error");
+        } else {
+            alert("管理者権限がありません。");
+        }
         return;
     }
 
-    const title = document.getElementById('settingTitleInput').value.trim();
+    const titleInput = document.getElementById('settingTitleInput');
+    const title = titleInput ? titleInput.value.trim() : '';
     const favicon = window.currentFaviconBase64 || window.rosterSettings?.favicon || "";
 
     const galleryCategories = {
@@ -2322,17 +2338,23 @@ async function saveRosterSettings(event) {
     };
 
     try {
-        const rosterConfigRef = doc(db, 'artifacts', window.appId, 'public', 'data', 'config', 'characterRosterSettings');
-        await setDoc(rosterConfigRef, newSettings);
+        if (typeof showToast === 'function') showToast("設定を保存中...", "info");
+
+        // 🌟 window.doc と window.setDoc を使用してエラーを回避
+        const rosterConfigRef = window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'config', 'characterRosterSettings');
+        await window.setDoc(rosterConfigRef, newSettings);
         
         window.rosterSettings = newSettings;
-        applyRosterSettings(newSettings);
-        closeSettingsModal();
-        renderSystemFolders();
-        showToast("HP設定を保存しました！", "info");
+        if (typeof applyRosterSettings === 'function') applyRosterSettings(newSettings);
+        if (typeof closeSettingsModal === 'function') closeSettingsModal();
+        if (typeof renderSystemFolders === 'function') renderSystemFolders();
+        
+        if (typeof showToast === 'function') {
+            showToast("設定を保存しました！", "info");
+        }
     } catch (e) {
         console.error("Settings save error:", e);
-        alert("設定の保存に失敗しました。");
+        alert("設定の保存に失敗しました。コンソールを確認してください。");
     }
 }
 window.saveRosterSettings = saveRosterSettings;
@@ -2621,7 +2643,7 @@ function handleAvatarFileSelect(event) {
 window.handleAvatarFileSelect = handleAvatarFileSelect;
 
 // ==========================================
-// 💡 キャラクター削除関数（Firestore完全同期版）
+// 💡 キャラクター削除関数（Firestore完全同期・グローバル関数対応版）
 // ==========================================
 async function deleteCharacter(characterId) {
     if (!confirm('本当にこのキャラクターを削除しますか？')) {
@@ -2639,11 +2661,11 @@ async function deleteCharacter(characterId) {
         // 💡 1. 手元のブラウザ（localStorage）を更新
         localStorage.setItem('local_characters', JSON.stringify(window.characters || []));
 
-        // 💡 2. Firestore（クラウド）側へも削除後のリストを即座に同期・保存
+        // 💡 2. Firestore（クラウド）側へも削除後のリストを即座に同期・保存（window.doc / window.setDoc を使用）
         if (typeof showToast === 'function') showToast("Firestoreへ同期中...", "info");
 
-        const charDocRef = doc(window.db, 'artifacts', window.appId, 'public', 'data', 'characters', 'master');
-        await setDoc(charDocRef, {
+        const charDocRef = window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'characters', 'master');
+        await window.setDoc(charDocRef, {
             list: window.characters,
             updatedAt: new Date().toISOString()
         });
@@ -3143,7 +3165,9 @@ function exportCharactersJSON() {
 }
 window.exportCharactersJSON = exportCharactersJSON;
 
-// 📂 JSONファイルを読み込んでFirestore＆ローカルに反映（柔軟対応版）
+// ==========================================
+// 💡 JSONファイルを読み込んでFirestore＆ローカルに反映（柔軟対応版・グローバル関数対応）
+// ==========================================
 async function importCharactersJSON(event) {
     const file = event.target.files[0];
     if (!file) return;
@@ -3171,10 +3195,11 @@ async function importCharactersJSON(event) {
             window.characters = importedList;
             localStorage.setItem('local_characters', JSON.stringify(window.characters));
 
-            // Firestoreへも即座に同期
+            // Firestoreへも即座に同期（window.doc / window.setDoc を使用）
             if (typeof showToast === 'function') showToast("Firestoreへ同期中...", "info");
-            const charDocRef = doc(window.db, 'artifacts', window.appId, 'public', 'data', 'characters', 'master');
-            await setDoc(charDocRef, {
+            
+            const charDocRef = window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'characters', 'master');
+            await window.setDoc(charDocRef, {
                 list: window.characters,
                 updatedAt: new Date().toISOString()
             });
@@ -3193,7 +3218,7 @@ async function importCharactersJSON(event) {
     reader.readAsText(file);
 }
 window.importCharactersJSON = importCharactersJSON;
-            
+                    
         </script>
         
 </head>
