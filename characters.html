@@ -23,11 +23,31 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Playfair+Display:ital,wght@0,600;1,400&display=swap" rel="stylesheet">
     
-   <style>
+<style>
         /* 💡 スマホ表示などで画像がガビガビになるのを防ぎ、輪郭をシャープに保つ設定 */
         img {
             image-rendering: -webkit-optimize-contrast;
             image-rendering: crisp-edges;
+        }
+
+        /* 💡 【追加・改良】高解像度の縦長・横長画像（1800x4000やA4等）が来てもアス比を崩さず、枠内に綺麗に収める設定 */
+        .character-image-container, 
+        .image-viewer-container,
+        .gallery-img-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        /* キャラクター詳細やプレビュー等で表示される主要な画像に適用 */
+        .character-detail-img, 
+        .modal-character-img {
+            max-width: 100%;
+            max-height: 100%;
+            width: auto;
+            height: auto;
+            object-fit: contain; /* アス比を完全維持したまま枠内に全体を収める */
         }
 
         /* 自由変形型のテキストエリア（textarea）の文字位置を整えるCSS */
