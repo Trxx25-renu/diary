@@ -147,34 +147,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     window.appId = "photo-journal-app";
 
-    const firebaseConfig = {
-        apiKey: "AIzaSyA2ctX9sUpJmLSVJomU9cbMzrUX_AXNjuE",
-        authDomain: "diary-36d77.firebaseapp.com",
-        projectId: "diary-36d77",
-        storageBucket: "diary-36d77.firebasestorage.app",
-        messagingSenderId: "1060563209082",
-        appId: "1:1060563209082:web:1c6cfc21a496548309e4c3",
-        measurementId: "G-RBK7ZN6NF1"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
-    window.db = db;
-
-    await signInAnonymously(auth);
-    console.log("✅ Firebase 匿名認証完了");
-
-    // 💡 表示モードの初期値（デフォルトはシステム別）
-    window.currentViewMode = window.currentViewMode || 'systems';
-
-    // 初期表示用のパンくず呼び出し
-    if (typeof renderBreadcrumbAndActions === 'function') {
-        renderBreadcrumbAndActions('home');
-    }
-
-    // デフォルトのシステムリスト
-    window.systems = [
+    // 💡 【修正】ここで早めにデフォルトのシステム一覧とカスタムフィールドを定義しておく
+    window.systems = window.systems || [
         { id: 'coc', name: 'クトゥルフ神話TRPG (6版)', desc: 'CoC 6版', badgeColor: 'bg-amber-900/80' },
         { id: 'dx3', name: 'ダブルクロス The 3rd Edition', desc: 'DX3rd', badgeColor: 'bg-rose-900/80' },
         { id: 'shinobigami', name: 'シノビガミ', desc: '現代忍法アクション', badgeColor: 'bg-cyan-900/80' },
@@ -183,8 +157,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         { id: 'sw25', name: 'ソード・ワールド2.5', desc: 'SW2.5', badgeColor: 'bg-emerald-800/80' }
     ];
 
-    // デフォルトのシステム別カスタムフィールド
-    window.systemCustomFields = {
+    window.systemCustomFields = window.systemCustomFields || {
         coc: {
             status: [
                 { id: 'san', label: 'SAN (正気度)', max: 99 },
@@ -242,6 +215,32 @@ document.addEventListener("DOMContentLoaded", async () => {
             ]
         }
     };
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyA2ctX9sUpJmLSVJomU9cbMzrUX_AXNjuE",
+        authDomain: "diary-36d77.firebaseapp.com",
+        projectId: "diary-36d77",
+        storageBucket: "diary-36d77.firebasestorage.app",
+        messagingSenderId: "1060563209082",
+        appId: "1:1060563209082:web:1c6cfc21a496548309e4c3",
+        measurementId: "G-RBK7ZN6NF1"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    window.db = db;
+
+    await signInAnonymously(auth);
+    console.log("✅ Firebase 匿名認証完了");
+
+    // 💡 表示モードの初期値（デフォルトはシステム別）
+    window.currentViewMode = window.currentViewMode || 'systems';
+
+    // 初期表示用のパンくず呼び出し
+    if (typeof renderBreadcrumbAndActions === 'function') {
+        renderBreadcrumbAndActions('home');
+    }
 
     try {
         const configRef = window.doc(db, 'artifacts', window.appId, 'public', 'data', 'config', 'settings');
