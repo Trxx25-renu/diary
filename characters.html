@@ -3306,90 +3306,72 @@ window.importCharactersJSON = importCharactersJSON;
         <!-- 階層に応じて自動で切り替わるパンくず＆ヘッダーアクションのプレースホルダー -->
         <div id="headerBreadcrumbArea"></div>
 
-<!-- 📋 2階層目：キャラクター一覧画面の検索＆ソートエリア（3段組レイアウト） -->
-<div class="flex flex-col gap-3 w-full bg-stone-50/60 p-3.5 sm:p-4 rounded-2xl border border-stone-200/70 mb-6 shadow-xs">
-    
-    <!-- 1段目：タイトル・見出しエリア -->
-    <div class="flex items-center justify-between">
-        <h2 class="text-xs font-bold text-stone-500 uppercase tracking-wider">キャラクター一覧</h2>
-    </div>
-
-    <!-- 2段目：検索窓（スマホでも横幅いっぱい、ゆったり入力可能） -->
-    <div class="relative w-full">
-        <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-stone-400 text-xs">
-            <i class="fa-solid fa-search"></i>
-        </span>
-        <input type="text" id="characterSearchInput" oninput="handleCharacterSearchInput(event)" placeholder="このシステム内を検索..." class="w-full bg-stone-50 border border-stone-200 rounded-full pl-9 pr-4 py-1.5 text-xs text-stone-800 focus:outline-none focus:bg-white focus:border-stone-400 transition-all">
-    </div>
-
-    <!-- 3段目：ソート切り替えボタン群（仕様はそのまま、均等配置） -->
-    <div class="p-1 rounded-xl flex items-center gap-1 bg-stone-100 border border-stone-200/60 w-full">
-        <button type="button" onclick="changeCharacterSort('updated')" id="charSortBtn_updated" class="flex-1 px-3 py-1.5 rounded-lg text-xs transition-all font-semibold bg-white text-stone-900 shadow-sm text-center">更新順</button>
-        <button type="button" onclick="changeCharacterSort('name')" id="charSortBtn_name" class="flex-1 px-3 py-1.5 rounded-lg text-xs transition-all font-medium text-stone-500 hover:text-stone-800 text-center">あいうえお順</button>
-        <button type="button" onclick="changeCharacterSort('birthdate')" id="charSortBtn_birthdate" class="flex-1 px-3 py-1.5 rounded-lg text-xs transition-all font-medium text-stone-500 hover:text-stone-800 text-center">誕生日順</button>
-    </div>
-
-</div>
-
-<div id="characterGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4"></div>
-        
-        <!-- 📂 キャラクター一覧ビュー（日記サイトの配置に完全に合わせました） -->
-        <div id="view-list" class="hidden">
-            <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 mb-6 bg-white p-4 rounded-2xl border border-stone-200/80 shadow-sm">
-                <!-- 左側：システムタイトルなど -->
-                <div>
-                    <h2 id="currentSystemTitle" class="text-base font-bold text-stone-800">PC一覧</h2>
-                    <p class="text-[11px] text-stone-400">登録されているPC</p>
-                </div>
+        <!-- 📂 1階層目：システム別フォルダビュー（ホーム） ＋ 3モード切り替えタブ -->
+        <div id="view-folders">
+            <div class="bg-white rounded-2xl border border-stone-200/80 p-4 sm:p-5 shadow-sm mb-6 flex flex-col gap-3">
                 
-                <!-- 右側：検索窓 ＆ 並び替えボタン群（日記のタグ位置にソートを配置） -->
-                <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
-                    <!-- 検索窓 -->
-                    <div class="relative flex-1 sm:w-56">
-                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-stone-400 text-xs">
-                            <i class="fa-solid fa-search"></i>
-                        </span>
-                        <input type="text" id="characterSearchInput" oninput="handleCharacterSearchInput(event)" placeholder="このシステム内を検索..." class="w-full bg-stone-50 border border-stone-200 rounded-full pl-9 pr-4 py-1.5 text-xs text-stone-800 focus:outline-none focus:bg-white focus:border-stone-400 transition-all">
+                <!-- 1段目：タイトル -->
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-base font-bold text-stone-800">システム選択</h2>
+                        <p class="text-[11px] text-stone-400 mt-0.5">システムを選んでください</p>
                     </div>
+                </div>
 
-                    <!-- 📱 スマホでも快適な3段構造（タイトル ＋ 検索バー ＋ 3モード切り替えタブ） -->
-<div class="flex flex-col gap-3 w-full bg-stone-50/60 p-3.5 sm:p-4 rounded-2xl border border-stone-200/70 mb-6 shadow-xs">
-    
-    <!-- 1段目：タイトルまたは現在のセクション名 -->
-    <div class="flex items-center justify-between">
-        <h2 class="text-xs font-bold text-stone-500 uppercase tracking-wider flex items-center gap-1.5">
-            <i class="fa-solid id-card"></i> キャラクターアーカイブ
-        </h2>
-    </div>
+                <!-- 2段目：検索バー -->
+                <div class="relative w-full">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-stone-400 text-xs">
+                        <i class="fa-solid fa-search"></i>
+                    </span>
+                    <input type="text" id="folderSearchInput" oninput="handleFolderSearchInput(event)" placeholder="システムやPC名で検索" class="w-full bg-stone-50 hover:bg-stone-100/70 focus:bg-white border border-stone-200 rounded-xl pl-9 pr-4 py-2 text-xs text-stone-800 focus:outline-none focus:ring-2 focus:ring-stone-400/20 focus:border-stone-400 transition-all shadow-sm">
+                </div>
 
-    <!-- 2段目：検索バー（スマホでも横幅いっぱい、ゆったり入力可能） -->
-    <div class="relative w-full">
-        <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-stone-400 text-xs">
-            <i class="fa-solid fa-search"></i>
-        </span>
-        <input type="text" 
-               id="characterSearchInput" 
-               oninput="handleCharacterSearchInput(event)" 
-               placeholder="キャラクター名で検索..." 
-               class="w-full bg-white border border-stone-200 rounded-full pl-10 pr-4 py-2 text-xs text-stone-800 focus:outline-none focus:border-stone-400 shadow-xs transition-all">
-    </div>
+                <!-- 3段目：3モード切り替えタブ（システム別 / 索引 / 全キャラリスト） -->
+                <div class="p-1 rounded-xl flex items-center gap-1 bg-stone-100 border border-stone-200/80 w-full overflow-x-auto">
+                    <button type="button" onclick="switchViewMode('systems')" id="viewModeBtn_systems" class="flex-1 px-3 py-1.5 rounded-lg text-xs transition-all font-semibold bg-white text-stone-900 shadow-xs text-center whitespace-nowrap">
+                        <i class="fa-solid fa-folder-tree mr-1 text-[11px] text-stone-500"></i>システム別
+                    </button>
+                    <button type="button" onclick="switchViewMode('index')" id="viewModeBtn_index" class="flex-1 px-3 py-1.5 rounded-lg text-xs transition-all font-medium text-stone-500 hover:text-stone-800 text-center whitespace-nowrap">
+                        <i class="fa-solid fa-book-bookmark mr-1 text-[11px] text-stone-400"></i>索引 (あかさたな)
+                    </button>
+                    <button type="button" onclick="switchViewMode('all')" id="viewModeBtn_all" class="flex-1 px-3 py-1.5 rounded-lg text-xs transition-all font-medium text-stone-500 hover:text-stone-800 text-center whitespace-nowrap">
+                        <i class="fa-solid fa-users mr-1 text-[11px] text-stone-400"></i>全キャラリスト
+                    </button>
+                </div>
+            </div>
 
-    <!-- 3段目：3モード切り替えタブ（システム別 / 索引 / 全キャラリスト） -->
-    <div class="p-1 rounded-xl flex items-center gap-1 bg-stone-200/70 border border-stone-300/60 w-full overflow-x-auto">
-        <button type="button" onclick="switchViewMode('systems')" id="viewModeBtn_systems" class="flex-1 px-3 py-1.5 rounded-lg text-xs transition-all font-semibold bg-white text-stone-900 shadow-sm text-center whitespace-nowrap">
-            <i class="fa-solid fa-folder-tree mr-1 text-[11px] text-stone-500"></i>システム別
-        </button>
-        <button type="button" onclick="switchViewMode('index')" id="viewModeBtn_index" class="flex-1 px-3 py-1.5 rounded-lg text-xs transition-all font-medium text-stone-600 hover:text-stone-900 text-center whitespace-nowrap">
-            <i class="fa-solid fa-book-bookmark mr-1 text-[11px] text-stone-500"></i>索引 (あかさたな)
-        </button>
-        <button type="button" onclick="switchViewMode('all')" id="viewModeBtn_all" class="flex-1 px-3 py-1.5 rounded-lg text-xs transition-all font-medium text-stone-600 hover:text-stone-900 text-center whitespace-nowrap">
-            <i class="fa-solid fa-users mr-1 text-[11px] text-stone-500"></i>全キャラリスト
-        </button>
-    </div>
-</div>
+            <!-- システムフォルダ一覧グリッド -->
+            <div id="systemFoldersContainer" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4"></div>
+        </div>
+        
+        <!-- 📂 2階層目：キャラクター一覧ビュー（ご希望の3段組レイアウト・仕様変更なし） -->
+        <div id="view-list" class="hidden">
+            <div class="flex flex-col gap-3 w-full bg-stone-50/60 p-3.5 sm:p-4 rounded-2xl border border-stone-200/70 mb-6 shadow-xs">
+                
+                <!-- 1段目：タイトル・見出しエリア -->
+                <div class="flex items-center justify-between">
+                    <h2 id="currentSystemTitle" class="text-xs font-bold text-stone-500 uppercase tracking-wider">キャラクター一覧</h2>
+                </div>
 
-<!-- キャラクター / システム表示用のグリッドエリア -->
-<div id="characterGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4"></div>
+                <!-- 2段目：検索窓（横幅いっぱい） -->
+                <div class="relative w-full">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-stone-400 text-xs">
+                        <i class="fa-solid fa-search"></i>
+                    </span>
+                    <input type="text" id="characterSearchInput" oninput="handleCharacterSearchInput(event)" placeholder="このシステム内を検索..." class="w-full bg-stone-50 border border-stone-200 rounded-full pl-9 pr-4 py-1.5 text-xs text-stone-800 focus:outline-none focus:bg-white focus:border-stone-400 transition-all">
+                </div>
+
+                <!-- 3段目：ソート切り替えボタン群（更新順・あいうえお順・誕生日順） -->
+                <div class="p-1 rounded-xl flex items-center gap-1 bg-stone-100 border border-stone-200/60 w-full">
+                    <button type="button" onclick="changeCharacterSort('updated')" id="charSortBtn_updated" class="flex-1 px-3 py-1.5 rounded-lg text-xs transition-all font-semibold bg-white text-stone-900 shadow-sm text-center">更新順</button>
+                    <button type="button" onclick="changeCharacterSort('name')" id="charSortBtn_name" class="flex-1 px-3 py-1.5 rounded-lg text-xs transition-all font-medium text-stone-500 hover:text-stone-800 text-center">あいうえお順</button>
+                    <button type="button" onclick="changeCharacterSort('birthdate')" id="charSortBtn_birthdate" class="flex-1 px-3 py-1.5 rounded-lg text-xs transition-all font-medium text-stone-500 hover:text-stone-800 text-center">誕生日順</button>
+                </div>
+            </div>
+
+            <!-- キャラクター表示グリッド -->
+            <div id="characterGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4"></div>
+        </div>
 
         <!-- 📂 キャラクター詳細ビュー -->
         <div id="view-detail" class="hidden"></div>
