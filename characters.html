@@ -1083,13 +1083,13 @@ function navigateTo(target, param) {
 window.navigateTo = navigateTo;
 
 // ==========================================
-// 💡 1階層目のビューモード切り替え関数（システム別・五十音順・全キャラ）
+// 💡 1階層目のビューモード切り替え関数（反復横跳び完全対応版）
 // ==========================================
 function switchViewMode(mode) {
     console.log("🔍 switchViewMode が呼ばれました！ モード:", mode);
     window.currentViewMode = mode;
 
-    // 1. タブボタンの見た目（アクティブ状態）を切り替える
+    // 1. タブボタンの見た目（アクティブ状態）を瞬時に切り替える
     const modes = ['systems', 'index', 'all'];
     modes.forEach(m => {
         const btn = document.getElementById(`viewModeBtn_${m}`);
@@ -1102,18 +1102,17 @@ function switchViewMode(mode) {
         }
     });
 
-    // 2. 1階層目のコンテナ要素を取得（HTML側のIDに合わせて対応）
+    // 2. コンテナ要素の取得
     const folderView = document.getElementById('systemFolderView') || document.getElementById('view-folders');
     const listView = document.getElementById('characterListView') || document.getElementById('view-list') || document.getElementById('characterListContainer');
 
-    // 3. 検索キーワードを取得
+    // 3. 検索キーワードを保持したまま切り替えられるようにする
     const searchInput = document.getElementById('searchInput') || document.getElementById('folderSearchInput') || document.getElementById('charSearchInput');
     const keyword = searchInput ? searchInput.value : '';
 
-    // 4. モードに応じた表示切り替えと描画の実行
+    // 4. モードに応じた表示切り替えと描画
     if (mode === 'systems') {
         window.selectedSystemId = null;
-        // システム別ビューを表示し、リスト系ビューを隠す
         if (folderView) folderView.classList.remove('hidden');
         if (listView) listView.classList.add('hidden');
 
@@ -1121,7 +1120,6 @@ function switchViewMode(mode) {
             renderSystemFolders();
         }
     } else {
-        // 「五十音順(index)」または「全キャラ(all)」の場合はリスト用ビューを表示
         if (folderView) folderView.classList.add('hidden');
         if (listView) listView.classList.remove('hidden');
 
