@@ -2242,10 +2242,10 @@ function createCharacterCardElement(ch) {
 window.createCharacterCardElement = createCharacterCardElement;
 
 // ==========================================
-// 💡 五十音順キャラクターリスト描画関数（ヨミガナ・外国人カタカナソート完全対応版）
+// 💡 五十音順キャラクターリスト描画関数（全プロパティ対応・完全版）
 // ==========================================
 function renderKanaList(filterKeyword = "") {
-    window.selectedSystemId = null; // 五十音順表示中もシステム選択は解除
+    window.selectedSystemId = null; 
     
     const titleEl = document.getElementById('currentSystemTitle');
     if (titleEl) {
@@ -2266,6 +2266,9 @@ function renderKanaList(filterKeyword = "") {
         const searchTargets = [
             c.name,
             c.yomigana,
+            c.kana,
+            c.ruby,
+            c.read,
             c.charNameKana,
             c.epithet,
             c.epithetKana,
@@ -2280,7 +2283,6 @@ function renderKanaList(filterKeyword = "") {
         });
     });
 
-    // ソート実行
     const sortedChars = (typeof sortCharacters === 'function') ? sortCharacters(filteredChars) : filteredChars;
 
     if (sortedChars.length === 0) {
@@ -2293,7 +2295,6 @@ function renderKanaList(filterKeyword = "") {
         return;
     }
 
-    // セクション（行・アルファベット）の定義
     const sections = [
         { title: 'あ行', match: ['あ','い','う','え','お','ア','イ','ウ','エ','オ'] },
         { title: 'か行', match: ['か','き','く','け','こ','が','ぎ','ぐ','げ','ご','カ','キ','ク','ケ','コ','ガ','ギ','グ','ゲ','ゴ'] },
@@ -2317,18 +2318,17 @@ function renderKanaList(filterKeyword = "") {
     sections.forEach(sec => grouped[sec.title] = []);
 
     sortedChars.forEach(ch => {
-        // 💡 ヨミガナ（yomigana または charNameKana）を最優先で取得
-        const kana = ch.yomigana || ch.charNameKana || ch.name || '';
-        let firstChar = kana.trim().charAt(0);
+        // 💡 存在する可能性のあるヨミガナのプロパティを片っ端から網羅して取得する
+        const kana = (ch.yomigana || ch.kana || ch.ruby || ch.read || ch.charNameKana || ch.name || '').trim();
+        let firstChar = kana.charAt(0);
         
-        // 💡 外国人キャラ対応：ヨミガナがアルファベットで、名前がカタカナ/ひらがなの場合は、名前の先頭文字をグループ判定に使う
+        // 外国人キャラ対応：ヨミガナがアルファベットで、名前がカタカナ/ひらがなの場合は名前の先頭を使う
         const nameFirstChar = (ch.name || '').trim().charAt(0);
         if (/^[a-zA-Zａ-ｚＡ-Ｚ]$/.test(firstChar) && /^[\u3040-\u309F\u30A0-\u30FF]$/.test(nameFirstChar)) {
             firstChar = nameFirstChar;
         }
 
         let placed = false;
-
         for (const sec of sections) {
             if (sec.match.includes(firstChar)) {
                 grouped[sec.title].push(ch);
@@ -2339,7 +2339,6 @@ function renderKanaList(filterKeyword = "") {
         if (!placed) grouped['その他・記号'].push(ch);
     });
 
-    // セクションごとに見出しとカードを生成してgridに追加
     sections.forEach(sec => {
         const list = grouped[sec.title];
         if (list.length === 0) return;
