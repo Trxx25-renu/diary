@@ -437,7 +437,7 @@ window.handleFolderSearchInput = handleFolderSearchInput;
             .replace(/\s+/g, '');
     }
 // ==========================================
-// 💡 キャラクター一覧描画関数（修正・バッジ対応版）
+// 💡 キャラクター一覧描画関数（完成版・バッジ配置調整済み）
 // ==========================================
 function renderCharacterList(systemId, filterKeyword = "") {
     window.selectedSystemId = systemId;
@@ -461,7 +461,7 @@ function renderCharacterList(systemId, filterKeyword = "") {
 
         const searchTargets = [
             c.name,
-            c.yomigana || c.nameKana, // 💡 ここも両方に対応
+            c.yomigana || c.nameKana,
             c.epithet,
             c.epithetKana,
             c.occupation,
@@ -490,10 +490,9 @@ function renderCharacterList(systemId, filterKeyword = "") {
     sortedChars.forEach(ch => {
         const themeColor = ch.themeColor || '#78716c';
 
-        // 💡 【超重要】ここでループごとに charKana を定義する
         const charKana = ch.yomigana || ch.nameKana || '';
 
-        // ★ window.systems からシステム情報を取得（略称とカラーを反映）
+        // システム情報からバッジのテキストとカラーを取得
         const charSystem = (window.systems || []).find(s => s.id === ch.systemId);
         const badgeText = charSystem ? (charSystem.desc || charSystem.name) : '';
         const badgeClass = charSystem && charSystem.badgeColor ? charSystem.badgeColor : 'bg-stone-700';
@@ -514,11 +513,31 @@ function renderCharacterList(systemId, filterKeyword = "") {
 
         let epithetHtml = '';
         if (ch.epithet && ch.epithet.trim() !== '') {
-            const kana = ch.epithetKana ? `<span class="text-[9px] font-medium text-stone-400 block mb-0.5 truncate">${ch.epithetKana}</span>` : '';
+            // 💡 二つ名のルビ（epithetKana）の横に、小さくしたシステムバッジを並べる配置
+            const kana = ch.epithetKana ? `<span class="text-[9px] font-medium text-stone-400 truncate">${ch.epithetKana}</span>` : '';
+            
             epithetHtml = `
+                <div class="mb-1 flex items-center justify-between gap-1 w-full min-w-0">
+                    <div class="flex items-center gap-1.5 min-w-0 flex-1">
+                        ${kana}
+                        ${badgeText ? `
+                            <span class="text-[8px] font-bold px-1.5 py-0.2 rounded text-white shadow-xs shrink-0 ${badgeClass}">
+                                ${badgeText}
+                            </span>
+                        ` : ''}
+                    </div>
+                </div>
                 <div class="mb-1 truncate">
-                    ${kana}
                     <span class="text-xs font-bold tracking-wider block leading-tight" style="color: color-mix(in srgb, ${themeColor} 70%, #1c1917);">${ch.epithet}</span>
+                </div>
+            `;
+        } else if (badgeText) {
+            // 二つ名がない場合は、ルビ用の行にバッジだけでもきれいに収まるようにする
+            epithetHtml = `
+                <div class="mb-1 flex items-center justify-start gap-1 w-full min-w-0">
+                    <span class="text-[8px] font-bold px-1.5 py-0.2 rounded text-white shadow-xs shrink-0 ${badgeClass}">
+                        ${badgeText}
+                    </span>
                 </div>
             `;
         }
@@ -541,12 +560,6 @@ function renderCharacterList(systemId, filterKeyword = "") {
                         <h3 class="text-sm font-bold text-stone-800 tracking-wide truncate group-hover:text-stone-600 transition-colors">${ch.name}</h3>
                         ${charKana ? `<span class="text-[10px] text-stone-400 font-light truncate">${charKana}</span>` : ''}
                     </div>
-                    <!-- ★ システムバッジ -->
-                    ${badgeText ? `
-                        <span class="text-[9px] font-bold px-2 py-0.5 rounded-md text-white shadow-xs shrink-0 ${badgeClass}">
-                            ${badgeText}
-                        </span>
-                    ` : ''}
                 </div>
                 <p class="text-[11px] text-stone-500 font-medium truncate mt-1">${subInfoText}</p>
             </div>
@@ -2229,7 +2242,7 @@ function createCharacterCardElement(ch) {
 window.createCharacterCardElement = createCharacterCardElement;
 
 // ==========================================
-// 💡 五十音順キャラクターリスト描画関数（見出し付き）
+// 💡 五十音順キャラクターリスト描画関数（見出し付き・完全対応版）
 // ==========================================
 function renderKanaList(filterKeyword = "") {
     window.selectedSystemId = null; // 五十音順表示中もシステム選択は解除
@@ -2253,6 +2266,7 @@ function renderKanaList(filterKeyword = "") {
         const searchTargets = [
             c.name,
             c.yomigana,
+            c.charNameKana,
             c.epithet,
             c.epithetKana,
             c.occupation,
@@ -2303,7 +2317,8 @@ function renderKanaList(filterKeyword = "") {
     sections.forEach(sec => grouped[sec.title] = []);
 
     sortedChars.forEach(ch => {
-        const kana = ch.yomigana || ch.name || '';
+        // ✨ 修正：yomigana や charNameKana を優先的に参照して漢字名がその他に落ちないようにする
+        const kana = ch.yomigana || ch.charNameKana || ch.name || '';
         const firstChar = kana.trim().charAt(0);
         let placed = false;
 
@@ -2331,7 +2346,12 @@ function renderKanaList(filterKeyword = "") {
         grid.appendChild(headerDiv);
 
         list.forEach(ch => {
-            grid.appendChild(createCharacterCardElement(ch));
+            const cardEl = (typeof createCharacterCardElement === 'function') ? createCharacterCardElement(ch) : document.createElement('div');
+            
+            // ✨ 補足：もしカード要素内のレイアウトをここで直接微調整したい場合は、
+            // 生成されたカード要素の中から二つ名とシステムバッジの箇所を探すか、
+            // createCharacterCardElement 側で横並び（truncate & shrink-0）に設定してください。
+            grid.appendChild(cardEl);
         });
     });
 }
