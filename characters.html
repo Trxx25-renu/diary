@@ -461,7 +461,7 @@ function renderCharacterList(systemId, filterKeyword = "") {
 
         const searchTargets = [
             c.name,
-            c.yomigana,
+            c.yomigana || c.nameKana, // 💡 ここも両方に対応
             c.epithet,
             c.epithetKana,
             c.occupation,
@@ -489,6 +489,9 @@ function renderCharacterList(systemId, filterKeyword = "") {
 
     sortedChars.forEach(ch => {
         const themeColor = ch.themeColor || '#78716c';
+
+        // 💡 【超重要】ここでループごとに charKana を定義する
+        const charKana = ch.yomigana || ch.nameKana || '';
 
         // ★ window.systems からシステム情報を取得（略称とカラーを反映）
         const charSystem = (window.systems || []).find(s => s.id === ch.systemId);
@@ -535,9 +538,9 @@ function renderCharacterList(systemId, filterKeyword = "") {
                 ${epithetHtml}
                 <div class="flex items-center justify-between gap-1">
                     <div class="flex items-center gap-1.5 min-w-0">
-    <h3 class="text-sm font-bold text-stone-800 tracking-wide truncate group-hover:text-stone-600 transition-colors">${ch.name}</h3>
-    ${charKana ? `<span class="text-[10px] text-stone-400 font-light truncate">${charKana}</span>` : ''}
-</div>
+                        <h3 class="text-sm font-bold text-stone-800 tracking-wide truncate group-hover:text-stone-600 transition-colors">${ch.name}</h3>
+                        ${charKana ? `<span class="text-[10px] text-stone-400 font-light truncate">${charKana}</span>` : ''}
+                    </div>
                     <!-- ★ システムバッジ -->
                     ${badgeText ? `
                         <span class="text-[9px] font-bold px-2 py-0.5 rounded-md text-white shadow-xs shrink-0 ${badgeClass}">
