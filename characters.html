@@ -439,7 +439,7 @@ window.handleFolderSearchInput = handleFolderSearchInput;
     }
 
     // ==========================================
-    // 💡 キャラクター一覧描画関数
+    // 💡 キャラクター一覧描画関数（システムバッジ対応版）
     // ==========================================
     function renderCharacterList(systemId, filterKeyword = "") {
         window.selectedSystemId = systemId;
@@ -492,6 +492,11 @@ window.handleFolderSearchInput = handleFolderSearchInput;
         sortedChars.forEach(ch => {
             const themeColor = ch.themeColor || '#78716c';
 
+            // ★ window.systems からキャラクターの所属システム情報を取得
+            const charSystem = (window.systems || []).find(s => s.id === ch.systemId);
+            const badgeText = charSystem ? (charSystem.desc || charSystem.name) : '';
+            const badgeClass = charSystem && charSystem.badgeColor ? charSystem.badgeColor : 'bg-stone-700';
+
             const card = document.createElement('div');
             card.className = 'bg-white rounded-3xl p-4 border border-stone-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer flex flex-col gap-3 relative overflow-hidden group';
             card.onclick = () => navigateTo('detail', ch.id);
@@ -510,7 +515,7 @@ window.handleFolderSearchInput = handleFolderSearchInput;
             if (ch.epithet && ch.epithet.trim() !== '') {
                 const kana = ch.epithetKana ? `<span class="text-[9px] font-medium text-stone-400 block mb-0.5 truncate">${ch.epithetKana}</span>` : '';
                 epithetHtml = `
-                    <div class="mb-2 truncate">
+                    <div class="mb-1 truncate">
                         ${kana}
                         <span class="text-xs font-bold tracking-wider block leading-tight" style="color: color-mix(in srgb, ${themeColor} 70%, #1c1917);">${ch.epithet}</span>
                     </div>
@@ -530,9 +535,17 @@ window.handleFolderSearchInput = handleFolderSearchInput;
                 </div>
                 <div class="flex flex-col gap-0.5 px-1">
                     ${epithetHtml}
-                    <div class="flex items-center justify-between">
-                        <h3 class="text-sm font-bold text-stone-800 tracking-wide truncate group-hover:text-stone-600 transition-colors">${ch.name}</h3>
-                        ${ch.yomigana ? `<span class="text-[10px] text-stone-400 font-light truncate ml-1">${ch.yomigana}</span>` : ''}
+                    <div class="flex items-center justify-between gap-1">
+                        <div class="flex items-center gap-1.5 min-w-0">
+                            <h3 class="text-sm font-bold text-stone-800 tracking-wide truncate group-hover:text-stone-600 transition-colors">${ch.name}</h3>
+                            ${ch.yomigana ? `<span class="text-[10px] text-stone-400 font-light truncate">${ch.yomigana}</span>` : ''}
+                        </div>
+                        <!-- ★ システムごとの短縮名 & カラーを反映したバッジ -->
+                        ${badgeText ? `
+                            <span class="text-[9px] font-bold px-2 py-0.5 rounded-md text-white shadow-xs shrink-0 ${badgeClass}">
+                                ${badgeText}
+                            </span>
+                        ` : ''}
                     </div>
                     <p class="text-[11px] text-stone-500 font-medium truncate mt-1">${subInfoText}</p>
                 </div>
@@ -943,6 +956,39 @@ async function saveCharacter(event) {
     }
 }
 window.saveCharacter = saveCharacter;
+
+    // ==========================================
+// 💡 カラー調整・文字色判定のヘルパー関数（先に追加する）
+// ==========================================
+function getAdjustedColor(hexColor) {
+    if (!hexColor || !hexColor.startsWith('#')) return '#44403c';
+    let r = parseInt(hexColor.slice(1, 3), 16);
+    let g = parseInt(hexColor.slice(3, 5), 16);
+    let b = parseInt(hexColor.slice(5, 7), 16);
+    let yiq = (r * 299 + g * 587 + b * 114) / 1000;
+    if (yiq > 200) {
+        r = Math.floor(r * 0.7);
+        g = Math.floor(g * 0.7);
+        b = Math.floor(b * 0.7);
+        return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
+    }
+    return hexColor;
+}
+window.getAdjustedColor = getAdjustedColor;
+
+function getAdaptiveTextColor(hexColor) {
+    if (!hexColor || !hexColor.startsWith('#')) return '#1c1917';
+    let hex = hexColor.replace('#', '');
+    if (hex.length === 3) {
+        hex = hex.split('').map(char => char + char).join('');
+    }
+    const r = parseInt(hex.substr(0, 2), 16);
+    const g = parseInt(hex.substr(2, 2), 16);
+    const b = parseInt(hex.substr(4, 2), 16);
+    const yiq = (r * 299 + g * 587 + b * 114) / 1000;
+    return yiq >= 150 ? '#292524' : '#ffffff';
+}
+window.getAdaptiveTextColor = getAdaptiveTextColor;
        
 // ==========================================
 // 💡 画面やビューを切り替えるルーター関数（一本化・整理版）
@@ -1034,45 +1080,12 @@ function navigateTo(target, param) {
     }
 }
 window.navigateTo = navigateTo;
-       
-       // ==========================================
-// 💡 カラー調整・文字色判定のヘルパー関数（先に追加する）
+
+    
+    
 // ==========================================
-function getAdjustedColor(hexColor) {
-    if (!hexColor || !hexColor.startsWith('#')) return '#44403c';
-    let r = parseInt(hexColor.slice(1, 3), 16);
-    let g = parseInt(hexColor.slice(3, 5), 16);
-    let b = parseInt(hexColor.slice(5, 7), 16);
-    let yiq = (r * 299 + g * 587 + b * 114) / 1000;
-    if (yiq > 200) {
-        r = Math.floor(r * 0.7);
-        g = Math.floor(g * 0.7);
-        b = Math.floor(b * 0.7);
-        return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
-    }
-    return hexColor;
-}
-window.getAdjustedColor = getAdjustedColor;
-
-function getAdaptiveTextColor(hexColor) {
-    if (!hexColor || !hexColor.startsWith('#')) return '#1c1917';
-    let hex = hexColor.replace('#', '');
-    if (hex.length === 3) {
-        hex = hex.split('').map(char => char + char).join('');
-    }
-    const r = parseInt(hex.substr(0, 2), 16);
-    const g = parseInt(hex.substr(2, 2), 16);
-    const b = parseInt(hex.substr(4, 2), 16);
-    const yiq = (r * 299 + g * 587 + b * 114) / 1000;
-    return yiq >= 150 ? '#292524' : '#ffffff';
-}
-window.getAdaptiveTextColor = getAdaptiveTextColor;
-
-
+// 💡 3. キャラクター詳細描画関数（ギャラリー・秘匿メモ対応版）
 // ==========================================
-// 💡 キャラクター詳細描画関数（ギャラリー・秘匿メモ対応版）
-// ==========================================
-
 window._currentGalleryState = window._currentGalleryState || { characterId: null, category: 'base', index: 0 };
 
 function renderCharacterDetail(characterId) {
@@ -1093,7 +1106,7 @@ function renderCharacterDetail(characterId) {
     const themeColor = getAdjustedColor(rawThemeColor);
     const badgeTextColor = getAdaptiveTextColor(themeColor);
 
-    // 💡【統合処理】ch.images（カテゴリ別オブジェクト）または古い ch.avatars / ch.avatar から画像を安全に抽出してリスト化
+    // 💡【統合処理】画像リストの抽出
     let avatars = [];
     if (ch.images && typeof ch.images === 'object') {
         ['base', 'combat', 'sd', 'doodle'].forEach(catKey => {
@@ -1108,7 +1121,6 @@ function renderCharacterDetail(characterId) {
             }
         });
     }
-    // 旧形式のデータフォールバック
     if (avatars.length === 0) {
         if (Array.isArray(ch.avatars) && ch.avatars.length > 0) {
             avatars = ch.avatars;
@@ -1194,7 +1206,6 @@ function renderCharacterDetail(characterId) {
         const labelContainer = document.getElementById('galleryImageLabel');
         if (imgContainer) {
             if (currentImg && currentImg.url) {
-                // 🌟 メイン画像のクラスを統一（object-containで全体を表示）
                 imgContainer.innerHTML = `<img src="${currentImg.url}" class="w-full h-auto max-h-[600px] object-contain rounded-xl transition-all duration-300 [image-rendering:-webkit-optimize-contrast]">`;
             } else {
                 imgContainer.innerHTML = `<div class="text-stone-400 text-xs py-20"><i class="fa-solid fa-image text-3xl mb-1 block"></i>画像がありません</div>`;
@@ -1306,7 +1317,6 @@ function renderCharacterDetail(characterId) {
         `;
     }
 
-    // 💎 二つ名（epithet）のフォントサイズを控えめなサブタイトルサイズに調整
     let epithetHtml = '';
     if (ch.epithet && ch.epithet.trim() !== '') {
         const kana = ch.epithetKana ? `<span class="text-[10px] font-medium text-stone-400 block mb-0.5">${ch.epithetKana}</span>` : '';
@@ -1326,7 +1336,6 @@ function renderCharacterDetail(characterId) {
         </div>
     `;
 
-    // 🔗 複数リンク対応（旧形式の ch.sheetUrl があれば自動でフォールバックして対応）
     let linksList = [];
     if (Array.isArray(ch.links) && ch.links.length > 0) {
         linksList = ch.links;
@@ -1360,7 +1369,7 @@ function renderCharacterDetail(characterId) {
         customFieldsHtml += `<div class="space-y-2.5 mt-4 pt-4 border-t border-stone-100"><h4 class="text-xs font-bold text-stone-500">カスタム情報（ネタバレはクリックで表示）</h4>`;
         textFields.forEach(f => {
             const rawVal = ch.customValues && ch.customValues[f.id] !== undefined ? String(ch.customValues[f.id]) : '-';
-            const parsedVal = parseSpoilers(rawVal);
+            const parsedVal = typeof parseSpoilers === 'function' ? parseSpoilers(rawVal) : rawVal;
             customFieldsHtml += `
                 <div class="flex flex-col sm:flex-row sm:justify-between text-xs gap-1">
                     <span class="font-medium text-stone-400 w-32 shrink-0">${f.label}:</span>
@@ -1420,27 +1429,21 @@ function renderCharacterDetail(characterId) {
                     <h4 class="text-xs font-bold text-rose-600 mb-1.5 flex items-center gap-1.5">
                         <i class="fa-solid fa-user-secret text-rose-500"></i> 秘匿メモ（ネタバレ）
                     </h4>
-                    <!-- 日記側と同じ構造のコンテナ -->
                     <div class="relative bg-rose-50/40 text-stone-800 rounded-2xl p-4 border border-rose-200/70 cursor-pointer overflow-hidden transition-all shadow-xs group" onclick="
                         const container = this;
                         const overlay = container.querySelector('.js-secret-overlay');
                         const isHidden = overlay.style.display !== 'none';
                         overlay.style.display = isHidden ? 'none' : 'flex';
                     ">
-                        <!-- ヘッダー部分 -->
                         <div class="flex items-center justify-between mb-2 pb-1.5 border-b border-rose-200/60 text-xs text-rose-800 font-bold select-none">
                             <span class="flex items-center gap-1.5">
                                 <i class="fa-solid fa-triangle-exclamation text-rose-500"></i> ネタバレ防止用本文
                             </span>
                             <span class="text-[10px] text-rose-400 font-normal">タップで切替</span>
                         </div>
-
-                        <!-- 本文エリア（最初から中身はあるが、オーバーレイで隠されている） -->
                         <div class="text-xs text-stone-700 leading-relaxed whitespace-pre-wrap text-left">
                             ${secret}
                         </div>
-
-                        <!-- 🙈 未開封オーバーレイ（不透明化して透けを防止） -->
                         <div class="js-secret-overlay absolute inset-0 bg-rose-100 flex flex-col items-center justify-center gap-1.5 text-stone-700 transition-all select-none z-10">
                             <div class="w-8 h-8 rounded-full bg-white/90 flex items-center justify-center text-rose-600 text-sm shadow-xs group-hover:scale-110 transition-transform">
                                 <i class="fa-solid fa-eye-slash"></i>
@@ -1506,7 +1509,7 @@ function renderCharacterDetail(characterId) {
                     ${window.isAdmin ? `
                         <button onclick="openEditCharacterModal('${characterId}')" class="flex items-center gap-1.5 text-xs font-bold text-stone-700 bg-white hover:bg-stone-50 border border-stone-300 px-4 py-2 rounded-xl shadow-xs hover:shadow transition-all">
                             <i class="fa-solid fa-pen text-stone-500 text-[11px]"></i>
-                          <span>編集</span>
+                            <span>編集</span>
                         </button>
                         <button onclick="exportCharacterJson('${characterId}')" class="flex items-center gap-1.5 text-xs font-bold text-stone-700 bg-white hover:bg-stone-50 border border-stone-300 px-3 py-2 rounded-xl shadow-xs hover:shadow transition-all" title="このキャラのJSONを書き出し">
                             <i class="fa-solid fa-file-code text-stone-500 text-[11px]"></i>
@@ -1514,7 +1517,7 @@ function renderCharacterDetail(characterId) {
                         </button>
                         <button onclick="deleteCharacter('${characterId}')" class="flex items-center gap-1.5 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 px-4 py-2 rounded-xl shadow-xs hover:shadow transition-all">
                             <i class="fa-solid fa-trash text-[11px]"></i>
-                          <span>削除</span>
+                            <span>削除</span>
                         </button>
                     ` : ''}
                     <button onclick="navigateTo('characterList', '${ch.systemId}')" class="flex items-center gap-1.5 text-xs font-bold text-stone-700 bg-stone-100 hover:bg-stone-200 px-4 py-2 rounded-xl transition-all">
