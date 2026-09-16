@@ -2242,7 +2242,7 @@ function createCharacterCardElement(ch) {
 window.createCharacterCardElement = createCharacterCardElement;
 
 // ==========================================
-// 💡 五十音順キャラクターリスト描画関数（見出し付き・完全対応版）
+// 💡 五十音順キャラクターリスト描画関数（ヨミガナ・外国人カタカナソート完全対応版）
 // ==========================================
 function renderKanaList(filterKeyword = "") {
     window.selectedSystemId = null; // 五十音順表示中もシステム選択は解除
@@ -2317,9 +2317,16 @@ function renderKanaList(filterKeyword = "") {
     sections.forEach(sec => grouped[sec.title] = []);
 
     sortedChars.forEach(ch => {
-        // ✨ 修正：yomigana や charNameKana を優先的に参照して漢字名がその他に落ちないようにする
+        // 💡 ヨミガナ（yomigana または charNameKana）を最優先で取得
         const kana = ch.yomigana || ch.charNameKana || ch.name || '';
-        const firstChar = kana.trim().charAt(0);
+        let firstChar = kana.trim().charAt(0);
+        
+        // 💡 外国人キャラ対応：ヨミガナがアルファベットで、名前がカタカナ/ひらがなの場合は、名前の先頭文字をグループ判定に使う
+        const nameFirstChar = (ch.name || '').trim().charAt(0);
+        if (/^[a-zA-Zａ-ｚＡ-Ｚ]$/.test(firstChar) && /^[\u3040-\u309F\u30A0-\u30FF]$/.test(nameFirstChar)) {
+            firstChar = nameFirstChar;
+        }
+
         let placed = false;
 
         for (const sec of sections) {
@@ -2347,10 +2354,6 @@ function renderKanaList(filterKeyword = "") {
 
         list.forEach(ch => {
             const cardEl = (typeof createCharacterCardElement === 'function') ? createCharacterCardElement(ch) : document.createElement('div');
-            
-            // ✨ 補足：もしカード要素内のレイアウトをここで直接微調整したい場合は、
-            // 生成されたカード要素の中から二つ名とシステムバッジの箇所を探すか、
-            // createCharacterCardElement 側で横並び（truncate & shrink-0）に設定してください。
             grid.appendChild(cardEl);
         });
     });
@@ -2453,7 +2456,7 @@ function renderBirthdayList(filterKeyword = "") {
 window.renderBirthdayList = renderBirthdayList;
        
 // ==========================================
-// 💡 キャラクターの並び替え機能（修正・頑健版）
+// 💡 キャラクターの並び替え機能（外国人キャラのカタカナソート・ヨミガナ完全対応版）
 // ==========================================
 window.currentCharacterSortMode = window.currentCharacterSortMode || 'updated';
 
@@ -2497,7 +2500,7 @@ function changeCharacterSort(mode) {
     }
 }
 window.changeCharacterSort = changeCharacterSort;
-       
+        
 // 文字のグループ（1:日本語, 2:アルファベット, 3:その他）を判定するヘルパー
 function getCharGroupOrder(str) {
     if (!str) return 3;
@@ -2532,10 +2535,21 @@ function sortCharacters(chars) {
     const mode = window.currentCharacterSortMode || 'updated';
 
     if (mode === 'name') {
-        // ① 五十音順（読み仮名優先、日本語 → スペル → その他の順）
+        // ① 五十音順（読み仮名・カタカナ読み優先、日本語 → スペル → その他の順）
         sorted.sort((a, b) => {
-            const keyA = (a.nameKana || a.name || '').trim();
-            const keyB = (b.nameKana || b.name || '').trim();
+            let keyA = (a.yomigana || a.nameKana || a.charNameKana || a.name || '').trim();
+            let keyB = (b.yomigana || b.nameKana || b.charNameKana || b.name || '').trim();
+
+            // 💡 外国人キャラ対応：ヨミガナがアルファベットで、名前がカタカナ/ひらがなの場合は名前をソートキーに使う
+            const nameFirstA = (a.name || '').trim().charAt(0);
+            if (/^[a-zA-Zａ-ｚＡ-Ｚ]$/.test(keyA.charAt(0)) && /^[\u3040-\u309F\u30A0-\u30FF]$/.test(nameFirstA)) {
+                keyA = a.name.trim();
+            }
+
+            const nameFirstB = (b.name || '').trim().charAt(0);
+            if (/^[a-zA-Zａ-ｚＡ-Ｚ]$/.test(keyB.charAt(0)) && /^[\u3040-\u309F\u30A0-\u30FF]$/.test(nameFirstB)) {
+                keyB = b.name.trim();
+            }
 
             const groupA = getCharGroupOrder(keyA);
             const groupB = getCharGroupOrder(keyB);
