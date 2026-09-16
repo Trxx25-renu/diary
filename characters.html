@@ -2088,56 +2088,53 @@ function removeSystem(sysId) {
 }
 window.removeSystem = removeSystem;
 
-    // ==========================================
-// 💡 表示モード切り替え関数（システム別・五十音順・全キャラリスト）
+// ==========================================
+// 💡 表示モード切り替え関数（HTMLのID・引数完全対応版）
 // ==========================================
 function switchViewMode(mode) {
+    console.log("👉 switchViewMode 実行: ", mode);
     window.currentViewMode = mode;
 
-    // ボタンの見た目（アクティブ状態）を切り替える処理
+    // HTML側のボタンIDに対応させた要素のマッピング
     const buttons = {
-        'system': document.getElementById('btnViewSystem'),
-        'kana': document.getElementById('btnViewKana'),
-        'all': document.getElementById('btnViewAll')
+        'systems': document.getElementById('viewModeBtn_systems'),
+        'index': document.getElementById('viewModeBtn_index'),
+        'all': document.getElementById('viewModeBtn_all')
     };
 
-    // すべてのボタンのスタイルを非アクティブ風に戻す（必要に応じてクラス調整）
+    // ボタンの選択・非選択スタイルを切り替え
     Object.keys(buttons).forEach(key => {
         const btn = buttons[key];
         if (btn) {
             if (key === mode) {
-                // 選択中のボタンのデザイン
-                btn.className = "flex-1 py-2 text-xs font-bold bg-white text-stone-800 rounded-xl shadow-xs transition-all";
+                // 選択中
+                btn.className = "w-full px-2 py-1.5 rounded-lg text-xs transition-all font-semibold bg-white text-stone-950 shadow-xs text-center truncate";
             } else {
-                // 非選択のボタンのデザイン
-                btn.className = "flex-1 py-2 text-xs font-medium text-stone-500 hover:text-stone-800 transition-all";
+                // 非選択
+                btn.className = "w-full px-2 py-1.5 rounded-lg text-xs transition-all font-medium text-stone-500 hover:text-stone-800 text-center truncate";
             }
         }
     });
 
-    // モードに応じた画面・リスト描画の切り替え
-    const container = document.getElementById('characterGrid');
-    if (!container) return;
-
-    if (mode === 'system') {
-        // システム別ビューに戻る（最後に選択していたシステムがあればそれを表示）
-        const targetSystemId = window.selectedSystemId || (window.systems && window.systems[0] ? window.systems[0].id : '');
-        if (typeof renderCharacterList === 'function') {
-            renderCharacterList(targetSystemId);
+    // モードに応じた処理の分岐
+    if (mode === 'systems') {
+        // システム別フォルダビューを表示する場合の処理
+        if (typeof renderSystemFolders === 'function') {
+            renderSystemFolders();
         }
-    } else if (mode === 'kana') {
-        // 五十音順ビューの描画処理（もし関数があれば）
+    } else if (mode === 'index') {
+        // 五十音順ビュー
         if (typeof renderKanaList === 'function') {
             renderKanaList();
         } else {
-            console.log("五十音順リスト描画関数が未定義です");
+            console.error("❌ renderKanaList が定義されていません");
         }
     } else if (mode === 'all') {
-        // 全キャラリストビューの描画処理（もし関数があれば）
+        // 全キャラリストビュー
         if (typeof renderAllCharacterList === 'function') {
             renderAllCharacterList();
         } else {
-            console.log("全キャラリスト描画関数が未定義です");
+            console.error("❌ renderAllCharacterList が定義されていません");
         }
     }
 }
