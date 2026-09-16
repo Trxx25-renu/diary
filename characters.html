@@ -439,123 +439,123 @@ window.handleFolderSearchInput = handleFolderSearchInput;
     }
 
     // ==========================================
-    // 💡 キャラクター一覧描画関数（システムバッジ対応版）
-    // ==========================================
-    function renderCharacterList(systemId, filterKeyword = "") {
-        window.selectedSystemId = systemId;
-        
-        const sys = (window.systems || []).find(s => s.id === systemId);
-        const titleEl = document.getElementById('currentSystemTitle');
-        if (titleEl) {
-            titleEl.textContent = sys ? sys.name : 'キャラクター一覧';
-        }
-
-        const grid = document.getElementById('characterGrid');
-        if (!grid) return;
-
-        grid.innerHTML = '';
-        
-        const keyword = normalizeText(filterKeyword);
-        const systemChars = (window.characters || []).filter(c => c.systemId === systemId);
-        
-        const filteredChars = systemChars.filter(c => {
-            if (!keyword) return true;
-
-            const searchTargets = [
-                c.name,
-                c.yomigana,
-                c.epithet,
-                c.epithetKana,
-                c.occupation,
-                c.age,
-                c.birthdate
-            ];
-
-            return searchTargets.some(target => {
-                if (target == null) return false;
-                return normalizeText(target).includes(keyword);
-            });
-        });
-
-        const sortedChars = (typeof sortCharacters === 'function') ? sortCharacters(filteredChars) : filteredChars;
-
-        if (sortedChars.length === 0) {
-            grid.innerHTML = `
-                <div class="col-span-full text-center py-12 text-stone-400 text-xs">
-                    <i class="fa-solid fa-user-slash text-2xl mb-2"></i>
-                    <p>${systemChars.length === 0 ? 'このシステムに登録されているキャラクターはまだいません。' : '条件に一致するキャラクターがいません。'}</p>
-                </div>
-            `;
-            return;
-        }
-
-        sortedChars.forEach(ch => {
-            const themeColor = ch.themeColor || '#78716c';
-
-            // ★ window.systems からキャラクターの所属システム情報を取得
-            const charSystem = (window.systems || []).find(s => s.id === ch.systemId);
-            const badgeText = charSystem ? (charSystem.desc || charSystem.name) : '';
-            const badgeClass = charSystem && charSystem.badgeColor ? charSystem.badgeColor : 'bg-stone-700';
-
-            const card = document.createElement('div');
-            card.className = 'bg-white rounded-3xl p-4 border border-stone-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer flex flex-col gap-3 relative overflow-hidden group';
-            card.onclick = () => navigateTo('detail', ch.id);
-
-            let thumbHtml = `<div class="w-full h-full flex items-center justify-center text-stone-300 bg-stone-50"><i class="fa-solid fa-user text-3xl"></i></div>`;
-            
-            if (ch.thumbnail && ch.thumbnail.trim() !== "") {
-                thumbHtml = `<img src="${ch.thumbnail}" class="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500">`;
-            } else if (ch.avatar && ch.avatar.trim() !== "") {
-                thumbHtml = `<img src="${ch.avatar}" class="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500">`;
-            } else if (ch.images && ch.images.base && ch.images.base.length > 0 && ch.images.base[0].url) {
-                thumbHtml = `<img src="${ch.images.base[0].url}" class="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500">`;
-            }
-
-            let epithetHtml = '';
-            if (ch.epithet && ch.epithet.trim() !== '') {
-                const kana = ch.epithetKana ? `<span class="text-[9px] font-medium text-stone-400 block mb-0.5 truncate">${ch.epithetKana}</span>` : '';
-                epithetHtml = `
-                    <div class="mb-1 truncate">
-                        ${kana}
-                        <span class="text-xs font-bold tracking-wider block leading-tight" style="color: color-mix(in srgb, ${themeColor} 70%, #1c1917);">${ch.epithet}</span>
-                    </div>
-                `;
-            }
-
-            let ageAndBirthText = '';
-            if (ch.age) ageAndBirthText += `${ch.age}歳`;
-            if (ch.birthdate) {
-                ageAndBirthText += ageAndBirthText ? ` <span class="text-stone-300 font-normal">/</span> ${ch.birthdate}` : ch.birthdate;
-            }
-            const subInfoText = ageAndBirthText || ch.occupation || '';
-
-            card.innerHTML = `
-                <div class="aspect-square w-full rounded-2xl overflow-hidden relative border-2 border-stone-200 shadow-inner flex items-center justify-center" style="background-color: ${themeColor};">
-                    ${thumbHtml}
-                </div>
-                <div class="flex flex-col gap-0.5 px-1">
-                    ${epithetHtml}
-                    <div class="flex items-center justify-between gap-1">
-                        <div class="flex items-center gap-1.5 min-w-0">
-                            <h3 class="text-sm font-bold text-stone-800 tracking-wide truncate group-hover:text-stone-600 transition-colors">${ch.name}</h3>
-                            ${ch.yomigana ? `<span class="text-[10px] text-stone-400 font-light truncate">${ch.yomigana}</span>` : ''}
-                        </div>
-                        <!-- ★ システムごとの短縮名 & カラーを反映したバッジ -->
-                        ${badgeText ? `
-                            <span class="text-[9px] font-bold px-2 py-0.5 rounded-md text-white shadow-xs shrink-0 ${badgeClass}">
-                                ${badgeText}
-                            </span>
-                        ` : ''}
-                    </div>
-                    <p class="text-[11px] text-stone-500 font-medium truncate mt-1">${subInfoText}</p>
-                </div>
-            `;
-
-            grid.appendChild(card);
-        });
+// 💡 キャラクター一覧描画関数（修正・バッジ対応版）
+// ==========================================
+function renderCharacterList(systemId, filterKeyword = "") {
+    window.selectedSystemId = systemId;
+    
+    const sys = (window.systems || []).find(s => s.id === systemId);
+    const titleEl = document.getElementById('currentSystemTitle');
+    if (titleEl) {
+        titleEl.textContent = sys ? sys.name : 'キャラクター一覧';
     }
-    window.renderCharacterList = renderCharacterList;
 
+    const grid = document.getElementById('characterGrid');
+    if (!grid) return;
+
+    grid.innerHTML = '';
+    
+    const keyword = normalizeText(filterKeyword);
+    const systemChars = (window.characters || []).filter(c => c.systemId === systemId);
+    
+    const filteredChars = systemChars.filter(c => {
+        if (!keyword) return true;
+
+        const searchTargets = [
+            c.name,
+            c.yomigana,
+            c.epithet,
+            c.epithetKana,
+            c.occupation,
+            c.age,
+            c.birthdate
+        ];
+
+        return searchTargets.some(target => {
+            if (target == null) return false;
+            return normalizeText(target).includes(keyword);
+        });
+    });
+
+    const sortedChars = (typeof sortCharacters === 'function') ? sortCharacters(filteredChars) : filteredChars;
+
+    if (sortedChars.length === 0) {
+        grid.innerHTML = `
+            <div class="col-span-full text-center py-12 text-stone-400 text-xs">
+                <i class="fa-solid fa-user-slash text-2xl mb-2"></i>
+                <p>${systemChars.length === 0 ? 'このシステムに登録されているキャラクターはまだいません。' : '条件に一致するキャラクターがいません。'}</p>
+            </div>
+        `;
+        return;
+    }
+
+    sortedChars.forEach(ch => {
+        const themeColor = ch.themeColor || '#78716c';
+
+        // ★ window.systems からシステム情報を取得（略称とカラーを反映）
+        const charSystem = (window.systems || []).find(s => s.id === ch.systemId);
+        const badgeText = charSystem ? (charSystem.desc || charSystem.name) : '';
+        const badgeClass = charSystem && charSystem.badgeColor ? charSystem.badgeColor : 'bg-stone-700';
+
+        const card = document.createElement('div');
+        card.className = 'bg-white rounded-3xl p-4 border border-stone-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer flex flex-col gap-3 relative overflow-hidden group';
+        card.onclick = () => navigateTo('detail', ch.id);
+
+        let thumbHtml = `<div class="w-full h-full flex items-center justify-center text-stone-300 bg-stone-50"><i class="fa-solid fa-user text-3xl"></i></div>`;
+        
+        if (ch.thumbnail && ch.thumbnail.trim() !== "") {
+            thumbHtml = `<img src="${ch.thumbnail}" class="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500">`;
+        } else if (ch.avatar && ch.avatar.trim() !== "") {
+            thumbHtml = `<img src="${ch.avatar}" class="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500">`;
+        } else if (ch.images && ch.images.base && ch.images.base.length > 0 && ch.images.base[0].url) {
+            thumbHtml = `<img src="${ch.images.base[0].url}" class="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500">`;
+        }
+
+        let epithetHtml = '';
+        if (ch.epithet && ch.epithet.trim() !== '') {
+            const kana = ch.epithetKana ? `<span class="text-[9px] font-medium text-stone-400 block mb-0.5 truncate">${ch.epithetKana}</span>` : '';
+            epithetHtml = `
+                <div class="mb-1 truncate">
+                    ${kana}
+                    <span class="text-xs font-bold tracking-wider block leading-tight" style="color: color-mix(in srgb, ${themeColor} 70%, #1c1917);">${ch.epithet}</span>
+                </div>
+            `;
+        }
+
+        let ageAndBirthText = '';
+        if (ch.age) ageAndBirthText += `${ch.age}歳`;
+        if (ch.birthdate) {
+            ageAndBirthText += ageAndBirthText ? ` <span class="text-stone-300 font-normal">/</span> ${ch.birthdate}` : ch.birthdate;
+        }
+        const subInfoText = ageAndBirthText || ch.occupation || '';
+
+        card.innerHTML = `
+            <div class="aspect-square w-full rounded-2xl overflow-hidden relative border-2 border-stone-200 shadow-inner flex items-center justify-center" style="background-color: ${themeColor};">
+                ${thumbHtml}
+            </div>
+            <div class="flex flex-col gap-0.5 px-1">
+                ${epithetHtml}
+                <div class="flex items-center justify-between gap-1">
+                    <div class="flex items-center gap-1.5 min-w-0">
+                        <h3 class="text-sm font-bold text-stone-800 tracking-wide truncate group-hover:text-stone-600 transition-colors">${ch.name}</h3>
+                        ${ch.yomigana ? `<span class="text-[10px] text-stone-400 font-light truncate">${ch.yomigana}</span>` : ''}
+                    </div>
+                    <!-- ★ システムバッジ -->
+                    ${badgeText ? `
+                        <span class="text-[9px] font-bold px-2 py-0.5 rounded-md text-white shadow-xs shrink-0 ${badgeClass}">
+                            ${badgeText}
+                        </span>
+                    ` : ''}
+                </div>
+                <p class="text-[11px] text-stone-500 font-medium truncate mt-1">${subInfoText}</p>
+            </div>
+        `;
+
+        grid.appendChild(card);
+    });
+}
+window.renderCharacterList = renderCharacterList;
+    
 // ==========================================
 // 💡 キャラクター画像（アイコン・立ち絵・ギャラリー）統合管理まわり
 // ==========================================
@@ -2087,6 +2087,61 @@ function removeSystem(sysId) {
     }
 }
 window.removeSystem = removeSystem;
+
+    // ==========================================
+// 💡 表示モード切り替え関数（システム別・五十音順・全キャラリスト）
+// ==========================================
+function switchViewMode(mode) {
+    window.currentViewMode = mode;
+
+    // ボタンの見た目（アクティブ状態）を切り替える処理
+    const buttons = {
+        'system': document.getElementById('btnViewSystem'),
+        'kana': document.getElementById('btnViewKana'),
+        'all': document.getElementById('btnViewAll')
+    };
+
+    // すべてのボタンのスタイルを非アクティブ風に戻す（必要に応じてクラス調整）
+    Object.keys(buttons).forEach(key => {
+        const btn = buttons[key];
+        if (btn) {
+            if (key === mode) {
+                // 選択中のボタンのデザイン
+                btn.className = "flex-1 py-2 text-xs font-bold bg-white text-stone-800 rounded-xl shadow-xs transition-all";
+            } else {
+                // 非選択のボタンのデザイン
+                btn.className = "flex-1 py-2 text-xs font-medium text-stone-500 hover:text-stone-800 transition-all";
+            }
+        }
+    });
+
+    // モードに応じた画面・リスト描画の切り替え
+    const container = document.getElementById('characterGrid');
+    if (!container) return;
+
+    if (mode === 'system') {
+        // システム別ビューに戻る（最後に選択していたシステムがあればそれを表示）
+        const targetSystemId = window.selectedSystemId || (window.systems && window.systems[0] ? window.systems[0].id : '');
+        if (typeof renderCharacterList === 'function') {
+            renderCharacterList(targetSystemId);
+        }
+    } else if (mode === 'kana') {
+        // 五十音順ビューの描画処理（もし関数があれば）
+        if (typeof renderKanaList === 'function') {
+            renderKanaList();
+        } else {
+            console.log("五十音順リスト描画関数が未定義です");
+        }
+    } else if (mode === 'all') {
+        // 全キャラリストビューの描画処理（もし関数があれば）
+        if (typeof renderAllCharacterList === 'function') {
+            renderAllCharacterList();
+        } else {
+            console.log("全キャラリスト描画関数が未定義です");
+        }
+    }
+}
+window.switchViewMode = switchViewMode;
        
 // ==========================================
 // 💡 キャラクターの並び替え機能（更新順・五十音順・誕生日順）
