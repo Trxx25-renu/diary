@@ -2242,7 +2242,7 @@ function createCharacterCardElement(ch) {
 window.createCharacterCardElement = createCharacterCardElement;
 
 // ==========================================
-// 💡 五十音順キャラクターリスト描画関数（全プロパティ対応・完全版）
+// 💡 五十音順キャラクターリスト描画関数（nameKana完全対応版）
 // ==========================================
 function renderKanaList(filterKeyword = "") {
     window.selectedSystemId = null; 
@@ -2265,11 +2265,8 @@ function renderKanaList(filterKeyword = "") {
 
         const searchTargets = [
             c.name,
+            c.nameKana,
             c.yomigana,
-            c.kana,
-            c.ruby,
-            c.read,
-            c.charNameKana,
             c.epithet,
             c.epithetKana,
             c.occupation,
@@ -2318,11 +2315,11 @@ function renderKanaList(filterKeyword = "") {
     sections.forEach(sec => grouped[sec.title] = []);
 
     sortedChars.forEach(ch => {
-        // 💡 存在する可能性のあるヨミガナのプロパティを片っ端から網羅して取得する
-        const kana = (ch.yomigana || ch.kana || ch.ruby || ch.read || ch.charNameKana || ch.name || '').trim();
+        // 💡 フォームの入力項目に合わせた `nameKana` を最優先で取得
+        const kana = (ch.nameKana || ch.yomigana || ch.name || '').trim();
         let firstChar = kana.charAt(0);
         
-        // 外国人キャラ対応：ヨミガナがアルファベットで、名前がカタカナ/ひらがなの場合は名前の先頭を使う
+        // 💡 外国人キャラ対応：nameKana がアルファベットで、名前（name）がカタカナ/ひらがなの場合は名前の先頭を使う
         const nameFirstChar = (ch.name || '').trim().charAt(0);
         if (/^[a-zA-Zａ-ｚＡ-Ｚ]$/.test(firstChar) && /^[\u3040-\u309F\u30A0-\u30FF]$/.test(nameFirstChar)) {
             firstChar = nameFirstChar;
