@@ -2146,12 +2146,12 @@ function removeSystem(sysId) {
 window.removeSystem = removeSystem;
 
 // ==========================================
-// 💡 共通：キャラクターカードのHTMLを生成するヘルパー関数（完全版）
+// 💡 共通：キャラクターカードのHTMLを生成するヘルパー関数（名前・読み仮名縦並び修正版）
 // ==========================================
 function createCharacterCardElement(ch) {
     const themeColor = ch.themeColor || '#78716c';
 
-    // 💡 ここで確実に charKana を定義する（エラー防止の要）
+    // 💡 確実に charKana を定義する（エラー防止の要）
     const charKana = ch.yomigana || ch.nameKana || '';
 
     // システム情報を取得（バッジ表示用）
@@ -2189,7 +2189,7 @@ function createCharacterCardElement(ch) {
     if (ch.birthdate) {
         ageAndBirthText += ageAndBirthText ? ` <span class="text-stone-300 font-normal">/</span> ${ch.birthdate}` : ch.birthdate;
     }
-    const subInfoText = ageAndBirthText || ch.occupation || '';
+    const subInfoTest = ageAndBirthText || ch.occupation || '';
 
     card.innerHTML = `
         <div class="aspect-square w-full rounded-2xl overflow-hidden relative border-2 border-stone-200 shadow-inner flex items-center justify-center" style="background-color: ${themeColor};">
@@ -2197,18 +2197,19 @@ function createCharacterCardElement(ch) {
         </div>
         <div class="flex flex-col gap-0.5 px-1">
             ${epithetHtml}
-            <div class="flex items-center justify-between gap-1">
-                <div class="flex items-center gap-1.5 min-w-0">
+            <div class="flex items-start justify-between gap-1">
+                <div class="flex flex-col min-w-0 flex-1">
+                    <!-- 💡 読み仮名を「名前の上」に配置し、幅を確保 -->
+                    ${charKana ? `<span class="text-[10px] text-stone-400 font-light leading-tight truncate">${charKana}</span>` : ''}
                     <h3 class="text-sm font-bold text-stone-800 tracking-wide truncate group-hover:text-stone-600 transition-colors">${ch.name}</h3>
-                    ${charKana ? `<span class="text-[10px] text-stone-400 font-light truncate">${charKana}</span>` : ''}
                 </div>
                 ${badgeText ? `
-                    <span class="text-[9px] font-bold px-2 py-0.5 rounded-md text-white shadow-xs shrink-0 ${badgeClass}">
+                    <span class="text-[9px] font-bold px-2 py-0.5 rounded-md text-white shadow-xs shrink-0 mt-0.5 ${badgeClass}">
                         ${badgeText}
                     </span>
                 ` : ''}
             </div>
-            <p class="text-[11px] text-stone-500 font-medium truncate mt-1">${subInfoText}</p>
+            <p class="text-[11px] text-stone-500 font-medium truncate mt-1">${subInfoTest}</p>
         </div>
     `;
 
