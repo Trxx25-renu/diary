@@ -2089,7 +2089,7 @@ function removeSystem(sysId) {
 window.removeSystem = removeSystem;
 
 // ==========================================
-// 💡 表示モード切り替え関数（HTMLのID・引数完全対応版）
+// 💡 表示モード切り替え関数（ビュー切り替え＋ID完全対応版）
 // ==========================================
 function switchViewMode(mode) {
     console.log("👉 switchViewMode 実行: ", mode);
@@ -2116,25 +2116,38 @@ function switchViewMode(mode) {
         }
     });
 
-    // モードに応じた処理の分岐
+    // ビュー自体の切り替え要素を取得
+    const viewFolders = document.getElementById('view-folders');
+    const viewList = document.getElementById('view-list');
+
+    // モードに応じた処理の分岐と画面切り替え
     if (mode === 'systems') {
-        // システム別フォルダビューを表示する場合の処理
+        // システム選択ビューを表示、リストビューを隠す
+        if (viewFolders) viewFolders.classList.remove('hidden');
+        if (viewList) viewList.classList.add('hidden');
+
         if (typeof renderSystemFolders === 'function') {
             renderSystemFolders();
         }
-    } else if (mode === 'index') {
-        // 五十音順ビュー
-        if (typeof renderKanaList === 'function') {
-            renderKanaList();
-        } else {
-            console.error("❌ renderKanaList が定義されていません");
-        }
-    } else if (mode === 'all') {
-        // 全キャラリストビュー
-        if (typeof renderAllCharacterList === 'function') {
-            renderAllCharacterList();
-        } else {
-            console.error("❌ renderAllCharacterList が定義されていません");
+    } else {
+        // 「五十音順」または「全キャラリスト」の場合は、フォルダビューを隠してリストビューを表示する
+        if (viewFolders) viewFolders.classList.add('hidden');
+        if (viewList) viewList.classList.remove('hidden');
+
+        if (mode === 'index') {
+            // 五十音順ビュー
+            if (typeof renderKanaList === 'function') {
+                renderKanaList();
+            } else {
+                console.error("❌ renderKanaList が定義されていません");
+            }
+        } else if (mode === 'all') {
+            // 全キャラリストビュー
+            if (typeof renderAllCharacterList === 'function') {
+                renderAllCharacterList();
+            } else {
+                console.error("❌ renderAllCharacterList が定義されていません");
+            }
         }
     }
 }
