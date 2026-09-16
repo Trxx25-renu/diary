@@ -436,8 +436,7 @@ window.handleFolderSearchInput = handleFolderSearchInput;
             })
             .replace(/\s+/g, '');
     }
-
-    // ==========================================
+// ==========================================
 // 💡 キャラクター一覧描画関数（修正・バッジ対応版）
 // ==========================================
 function renderCharacterList(systemId, filterKeyword = "") {
@@ -2138,12 +2137,12 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ==========================================
-// 💡 共通：キャラクターカードのHTMLを生成するヘルパー関数
+// 💡 共通：キャラクターカードのHTMLを生成するヘルパー関数（完全版）
 // ==========================================
 function createCharacterCardElement(ch) {
     const themeColor = ch.themeColor || '#78716c';
 
-    // 💡 読み仮名を安全に取得する（yomigana と nameKana の両方に対応）
+    // 💡 ここで確実に charKana を定義する（エラー防止の要）
     const charKana = ch.yomigana || ch.nameKana || '';
 
     // システム情報を取得（バッジ表示用）
@@ -2192,7 +2191,6 @@ function createCharacterCardElement(ch) {
             <div class="flex items-center justify-between gap-1">
                 <div class="flex items-center gap-1.5 min-w-0">
                     <h3 class="text-sm font-bold text-stone-800 tracking-wide truncate group-hover:text-stone-600 transition-colors">${ch.name}</h3>
-                    <!-- 💡 ここを ch.yomigana から charKana に修正 -->
                     ${charKana ? `<span class="text-[10px] text-stone-400 font-light truncate">${charKana}</span>` : ''}
                 </div>
                 ${badgeText ? `
