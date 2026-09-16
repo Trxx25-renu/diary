@@ -537,9 +537,9 @@ function renderCharacterList(systemId, filterKeyword = "") {
                 ${epithetHtml}
                 <div class="flex items-center justify-between gap-1">
                     <div class="flex items-center gap-1.5 min-w-0">
-                        <h3 class="text-sm font-bold text-stone-800 tracking-wide truncate group-hover:text-stone-600 transition-colors">${ch.name}</h3>
-                        ${ch.yomigana ? `<span class="text-[10px] text-stone-400 font-light truncate">${ch.yomigana}</span>` : ''}
-                    </div>
+    <h3 class="text-sm font-bold text-stone-800 tracking-wide truncate group-hover:text-stone-600 transition-colors">${ch.name}</h3>
+    ${charKana ? `<span class="text-[10px] text-stone-400 font-light truncate">${charKana}</span>` : ''}
+</div>
                     <!-- ★ システムバッジ -->
                     ${badgeText ? `
                         <span class="text-[9px] font-bold px-2 py-0.5 rounded-md text-white shadow-xs shrink-0 ${badgeClass}">
@@ -2089,10 +2089,55 @@ function removeSystem(sysId) {
 window.removeSystem = removeSystem;
 
 // ==========================================
+// 💡 ビューモード切り替え関数（システム別・五十音順・全キャラ）
+// ==========================================
+function switchViewMode(mode) {
+    // 1. タブボタンの見た目（アクティブ状態）を切り替える
+    const modes = ['systems', 'index', 'all'];
+    modes.forEach(m => {
+        const btn = document.getElementById(`viewModeBtn_${m}`);
+        if (!btn) return;
+
+        if (m === mode) {
+            btn.className = "w-full px-2 py-1.5 rounded-lg text-xs transition-all font-semibold bg-white text-stone-900 shadow-xs text-center truncate";
+        } else {
+            btn.className = "w-full px-2 py-1.5 rounded-lg text-xs transition-all font-medium text-stone-500 hover:text-stone-800 text-center truncate";
+        }
+    });
+
+    // 2. モードに応じて対応する一覧描画関数を呼び出す
+    const searchInput = document.getElementById('folderSearchInput') || document.getElementById('charSearchInput');
+    const keyword = searchInput ? searchInput.value : '';
+
+    if (mode === 'systems') {
+        if (typeof renderSystemFolders === 'function') {
+            renderSystemFolders();
+        }
+    } else if (mode === 'index') {
+        if (typeof renderKanaList === 'function') {
+            renderKanaList(keyword);
+        }
+    } else if (mode === 'all') {
+        if (typeof renderAllCharacterList === 'function') {
+            renderAllCharacterList(keyword);
+        }
+    }
+}
+window.switchViewMode = switchViewMode;
+
+// 💡 アプリ起動時（または初期読み込み時）に「システム別」を初期表示にする
+document.addEventListener('DOMContentLoaded', () => {
+    switchViewMode('systems');
+});
+
+// ==========================================
 // 💡 共通：キャラクターカードのHTMLを生成するヘルパー関数
 // ==========================================
 function createCharacterCardElement(ch) {
     const themeColor = ch.themeColor || '#78716c';
+
+// 💡 読み仮名を安全に取得する（yomigana と nameKana の両方に対応）
+    const charKana = ch.yomigana || ch.nameKana || '';
 
     // システム情報を取得（バッジ表示用）
     const charSystem = (window.systems || []).find(s => s.id === ch.systemId);
@@ -2154,6 +2199,7 @@ function createCharacterCardElement(ch) {
 
     return card;
 }
+window.createCharacterCardElement = createCharacterCardElement;
 
 // ==========================================
 // 💡 五十音順キャラクターリスト描画関数（見出し付き）
