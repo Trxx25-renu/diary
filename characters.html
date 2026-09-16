@@ -1082,7 +1082,63 @@ function navigateTo(target, param) {
 }
 window.navigateTo = navigateTo;
 
-    
+// ==========================================
+// 💡 1階層目のビューモード切り替え関数（システム別・五十音順・全キャラ）
+// ==========================================
+function switchViewMode(mode) {
+    console.log("🔍 switchViewMode が呼ばれました！ モード:", mode);
+    window.currentViewMode = mode;
+
+    // 1. タブボタンの見た目（アクティブ状態）を切り替える
+    const modes = ['systems', 'index', 'all'];
+    modes.forEach(m => {
+        const btn = document.getElementById(`viewModeBtn_${m}`);
+        if (!btn) return;
+
+        if (m === mode) {
+            btn.className = "w-full px-2 py-1.5 rounded-lg text-xs transition-all font-semibold bg-white text-stone-900 shadow-xs text-center truncate";
+        } else {
+            btn.className = "w-full px-2 py-1.5 rounded-lg text-xs transition-all font-medium text-stone-500 hover:text-stone-800 text-center truncate";
+        }
+    });
+
+    // 2. 1階層目のコンテナ要素を取得（HTML側のIDに合わせて対応）
+    const folderView = document.getElementById('systemFolderView') || document.getElementById('view-folders');
+    const listView = document.getElementById('characterListView') || document.getElementById('view-list') || document.getElementById('characterListContainer');
+
+    // 3. 検索キーワードを取得
+    const searchInput = document.getElementById('searchInput') || document.getElementById('folderSearchInput') || document.getElementById('charSearchInput');
+    const keyword = searchInput ? searchInput.value : '';
+
+    // 4. モードに応じた表示切り替えと描画の実行
+    if (mode === 'systems') {
+        window.selectedSystemId = null;
+        // システム別ビューを表示し、リスト系ビューを隠す
+        if (folderView) folderView.classList.remove('hidden');
+        if (listView) listView.classList.add('hidden');
+
+        if (typeof renderSystemFolders === 'function') {
+            renderSystemFolders();
+        }
+    } else {
+        // 「五十音順(index)」または「全キャラ(all)」の場合はリスト用ビューを表示
+        if (folderView) folderView.classList.add('hidden');
+        if (listView) listView.classList.remove('hidden');
+
+        window.selectedSystemId = null;
+
+        if (mode === 'index') {
+            if (typeof renderKanaList === 'function') {
+                renderKanaList(keyword);
+            }
+        } else if (mode === 'all') {
+            if (typeof renderAllCharacterList === 'function') {
+                renderAllCharacterList(keyword);
+            }
+        }
+    }
+}
+window.switchViewMode = switchViewMode;
     
 // ==========================================
 // 💡 3. キャラクター詳細描画関数（ギャラリー・秘匿メモ対応版）
@@ -2088,56 +2144,6 @@ function removeSystem(sysId) {
     }
 }
 window.removeSystem = removeSystem;
-
-// ==========================================
-// 💡 ビューモード切り替え関数（システム別・五十音順・全キャラ）
-// ==========================================
-function switchViewMode(mode) {
-    console.log("🔍 switchViewMode が呼ばれました！ モード:", mode);
-
-    // グローバル変数にも現在のモードを保存しておく
-    window.currentViewMode = mode;
-
-    // 1. タブボタンの見た目（アクティブ状態）を切り替える
-    const modes = ['systems', 'index', 'all'];
-    modes.forEach(m => {
-        const btn = document.getElementById(`viewModeBtn_${m}`);
-        if (!btn) return;
-
-        if (m === mode) {
-            btn.className = "w-full px-2 py-1.5 rounded-lg text-xs transition-all font-semibold bg-white text-stone-900 shadow-xs text-center truncate";
-        } else {
-            btn.className = "w-full px-2 py-1.5 rounded-lg text-xs transition-all font-medium text-stone-500 hover:text-stone-800 text-center truncate";
-        }
-    });
-
-    // 2. モードに応じて対応する一覧描画関数を呼び出す
-    const searchInput = document.getElementById('folderSearchInput') || document.getElementById('charSearchInput');
-    const keyword = searchInput ? searchInput.value : '';
-
-    if (mode === 'systems') {
-        window.selectedSystemId = null; // システム別に戻すときは選択を解除
-        if (typeof renderSystemFolders === 'function') {
-            renderSystemFolders();
-        }
-    } else if (mode === 'index') {
-        window.selectedSystemId = null;
-        if (typeof renderKanaList === 'function') {
-            renderKanaList(keyword);
-        }
-    } else if (mode === 'all') {
-        window.selectedSystemId = null;
-        if (typeof renderAllCharacterList === 'function') {
-            renderAllCharacterList(keyword);
-        }
-    }
-}
-window.switchViewMode = switchViewMode;
-
-// 💡 アプリ起動時（または初期読み込み時）に「システム別」を初期表示にする
-document.addEventListener('DOMContentLoaded', () => {
-    switchViewMode('systems');
-});
 
 // ==========================================
 // 💡 共通：キャラクターカードのHTMLを生成するヘルパー関数（完全版）
