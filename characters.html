@@ -1083,14 +1083,14 @@ function navigateTo(target, param) {
 window.navigateTo = navigateTo;
 
 // ==========================================
-// 💡 1階層目のビューモード切り替え関数（反復横跳び完全対応版）
+// 💡 1階層目のビューモード切り替え関数（反復横跳び・誕生日順対応版）
 // ==========================================
 function switchViewMode(mode) {
     console.log("🔍 switchViewMode が呼ばれました！ モード:", mode);
     window.currentViewMode = mode;
 
     // 1. タブボタンの見た目（アクティブ状態）を瞬時に切り替える
-    const modes = ['systems', 'index', 'all'];
+    const modes = ['systems', 'index', 'birthday'];
     modes.forEach(m => {
         const btn = document.getElementById(`viewModeBtn_${m}`);
         if (!btn) return;
@@ -1129,9 +1129,9 @@ function switchViewMode(mode) {
             if (typeof renderKanaList === 'function') {
                 renderKanaList(keyword);
             }
-        } else if (mode === 'all') {
-            if (typeof renderAllCharacterList === 'function') {
-                renderAllCharacterList(keyword);
+        } else if (mode === 'birthday') {
+            if (typeof renderBirthdayList === 'function') {
+                renderBirthdayList(keyword);
             }
         }
     }
