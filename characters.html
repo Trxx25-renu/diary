@@ -2091,6 +2091,11 @@ window.removeSystem = removeSystem;
 // 💡 ビューモード切り替え関数（システム別・五十音順・全キャラ）
 // ==========================================
 function switchViewMode(mode) {
+    console.log("🔍 switchViewMode が呼ばれました！ モード:", mode);
+
+    // グローバル変数にも現在のモードを保存しておく
+    window.currentViewMode = mode;
+
     // 1. タブボタンの見た目（アクティブ状態）を切り替える
     const modes = ['systems', 'index', 'all'];
     modes.forEach(m => {
@@ -2109,14 +2114,17 @@ function switchViewMode(mode) {
     const keyword = searchInput ? searchInput.value : '';
 
     if (mode === 'systems') {
+        window.selectedSystemId = null; // システム別に戻すときは選択を解除
         if (typeof renderSystemFolders === 'function') {
             renderSystemFolders();
         }
     } else if (mode === 'index') {
+        window.selectedSystemId = null;
         if (typeof renderKanaList === 'function') {
             renderKanaList(keyword);
         }
     } else if (mode === 'all') {
+        window.selectedSystemId = null;
         if (typeof renderAllCharacterList === 'function') {
             renderAllCharacterList(keyword);
         }
