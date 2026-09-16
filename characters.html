@@ -1083,13 +1083,13 @@ function navigateTo(target, param) {
 window.navigateTo = navigateTo;
 
 // ==========================================
-// 💡 1階層目のビューモード切り替え関数（反復横跳び・誕生日順対応版）
+// 💡 1階層目のビューモード切り替え関数（完全安全・デバッグ版）
 // ==========================================
 function switchViewMode(mode) {
-    console.log("🔍 switchViewMode が呼ばれました！ モード:", mode);
+    console.log("🚀 switchViewMode 実行 -> モード:", mode);
     window.currentViewMode = mode;
 
-    // 1. タブボタンの見た目（アクティブ状態）を瞬時に切り替える
+    // 1. タブボタンのアクティブ状態切り替え
     const modes = ['systems', 'index', 'birthday'];
     modes.forEach(m => {
         const btn = document.getElementById(`viewModeBtn_${m}`);
@@ -1102,15 +1102,18 @@ function switchViewMode(mode) {
         }
     });
 
-    // 2. コンテナ要素の取得
-    const folderView = document.getElementById('systemFolderView') || document.getElementById('view-folders');
+    // 2. コンテナ要素の取得（HTML側の実際のIDに合わせて柔軟に対応）
+    // ※もしお使いのHTMLのIDがこれらと違う場合は、ここを合わせる必要があります
+    const folderView = document.getElementById('systemFolderView') || document.getElementById('view-folders') || document.getElementById('systemFolderContainer');
     const listView = document.getElementById('characterListView') || document.getElementById('view-list') || document.getElementById('characterListContainer');
 
-    // 3. 検索キーワードを保持したまま切り替えられるようにする
+    console.log("📂 folderView:", folderView ? "発見" : "未発見");
+    console.log("📋 listView:", listView ? "発見" : "未発見");
+
     const searchInput = document.getElementById('searchInput') || document.getElementById('folderSearchInput') || document.getElementById('charSearchInput');
     const keyword = searchInput ? searchInput.value : '';
 
-    // 4. モードに応じた表示切り替えと描画
+    // 3. 表示・非表示の切り替え
     if (mode === 'systems') {
         window.selectedSystemId = null;
         if (folderView) folderView.classList.remove('hidden');
@@ -1118,6 +1121,8 @@ function switchViewMode(mode) {
 
         if (typeof renderSystemFolders === 'function') {
             renderSystemFolders();
+        } else {
+            console.warn("⚠️ renderSystemFolders 関数が見つかりません");
         }
     } else {
         if (folderView) folderView.classList.add('hidden');
@@ -1128,10 +1133,14 @@ function switchViewMode(mode) {
         if (mode === 'index') {
             if (typeof renderKanaList === 'function') {
                 renderKanaList(keyword);
+            } else {
+                console.warn("⚠️ renderKanaList 関数が見つかりません");
             }
         } else if (mode === 'birthday') {
             if (typeof renderBirthdayList === 'function') {
                 renderBirthdayList(keyword);
+            } else {
+                console.warn("⚠️ renderBirthdayList 関数が見つかりません");
             }
         }
     }
