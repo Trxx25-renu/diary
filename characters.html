@@ -2143,7 +2143,7 @@ document.addEventListener('DOMContentLoaded', () => {
 function createCharacterCardElement(ch) {
     const themeColor = ch.themeColor || '#78716c';
 
-// 💡 読み仮名を安全に取得する（yomigana と nameKana の両方に対応）
+    // 💡 読み仮名を安全に取得する（yomigana と nameKana の両方に対応）
     const charKana = ch.yomigana || ch.nameKana || '';
 
     // システム情報を取得（バッジ表示用）
@@ -2192,7 +2192,8 @@ function createCharacterCardElement(ch) {
             <div class="flex items-center justify-between gap-1">
                 <div class="flex items-center gap-1.5 min-w-0">
                     <h3 class="text-sm font-bold text-stone-800 tracking-wide truncate group-hover:text-stone-600 transition-colors">${ch.name}</h3>
-                    ${ch.yomigana ? `<span class="text-[10px] text-stone-400 font-light truncate">${ch.yomigana}</span>` : ''}
+                    <!-- 💡 ここを ch.yomigana から charKana に修正 -->
+                    ${charKana ? `<span class="text-[10px] text-stone-400 font-light truncate">${charKana}</span>` : ''}
                 </div>
                 ${badgeText ? `
                     <span class="text-[9px] font-bold px-2 py-0.5 rounded-md text-white shadow-xs shrink-0 ${badgeClass}">
