@@ -2325,60 +2325,99 @@ function renderKanaList(filterKeyword = "") {
 window.renderKanaList = renderKanaList;
 
 // ==========================================
-// 💡 全キャラクターリスト描画関数
+// 💡 誕生日順（月別区切り）キャラクターリスト描画関数
 // ==========================================
-function renderAllCharacterList(filterKeyword = "") {
-    window.selectedSystemId = null; // 全キャラ表示中はシステム選択を解除
-    
-    const titleEl = document.getElementById('currentSystemTitle');
-    if (titleEl) {
-        titleEl.textContent = 'すべてのキャラクター';
-    }
-
-    const grid = document.getElementById('characterGrid');
+function renderBirthdayList(filterKeyword = "") {
+    const grid = document.getElementById('characterGrid') || document.getElementById('characterListContainer');
     if (!grid) return;
 
     grid.innerHTML = '';
-    
-    const keyword = normalizeText(filterKeyword);
+
+    const keyword = typeof normalizeText === 'function' ? normalizeText(filterKeyword) : filterKeyword.toLowerCase();
     const allChars = window.characters || [];
-    
+
+    // 1. キーワードフィルタリング
     const filteredChars = allChars.filter(c => {
         if (!keyword) return true;
-
         const searchTargets = [
             c.name,
-            c.yomigana,
+            c.yomigana || c.nameKana,
             c.epithet,
             c.epithetKana,
             c.occupation,
-            c.age,
             c.birthdate
         ];
-
         return searchTargets.some(target => {
             if (target == null) return false;
-            return normalizeText(target).includes(keyword);
+            const targetStr = typeof normalizeText === 'function' ? normalizeText(target) : target.toLowerCase();
+            return targetStr.includes(keyword);
         });
     });
 
-    const sortedChars = (typeof sortCharacters === 'function') ? sortCharacters(filteredChars) : filteredChars;
-
-    if (sortedChars.length === 0) {
+    if (filteredChars.length === 0) {
         grid.innerHTML = `
             <div class="col-span-full text-center py-12 text-stone-400 text-xs">
-                <i class="fa-solid fa-user-slash text-2xl mb-2"></i>
-                <p>${allChars.length === 0 ? '登録されているキャラクターはまだいません。' : '条件に一致するキャラクターがいません。'}</p>
+                <i class="fa-solid fa-cake-candles text-2xl mb-2"></i>
+                <p>条件に一致するキャラクターがいません。</p>
             </div>
         `;
         return;
     }
 
+    // 2. 既存の sortCharacters を使って誕生日順にソートする
+    const prevMode = window.currentCharacterSortMode;
+    window.currentCharacterSortMode = 'birthdate';
+    const sortedChars = typeof sortCharacters === 'function' ? sortCharacters(filteredChars) : filteredChars;
+    window.currentCharacterSortMode = prevMode; // モードを復元
+
+    // 3. 月ごとにグループ分けする
+    const groups = {};
     sortedChars.forEach(ch => {
-        grid.appendChild(createCharacterCardElement(ch));
+        const [month] = typeof parseBirthdate === 'function' ? parseBirthdate(ch.birthdate) : [99, 99];
+        const monthKey = (month >= 1 && month <= 12) ? `${month}月` : '誕生日未設定';
+        
+        if (!groups[monthKey]) {
+            groups[monthKey] = [];
+        }
+        groups[monthKey].push(ch);
+    });
+
+    // 4. 月順に並べてセクション（見出し ＋ カードグリッド）を構築して描画
+    const monthOrder = ["1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月", "誕生日未設定"];
+    
+    monthOrder.forEach(monthKey => {
+        const charsInMonth = groups[monthKey];
+        if (!charsInMonth || charsInMonth.length === 0) return;
+
+        // 月ごとの区切りヘッダー
+        const sectionWrapper = document.createElement('div');
+        sectionWrapper.className = 'col-span-full mb-6';
+
+        const headerHtml = `
+            <div class="flex items-center gap-2 mb-3 pb-1 border-b border-stone-200">
+                <i class="fa-solid fa-calendar-days text-stone-400 text-xs"></i>
+                <h3 class="text-xs font-bold text-stone-600 tracking-wider">${monthKey}</h3>
+                <span class="text-[10px] text-stone-400 font-medium">(${charsInMonth.length}人)</span>
+            </div>
+        `;
+
+        // カードを並べるグリッド
+        const subGrid = document.createElement('div');
+        subGrid.className = 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4';
+
+        charsInMonth.forEach(ch => {
+            if (typeof createCharacterCardElement === 'function') {
+                const card = createCharacterCardElement(ch);
+                subGrid.appendChild(card);
+            }
+        });
+
+        sectionWrapper.innerHTML = headerHtml;
+        sectionWrapper.appendChild(subGrid);
+        grid.appendChild(sectionWrapper);
     });
 }
-window.renderAllCharacterList = renderAllCharacterList;
+window.renderBirthdayList = renderBirthdayList;
        
 // ==========================================
 // 💡 キャラクターの並び替え機能（修正・頑健版）
