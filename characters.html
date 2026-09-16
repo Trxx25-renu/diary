@@ -2089,72 +2089,74 @@ function removeSystem(sysId) {
 window.removeSystem = removeSystem;
 
 // ==========================================
-// 💡 表示モード切り替え関数（ビュー切り替え＋ID完全対応版）
+// 💡 共通：キャラクターカードのHTMLを生成するヘルパー関数
 // ==========================================
-function switchViewMode(mode) {
-    console.log("👉 switchViewMode 実行: ", mode);
-    window.currentViewMode = mode;
+function createCharacterCardElement(ch) {
+    const themeColor = ch.themeColor || '#78716c';
 
-    // HTML側のボタンIDに対応させた要素のマッピング
-    const buttons = {
-        'systems': document.getElementById('viewModeBtn_systems'),
-        'index': document.getElementById('viewModeBtn_index'),
-        'all': document.getElementById('viewModeBtn_all')
-    };
+    // システム情報を取得（バッジ表示用）
+    const charSystem = (window.systems || []).find(s => s.id === ch.systemId);
+    const badgeText = charSystem ? (charSystem.desc || charSystem.name) : '';
+    const badgeClass = charSystem && charSystem.badgeColor ? charSystem.badgeColor : 'bg-stone-700';
 
-    // ボタンの選択・非選択スタイルを切り替え
-    Object.keys(buttons).forEach(key => {
-        const btn = buttons[key];
-        if (btn) {
-            if (key === mode) {
-                // 選択中
-                btn.className = "w-full px-2 py-1.5 rounded-lg text-xs transition-all font-semibold bg-white text-stone-950 shadow-xs text-center truncate";
-            } else {
-                // 非選択
-                btn.className = "w-full px-2 py-1.5 rounded-lg text-xs transition-all font-medium text-stone-500 hover:text-stone-800 text-center truncate";
-            }
-        }
-    });
+    const card = document.createElement('div');
+    card.className = 'bg-white rounded-3xl p-4 border border-stone-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer flex flex-col gap-3 relative overflow-hidden group';
+    card.onclick = () => navigateTo('detail', ch.id);
 
-    // ビュー自体の切り替え要素を取得
-    const viewFolders = document.getElementById('view-folders');
-    const viewList = document.getElementById('view-list');
-
-    // モードに応じた処理の分岐と画面切り替え
-    if (mode === 'systems') {
-        // システム選択ビューを表示、リストビューを隠す
-        if (viewFolders) viewFolders.classList.remove('hidden');
-        if (viewList) viewList.classList.add('hidden');
-
-        if (typeof renderSystemFolders === 'function') {
-            renderSystemFolders();
-        }
-    } else {
-        // 「五十音順」または「全キャラリスト」の場合は、フォルダビューを隠してリストビューを表示する
-        if (viewFolders) viewFolders.classList.add('hidden');
-        if (viewList) viewList.classList.remove('hidden');
-
-        if (mode === 'index') {
-            // 五十音順ビュー
-            if (typeof renderKanaList === 'function') {
-                renderKanaList();
-            } else {
-                console.error("❌ renderKanaList が定義されていません");
-            }
-        } else if (mode === 'all') {
-            // 全キャラリストビュー
-            if (typeof renderAllCharacterList === 'function') {
-                renderAllCharacterList();
-            } else {
-                console.error("❌ renderAllCharacterList が定義されていません");
-            }
-        }
+    let thumbHtml = `<div class="w-full h-full flex items-center justify-center text-stone-300 bg-stone-50"><i class="fa-solid fa-user text-3xl"></i></div>`;
+    
+    if (ch.thumbnail && ch.thumbnail.trim() !== "") {
+        thumbHtml = `<img src="${ch.thumbnail}" class="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500">`;
+    } else if (ch.avatar && ch.avatar.trim() !== "") {
+        thumbHtml = `<img src="${ch.avatar}" class="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500">`;
+    } else if (ch.images && ch.images.base && ch.images.base.length > 0 && ch.images.base[0].url) {
+        thumbHtml = `<img src="${ch.images.base[0].url}" class="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500">`;
     }
-}
-window.switchViewMode = switchViewMode;
 
-    // ==========================================
-// 💡 五十音順キャラクターリスト描画関数
+    let epithetHtml = '';
+    if (ch.epithet && ch.epithet.trim() !== '') {
+        const kana = ch.epithetKana ? `<span class="text-[9px] font-medium text-stone-400 block mb-0.5 truncate">${ch.epithetKana}</span>` : '';
+        epithetHtml = `
+            <div class="mb-1 truncate">
+                ${kana}
+                <span class="text-xs font-bold tracking-wider block leading-tight" style="color: color-mix(in srgb, ${themeColor} 70%, #1c1917);">${ch.epithet}</span>
+            </div>
+        `;
+    }
+
+    let ageAndBirthText = '';
+    if (ch.age) ageAndBirthText += `${ch.age}歳`;
+    if (ch.birthdate) {
+        ageAndBirthText += ageAndBirthText ? ` <span class="text-stone-300 font-normal">/</span> ${ch.birthdate}` : ch.birthdate;
+    }
+    const subInfoText = ageAndBirthText || ch.occupation || '';
+
+    card.innerHTML = `
+        <div class="aspect-square w-full rounded-2xl overflow-hidden relative border-2 border-stone-200 shadow-inner flex items-center justify-center" style="background-color: ${themeColor};">
+            ${thumbHtml}
+        </div>
+        <div class="flex flex-col gap-0.5 px-1">
+            ${epithetHtml}
+            <div class="flex items-center justify-between gap-1">
+                <div class="flex items-center gap-1.5 min-w-0">
+                    <h3 class="text-sm font-bold text-stone-800 tracking-wide truncate group-hover:text-stone-600 transition-colors">${ch.name}</h3>
+                    ${ch.yomigana ? `<span class="text-[10px] text-stone-400 font-light truncate">${ch.yomigana}</span>` : ''}
+                </div>
+                ${badgeText ? `
+                    <span class="text-[9px] font-bold px-2 py-0.5 rounded-md text-white shadow-xs shrink-0 ${badgeClass}">
+                        ${badgeText}
+                    </span>
+                ` : ''}
+            </div>
+            <p class="text-[11px] text-stone-500 font-medium truncate mt-1">${subInfoText}</p>
+        </div>
+    `;
+
+    return card;
+}
+
+// ==========================================
+// 💡 五十音順キャラクターリスト描画関数（見出し付き）
 // ==========================================
 function renderKanaList(filterKeyword = "") {
     window.selectedSystemId = null; // 五十音順表示中もシステム選択は解除
@@ -2191,12 +2193,8 @@ function renderKanaList(filterKeyword = "") {
         });
     });
 
-    // よみがな（yomigana）で昇順ソートする処理
-    const sortedChars = filteredChars.sort((a, b) => {
-        const kanaA = a.yomigana || a.name || '';
-        const kanaB = b.yomigana || b.name || '';
-        return kanaA.localeCompare(kanaB, 'ja');
-    });
+    // ソート実行
+    const sortedChars = (typeof sortCharacters === 'function') ? sortCharacters(filteredChars) : filteredChars;
 
     if (sortedChars.length === 0) {
         grid.innerHTML = `
@@ -2208,74 +2206,65 @@ function renderKanaList(filterKeyword = "") {
         return;
     }
 
+    // セクション（行・アルファベット）の定義
+    const sections = [
+        { title: 'あ行', match: ['あ','い','う','え','お','ア','イ','ウ','エ','オ'] },
+        { title: 'か行', match: ['か','き','く','け','こ','が','ぎ','ぐ','げ','ご','カ','キ','ク','ケ','コ','ガ','ギ','グ','ゲ','ゴ'] },
+        { title: 'さ行', match: ['さ','し','す','せ','そ','ざ','じ','ず','ぜ','ぞ','サ','シ','ス','セ','ソ','ザ','ジ','ズ','ゼ','ゾ'] },
+        { title: 'た行', match: ['た','ち','つ','て','と','だ','ぢ','づ','で','ど','タ','チ','ツ','テ','ト','ダ','ヂ','ヅ','デ','ド'] },
+        { title: 'な行', match: ['な','に','ぬ','ね','の','ナ','ニ','ヌ','ネ','ノ'] },
+        { title: 'は行', match: ['は','ひ','ふ','へ','ほ','ば','び','ぶ','べ','ぼ','ぱ','ぴ','ぷ','ぺ','ぽ','ハ','ヒ','フ','ヘ','ホ','バ','ビ','ブ','ベ','ボ','パ','ピ','プ','ペ','ポ'] },
+        { title: 'ま行', match: ['ま','み','む','め','も','マ','ミ','ム','メ','モ'] },
+        { title: 'や行', match: ['や','ゆ','よ','ヤ','ユ','ヨ'] },
+        { title: 'ら行', match: ['ら','り','る','れ','ろ','ラ','リ','ル','レ','ロ'] },
+        { title: 'わ行', match: ['わ','を','ん','ワ','ヲ','ン'] },
+        { title: 'A - E', match: ['A','B','C','D','E','a','b','c','d','e'] },
+        { title: 'F - J', match: ['F','G','H','I','J','f','g','h','i','j'] },
+        { title: 'K - O', match: ['K','L','M','N','O','k','l','m','n','o'] },
+        { title: 'P - T', match: ['P','Q','R','S','T','p','q','r','s','t'] },
+        { title: 'U - Z', match: ['U','V','W','X','Y','Z','u','v','w','x','y','z'] },
+        { title: 'その他・記号', match: [] }
+    ];
+
+    const grouped = {};
+    sections.forEach(sec => grouped[sec.title] = []);
+
     sortedChars.forEach(ch => {
-        const themeColor = ch.themeColor || '#78716c';
+        const kana = ch.yomigana || ch.name || '';
+        const firstChar = kana.trim().charAt(0);
+        let placed = false;
 
-        // ★ システム情報を取得（バッジ表示用）
-        const charSystem = (window.systems || []).find(s => s.id === ch.systemId);
-        const badgeText = charSystem ? (charSystem.desc || charSystem.name) : '';
-        const badgeClass = charSystem && charSystem.badgeColor ? charSystem.badgeColor : 'bg-stone-700';
-
-        const card = document.createElement('div');
-        card.className = 'bg-white rounded-3xl p-4 border border-stone-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer flex flex-col gap-3 relative overflow-hidden group';
-        card.onclick = () => navigateTo('detail', ch.id);
-
-        let thumbHtml = `<div class="w-full h-full flex items-center justify-center text-stone-300 bg-stone-50"><i class="fa-solid fa-user text-3xl"></i></div>`;
-        
-        if (ch.thumbnail && ch.thumbnail.trim() !== "") {
-            thumbHtml = `<img src="${ch.thumbnail}" class="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500">`;
-        } else if (ch.avatar && ch.avatar.trim() !== "") {
-            thumbHtml = `<img src="${ch.avatar}" class="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500">`;
-        } else if (ch.images && ch.images.base && ch.images.base.length > 0 && ch.images.base[0].url) {
-            thumbHtml = `<img src="${ch.images.base[0].url}" class="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500">`;
+        for (const sec of sections) {
+            if (sec.match.includes(firstChar)) {
+                grouped[sec.title].push(ch);
+                placed = true;
+                break;
+            }
         }
+        if (!placed) grouped['その他・記号'].push(ch);
+    });
 
-        let epithetHtml = '';
-        if (ch.epithet && ch.epithet.trim() !== '') {
-            const kana = ch.epithetKana ? `<span class="text-[9px] font-medium text-stone-400 block mb-0.5 truncate">${ch.epithetKana}</span>` : '';
-            epithetHtml = `
-                <div class="mb-1 truncate">
-                    ${kana}
-                    <span class="text-xs font-bold tracking-wider block leading-tight" style="color: color-mix(in srgb, ${themeColor} 70%, #1c1917);">${ch.epithet}</span>
-                </div>
-            `;
-        }
+    // セクションごとに見出しとカードを生成してgridに追加
+    sections.forEach(sec => {
+        const list = grouped[sec.title];
+        if (list.length === 0) return;
 
-        let ageAndBirthText = '';
-        if (ch.age) ageAndBirthText += `${ch.age}歳`;
-        if (ch.birthdate) {
-            ageAndBirthText += ageAndBirthText ? ` <span class="text-stone-300 font-normal">/</span> ${ch.birthdate}` : ch.birthdate;
-        }
-        const subInfoText = ageAndBirthText || ch.occupation || '';
-
-        card.innerHTML = `
-            <div class="aspect-square w-full rounded-2xl overflow-hidden relative border-2 border-stone-200 shadow-inner flex items-center justify-center" style="background-color: ${themeColor};">
-                ${thumbHtml}
-            </div>
-            <div class="flex flex-col gap-0.5 px-1">
-                ${epithetHtml}
-                <div class="flex items-center justify-between gap-1">
-                    <div class="flex items-center gap-1.5 min-w-0">
-                        <h3 class="text-sm font-bold text-stone-800 tracking-wide truncate group-hover:text-stone-600 transition-colors">${ch.name}</h3>
-                        ${ch.yomigana ? `<span class="text-[10px] text-stone-400 font-light truncate">${ch.yomigana}</span>` : ''}
-                    </div>
-                    <!-- ★ システムバッジ -->
-                    ${badgeText ? `
-                        <span class="text-[9px] font-bold px-2 py-0.5 rounded-md text-white shadow-xs shrink-0 ${badgeClass}">
-                            ${badgeText}
-                        </span>
-                    ` : ''}
-                </div>
-                <p class="text-[11px] text-stone-500 font-medium truncate mt-1">${subInfoText}</p>
-            </div>
+        const headerDiv = document.createElement('div');
+        headerDiv.className = 'col-span-full mt-4 mb-1 flex items-center gap-2 border-b border-stone-200 pb-1.5';
+        headerDiv.innerHTML = `
+            <span class="text-xs font-bold text-stone-700 bg-stone-100 px-3 py-1 rounded-lg">${sec.title}</span>
+            <span class="text-[10px] text-stone-400 font-medium">(${list.length}件)</span>
         `;
+        grid.appendChild(headerDiv);
 
-        grid.appendChild(card);
+        list.forEach(ch => {
+            grid.appendChild(createCharacterCardElement(ch));
+        });
     });
 }
 window.renderKanaList = renderKanaList;
 
-    // ==========================================
+// ==========================================
 // 💡 全キャラクターリスト描画関数
 // ==========================================
 function renderAllCharacterList(filterKeyword = "") {
@@ -2326,84 +2315,20 @@ function renderAllCharacterList(filterKeyword = "") {
     }
 
     sortedChars.forEach(ch => {
-        const themeColor = ch.themeColor || '#78716c';
-
-        // ★ システム情報を取得（バッジ表示用）
-        const charSystem = (window.systems || []).find(s => s.id === ch.systemId);
-        const badgeText = charSystem ? (charSystem.desc || charSystem.name) : '';
-        const badgeClass = charSystem && charSystem.badgeColor ? charSystem.badgeColor : 'bg-stone-700';
-
-        const card = document.createElement('div');
-        card.className = 'bg-white rounded-3xl p-4 border border-stone-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer flex flex-col gap-3 relative overflow-hidden group';
-        card.onclick = () => navigateTo('detail', ch.id);
-
-        let thumbHtml = `<div class="w-full h-full flex items-center justify-center text-stone-300 bg-stone-50"><i class="fa-solid fa-user text-3xl"></i></div>`;
-        
-        if (ch.thumbnail && ch.thumbnail.trim() !== "") {
-            thumbHtml = `<img src="${ch.thumbnail}" class="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500">`;
-        } else if (ch.avatar && ch.avatar.trim() !== "") {
-            thumbHtml = `<img src="${ch.avatar}" class="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500">`;
-        } else if (ch.images && ch.images.base && ch.images.base.length > 0 && ch.images.base[0].url) {
-            thumbHtml = `<img src="${ch.images.base[0].url}" class="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500">`;
-        }
-
-        let epithetHtml = '';
-        if (ch.epithet && ch.epithet.trim() !== '') {
-            const kana = ch.epithetKana ? `<span class="text-[9px] font-medium text-stone-400 block mb-0.5 truncate">${ch.epithetKana}</span>` : '';
-            epithetHtml = `
-                <div class="mb-1 truncate">
-                    ${kana}
-                    <span class="text-xs font-bold tracking-wider block leading-tight" style="color: color-mix(in srgb, ${themeColor} 70%, #1c1917);">${ch.epithet}</span>
-                </div>
-            `;
-        }
-
-        let ageAndBirthText = '';
-        if (ch.age) ageAndBirthText += `${ch.age}歳`;
-        if (ch.birthdate) {
-            ageAndBirthText += ageAndBirthText ? ` <span class="text-stone-300 font-normal">/</span> ${ch.birthdate}` : ch.birthdate;
-        }
-        const subInfoText = ageAndBirthText || ch.occupation || '';
-
-        card.innerHTML = `
-            <div class="aspect-square w-full rounded-2xl overflow-hidden relative border-2 border-stone-200 shadow-inner flex items-center justify-center" style="background-color: ${themeColor};">
-                ${thumbHtml}
-            </div>
-            <div class="flex flex-col gap-0.5 px-1">
-                ${epithetHtml}
-                <div class="flex items-center justify-between gap-1">
-                    <div class="flex items-center gap-1.5 min-w-0">
-                        <h3 class="text-sm font-bold text-stone-800 tracking-wide truncate group-hover:text-stone-600 transition-colors">${ch.name}</h3>
-                        ${ch.yomigana ? `<span class="text-[10px] text-stone-400 font-light truncate">${ch.yomigana}</span>` : ''}
-                    </div>
-                    <!-- ★ システムバッジ -->
-                    ${badgeText ? `
-                        <span class="text-[9px] font-bold px-2 py-0.5 rounded-md text-white shadow-xs shrink-0 ${badgeClass}">
-                            ${badgeText}
-                        </span>
-                    ` : ''}
-                </div>
-                <p class="text-[11px] text-stone-500 font-medium truncate mt-1">${subInfoText}</p>
-            </div>
-        `;
-
-        grid.appendChild(card);
+        grid.appendChild(createCharacterCardElement(ch));
     });
 }
 window.renderAllCharacterList = renderAllCharacterList;
        
 // ==========================================
-// 💡 キャラクターの並び替え機能（更新順・五十音順・誕生日順）
+// 💡 キャラクターの並び替え機能（修正・頑健版）
 // ==========================================
-
-// 現在のキャラクター並び替えモード（デフォルトを 'updated' に設定）
 window.currentCharacterSortMode = window.currentCharacterSortMode || 'updated';
 
-// 並び替えモードを変更して再描画する関数
 function changeCharacterSort(mode) {
     window.currentCharacterSortMode = mode;
 
-    // ボタンの見た目（アクティブ状態）の切り替え（3つのIDに対応）
+    // ボタンの見た目（アクティブ状態）の切り替え
     const modes = ['updated', 'name', 'birthdate'];
     modes.forEach(m => {
         const btn = document.getElementById(`charSortBtn_${m}`);
@@ -2416,13 +2341,27 @@ function changeCharacterSort(mode) {
         }
     });
 
-    // 💡 修正：現在開いているキャラクター一覧のシステムIDがあれば、その場で一覧を再描画する
-    if (window.selectedSystemId && typeof renderCharacterList === 'function') {
-        renderCharacterList(window.selectedSystemId);
-    } else if (typeof window.currentSelectedSystemId !== 'undefined' && typeof selectSystemFolder === 'function') {
-        selectSystemFolder(window.currentSelectedSystemId);
-    } else if (typeof renderSystemFolders === 'function') {
-        renderSystemFolders();
+    // 💡 現在どのビュー（画面）を開いているかに応じて適切に再描画する
+    const currentTitle = document.getElementById('currentSystemTitle')?.textContent || '';
+    const searchInput = document.getElementById('charSearchInput');
+    const keyword = searchInput ? searchInput.value : '';
+
+    if (currentTitle.includes('五十音順')) {
+        if (typeof renderKanaList === 'function') {
+            renderKanaList(keyword);
+        }
+    } else if (currentTitle.includes('すべてのキャラクター')) {
+        if (typeof renderAllCharacterList === 'function') {
+            renderAllCharacterList(keyword);
+        }
+    } else {
+        if (window.selectedSystemId && typeof renderCharacterList === 'function') {
+            renderCharacterList(window.selectedSystemId);
+        } else if (typeof window.currentSelectedSystemId !== 'undefined' && typeof selectSystemFolder === 'function') {
+            selectSystemFolder(window.currentSelectedSystemId);
+        } else if (typeof renderSystemFolders === 'function') {
+            renderSystemFolders();
+        }
     }
 }
 window.changeCharacterSort = changeCharacterSort;
