@@ -1126,7 +1126,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ==========================================
-// 💡 1階層目のビューモード切り替え関数（完全統合・既存関数連携版）
+// 💡 1階層目のビューモード切り替え関数（完全統合版）
 // ==========================================
 function switchViewMode(mode) {
     console.log("🚀 switchViewMode 実行 -> モード:", mode);
@@ -1145,7 +1145,7 @@ function switchViewMode(mode) {
         }
     });
 
-    const container = document.getElementById('systemFoldersContainer');
+    const container = document.getElementById('systemFoldersContainer') || document.getElementById('characterGrid');
     if (!container) return;
 
     const searchInput = document.getElementById('folderSearchInput');
@@ -1160,9 +1160,9 @@ function switchViewMode(mode) {
         }
     } 
     else if (mode === 'birthday') {
-        // 💡 3. 誕生日順：ご自身で作成された月別区切り関数（renderBirthdayList）をそのまま呼び出す！
         window.selectedSystemId = null;
-        container.className = ""; // 月別ヘッダー構造を崩さないためクラスをリセット
+        // 月ごとの見出しセクション（col-span-full）を正しく機能させるため、親を通常のブロックコンテナにする
+        container.className = "grid grid-cols-1 gap-6";
         
         if (typeof renderBirthdayList === 'function') {
             renderBirthdayList(keyword);
@@ -1171,99 +1171,15 @@ function switchViewMode(mode) {
         }
     } 
     else if (mode === 'index') {
-        // 💡 4. 五十音順：sortCharacters の 'name' モードを使って綺麗にカードを並べる
         window.selectedSystemId = null;
-        container.className = "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4";
+        // 五十音順の見出しセクション（col-span-full）を正しく機能させるため、親を通常のブロックコンテナにする
+        container.className = "grid grid-cols-1 gap-6";
         
-        let allChars = [...(window.characters || [])];
-        
-        // 既存の sortCharacters を使って五十音順にソートする
-        const prevMode = window.currentCharacterSortMode;
-        window.currentCharacterSortMode = 'name';
-        const sortedChars = typeof sortCharacters === 'function' ? sortCharacters(allChars) : allChars;
-        window.currentCharacterSortMode = prevMode; // モードを復元
-
-        // キーワードフィルター
-        const filtered = sortedChars.filter(c => {
-            if (!keyword) return true;
-            const kw = typeof normalizeText === 'function' ? normalizeText(keyword) : keyword.toLowerCase();
-            return [c.name, c.yomigana, c.nameKana, c.epithet, c.occupation, c.birthdate].some(t => {
-                if (t == null) return false;
-                const tStr = typeof normalizeText === 'function' ? normalizeText(t) : String(t).toLowerCase();
-                return tStr.includes(kw);
-            });
-        });
-
-        container.innerHTML = '';
-        if (filtered.length === 0) {
-            container.innerHTML = `<div class="col-span-full text-center py-12 text-stone-400 text-xs"><p>キャラクターが見つかりませんでした。</p></div>`;
-            return;
+        if (typeof renderKanaList === 'function') {
+            renderKanaList(keyword);
+        } else {
+            console.error("❌ renderKanaList 関数が見つかりません");
         }
-
-        // 共通のカード生成ロジックで五十音順の全キャラカードを一気に描画
-        filtered.forEach(ch => {
-            const themeColor = ch.themeColor || '#78716c';
-            const charKana = ch.yomigana || ch.nameKana || '';
-
-            const charSystem = (window.systems || []).find(s => s.id.toLowerCase() === String(ch.systemId).toLowerCase());
-            const badgeText = charSystem ? (charSystem.desc || charSystem.name) : '';
-            const badgeClass = charSystem && charSystem.badgeColor ? charSystem.badgeColor : 'bg-stone-700';
-
-            const card = document.createElement('div');
-            card.className = 'bg-white rounded-3xl p-4 border border-stone-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer flex flex-col gap-3 relative overflow-hidden group';
-            card.onclick = () => navigateTo('detail', ch.id);
-
-            let thumbHtml = `<div class="w-full h-full flex items-center justify-center text-stone-300 bg-stone-50"><i class="fa-solid fa-user text-3xl"></i></div>`;
-            
-            if (ch.thumbnail && ch.thumbnail.trim() !== "") {
-                thumbHtml = `<img src="${ch.thumbnail}" class="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500">`;
-            } else if (ch.avatar && ch.avatar.trim() !== "") {
-                thumbHtml = `<img src="${ch.avatar}" class="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500">`;
-            } else if (ch.images && ch.images.base && ch.images.base.length > 0 && ch.images.base[0].url) {
-                thumbHtml = `<img src="${ch.images.base[0].url}" class="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500">`;
-            }
-
-            let epithetHtml = '';
-            if (ch.epithet && ch.epithet.trim() !== '') {
-                const kana = ch.epithetKana ? `<span class="text-[9px] font-medium text-stone-400 block mb-0.5 truncate">${ch.epithetKana}</span>` : '';
-                epithetHtml = `
-                    <div class="mb-1 truncate">
-                        ${kana}
-                        <span class="text-xs font-bold tracking-wider block leading-tight" style="color: color-mix(in srgb, ${themeColor} 70%, #1c1917);">${ch.epithet}</span>
-                    </div>
-                `;
-            }
-
-            let ageAndBirthText = '';
-            if (ch.age) ageAndBirthText += `${ch.age}歳`;
-            if (ch.birthdate) {
-                ageAndBirthText += ageAndBirthText ? ` <span class="text-stone-300 font-normal">/</span> ${ch.birthdate}` : ch.birthdate;
-            }
-            const subInfoText = ageAndBirthText || ch.occupation || '';
-
-            card.innerHTML = `
-                <div class="aspect-square w-full rounded-2xl overflow-hidden relative border-2 border-stone-200 shadow-inner flex items-center justify-center" style="background-color: ${themeColor};">
-                    ${thumbHtml}
-                </div>
-                <div class="flex flex-col gap-0.5 px-1">
-                    ${epithetHtml}
-                    <div class="flex items-center justify-between gap-1">
-                        <div class="flex items-center gap-1.5 min-w-0">
-                            <h3 class="text-sm font-bold text-stone-800 tracking-wide truncate group-hover:text-stone-600 transition-colors">${ch.name}</h3>
-                            ${charKana ? `<span class="text-[10px] text-stone-400 font-light truncate">${charKana}</span>` : ''}
-                        </div>
-                        ${badgeText ? `
-                            <span class="text-[10px] font-bold px-2 py-0.5 rounded-md text-white shadow-xs shrink-0 ${badgeClass}">
-                                ${badgeText}
-                            </span>
-                        ` : ''}
-                    </div>
-                    <p class="text-[11px] text-stone-500 font-medium truncate mt-1">${subInfoText}</p>
-                </div>
-            `;
-
-            container.appendChild(card);
-        });
     }
 }
 window.switchViewMode = switchViewMode;
