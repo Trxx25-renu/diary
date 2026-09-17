@@ -452,12 +452,12 @@ window.handleFolderSearchInput = handleFolderSearchInput;
             .replace(/[\u30a1-\u30f6]/g, match => {
                 const chr = match.charCodeAt(0) - 0x60;
 // ==========================================
-// 💡 キャラクター一覧描画関数（ソート・グループ分け完全連動版・修正済み）
+// 💡 キャラクター一覧描画関数（完全クリーン版）
 // ==========================================
 function renderCharacterList(systemId, filterKeyword = "") {
     window.selectedSystemId = systemId;
     
-    // 💡 2階層目の専用グリッドを取得
+    // 2階層目の専用グリッドを取得
     const grid = document.getElementById('characterGrid');
     if (!grid) {
         console.warn("⚠️ characterGrid 要素が見つかりません。HTML側のIDを確認してください。");
@@ -467,7 +467,7 @@ function renderCharacterList(systemId, filterKeyword = "") {
     grid.style.display = 'block'; // グループごとのセクションを縦に積むため block に変更
     grid.classList.remove('hidden');
 
-    // 💡 システム情報を取得
+    // システム情報を取得
     const sys = (window.systems || []).find(s => s.id.toLowerCase() === String(systemId).toLowerCase());
     const titleEl = document.getElementById('currentSystemTitle');
     if (titleEl) {
@@ -513,7 +513,7 @@ function renderCharacterList(systemId, filterKeyword = "") {
         return;
     }
 
-    // 💡 現在のソートモード（window.currentCharacterSortMode など）を判定
+    // 現在のソートモードを判定
     const currentSortMode = window.currentCharacterSortMode || 'default';
 
     // ==========================================
@@ -577,7 +577,7 @@ function renderCharacterList(systemId, filterKeyword = "") {
             { title: 'ま行', match: ['ま','み','む','め','も','マ','ミ','ム','メ','モ'] },
             { title: 'や行', match: ['や','ゆ','よ','ヤ','ユ','ヨ'] },
             { title: 'ら行', match: ['ら','り','る','れ','ろ','ラ','リ','ル','レ','ロ'] },
-            { title: 'わ行', match: ['わ','를', 'を','ん','ワ','ヲ','ン'] },
+            { title: 'わ行', match: ['わ','を','ん','ワ','ヲ','ン'] }, // 👈 謎文字を削除しました
             { title: 'A - E', match: ['A','B','C','D','E','a','b','c','d','e'] },
             { title: 'F - J', match: ['F','G','H','I','J','f','g','h','i','j'] },
             { title: 'K - O', match: ['K','L','M','N','O','k','l','m','n','o'] },
