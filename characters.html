@@ -1026,7 +1026,7 @@ function getAdaptiveTextColor(hexColor) {
 window.getAdaptiveTextColor = getAdaptiveTextColor;
        
 // ==========================================
-// 💡 画面やビューを切り替えるルーター関数（表示エリア完全分離版）
+// 💡 画面やビューを切り替えるルーター関数（完全セーフガード・詳細エラー出力版）
 // ==========================================
 function navigateTo(target, param) {
     console.log("🚀 navigateTo 実行 -> target:", target, "param:", param);
@@ -1142,6 +1142,10 @@ function navigateTo(target, param) {
 
     } catch (err) {
         console.error("❌ navigateTo 内部でエラーが発生しました:", err);
+        // 💡 どこでエラーが起きたかを完全に追跡できるようにする
+        if (err.stack) {
+            console.error("📍 エラー詳細スタック:", err.stack);
+        }
     }
 }
 window.navigateTo = navigateTo;
