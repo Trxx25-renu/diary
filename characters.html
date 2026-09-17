@@ -1019,85 +1019,93 @@ function getAdaptiveTextColor(hexColor) {
 window.getAdaptiveTextColor = getAdaptiveTextColor;
        
 // ==========================================
-// 💡 画面やビューを切り替えるルーター関数（HTML構造完全一致版）
+// 💡 画面やビューを切り替えるルーター関数（安全・ID完全網羅版）
 // ==========================================
 function navigateTo(target, param) {
     console.log("🚀 navigateTo 実行 -> target:", target, "param:", param);
 
-    // 0. モーダルが開いていれば全部閉じる
-    const modals = ['characterModal', 'characterDetailModal'];
-    modals.forEach(modalId => {
-        const m = document.getElementById(modalId);
-        if (m) m.classList.add('hidden');
-    });
+    try {
+        // 0. モーダルが開いていれば全部閉じる
+        const modals = ['characterModal', 'characterDetailModal'];
+        modals.forEach(modalId => {
+            const m = document.getElementById(modalId);
+            if (m) m.classList.add('hidden');
+        });
 
-    // 🔍 検索バーのプレースホルダーを切り替える
-    const searchInput = document.getElementById('searchInput');
-    if (searchInput) {
+        // 🔍 検索バーのプレースホルダーを切り替える
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) {
+            if (target === 'home' || !target) {
+                searchInput.placeholder = 'システムやPC名で検索';
+            } else if (target === 'characterList') {
+                searchInput.placeholder = 'このシステム内を検索…';
+            }
+        }
+
+        // 💡 各ビュー要素（考えられるIDを両方カバー）
+        const folderView = document.getElementById('view-folders') || document.getElementById('systemFolderView');
+        const listView = document.getElementById('view-list') || document.getElementById('characterListView');
+        const detailView = document.getElementById('view-detail') || document.getElementById('characterDetailView');
+
+        // 0.5. ホーム画面へ戻る場合
         if (target === 'home' || !target) {
-            searchInput.placeholder = 'システムやPC名で検索';
-        } else if (target === 'characterList') {
-            searchInput.placeholder = 'このシステム内を検索…';
+            if (folderView) folderView.classList.remove('hidden');
+            if (listView) listView.classList.add('hidden');
+            if (detailView) detailView.classList.add('hidden');
+
+            if (typeof renderBreadcrumbAndActions === 'function') {
+                renderBreadcrumbAndActions('home');
+            }
         }
+        // 1. キャラクター一覧画面へ移動する場合
+        else if (target === 'characterList') {
+            const targetSystemId = param || window.selectedSystemId;
+            window.selectedSystemId = targetSystemId;
+
+            if (folderView) folderView.classList.add('hidden');
+            if (listView) {
+                listView.classList.remove('hidden');
+                listView.style.display = '';
+            }
+            if (detailView) detailView.classList.add('hidden');
+
+            if (targetSystemId && typeof renderCharacterList === 'function') {
+                renderCharacterList(targetSystemId);
+            } else {
+                console.error("❌ renderCharacterList 関数が見つからないか未定義です");
+            }
+
+            if (typeof renderBreadcrumbAndActions === 'function') {
+                renderBreadcrumbAndActions('characterList', targetSystemId);
+            }
+        } 
+        // 2. キャラクター詳細画面へ移動する場合
+        else if (target === 'detail') {
+            if (folderView) folderView.classList.add('hidden');
+            if (listView) listView.classList.add('hidden');
+            if (detailView) {
+                detailView.classList.remove('hidden');
+                detailView.style.display = '';
+            } else {
+                console.error("❌ 詳細ビューの要素（view-detail または characterDetailView）が見つかりません！");
+            }
+
+            if (typeof renderCharacterDetail === 'function') {
+                renderCharacterDetail(param);
+            } else {
+                console.error("❌ renderCharacterDetail 関数が見つからないか未定義です");
+            }
+
+            if (typeof renderBreadcrumbAndActions === 'function') {
+                renderBreadcrumbAndActions('detail', param);
+            }
+        }
+
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    } catch (err) {
+        console.error("❌ navigateTo 内部でエラーが発生しました:", err);
     }
-
-    // 💡 実際のHTML構造（view-folders / view-list）に合わせた要素取得
-    const folderView = document.getElementById('view-folders');
-    const listView = document.getElementById('view-list');
-    const detailView = document.getElementById('view-detail');
-
-    // 0.5. トップ画面（ホーム・システム選択）へ戻る場合
-    if (target === 'home' || !target) {
-        if (folderView) folderView.classList.remove('hidden');
-        if (listView) listView.classList.add('hidden');
-        if (detailView) detailView.classList.add('hidden');
-
-        if (typeof renderBreadcrumbAndActions === 'function') {
-            renderBreadcrumbAndActions('home');
-        }
-    }
-    // 1. システムごとの「キャラクター一覧画面」へ移動する場合
-    else if (target === 'characterList') {
-        const targetSystemId = param || window.selectedSystemId;
-        window.selectedSystemId = targetSystemId;
-
-        // リストを描画
-        if (targetSystemId && typeof renderCharacterList === 'function') {
-            renderCharacterList(targetSystemId);
-        }
-
-        // 💡 フォルダビューを隠し、一覧ビュー（view-list）を表示する
-        if (folderView) folderView.classList.add('hidden');
-        if (listView) {
-            listView.classList.remove('hidden');
-            listView.style.display = ''; // 非表示スタイルが残っていればクリア
-        }
-        if (detailView) detailView.classList.add('hidden');
-
-        if (typeof renderBreadcrumbAndActions === 'function') {
-            renderBreadcrumbAndActions('characterList', targetSystemId);
-        }
-    } 
-    // 2. 個別の「キャラクター詳細画面」へ移動する場合
-    else if (target === 'detail') {
-        if (folderView) folderView.classList.add('hidden');
-        if (listView) listView.classList.add('hidden');
-        if (detailView) {
-            detailView.classList.remove('hidden');
-            detailView.style.display = '';
-        }
-
-        if (typeof renderCharacterDetail === 'function') {
-            renderCharacterDetail(param);
-        }
-
-        if (typeof renderBreadcrumbAndActions === 'function') {
-            renderBreadcrumbAndActions('detail', param);
-        }
-    }
-
-    // 画面一番上にスクロール
-    window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 window.navigateTo = navigateTo;
 
