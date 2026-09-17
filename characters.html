@@ -1053,8 +1053,7 @@ function navigateTo(target, param) {
         }
 
         // 💡 各階層のコンテナ要素を取得
-        const homeSearchArea = document.getElementById('homeSearchArea');      // 1階層目の検索・タブエリア
-        const folderView = document.getElementById('systemFoldersContainer');    // 1階層目のシステム一覧グリッド
+        const viewFolders = document.getElementById('view-folders');     // 1階層目全体（フォルダビュー）
         const listView = document.getElementById('view-list');                 // 2階層目のラッパー
         const detailView = document.getElementById('view-detail');             // 3階層目の詳細ビュー
 
@@ -1071,8 +1070,7 @@ function navigateTo(target, param) {
 
         // 0.5. ホーム画面（1階層目）へ移動
         if (target === 'home' || !target) {
-            toggleView(homeSearchArea, true, 'block');
-            toggleView(folderView, true, 'grid');
+            toggleView(viewFolders, true, 'block');
             toggleView(listView, false);
             toggleView(detailView, false);
 
@@ -1084,8 +1082,7 @@ function navigateTo(target, param) {
             const targetSystemId = param || window.selectedSystemId;
             window.selectedSystemId = targetSystemId;
 
-            toggleView(homeSearchArea, false);
-            toggleView(folderView, false);
+            toggleView(viewFolders, false);
             toggleView(listView, true, 'block');
             toggleView(detailView, false);
 
@@ -1098,16 +1095,9 @@ function navigateTo(target, param) {
         } 
         // 2. キャラクター詳細画面（3階層目）へ移動
         else if (target === 'detail') {
-            toggleView(homeSearchArea, false);
-            toggleView(folderView, false);
+            toggleView(viewFolders, false);
             toggleView(listView, false);
             toggleView(detailView, true, 'block');
-
-            // 💡 3階層目では確実に切り替えタブなどを非効化・隠す
-            if (homeSearchArea) {
-                homeSearchArea.classList.add('hidden');
-                homeSearchArea.style.display = 'none';
-            }
 
             if (typeof renderCharacterDetail === 'function') {
                 renderCharacterDetail(param);
