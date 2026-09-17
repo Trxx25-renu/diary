@@ -1019,7 +1019,7 @@ function getAdaptiveTextColor(hexColor) {
 window.getAdaptiveTextColor = getAdaptiveTextColor;
        
 // ==========================================
-// 💡 画面やビューを切り替えるルーター関数（完全修正版）
+// 💡 画面やビューを切り替えるルーター関数（全要素強制表示・完全安定版）
 // ==========================================
 function navigateTo(target, param) {
     console.log("🚀 navigateTo 実行 -> target:", target, "param:", param);
@@ -1042,7 +1042,7 @@ function navigateTo(target, param) {
             }
         }
 
-        // 💡 各ビュー要素
+        // ビュー要素を取得
         const folderView = document.getElementById('view-folders');
         const listView = document.getElementById('view-list');
         const detailView = document.getElementById('view-detail');
@@ -1063,18 +1063,27 @@ function navigateTo(target, param) {
             const targetSystemId = param || window.selectedSystemId;
             window.selectedSystemId = targetSystemId;
 
-            // フォルダを隠し、リストとグリッドを表示する
+            // 1階層目を隠す
             if (folderView) folderView.classList.add('hidden');
+            
+            // 💡 2階層目のリストビューを強制表示
             if (listView) {
                 listView.classList.remove('hidden');
-                listView.style.display = '';
+                listView.style.display = 'block'; // ブロック表示を強制
+                listView.style.visibility = 'visible';
             }
+            
+            // 💡 グリッド本体も強制表示
             if (characterGrid) {
                 characterGrid.classList.remove('hidden');
-                characterGrid.style.display = '';
+                characterGrid.style.display = 'grid'; // グリッド表示を強制
+                characterGrid.style.visibility = 'visible';
             }
+
+            // 3階層目を隠す
             if (detailView) detailView.classList.add('hidden');
 
+            // リストを描画
             if (targetSystemId && typeof renderCharacterList === 'function') {
                 renderCharacterList(targetSystemId);
             } else {
@@ -1091,10 +1100,11 @@ function navigateTo(target, param) {
             if (listView) listView.classList.add('hidden');
             if (characterGrid) characterGrid.classList.add('hidden');
             
-            // 詳細ビューを表示する
+            // 💡 3階層目の詳細ビューを強制表示
             if (detailView) {
                 detailView.classList.remove('hidden');
-                detailView.style.display = '';
+                detailView.style.display = 'block';
+                detailView.style.visibility = 'visible';
             } else {
                 console.error("❌ 詳細ビューの要素（view-detail）が見つかりません！");
             }
