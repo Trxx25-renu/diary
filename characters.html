@@ -1029,13 +1029,13 @@ function getAdaptiveTextColor(hexColor) {
 window.getAdaptiveTextColor = getAdaptiveTextColor;
        
 // ==========================================
-// 💡 画面やビューを切り替えるルーター関数（グリッド表示完全保証版）
+// 💡 画面やビューを切り替えるルーター関数（完全安定版）
 // ==========================================
 function navigateTo(target, param) {
     console.log("🚀 navigateTo 実行 -> target:", target, "param:", param);
 
     try {
-        // 0. モーダルが開いていれば全部閉じる
+        // 0. 開いているモーダルをすべて閉じる
         const modals = ['characterModal', 'characterDetailModal'];
         modals.forEach(modalId => {
             const m = document.getElementById(modalId);
@@ -1056,25 +1056,26 @@ function navigateTo(target, param) {
         const folderView = document.getElementById('view-folders');
         const listView = document.getElementById('view-list');
         const detailView = document.getElementById('view-detail');
-        const characterGrid = document.getElementById('characterGrid'); // 追加
+        const characterGrid = document.getElementById('characterGrid');
+
+        // ヘルパー関数：要素の表示・非表示を安全に切り替える
+        const toggleView = (element, show, displayType = '') => {
+            if (!element) return;
+            if (show) {
+                element.classList.remove('hidden');
+                element.style.display = displayType;
+            } else {
+                element.classList.add('hidden');
+                element.style.display = 'none';
+            }
+        };
 
         // 0.5. ホーム画面（1階層目）へ戻る場合
         if (target === 'home' || !target) {
-            if (folderView) {
-                folderView.classList.remove('hidden');
-                folderView.style.display = '';
-            }
-            if (listView) {
-                listView.classList.add('hidden');
-                listView.style.display = 'none';
-            }
-            if (detailView) {
-                detailView.classList.add('hidden');
-                detailView.style.display = 'none';
-            }
-            if (characterGrid) {
-                characterGrid.classList.add('hidden');
-            }
+            toggleView(folderView, true, '');
+            toggleView(listView, false);
+            toggleView(detailView, false);
+            toggleView(characterGrid, false);
 
             if (typeof renderBreadcrumbAndActions === 'function') {
                 renderBreadcrumbAndActions('home');
@@ -1085,26 +1086,10 @@ function navigateTo(target, param) {
             const targetSystemId = param || window.selectedSystemId;
             window.selectedSystemId = targetSystemId;
 
-            // ホームを完全に隠す
-            if (folderView) {
-                folderView.classList.add('hidden');
-                folderView.style.display = 'none';
-            }
-            // リストビューを表示
-            if (listView) {
-                listView.classList.remove('hidden');
-                listView.style.display = '';
-            }
-            // 💡 キャラクターグリッドを確実に表示して隠しクラスを剥ぎ取る
-            if (characterGrid) {
-                characterGrid.classList.remove('hidden');
-                characterGrid.style.display = 'grid';
-            }
-            // 詳細を隠す
-            if (detailView) {
-                detailView.classList.add('hidden');
-                detailView.style.display = 'none';
-            }
+            toggleView(folderView, false);
+            toggleView(listView, true, '');
+            toggleView(characterGrid, true, 'grid'); // グリッドを確実にグリッド表示
+            toggleView(detailView, false);
 
             // リストを描画
             if (targetSystemId && typeof renderCharacterList === 'function') {
@@ -1119,25 +1104,10 @@ function navigateTo(target, param) {
         } 
         // 2. キャラクター詳細画面（3階層目）へ移動する場合
         else if (target === 'detail') {
-            if (folderView) {
-                folderView.classList.add('hidden');
-                folderView.style.display = 'none';
-            }
-            if (listView) {
-                listView.classList.add('hidden');
-                listView.style.display = 'none';
-            }
-            if (characterGrid) {
-                characterGrid.classList.add('hidden');
-            }
-            
-            // 詳細ビューを表示
-            if (detailView) {
-                detailView.classList.remove('hidden');
-                detailView.style.display = '';
-            } else {
-                console.error("❌ 詳細ビューの要素（view-detail）が見つかりません！");
-            }
+            toggleView(folderView, false);
+            toggleView(listView, false);
+            toggleView(characterGrid, false);
+            toggleView(detailView, true, '');
 
             if (typeof renderCharacterDetail === 'function') {
                 renderCharacterDetail(param);
@@ -3809,7 +3779,7 @@ window.importCharactersJSON = importCharactersJSON;
         </div>
         
         <!-- 📂 2階層目：キャラクター一覧ビュー（Gridで完全に均等固定） -->
-        <div id="view-list" class="hidden">
+        <div id="view-list">
             <div class="flex flex-col gap-3 w-full bg-stone-50/60 p-3.5 sm:p-4 rounded-2xl border border-stone-200/70 mb-6 shadow-xs">
                 
                 <!-- 1段目：タイトル・見出しエリア -->
