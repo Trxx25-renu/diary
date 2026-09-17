@@ -1019,7 +1019,7 @@ function getAdaptiveTextColor(hexColor) {
 window.getAdaptiveTextColor = getAdaptiveTextColor;
        
 // ==========================================
-// 💡 画面やビューを切り替えるルーター関数（安全・ID完全網羅版）
+// 💡 画面やビューを切り替えるルーター関数（完全修正版）
 // ==========================================
 function navigateTo(target, param) {
     console.log("🚀 navigateTo 実行 -> target:", target, "param:", param);
@@ -1042,10 +1042,11 @@ function navigateTo(target, param) {
             }
         }
 
-        // 💡 各ビュー要素（考えられるIDを両方カバー）
-        const folderView = document.getElementById('view-folders') || document.getElementById('systemFolderView');
-        const listView = document.getElementById('view-list') || document.getElementById('characterListView');
-        const detailView = document.getElementById('view-detail') || document.getElementById('characterDetailView');
+        // 💡 各ビュー要素
+        const folderView = document.getElementById('view-folders');
+        const listView = document.getElementById('view-list');
+        const detailView = document.getElementById('view-detail');
+        const characterGrid = document.getElementById('characterGrid');
 
         // 0.5. ホーム画面へ戻る場合
         if (target === 'home' || !target) {
@@ -1057,15 +1058,20 @@ function navigateTo(target, param) {
                 renderBreadcrumbAndActions('home');
             }
         }
-        // 1. キャラクター一覧画面へ移動する場合
+        // 1. キャラクター一覧画面（2階層目）へ移動する場合
         else if (target === 'characterList') {
             const targetSystemId = param || window.selectedSystemId;
             window.selectedSystemId = targetSystemId;
 
+            // フォルダを隠し、リストとグリッドを表示する
             if (folderView) folderView.classList.add('hidden');
             if (listView) {
                 listView.classList.remove('hidden');
                 listView.style.display = '';
+            }
+            if (characterGrid) {
+                characterGrid.classList.remove('hidden');
+                characterGrid.style.display = '';
             }
             if (detailView) detailView.classList.add('hidden');
 
@@ -1079,15 +1085,18 @@ function navigateTo(target, param) {
                 renderBreadcrumbAndActions('characterList', targetSystemId);
             }
         } 
-        // 2. キャラクター詳細画面へ移動する場合
+        // 2. キャラクター詳細画面（3階層目）へ移動する場合
         else if (target === 'detail') {
             if (folderView) folderView.classList.add('hidden');
             if (listView) listView.classList.add('hidden');
+            if (characterGrid) characterGrid.classList.add('hidden');
+            
+            // 詳細ビューを表示する
             if (detailView) {
                 detailView.classList.remove('hidden');
                 detailView.style.display = '';
             } else {
-                console.error("❌ 詳細ビューの要素（view-detail または characterDetailView）が見つかりません！");
+                console.error("❌ 詳細ビューの要素（view-detail）が見つかりません！");
             }
 
             if (typeof renderCharacterDetail === 'function') {
