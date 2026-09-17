@@ -456,7 +456,7 @@ window.handleFolderSearchInput = handleFolderSearchInput;
             .replace(/\s+/g, '');
     }
 // ==========================================
-// 💡 キャラクター一覧描画関数（シンプル・安全版）
+// 💡 キャラクター一覧描画関数（共通カード生成対応版）
 // ==========================================
 function renderCharacterList(systemId, filterKeyword = "") {
     window.selectedSystemId = systemId;
@@ -518,68 +518,12 @@ function renderCharacterList(systemId, filterKeyword = "") {
         return;
     }
 
+    // 💡 共通のカード生成ヘルパー関数を使ってカードをスッキリ描画
     sortedChars.forEach(ch => {
-        const themeColor = ch.themeColor || '#78716c';
-        const charKana = ch.yomigana || ch.nameKana || '';
-
-        const charSystem = (window.systems || []).find(s => s.id.toLowerCase() === String(ch.systemId).toLowerCase());
-        const badgeText = charSystem ? (charSystem.desc || charSystem.name) : '';
-        const badgeClass = charSystem && charSystem.badgeColor ? charSystem.badgeColor : 'bg-stone-700';
-
-        const card = document.createElement('div');
-        card.className = 'bg-white rounded-3xl p-4 border border-stone-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer flex flex-col gap-3 relative overflow-hidden group';
-        card.onclick = () => navigateTo('detail', ch.id);
-
-        let thumbHtml = `<div class="w-full h-full flex items-center justify-center text-stone-300 bg-stone-50"><i class="fa-solid fa-user text-3xl"></i></div>`;
-        
-        if (ch.thumbnail && ch.thumbnail.trim() !== "") {
-            thumbHtml = `<img src="${ch.thumbnail}" class="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500">`;
-        } else if (ch.avatar && ch.avatar.trim() !== "") {
-            thumbHtml = `<img src="${ch.avatar}" class="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500">`;
-        } else if (ch.images && ch.images.base && ch.images.base.length > 0 && ch.images.base[0].url) {
-            thumbHtml = `<img src="${ch.images.base[0].url}" class="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500">`;
+        if (typeof createCharacterCardElement === 'function') {
+            const card = createCharacterCardElement(ch);
+            grid.appendChild(card);
         }
-
-        let epithetHtml = '';
-        if (ch.epithet && ch.epithet.trim() !== '') {
-            const kana = ch.epithetKana ? `<span class="text-[9px] font-medium text-stone-400 block mb-0.5 truncate">${ch.epithetKana}</span>` : '';
-            epithetHtml = `
-                <div class="mb-1 truncate">
-                    ${kana}
-                    <span class="text-xs font-bold tracking-wider block leading-tight" style="color: color-mix(in srgb, ${themeColor} 70%, #1c1917);">${ch.epithet}</span>
-                </div>
-            `;
-        }
-
-        let ageAndBirthText = '';
-        if (ch.age) ageAndBirthText += `${ch.age}歳`;
-        if (ch.birthdate) {
-            ageAndBirthText += ageAndBirthText ? ` <span class="text-stone-300 font-normal">/</span> ${ch.birthdate}` : ch.birthdate;
-        }
-        const subInfoText = ageAndBirthText || ch.occupation || '';
-
-        card.innerHTML = `
-            <div class="aspect-square w-full rounded-2xl overflow-hidden relative border-2 border-stone-200 shadow-inner flex items-center justify-center" style="background-color: ${themeColor};">
-                ${thumbHtml}
-            </div>
-            <div class="flex flex-col gap-0.5 px-1">
-                ${epithetHtml}
-                <div class="flex items-center justify-between gap-1">
-                    <div class="flex items-center gap-1.5 min-w-0">
-                        <h3 class="text-sm font-bold text-stone-800 tracking-wide truncate group-hover:text-stone-600 transition-colors">${ch.name}</h3>
-                        ${charKana ? `<span class="text-[10px] text-stone-400 font-light truncate">${charKana}</span>` : ''}
-                    </div>
-                    ${badgeText ? `
-                        <span class="text-[10px] font-bold px-2 py-0.5 rounded-md text-white shadow-xs shrink-0 ${badgeClass}">
-                            ${badgeText}
-                        </span>
-                    ` : ''}
-                </div>
-                <p class="text-[11px] text-stone-500 font-medium truncate mt-1">${subInfoText}</p>
-            </div>
-        `;
-
-        grid.appendChild(card);
     });
 }
 window.renderCharacterList = renderCharacterList;
