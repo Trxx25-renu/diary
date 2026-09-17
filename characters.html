@@ -325,6 +325,10 @@ async function loadCharactersFromLocal() {
 }
 window.loadCharactersFromLocal = loadCharactersFromLocal;
 
+
+// ==========================================
+// 💡 システムフォルダ描画関数（完全安定版）
+// ==========================================
 function renderSystemFolders(filterKeyword = "") {
     const container = document.getElementById('systemFoldersContainer');
     if (!container) return;
@@ -333,6 +337,11 @@ function renderSystemFolders(filterKeyword = "") {
     const keyword = filterKeyword.toLowerCase().trim();
     
     const allChars = window.characters || [];
+
+    if (!window.systems || !Array.isArray(window.systems)) {
+        console.warn("⚠️ window.systems が定義されていません");
+        return;
+    }
 
     window.systems.forEach(sys => {
         const sysChars = allChars.filter(c => c.systemId === sys.id);
@@ -349,7 +358,12 @@ function renderSystemFolders(filterKeyword = "") {
 
         const card = document.createElement('div');
         card.className = 'bg-white rounded-2xl p-5 border border-stone-200/80 shadow-sm hover:border-stone-400 transition-all cursor-pointer flex flex-col justify-between gap-4 group';
-        card.onclick = () => navigateTo('characterList', sys.id);
+        
+        // 💡 確実に一覧へ飛ぶよう明示的にnavigateToを呼び出す
+        card.onclick = () => {
+            console.log("📂 システムフォルダ選択:", sys.id);
+            navigateTo('characterList', sys.id);
+        };
 
         card.innerHTML = `
             <div>
@@ -994,20 +1008,19 @@ function getAdaptiveTextColor(hexColor) {
 window.getAdaptiveTextColor = getAdaptiveTextColor;
        
 // ==========================================
-// 💡 画面やビューを切り替えるルーター関数（一本化・整理版）
+// 💡 画面やビューを切り替えるルーター関数（完全安定・決定版）
 // ==========================================
 function navigateTo(target, param) {
-    console.log("navigateTo called -> target:", target, "param:", param);
+    console.log("🚀 navigateTo 実行 -> target:", target, "param:", param);
 
-    // 0. モーダルが開いていれば全部閉じる（戻るときに閉じ忘れを防ぐ）
+    // 0. モーダルが開いていれば全部閉じる
     const modals = ['characterModal', 'characterDetailModal'];
     modals.forEach(modalId => {
         const m = document.getElementById(modalId);
         if (m) m.classList.add('hidden');
     });
 
-    // 🔍 画面階層に応じて検索バーのプレースホルダーを切り替える
-    // ※ 検索入力欄のIDが 'searchInput' である想定です（もし異なる場合はIDを書き換えてください）
+    // 🔍 検索バーのプレースホルダーを切り替える
     const searchInput = document.getElementById('searchInput');
     if (searchInput) {
         if (target === 'home' || !target) {
@@ -1017,19 +1030,19 @@ function navigateTo(target, param) {
         }
     }
 
+    // 各ビュー要素を確実に対象取得
+    const folderView = document.getElementById('systemFolderView') || document.getElementById('view-folders');
+    const listView = document.getElementById('characterListView') || document.getElementById('view-list') || document.getElementById('characterListContainer');
+    const detailView = document.getElementById('view-detail') || document.getElementById('characterDetailView');
+    const systemSelectView = document.getElementById('systemSelectView');
+
     // 0.5. トップ画面（ホーム・システム一覧）へ戻る場合
     if (target === 'home' || !target) {
-        const folderView = document.getElementById('systemFolderView') || document.getElementById('view-folders');
-        const listView = document.getElementById('characterListView') || document.getElementById('view-list') || document.getElementById('characterListContainer');
-        const detailView = document.getElementById('view-detail');
-        const systemSelectView = document.getElementById('systemSelectView');
-
         if (folderView) folderView.classList.remove('hidden');
         if (systemSelectView) systemSelectView.classList.remove('hidden');
         if (listView) listView.classList.add('hidden');
         if (detailView) detailView.classList.add('hidden');
 
-        // ⭐ 1階層目（ホーム）のパンくずを描画
         if (typeof renderBreadcrumbAndActions === 'function') {
             renderBreadcrumbAndActions('home');
         }
@@ -1043,59 +1056,32 @@ function navigateTo(target, param) {
             renderCharacterList(targetSystemId);
         }
 
-        const folderView = document.getElementById('systemFolderView') || document.getElementById('view-folders');
-        const listView = document.getElementById('characterListView') || document.getElementById('view-list') || document.getElementById('characterListContainer');
-        const detailView = document.getElementById('view-detail');
-        const systemSelectView = document.getElementById('systemSelectView');
-
         if (folderView) folderView.classList.add('hidden');
         if (systemSelectView) systemSelectView.classList.add('hidden');
         if (listView) listView.classList.remove('hidden');
         if (detailView) detailView.classList.add('hidden');
 
-        // ⭐ 2階層目（キャラクター一覧）のパンくずを描画（システムIDを渡す）
         if (typeof renderBreadcrumbAndActions === 'function') {
             renderBreadcrumbAndActions('characterList', targetSystemId);
         }
     } 
     // 2. 個別の「キャラクター詳細画面」へ移動する場合
     else if (target === 'detail') {
-        // 各ビューの表示・非表示を切り替え
-        const folderView = document.getElementById('systemFolderView') || document.getElementById('view-folders');
-        const listView = document.getElementById('characterListView') || document.getElementById('view-list') || document.getElementById('characterListContainer');
-        const detailView = document.getElementById('view-detail') || document.getElementById('characterDetailView');
-        const systemSelectView = document.getElementById('systemSelectView');
-
         if (folderView) folderView.classList.add('hidden');
         if (systemSelectView) systemSelectView.classList.add('hidden');
         if (listView) listView.classList.add('hidden');
         if (detailView) detailView.classList.remove('hidden');
 
-        // 詳細画面を描画
         if (typeof renderCharacterDetail === 'function') {
             renderCharacterDetail(param);
         }
 
-        // ⭐ 3階層目（キャラクター詳細）のパンくずを描画（キャラクターIDを渡す）
         if (typeof renderBreadcrumbAndActions === 'function') {
             renderBreadcrumbAndActions('detail', param);
         }
     }
 }
 window.navigateTo = navigateTo;
-
-// ==========================================
-// 💡 動作追跡用のデバッグ用ラッパー
-// ==========================================
-const originalNavigateTo = window.navigateTo;
-if (typeof originalNavigateTo === 'function') {
-    window.navigateTo = function(viewName, param) {
-        console.log("🕵️‍♂️ [navigateTo 呼び出し検知]", { viewName, param, currentViewMode: window.currentViewMode });
-        return originalNavigateTo(viewName, param);
-    };
-} else {
-    console.warn("⚠️ navigateTo が見つかりません");
-}
 
 // ==========================================
 // 💡 1階層目のビューモード切り替え関数（安全・競合防止版）
