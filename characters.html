@@ -2414,9 +2414,11 @@ function renderKanaList(filterKeyword = "") {
         sectionWrapper.className = 'col-span-full mb-6 w-full';
 
         const headerDiv = document.createElement('div');
-        headerDiv.className = 'mb-3 flex items-center gap-2 border-b border-stone-200 pb-1.5';
+        // 💡 誕生日のヘッダー（カレンダーアイコン＋下線）と同じデザイン・構造に統一
+        headerDiv.className = 'flex items-center gap-2 mb-3 pb-1 border-b border-stone-200';
         headerDiv.innerHTML = `
-            <span class="text-xs font-bold text-stone-700 bg-stone-100 px-3 py-1 rounded-lg">${sec.title}</span>
+            <i class="fa-solid fa-font text-stone-400 text-xs"></i>
+            <h3 class="text-xs font-bold text-stone-600 tracking-wider">${sec.title}</h3>
             <span class="text-[10px] text-stone-400 font-medium">(${list.length}件)</span>
         `;
         sectionWrapper.appendChild(headerDiv);
