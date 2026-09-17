@@ -456,7 +456,7 @@ window.handleFolderSearchInput = handleFolderSearchInput;
             .replace(/\s+/g, '');
     }
 // ==========================================
-// 💡 キャラクター一覧描画関数（大文字小文字対応・親要素チェッカー付き完全版）
+// 💡 キャラクター一覧描画関数（大文字小文字対応・親ビュー完全強制表示版）
 // ==========================================
 function renderCharacterList(systemId, filterKeyword = "") {
     window.selectedSystemId = systemId;
@@ -468,12 +468,19 @@ function renderCharacterList(systemId, filterKeyword = "") {
         return;
     }
 
-    // 📱 【重要】親のコンテナやビューが隠れていてサイズが0pxになるのを防ぐため、強制的に表示状態にする
+    // 📱 【超重要】原因だった親コンテナ（#view-folders など）の hidden を強制解除し、表示状態にする
+    const viewFolders = document.getElementById('view-folders');
+    if (viewFolders) {
+        viewFolders.classList.remove('hidden');
+        viewFolders.style.display = 'block';
+    }
+
     const listView = document.getElementById('view-list') || grid.closest('.view-section, section');
     if (listView) {
         listView.style.display = 'block';
         listView.classList.remove('hidden');
     }
+    
     grid.style.display = 'grid';
     grid.classList.remove('hidden');
 
@@ -611,17 +618,6 @@ function renderCharacterList(systemId, filterKeyword = "") {
         const computed = window.getComputedStyle(card);
         console.log(`📏 [カード${idx + 1}計測] width: ${rect.width}px, height: ${rect.height}px, display: ${computed.display}, visibility: ${computed.visibility}`);
     });
-
-    // 🔍 親要素のサイズ連鎖チェッカー（どこで幅が0になっているかを追跡）
-    let current = grid;
-    let depth = 0;
-    while (current && current !== document.body && depth < 10) {
-        const rect = current.getBoundingClientRect();
-        const comp = window.getComputedStyle(current);
-        console.log(`階層 ${depth} [${current.tagName.toLowerCase()}#${current.id || 'no-id'}.${current.className}] -> width: ${rect.width}px, height: ${rect.height}px, display: ${comp.display}, visibility: ${comp.visibility}`);
-        current = current.parentElement;
-        depth++;
-    }
 }
 window.renderCharacterList = renderCharacterList;
     
