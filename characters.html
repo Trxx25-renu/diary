@@ -135,6 +135,7 @@ function parseSpoilers(text) {
 }
 window.parseSpoilers = parseSpoilers;
 
+// 🚀　初期化
 document.addEventListener("DOMContentLoaded", async () => {
     console.log("🚀 キャラクター管理ページ初期化開始...");
 
@@ -168,12 +169,11 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     window.currentViewMode = window.currentViewMode || 'systems';
 
-    // 初期表示用のパンくず呼び出し
     if (typeof renderBreadcrumbAndActions === 'function') {
         renderBreadcrumbAndActions('home');
     }
 
-    // 🌐 【ここから変更】ネットワークがなくても止まらないように、Firebase接続を安全にラップする
+    // 1. Firebase接続（タイムアウト付き）
     try {
         const firebaseConfig = {
             apiKey: "AIzaSyA2ctX9sUpJmLSVJomU9cbMzrUX_AXNjuE",
@@ -190,20 +190,15 @@ document.addEventListener("DOMContentLoaded", async () => {
         const db = getFirestore(app);
         window.db = db;
 
-        // 3秒でタイムアウトさせる仕組み（オフライン対策）
         const timeoutPromise = new Promise((_, reject) => 
             setTimeout(() => reject(new Error("Firebase接続タイムアウト")), 3000)
         );
 
         const onlineInitTask = async () => {
             await signInAnonymously(auth);
-            console.log("✅ Firebase 匿名認証完了");
-
             const configRef = window.doc(db, 'artifacts', window.appId, 'public', 'data', 'config', 'settings');
             const configSnap = await window.getDoc(configRef);
-            if (configSnap.exists()) {
-                window.storedPasscode = configSnap.data().passcode;
-            }
+            if (configSnap.exists()) window.storedPasscode = configSnap.data().passcode;
 
             const rosterConfigRef = window.doc(db, 'artifacts', window.appId, 'public', 'data', 'config', 'characterRosterSettings');
             const rosterSnap = await window.getDoc(rosterConfigRef);
@@ -211,19 +206,14 @@ document.addEventListener("DOMContentLoaded", async () => {
                 const data = rosterSnap.data();
                 window.rosterSettings = data;
                 applyRosterSettings(data);
-                if (data.systems && Array.isArray(data.systems)) {
-                    window.systems = data.systems;
-                }
-                if (data.customFields) {
-                    window.systemCustomFields = data.customFields;
-                }
+                if (data.systems && Array.isArray(data.systems)) window.systems = data.systems;
+                if (data.customFields) window.systemCustomFields = data.customFields;
             } else {
                 window.rosterSettings = { title: "", favicon: "" };
             }
             console.log("✅ Firestore設定データの読み込み完了");
         };
 
-        // ネットワーク通信とタイムアウトを競わせる（オフラインなら3秒で強制的にローカルへ移行）
         await Promise.race([onlineInitTask(), timeoutPromise]);
 
     } catch (e) {
@@ -231,24 +221,35 @@ document.addEventListener("DOMContentLoaded", async () => {
         window.rosterSettings = window.rosterSettings || { title: "", favicon: "" };
     }
 
-    // ⭐ キャラクターデータの読み込み（ローカル優先、またはローカルストレージから）
-    if (typeof loadCharactersFromLocal === 'function') {
-        await loadCharactersFromLocal();
+    // 2. キャラクターデータの読み込み（安全にラップ）
+    try {
+        if (typeof loadCharactersFromLocal === 'function') {
+            await loadCharactersFromLocal();
+        } else {
+            // もし関数がなければローカルストレージから直接取得を試みる
+            const localData = localStorage.getItem('characters_backup');
+            window.characters = localData ? JSON.parse(localData) : [];
+        }
+    } catch (e) {
+        console.warn("⚠️ キャラクターデータのローカル読み込みでエラー:", e);
+        window.characters = [];
     }
 
-    // ⭐ 1階層目の初期描画
-    if (typeof renderRootHierarchy === 'function') {
-        renderRootHierarchy();
-    } else if (typeof renderSystemFolders === 'function') {
-        renderSystemFolders();
+    // 3. 画面の初期描画（安全にラップ）
+    try {
+        if (typeof renderRootHierarchy === 'function') {
+            renderRootHierarchy();
+        } else if (typeof renderSystemFolders === 'function') {
+            renderSystemFolders();
+        }
+    } catch (e) {
+        console.error("❌ 画面の描画処理でエラーが発生しました:", e);
     }
 
-    // 💡 管理者としてログイン済みの場合は追加ボタンを表示
+    // 管理者の場合の処理
     if (window.isAdmin) {
         const headerAddBtn = document.getElementById('headerAddBtn');
-        if (headerAddBtn) {
-            headerAddBtn.classList.remove('hidden');
-        }
+        if (headerAddBtn) headerAddBtn.classList.remove('hidden');
     }
 
     console.log("🎉 キャラクター管理ページの初期化がすべて完了しました！");
