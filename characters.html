@@ -1126,7 +1126,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ==========================================
-// 💡 1階層目のビューモード切り替え関数（完全統合・描画対応版）
+// 💡 1階層目のビューモード切り替え関数（完全統合・既存関数連携版）
 // ==========================================
 function switchViewMode(mode) {
     console.log("🚀 switchViewMode 実行 -> モード:", mode);
@@ -1158,31 +1158,40 @@ function switchViewMode(mode) {
         if (typeof renderSystemFolders === 'function') {
             renderSystemFolders(keyword);
         }
-    } else {
-        // 五十音順・誕生日順のときは、全キャラを直接カードとして並べる！
+    } 
+    else if (mode === 'birthday') {
+        // 💡 3. 誕生日順：ご自身で作成された月別区切り関数（renderBirthdayList）をそのまま呼び出す！
+        window.selectedSystemId = null;
+        container.className = ""; // 月別ヘッダー構造を崩さないためクラスをリセット
+        
+        if (typeof renderBirthdayList === 'function') {
+            renderBirthdayList(keyword);
+        } else {
+            console.error("❌ renderBirthdayList 関数が見つかりません");
+        }
+    } 
+    else if (mode === 'index') {
+        // 💡 4. 五十音順：sortCharacters の 'name' モードを使って綺麗にカードを並べる
         window.selectedSystemId = null;
         container.className = "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4";
         
         let allChars = [...(window.characters || [])];
         
-        // ソート処理（五十音順 or 誕生日順）
-        if (mode === 'index') {
-            allChars.sort((a, b) => {
-                const kanaA = a.yomigana || a.nameKana || a.name || '';
-                const kanaB = b.yomigana || b.nameKana || b.name || '';
-                return kanaA.localeCompare(kanaB, 'ja');
-            });
-        } else if (mode === 'birthday') {
-            allChars.sort((a, b) => {
-                return (a.birthdate || '').localeCompare(b.birthdate || '');
-            });
-        }
+        // 既存の sortCharacters を使って五十音順にソートする
+        const prevMode = window.currentCharacterSortMode;
+        window.currentCharacterSortMode = 'name';
+        const sortedChars = typeof sortCharacters === 'function' ? sortCharacters(allChars) : allChars;
+        window.currentCharacterSortMode = prevMode; // モードを復元
 
         // キーワードフィルター
-        const filtered = allChars.filter(c => {
+        const filtered = sortedChars.filter(c => {
             if (!keyword) return true;
-            const kw = normalizeText(keyword);
-            return [c.name, c.yomigana, c.epithet, c.occupation, c.birthdate].some(t => t && normalizeText(t).includes(kw));
+            const kw = typeof normalizeText === 'function' ? normalizeText(keyword) : keyword.toLowerCase();
+            return [c.name, c.yomigana, c.nameKana, c.epithet, c.occupation, c.birthdate].some(t => {
+                if (t == null) return false;
+                const tStr = typeof normalizeText === 'function' ? normalizeText(t) : String(t).toLowerCase();
+                return tStr.includes(kw);
+            });
         });
 
         container.innerHTML = '';
@@ -1191,7 +1200,7 @@ function switchViewMode(mode) {
             return;
         }
 
-        // 💡 共通のカード生成ロジックで全キャラカードを一気に描画
+        // 共通のカード生成ロジックで五十音順の全キャラカードを一気に描画
         filtered.forEach(ch => {
             const themeColor = ch.themeColor || '#78716c';
             const charKana = ch.yomigana || ch.nameKana || '';
