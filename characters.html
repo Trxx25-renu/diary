@@ -456,23 +456,32 @@ window.handleFolderSearchInput = handleFolderSearchInput;
             .replace(/\s+/g, '');
     }
 // ==========================================
-// 💡 キャラクター一覧描画関数（大文字小文字対応・完全安定版）
+// 💡 キャラクター一覧描画関数（大文字小文字対応・親ビュー強制表示＆完全安定版）
 // ==========================================
 function renderCharacterList(systemId, filterKeyword = "") {
     window.selectedSystemId = systemId;
     
-    // 💡 大文字・小文字を区別せずにシステム情報を取得
-    const sys = (window.systems || []).find(s => s.id.toLowerCase() === String(systemId).toLowerCase());
-    const titleEl = document.getElementById('currentSystemTitle');
-    if (titleEl) {
-        titleEl.textContent = sys ? sys.name : 'キャラクター一覧';
-    }
-
     // 💡 2階層目の専用グリッド（characterGrid）を取得
     const grid = document.getElementById('characterGrid');
     if (!grid) {
         console.warn("⚠️ characterGrid 要素が見つかりません。HTML側のIDを確認してください。");
         return;
+    }
+
+    // 📱 【重要】親のコンテナやビューが隠れていてサイズが0pxになるのを防ぐため、強制的に表示状態にする
+    const listView = document.getElementById('view-list') || grid.closest('.view-section, section');
+    if (listView) {
+        listView.style.display = 'block';
+        listView.classList.remove('hidden');
+    }
+    grid.style.display = 'grid';
+    grid.classList.remove('hidden');
+
+    // 💡 大文字・小文字を区別せずにシステム情報を取得
+    const sys = (window.systems || []).find(s => s.id.toLowerCase() === String(systemId).toLowerCase());
+    const titleEl = document.getElementById('currentSystemTitle');
+    if (titleEl) {
+        titleEl.textContent = sys ? sys.name : 'キャラクター一覧';
     }
 
     grid.innerHTML = '';
