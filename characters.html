@@ -456,39 +456,12 @@ window.handleFolderSearchInput = handleFolderSearchInput;
             .replace(/\s+/g, '');
     }
 // ==========================================
-// 💡 キャラクター一覧描画関数（全親ビュー完全強制オープン版）
+// 💡 キャラクター一覧描画関数（シンプル・安全版）
 // ==========================================
 function renderCharacterList(systemId, filterKeyword = "") {
     window.selectedSystemId = systemId;
     
-    // 📱 【超重要】フォルダビューを確実に隠す
-    const viewFolders = document.getElementById('view-folders');
-    if (viewFolders) {
-        viewFolders.classList.add('hidden');
-        viewFolders.style.display = 'none';
-    }
-
-    // 📱 【超重要】リストビュー（およびその親セクション）を確実に強制表示する
-    const listView = document.getElementById('view-list');
-    if (listView) {
-        listView.classList.remove('hidden');
-        listView.style.display = 'block';
-        listView.style.visibility = 'visible';
-        
-        // リストビューの親要素（もしあれば）のhiddenも外す
-        let parent = listView.parentElement;
-        while (parent && parent !== document.body) {
-            if (parent.classList.contains('hidden')) {
-                parent.classList.remove('hidden');
-            }
-            if (window.getComputedStyle(parent).display === 'none') {
-                parent.style.display = 'block';
-            }
-            parent = parent.parentElement;
-        }
-    }
-
-    // 💡 2階層目の専用グリッド（characterGrid）を取得
+    // 💡 2階層目の専用グリッドを取得
     const grid = document.getElementById('characterGrid');
     if (!grid) {
         console.warn("⚠️ characterGrid 要素が見つかりません。HTML側のIDを確認してください。");
@@ -497,7 +470,6 @@ function renderCharacterList(systemId, filterKeyword = "") {
 
     grid.style.display = 'grid';
     grid.classList.remove('hidden');
-    grid.style.visibility = 'visible';
 
     // 💡 大文字・小文字を区別せずにシステム情報を取得
     const sys = (window.systems || []).find(s => s.id.toLowerCase() === String(systemId).toLowerCase());
@@ -510,19 +482,10 @@ function renderCharacterList(systemId, filterKeyword = "") {
     
     const keyword = normalizeText(filterKeyword);
     
-    // 💡 先に `systemChars` を定義する
     const systemChars = (window.characters || []).filter(c => {
         if (!c.systemId) return false;
         return c.systemId.toLowerCase() === String(systemId).toLowerCase();
     });
-    
-    console.log("🐛 [デバッグ] renderCharacterList に渡された全キャラクター:", window.characters);
-    console.log("🐛 [デバッグ] 絞り込み対象の systemChars:", systemChars);
-    if (systemChars.length > 0) {
-        console.log("🐛 [デバッグ] 1件目のキャラクターオブジェクト詳細:", systemChars[0]);
-    }
-
-    console.log(`🔍 系統「${systemId}」のキャラクター抽出結果:`, systemChars.length, "件");
 
     const filteredChars = systemChars.filter(c => {
         if (!keyword) return true;
@@ -617,21 +580,6 @@ function renderCharacterList(systemId, filterKeyword = "") {
         `;
 
         grid.appendChild(card);
-    });
-
-    // 💡 描画完了直後にグリッドの中身がどうなっているかを検証するログ
-    console.log("🐛 [デバッグ] characterGrid の子要素数:", grid.children.length);
-    console.log("🐛 [デバッグ] grid 内の HTML 文字列:", grid.innerHTML);
-
-    // 📱 スマホ環境用・実際の要素サイズ計測ログ
-    const gridRect = grid.getBoundingClientRect();
-    const gridComputed = window.getComputedStyle(grid);
-    console.log(`📏 [グリッド計測] width: ${gridRect.width}px, height: ${gridRect.height}px, display: ${gridComputed.display}`);
-
-    Array.from(grid.children).forEach((card, idx) => {
-        const rect = card.getBoundingClientRect();
-        const computed = window.getComputedStyle(card);
-        console.log(`📏 [カード${idx + 1}計測] width: ${rect.width}px, height: ${rect.height}px, display: ${computed.display}, visibility: ${computed.visibility}`);
     });
 }
 window.renderCharacterList = renderCharacterList;
@@ -1071,7 +1019,7 @@ function getAdaptiveTextColor(hexColor) {
 window.getAdaptiveTextColor = getAdaptiveTextColor;
        
 // ==========================================
-// 💡 画面やビューを切り替えるルーター関数（完全安定版）
+// 💡 画面やビューを切り替えるルーター関数（完全安定・初期化対応版）
 // ==========================================
 function navigateTo(target, param) {
     console.log("🚀 navigateTo 実行 -> target:", target, "param:", param);
@@ -1130,10 +1078,9 @@ function navigateTo(target, param) {
 
             toggleView(folderView, false);
             toggleView(listView, true, '');
-            toggleView(characterGrid, true, 'grid'); // グリッドを確実にグリッド表示
+            toggleView(characterGrid, true, 'grid');
             toggleView(detailView, false);
 
-            // リストを描画
             if (targetSystemId && typeof renderCharacterList === 'function') {
                 renderCharacterList(targetSystemId);
             } else {
@@ -1166,15 +1113,20 @@ function navigateTo(target, param) {
 
     } catch (err) {
         console.error("❌ navigateTo 内部でエラーが発生しました:", err);
-        if (err.stack) {
-            console.error("📍 エラー詳細スタック:", err.stack);
-        }
     }
 }
 window.navigateTo = navigateTo;
 
+// 💡 【超重要】ページ読み込み完了時に、強制的にホーム画面（1階層目）を表示状態に初期化する
+document.addEventListener('DOMContentLoaded', () => {
+    // もしURLや初期状態で特定の画面を指定していなければ、強制的にホームを表示
+    if (!window.selectedSystemId) {
+        navigateTo('home');
+    }
+});
+
 // ==========================================
-// 💡 1階層目のビューモード切り替え関数（完全統合版）
+// 💡 1階層目のビューモード切り替え関数（完全統合・描画対応版）
 // ==========================================
 function switchViewMode(mode) {
     console.log("🚀 switchViewMode 実行 -> モード:", mode);
@@ -1211,7 +1163,7 @@ function switchViewMode(mode) {
         window.selectedSystemId = null;
         container.className = "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4";
         
-        let allChars = window.characters || [];
+        let allChars = [...(window.characters || [])];
         
         // ソート処理（五十音順 or 誕生日順）
         if (mode === 'index') {
@@ -1233,15 +1185,76 @@ function switchViewMode(mode) {
             return [c.name, c.yomigana, c.epithet, c.occupation, c.birthdate].some(t => t && normalizeText(t).includes(kw));
         });
 
-        // 共通のカード生成ロジックで一気に描画
         container.innerHTML = '';
         if (filtered.length === 0) {
             container.innerHTML = `<div class="col-span-full text-center py-12 text-stone-400 text-xs"><p>キャラクターが見つかりませんでした。</p></div>`;
             return;
         }
 
-        // ※2階層目の `renderCharacterList` と同じカード生成処理をここで展開、あるいは共通関数化できます
-        // まずは1階層目のタブ切り替えが全キャラカード表示になることを確認しましょう！
+        // 💡 共通のカード生成ロジックで全キャラカードを一気に描画
+        filtered.forEach(ch => {
+            const themeColor = ch.themeColor || '#78716c';
+            const charKana = ch.yomigana || ch.nameKana || '';
+
+            const charSystem = (window.systems || []).find(s => s.id.toLowerCase() === String(ch.systemId).toLowerCase());
+            const badgeText = charSystem ? (charSystem.desc || charSystem.name) : '';
+            const badgeClass = charSystem && charSystem.badgeColor ? charSystem.badgeColor : 'bg-stone-700';
+
+            const card = document.createElement('div');
+            card.className = 'bg-white rounded-3xl p-4 border border-stone-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer flex flex-col gap-3 relative overflow-hidden group';
+            card.onclick = () => navigateTo('detail', ch.id);
+
+            let thumbHtml = `<div class="w-full h-full flex items-center justify-center text-stone-300 bg-stone-50"><i class="fa-solid fa-user text-3xl"></i></div>`;
+            
+            if (ch.thumbnail && ch.thumbnail.trim() !== "") {
+                thumbHtml = `<img src="${ch.thumbnail}" class="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500">`;
+            } else if (ch.avatar && ch.avatar.trim() !== "") {
+                thumbHtml = `<img src="${ch.avatar}" class="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500">`;
+            } else if (ch.images && ch.images.base && ch.images.base.length > 0 && ch.images.base[0].url) {
+                thumbHtml = `<img src="${ch.images.base[0].url}" class="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500">`;
+            }
+
+            let epithetHtml = '';
+            if (ch.epithet && ch.epithet.trim() !== '') {
+                const kana = ch.epithetKana ? `<span class="text-[9px] font-medium text-stone-400 block mb-0.5 truncate">${ch.epithetKana}</span>` : '';
+                epithetHtml = `
+                    <div class="mb-1 truncate">
+                        ${kana}
+                        <span class="text-xs font-bold tracking-wider block leading-tight" style="color: color-mix(in srgb, ${themeColor} 70%, #1c1917);">${ch.epithet}</span>
+                    </div>
+                `;
+            }
+
+            let ageAndBirthText = '';
+            if (ch.age) ageAndBirthText += `${ch.age}歳`;
+            if (ch.birthdate) {
+                ageAndBirthText += ageAndBirthText ? ` <span class="text-stone-300 font-normal">/</span> ${ch.birthdate}` : ch.birthdate;
+            }
+            const subInfoText = ageAndBirthText || ch.occupation || '';
+
+            card.innerHTML = `
+                <div class="aspect-square w-full rounded-2xl overflow-hidden relative border-2 border-stone-200 shadow-inner flex items-center justify-center" style="background-color: ${themeColor};">
+                    ${thumbHtml}
+                </div>
+                <div class="flex flex-col gap-0.5 px-1">
+                    ${epithetHtml}
+                    <div class="flex items-center justify-between gap-1">
+                        <div class="flex items-center gap-1.5 min-w-0">
+                            <h3 class="text-sm font-bold text-stone-800 tracking-wide truncate group-hover:text-stone-600 transition-colors">${ch.name}</h3>
+                            ${charKana ? `<span class="text-[10px] text-stone-400 font-light truncate">${charKana}</span>` : ''}
+                        </div>
+                        ${badgeText ? `
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded-md text-white shadow-xs shrink-0 ${badgeClass}">
+                                ${badgeText}
+                            </span>
+                        ` : ''}
+                    </div>
+                    <p class="text-[11px] text-stone-500 font-medium truncate mt-1">${subInfoText}</p>
+                </div>
+            `;
+
+            container.appendChild(card);
+        });
     }
 }
 window.switchViewMode = switchViewMode;
