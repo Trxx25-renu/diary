@@ -1026,7 +1026,7 @@ function getAdaptiveTextColor(hexColor) {
 window.getAdaptiveTextColor = getAdaptiveTextColor;
        
 // ==========================================
-// 💡 画面やビューを切り替えるルーター関数（完全セーフガード・詳細エラー出力版）
+// 💡 画面やビューを切り替えるルーター関数（グリッド表示完全保証版）
 // ==========================================
 function navigateTo(target, param) {
     console.log("🚀 navigateTo 実行 -> target:", target, "param:", param);
@@ -1053,15 +1053,14 @@ function navigateTo(target, param) {
         const folderView = document.getElementById('view-folders');
         const listView = document.getElementById('view-list');
         const detailView = document.getElementById('view-detail');
+        const characterGrid = document.getElementById('characterGrid'); // 追加
 
         // 0.5. ホーム画面（1階層目）へ戻る場合
         if (target === 'home' || !target) {
-            // ホーム（システム一覧・フォルダ）を表示
             if (folderView) {
                 folderView.classList.remove('hidden');
                 folderView.style.display = '';
             }
-            // リストと詳細を完全に隠す
             if (listView) {
                 listView.classList.add('hidden');
                 listView.style.display = 'none';
@@ -1069,6 +1068,9 @@ function navigateTo(target, param) {
             if (detailView) {
                 detailView.classList.add('hidden');
                 detailView.style.display = 'none';
+            }
+            if (characterGrid) {
+                characterGrid.classList.add('hidden');
             }
 
             if (typeof renderBreadcrumbAndActions === 'function') {
@@ -1090,6 +1092,11 @@ function navigateTo(target, param) {
                 listView.classList.remove('hidden');
                 listView.style.display = '';
             }
+            // 💡 キャラクターグリッドを確実に表示して隠しクラスを剥ぎ取る
+            if (characterGrid) {
+                characterGrid.classList.remove('hidden');
+                characterGrid.style.display = 'grid';
+            }
             // 詳細を隠す
             if (detailView) {
                 detailView.classList.add('hidden');
@@ -1109,7 +1116,6 @@ function navigateTo(target, param) {
         } 
         // 2. キャラクター詳細画面（3階層目）へ移動する場合
         else if (target === 'detail') {
-            // ホームとリストを完全に隠す
             if (folderView) {
                 folderView.classList.add('hidden');
                 folderView.style.display = 'none';
@@ -1117,6 +1123,9 @@ function navigateTo(target, param) {
             if (listView) {
                 listView.classList.add('hidden');
                 listView.style.display = 'none';
+            }
+            if (characterGrid) {
+                characterGrid.classList.add('hidden');
             }
             
             // 詳細ビューを表示
@@ -1142,7 +1151,6 @@ function navigateTo(target, param) {
 
     } catch (err) {
         console.error("❌ navigateTo 内部でエラーが発生しました:", err);
-        // 💡 どこでエラーが起きたかを完全に追跡できるようにする
         if (err.stack) {
             console.error("📍 エラー詳細スタック:", err.stack);
         }
