@@ -2275,7 +2275,7 @@ function createCharacterCardElement(ch) {
 window.createCharacterCardElement = createCharacterCardElement;
 
 // ==========================================
-// 💡 五十音順キャラクターリスト描画関数（nameKana完全対応版）
+// 💡 五十音順キャラクターリスト描画関数（修正版）
 // ==========================================
 function renderKanaList(filterKeyword = "") {
     window.selectedSystemId = null; 
@@ -2285,7 +2285,8 @@ function renderKanaList(filterKeyword = "") {
         titleEl.textContent = '五十音順キャラクター一覧';
     }
 
-    const grid = document.getElementById('characterGrid');
+    // 💡 systemFoldersContainer を最優先で取得するように修正
+    const grid = document.getElementById('systemFoldersContainer') || document.getElementById('characterGrid');
     if (!grid) return;
 
     grid.innerHTML = '';
@@ -2348,11 +2349,9 @@ function renderKanaList(filterKeyword = "") {
     sections.forEach(sec => grouped[sec.title] = []);
 
     sortedChars.forEach(ch => {
-        // 💡 フォームの入力項目に合わせた `nameKana` を最優先で取得
         const kana = (ch.nameKana || ch.yomigana || ch.name || '').trim();
         let firstChar = kana.charAt(0);
         
-        // 💡 外国人キャラ対応：nameKana がアルファベットで、名前（name）がカタカナ/ひらがなの場合は名前の先頭を使う
         const nameFirstChar = (ch.name || '').trim().charAt(0);
         if (/^[a-zA-Zａ-ｚＡ-Ｚ]$/.test(firstChar) && /^[\u3040-\u309F\u30A0-\u30FF]$/.test(nameFirstChar)) {
             firstChar = nameFirstChar;
@@ -2373,18 +2372,31 @@ function renderKanaList(filterKeyword = "") {
         const list = grouped[sec.title];
         if (list.length === 0) return;
 
+        // 行ごとのセクションラッパー
+        const sectionWrapper = document.createElement('div');
+        sectionWrapper.className = 'col-span-full mb-6 w-full';
+
         const headerDiv = document.createElement('div');
-        headerDiv.className = 'col-span-full mt-4 mb-1 flex items-center gap-2 border-b border-stone-200 pb-1.5';
+        headerDiv.className = 'mb-3 flex items-center gap-2 border-b border-stone-200 pb-1.5';
         headerDiv.innerHTML = `
             <span class="text-xs font-bold text-stone-700 bg-stone-100 px-3 py-1 rounded-lg">${sec.title}</span>
             <span class="text-[10px] text-stone-400 font-medium">(${list.length}件)</span>
         `;
-        grid.appendChild(headerDiv);
+        sectionWrapper.appendChild(headerDiv);
+
+        // カードを並べるグリッド
+        const subGrid = document.createElement('div');
+        subGrid.className = 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4';
 
         list.forEach(ch => {
-            const cardEl = (typeof createCharacterCardElement === 'function') ? createCharacterCardElement(ch) : document.createElement('div');
-            grid.appendChild(cardEl);
+            if (typeof createCharacterCardElement === 'function') {
+                const card = createCharacterCardElement(ch);
+                subGrid.appendChild(card);
+            }
         });
+
+        sectionWrapper.appendChild(subGrid);
+        grid.appendChild(sectionWrapper);
     });
 }
 window.renderKanaList = renderKanaList;
@@ -2393,7 +2405,8 @@ window.renderKanaList = renderKanaList;
 // 💡 誕生日順（月別区切り）キャラクターリスト描画関数
 // ==========================================
 function renderBirthdayList(filterKeyword = "") {
-    const grid = document.getElementById('characterGrid') || document.getElementById('characterListContainer');
+    // 💡 systemFoldersContainer を最優先で取得するように修正
+    const grid = document.getElementById('systemFoldersContainer') || document.getElementById('characterGrid') || document.getElementById('characterListContainer');
     if (!grid) return;
 
     grid.innerHTML = '';
@@ -2456,7 +2469,7 @@ function renderBirthdayList(filterKeyword = "") {
 
         // 月ごとの区切りヘッダー
         const sectionWrapper = document.createElement('div');
-        sectionWrapper.className = 'col-span-full mb-6';
+        sectionWrapper.className = 'col-span-full mb-6 w-full';
 
         const headerHtml = `
             <div class="flex items-center gap-2 mb-3 pb-1 border-b border-stone-200">
@@ -2485,7 +2498,7 @@ function renderBirthdayList(filterKeyword = "") {
 window.renderBirthdayList = renderBirthdayList;
        
 // ==========================================
-// 💡 キャラクターの並び替え機能（外国人キャラのカタカナソート・ヨミガナ完全対応版）
+// 💡 キャラクターの並び替え機能（ビューモード・ヨミガナ完全対応版）
 // ==========================================
 window.currentCharacterSortMode = window.currentCharacterSortMode || 'updated';
 
@@ -2505,26 +2518,34 @@ function changeCharacterSort(mode) {
         }
     });
 
-    // 💡 現在どのビュー（画面）を開いているかに応じて適切に再描画する
-    const currentTitle = document.getElementById('currentSystemTitle')?.textContent || '';
-    const searchInput = document.getElementById('charSearchInput');
+    const searchInput = document.getElementById('charSearchInput') || document.getElementById('folderSearchInput');
     const keyword = searchInput ? searchInput.value : '';
 
-    if (currentTitle.includes('五十音順')) {
+    // 💡 現在のビューモード（systems, index, birthday）を基に安全に再描画する
+    const currentMode = window.currentViewMode || 'systems';
+
+    if (currentMode === 'index') {
         if (typeof renderKanaList === 'function') {
             renderKanaList(keyword);
         }
-    } else if (currentTitle.includes('すべてのキャラクター')) {
-        if (typeof renderAllCharacterList === 'function') {
-            renderAllCharacterList(keyword);
+    } else if (currentMode === 'birthday') {
+        if (typeof renderBirthdayList === 'function') {
+            renderBirthdayList(keyword);
         }
     } else {
-        if (window.selectedSystemId && typeof renderCharacterList === 'function') {
-            renderCharacterList(window.selectedSystemId);
-        } else if (typeof window.currentSelectedSystemId !== 'undefined' && typeof selectSystemFolder === 'function') {
-            selectSystemFolder(window.currentSelectedSystemId);
-        } else if (typeof renderSystemFolders === 'function') {
-            renderSystemFolders();
+        const currentTitle = document.getElementById('currentSystemTitle')?.textContent || '';
+        if (currentTitle.includes('すべてのキャラクター')) {
+            if (typeof renderAllCharacterList === 'function') {
+                renderAllCharacterList(keyword);
+            }
+        } else {
+            if (window.selectedSystemId && typeof renderCharacterList === 'function') {
+                renderCharacterList(window.selectedSystemId);
+            } else if (typeof window.currentSelectedSystemId !== 'undefined' && typeof selectSystemFolder === 'function') {
+                selectSystemFolder(window.currentSelectedSystemId);
+            } else if (typeof renderSystemFolders === 'function') {
+                renderSystemFolders(keyword);
+            }
         }
     }
 }
