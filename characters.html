@@ -3862,12 +3862,8 @@ window.importCharactersJSON = importCharactersJSON;
         </div>
 
         <!-- ========================================== -->
-        <!-- 📂 3階層目：キャラクター詳細ビュー -->
-        <!-- ========================================== -->
-        <div id="view-detail" class="hidden"></div>
-    </main>
-   
     <!-- ⚙️ HP設定モーダル -->
+    <!-- ========================================== -->
     <div id="settingsModal" class="hidden fixed inset-0 z-50 bg-stone-900/40 backdrop-blur-sm flex items-center justify-center p-4">
         <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-xl border border-stone-200 max-h-[90vh] overflow-y-auto">
             <div class="flex items-center justify-between mb-4 pb-2 border-b border-stone-100">
@@ -3893,234 +3889,68 @@ window.importCharactersJSON = importCharactersJSON;
                         <img id="settingFaviconPreview" class="w-8 h-8 rounded-lg object-cover border border-stone-200 hidden">
                     </div>
                 </div>
-            </form>
-        </div>
-    </div>
 
-            <div class="pt-2 border-t border-stone-100">
-                <h4 class="text-xs font-bold text-stone-700 mb-1">ギャラリーカテゴリ名の変更</h4>
-                <p class="text-[11px] text-stone-400 mb-3">キャラクター詳細やアップロード画面で表示されるタブ名を変更できます</p>
-                <div class="grid grid-cols-2 gap-2">
-                    <div>
-                        <label class="block text-[10px] text-stone-400 mb-1">カテゴリ1（デフォルト: 基本）</label>
-                        <input type="text" id="catNameBase" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-1.5 text-xs text-stone-800" placeholder="基本">
-                    </div>
-                    <div>
-                        <label class="block text-[10px] text-stone-400 mb-1">カテゴリ2（デフォルト: 戦闘）</label>
-                        <input type="text" id="catNameCombat" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-1.5 text-xs text-stone-800" placeholder="戦闘">
-                    </div>
-                    <div>
-                        <label class="block text-[10px] text-stone-400 mb-1">カテゴリ3（デフォルト: SD・他）</label>
-                        <input type="text" id="catNameSd" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-1.5 text-xs text-stone-800" placeholder="SD・他">
-                    </div>
-                    <div>
-                        <label class="block text-[10px] text-stone-400 mb-1">カテゴリ4（デフォルト: 落書き）</label>
-                        <input type="text" id="catNameDoodle" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-1.5 text-xs text-stone-800" placeholder="落書き">
-                    </div>
-                </div>
-            </div>
-
-            <div class="pt-2 border-t border-stone-100">
-                <h4 class="text-xs font-bold text-stone-700 mb-1">システムの表示順・名前変更</h4>
-                <p class="text-[11px] text-stone-400 mb-3">矢印ボタンでトップページに表示されるシステムの並び順を変更できます</p>
-                <div id="settingsSystemsEditorContainer" class="space-y-2"></div>
-            </div>
-
-            <div class="pt-2 border-t border-stone-100">
-                <h4 class="text-xs font-bold text-stone-700 mb-1">システム別 カスタム項目設定</h4>
-                <p class="text-[11px] text-stone-400 mb-3">「テキスト（ネタバレ可）」と「ステータス」をそれぞれシステムごとに自由に追加・編集できます</p>
-                <div id="settingsFieldsEditorContainer" class="space-y-3"></div>
-            </div>
-
-            <!-- 💡 データバックアップ（エクスポート・インポート） -->
-            <div class="pt-2 border-t border-stone-100">
-                <h4 class="text-xs font-bold text-stone-700 mb-1">データバックアップ</h4>
-                <p class="text-[11px] text-stone-400 mb-2">キャラクターデータをファイルとして保存・復元します</p>
-                <div class="flex gap-2">
-                    <button type="button" onclick="exportCharactersJSON()" class="flex-1 py-2 px-3 rounded-xl text-xs font-bold text-stone-700 bg-stone-100 hover:bg-stone-200 transition-all flex items-center justify-center gap-1.5">
-                        <i class="fa-solid fa-download"></i>
-                        <span>書き出し</span>
-                    </button>
-                    <button type="button" onclick="document.getElementById('importFileJson').click()" class="flex-1 py-2 px-3 rounded-xl text-xs font-bold text-white bg-stone-700 hover:bg-stone-800 transition-all flex items-center justify-center gap-1.5">
-                        <i class="fa-solid fa-upload"></i>
-                        <span>読み込み</span>
-                    </button>
-                    <!-- ファイル選択用の隠しinput -->
-                    <input type="file" id="importFileJson" accept=".json" class="hidden" onchange="importCharactersJSON(event)">
-                </div>
-            </div>
-
-            <div class="pt-3 flex items-center justify-end gap-2 border-t border-stone-100">
-                <button type="button" onclick="closeSettingsModal()" class="px-4 py-2 rounded-xl text-xs font-medium text-stone-600 hover:bg-stone-100 transition-all">キャンセル</button>
-                <button type="submit" class="bg-stone-800 text-white px-5 py-2 rounded-xl text-xs font-medium shadow-sm hover:bg-stone-700 transition-all">設定を保存</button>
-            </div>
-        </form>
-    </div>
-</div>
-
-<!-- ========================================== -->
-<!-- 📝 キャラクター登録モーダル -->
-<!-- ========================================== -->
-<div id="characterModal" class="hidden fixed inset-0 z-50 bg-stone-900/40 backdrop-blur-sm flex items-center justify-center p-4">
-    <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-xl border border-stone-200 max-h-[90vh] overflow-y-auto">
-        <div class="flex items-center justify-between mb-4 pb-2 border-b border-stone-100">
-            <h3 class="font-bold text-stone-800 text-sm flex items-center gap-2">
-                <i class="fa-solid fa-user-plus text-stone-600"></i>
-                <span>新規キャラクター登録</span>
-            </h3>
-            <button onclick="closeCharacterModal()" class="text-stone-400 hover:text-stone-700 p-1">
-                <i class="fa-solid fa-xmark text-lg"></i>
-            </button>
-        </div>
-
-        <!-- 💡 JSONファイルからの一括インポートエリア -->
-        <div class="bg-stone-50 p-3 rounded-2xl border border-stone-200/80 mb-4 flex items-center justify-between shadow-xs">
-            <div class="text-xs font-bold text-stone-600 flex items-center gap-1.5">
-                <i class="fa-solid fa-file-code text-stone-500"></i>
-                <span>JSONから一括読み込み</span>
-            </div>
-            <label class="cursor-pointer bg-white hover:bg-stone-50 text-stone-700 text-xs font-bold px-3 py-1.5 rounded-xl border border-stone-300 shadow-xs transition-all flex items-center gap-1.5">
-                <i class="fa-solid fa-upload text-stone-500"></i> ファイル選択
-                <input type="file" accept=".json" class="hidden" onchange="importCharacterFromJson(event)">
-            </label>
-        </div>
-
-        <form id="characterForm" onsubmit="saveCharacter(event)" class="space-y-4">
-            <div>
-                <label class="block text-xs font-bold text-stone-600 mb-1">TRPGシステム</label>
-                <select id="charSystemSelect" onchange="handleSystemChangeInModal()" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-sm text-stone-800 focus:outline-none focus:border-stone-400"></select>
-            </div>
-            
-            <!-- 二つ名と二つ名の読み仮名 -->
-            <div class="grid grid-cols-2 gap-3">
-                <div>
-                    <label class="block text-xs font-bold text-stone-600 mb-1">二つ名の読み仮名</label>
-                    <input type="text" id="charEpithetKana" placeholder="例: こっこうのすないぱー" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-800 focus:outline-none focus:border-stone-400">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-stone-600 mb-1">二つ名（称号など）</label>
-                    <input type="text" id="charEpithet" placeholder="例: 孤高の狙撃手" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-800 focus:outline-none focus:border-stone-400">
-                </div>
-            </div>
-
-            <!-- 名前と名前の読み仮名 -->
-            <div class="grid grid-cols-2 gap-3">
-                <div>
-                    <label class="block text-xs font-bold text-stone-600 mb-1">名前の読み仮名</label>
-                    <input type="text" id="charNameKana" placeholder="例: やまだ たろう" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-800 focus:outline-none focus:border-stone-400">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-stone-600 mb-1">名前 <span class="text-rose-500">*</span></label>
-                    <input type="text" id="charName" placeholder="例: 山田 太郎" required class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-800 focus:outline-none focus:border-stone-400">
-                </div>
-            </div>
-
-            <!-- 年齢・性別・誕生日・テーマカラー -->
-            <div class="grid grid-cols-2 gap-3">
-                <div>
-                    <label class="block text-xs font-bold text-stone-600 mb-1">年齢</label>
-                    <input type="text" id="charAge" placeholder="例: 20" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-800 focus:outline-none focus:border-stone-400">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-stone-600 mb-1">性別</label>
-                    <select id="charGender" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-800 focus:outline-none focus:border-stone-400">
-                        <option value="">未選択</option>
-                        <option value="女性">女性</option>
-                        <option value="男性">男性</option>
-                        <option value="不明">不明</option>
-                    </select>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-2 gap-3">
-                <div>
-                    <label class="block text-xs font-bold text-stone-600 mb-1">誕生日</label>
-                    <input type="text" id="charBirthdate" placeholder="例: 4月1日" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-800 focus:outline-none focus:border-stone-400">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-stone-600 mb-1">テーマカラー</label>
-                    <div class="flex items-center gap-2">
-                        <input type="text" id="charThemeColor" placeholder="292524 または #292524" oninput="handleThemeColorInput(this.value)" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-800 focus:outline-none focus:border-stone-400 font-mono">
-                        <div id="characterColorPreview" class="w-9 h-9 rounded-xl border border-stone-300 shadow-inner bg-stone-100 shrink-0 transition-colors"></div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- 🔗 複数リンク管理エリア -->
-            <div class="pt-2 border-t border-stone-100">
-                <label class="block text-xs font-bold text-stone-600 mb-1 flex items-center justify-between">
-                    <span><i class="fa-solid fa-link text-stone-400 mr-1"></i> 関連リンク（キャラクターシート等）</span>
-                    <button type="button" onclick="window.addEditingLink()" class="text-[11px] text-rose-600 hover:text-rose-700 font-bold flex items-center gap-1">
-                        <i class="fa-solid fa-plus"></i> リンクを追加
-                    </button>
-                </label>
-                <!-- ここにJavaScriptで「ラベル」と「URL」の入力行が動的に並びます -->
-                <div id="charLinksContainer" class="space-y-2"></div>
-            </div>
-
-            <div id="dynamicCustomFieldsContainer" class="space-y-3 pt-2 border-t border-stone-100"></div>
-
-            <!-- 💡 追加：設定／メモ ＆ 秘匿メモ入力欄 -->
-            <div class="space-y-3 pt-3 border-t border-stone-100">
-                <div>
-                    <label class="block text-xs font-bold text-stone-600 mb-1">設定 / メモ</label>
-                    <textarea id="charMemo" rows="3" class="w-full bg-stone-50 border border-stone-200 rounded-xl p-2.5 text-xs text-stone-800 focus:outline-none focus:border-stone-400" placeholder="キャラクターの設定や自由なメモを記入..."></textarea>
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-rose-600 mb-1">秘匿メモ（ネタバレ）</label>
-                    <textarea id="charSecret" rows="3" class="w-full bg-rose-50/40 border border-rose-200/70 rounded-xl p-2.5 text-xs text-stone-800 focus:outline-none focus:border-rose-400" placeholder="||ネタバレを含む秘匿テキストはこう書けます||"></textarea>
-                </div>
-            </div>
-
-            <!-- 💡 統合されたキャラクター画像・イラスト管理セクション -->
-            <div class="pt-3 border-t border-stone-100">
-                <div class="flex items-center justify-between mb-2">
-                    <h4 class="text-xs font-bold text-stone-700 flex items-center gap-1.5">
-                        <i class="fa-solid fa-images text-stone-500"></i>
-                        <span>キャラクター画像・イラスト管理</span>
-                    </h4>
-                    <span class="text-[10px] text-stone-400">タブごとに画像や役割を設定できます</span>
-                </div>
-
-                <!-- カテゴリ（役割）タブ切り替え：アイコン・立ち絵・各種ギャラリーを統合 -->
-                <div class="flex bg-stone-100 p-1 rounded-xl mb-3 gap-1 overflow-x-auto">
-                    <button type="button" onclick="switchImageCategory('thumb')" id="imgTab-thumb" class="flex-1 py-1.5 px-2 text-[10px] font-bold rounded-lg text-stone-500 hover:text-stone-800 transition-all whitespace-nowrap">アイコン</button>
-                    <button type="button" onclick="switchImageCategory('avatar')" id="imgTab-avatar" class="flex-1 py-1.5 px-2 text-[10px] font-bold rounded-lg text-stone-500 hover:text-stone-800 transition-all whitespace-nowrap">立ち絵</button>
-                    <button type="button" onclick="switchImageCategory('base')" id="imgTab-base" class="flex-1 py-1.5 px-2 text-[10px] font-bold rounded-lg bg-white text-stone-800 shadow-sm transition-all whitespace-nowrap">基本</button>
-                    <button type="button" onclick="switchImageCategory('combat')" id="imgTab-combat" class="flex-1 py-1.5 px-2 text-[10px] font-bold rounded-lg text-stone-500 hover:text-stone-800 transition-all whitespace-nowrap">戦闘</button>
-                    <button type="button" onclick="switchImageCategory('sd')" id="imgTab-sd" class="flex-1 py-1.5 px-2 text-[10px] font-bold rounded-lg text-stone-500 hover:text-stone-800 transition-all whitespace-nowrap">SD・他</button>
-                    <button type="button" onclick="switchImageCategory('doodle')" id="imgTab-doodle" class="flex-1 py-1.5 px-2 text-[10px] font-bold rounded-lg text-stone-500 hover:text-stone-800 transition-all whitespace-nowrap">落書き</button>
-                </div>
-
-                <!-- 画像アップロード＆プレビューエリア（1箇所に集約） -->
-                <div class="bg-stone-50 p-3 rounded-2xl border border-stone-200/80 space-y-3">
-                    <input type="file" id="characterImageFile" accept="image/*" multiple onchange="handleCharacterImagesSelect(event)" class="w-full text-xs text-stone-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-white file:text-stone-700 hover:file:bg-stone-100 cursor-pointer border border-stone-200 rounded-xl bg-white">
-                    
-                    <div id="characterImagesPreviewContainer" class="grid grid-cols-3 gap-2 min-h-[80px] bg-white p-2 rounded-xl border border-stone-200">
-                        <div class="col-span-full flex items-center justify-center text-[11px] text-stone-400 py-4">
-                            画像が登録されていません
+                <div class="pt-2 border-t border-stone-100">
+                    <h4 class="text-xs font-bold text-stone-700 mb-1">ギャラリーカテゴリ名の変更</h4>
+                    <p class="text-[11px] text-stone-400 mb-3">キャラクター詳細やアップロード画面で表示されるタブ名を変更できます</p>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-[10px] text-stone-400 mb-1">カテゴリ1（デフォルト: 基本）</label>
+                            <input type="text" id="catNameBase" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-1.5 text-xs text-stone-800" placeholder="基本">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] text-stone-400 mb-1">カテゴリ2（デフォルト: 戦闘）</label>
+                            <input type="text" id="catNameCombat" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-1.5 text-xs text-stone-800" placeholder="戦闘">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] text-stone-400 mb-1">カテゴリ3（デフォルト: SD・他）</label>
+                            <input type="text" id="catNameSd" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-1.5 text-xs text-stone-800" placeholder="SD・他">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] text-stone-400 mb-1">カテゴリ4（デフォルト: 落書き）</label>
+                            <input type="text" id="catNameDoodle" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-1.5 text-xs text-stone-800" placeholder="落書き">
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- モーダル下部ボタン -->
-            <div class="pt-3 flex items-center justify-end gap-2 border-t border-stone-100">
-                <button type="button" onclick="closeCharacterModal()" class="px-4 py-2 rounded-xl text-xs font-medium text-stone-600 hover:bg-stone-100 transition-all">キャンセル</button>
-                <button type="submit" class="bg-stone-800 text-white px-5 py-2 rounded-xl text-xs font-medium shadow-sm hover:bg-stone-700 transition-all">登録する</button>
-            </div>
-        </form>
-    </div>
-</div>
+                <div class="pt-2 border-t border-stone-100">
+                    <h4 class="text-xs font-bold text-stone-700 mb-1">システムの表示順・名前変更</h4>
+                    <p class="text-[11px] text-stone-400 mb-3">矢印ボタンでトップページに表示されるシステムの並び順を変更できます</p>
+                    <div id="settingsSystemsEditorContainer" class="space-y-2"></div>
+                </div>
 
-            <!-- ボタン類 -->
-            <div class="pt-3 flex items-center justify-end gap-2 border-t border-stone-100">
-                <button type="button" onclick="closeCharacterModal()" class="px-4 py-2 rounded-xl text-xs font-medium text-stone-600 hover:bg-stone-100 transition-all">キャンセル</button>
-                <button type="submit" class="bg-stone-800 text-white px-5 py-2 rounded-xl text-xs font-medium shadow-sm hover:bg-stone-700 transition-all">登録する</button>
-            </div>
-        </form>
+                <div class="pt-2 border-t border-stone-100">
+                    <h4 class="text-xs font-bold text-stone-700 mb-1">システム別 カスタム項目設定</h4>
+                    <p class="text-[11px] text-stone-400 mb-3">「テキスト（ネタバレ可）」と「ステータス」をそれぞれシステムごとに自由に追加・編集できます</p>
+                    <div id="settingsFieldsEditorContainer" class="space-y-3"></div>
+                </div>
+
+                <!-- 💡 データバックアップ（エクスポート・インポート） -->
+                <div class="pt-2 border-t border-stone-100">
+                    <h4 class="text-xs font-bold text-stone-700 mb-1">データバックアップ</h4>
+                    <p class="text-[11px] text-stone-400 mb-2">キャラクターデータをファイルとして保存・復元します</p>
+                    <div class="flex gap-2">
+                        <button type="button" onclick="exportCharactersJSON()" class="flex-1 py-2 px-3 rounded-xl text-xs font-bold text-stone-700 bg-stone-100 hover:bg-stone-200 transition-all flex items-center justify-center gap-1.5">
+                            <i class="fa-solid fa-download"></i>
+                            <span>書き出し</span>
+                        </button>
+                        <button type="button" onclick="document.getElementById('importFileJson').click()" class="flex-1 py-2 px-3 rounded-xl text-xs font-bold text-white bg-stone-700 hover:bg-stone-800 transition-all flex items-center justify-center gap-1.5">
+                            <i class="fa-solid fa-upload"></i>
+                            <span>読み込み</span>
+                        </button>
+                        <!-- ファイル選択用の隠しinput -->
+                        <input type="file" id="importFileJson" accept=".json" class="hidden" onchange="importCharactersJSON(event)">
+                    </div>
+                </div>
+
+                <!-- 設定モーダルの保存ボタン -->
+                <div class="pt-3 flex items-center justify-end gap-2 border-t border-stone-100">
+                    <button type="button" onclick="closeSettingsModal()" class="px-4 py-2 rounded-xl text-xs font-medium text-stone-600 hover:bg-stone-100 transition-all">キャンセル</button>
+                    <button type="submit" class="bg-stone-800 text-white px-5 py-2 rounded-xl text-xs font-medium shadow-sm hover:bg-stone-700 transition-all">設定を保存</button>
+                </div>
+            </form>
+        </div>
     </div>
-</div>
 
 <!-- 🔑 パスコード入力モーダル -->
 <div id="authModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/40 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-200">
