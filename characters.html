@@ -327,7 +327,7 @@ window.loadCharactersFromLocal = loadCharactersFromLocal;
 
 
 // ==========================================
-// 💡 システムフォルダ描画関数（完全安定版）
+// 💡 システムフォルダ描画関数（大文字小文字対応・完全安定版）
 // ==========================================
 function renderSystemFolders(filterKeyword = "") {
     const container = document.getElementById('systemFoldersContainer');
@@ -344,7 +344,12 @@ function renderSystemFolders(filterKeyword = "") {
     }
 
     window.systems.forEach(sys => {
-        const sysChars = allChars.filter(c => c.systemId === sys.id);
+        // 💡 大文字・小文字の揺れ（coc / CoCなど）を完全に吸収して紐づけ
+        const sysChars = allChars.filter(c => {
+            if (!c.systemId || !sys.id) return false;
+            return String(c.systemId).toLowerCase() === String(sys.id).toLowerCase();
+        });
+
         const matchesSystem = sys.name.toLowerCase().includes(keyword) || sys.desc.toLowerCase().includes(keyword);
         const matchedChars = sysChars.filter(c => 
             (c.name && c.name.toLowerCase().includes(keyword)) ||
@@ -1014,7 +1019,7 @@ function getAdaptiveTextColor(hexColor) {
 window.getAdaptiveTextColor = getAdaptiveTextColor;
        
 // ==========================================
-// 💡 画面やビューを切り替えるルーター関数（完全安定・決定版）
+// 💡 画面やビューを切り替えるルーター関数（全方位・完全網羅版）
 // ==========================================
 function navigateTo(target, param) {
     console.log("🚀 navigateTo 実行 -> target:", target, "param:", param);
@@ -1036,9 +1041,16 @@ function navigateTo(target, param) {
         }
     }
 
-    // 各ビュー要素を確実に対象取得
+    // 各ビュー要素を確実に対象取得（考えられるIDをすべてカバー）
     const folderView = document.getElementById('systemFolderView') || document.getElementById('view-folders');
-    const listView = document.getElementById('characterListView') || document.getElementById('view-list') || document.getElementById('characterListContainer');
+    
+    // 💡 一覧用ビューの候補をさらに拡張
+    const listView = document.getElementById('characterListView') || 
+                     document.getElementById('view-list') || 
+                     document.getElementById('characterListContainer') || 
+                     document.getElementById('characterGrid')?.parentElement ||
+                     document.querySelector('.character-list-view');
+
     const detailView = document.getElementById('view-detail') || document.getElementById('characterDetailView');
     const systemSelectView = document.getElementById('systemSelectView');
 
@@ -1058,13 +1070,24 @@ function navigateTo(target, param) {
         const targetSystemId = param || window.selectedSystemId;
         window.selectedSystemId = targetSystemId;
 
+        // 💡 画面を表示する前にまずリストを描画
         if (targetSystemId && typeof renderCharacterList === 'function') {
             renderCharacterList(targetSystemId);
         }
 
         if (folderView) folderView.classList.add('hidden');
         if (systemSelectView) systemSelectView.classList.add('hidden');
-        if (listView) listView.classList.remove('hidden');
+        
+        // 💡 一覧ビューの hidden を確実に解除（もし親が取れなければ grid 自体の hidden も解除）
+        if (listView) {
+            listView.classList.remove('hidden');
+            listView.style.display = ''; // 万が一のインラインstyle対策
+        }
+        const grid = document.getElementById('characterGrid');
+        if (grid) {
+            grid.classList.remove('hidden');
+        }
+
         if (detailView) detailView.classList.add('hidden');
 
         if (typeof renderBreadcrumbAndActions === 'function') {
@@ -1076,7 +1099,13 @@ function navigateTo(target, param) {
         if (folderView) folderView.classList.add('hidden');
         if (systemSelectView) systemSelectView.classList.add('hidden');
         if (listView) listView.classList.add('hidden');
-        if (detailView) detailView.classList.remove('hidden');
+        const grid = document.getElementById('characterGrid');
+        if (grid) grid.classList.add('hidden');
+
+        if (detailView) {
+            detailView.classList.remove('hidden');
+            detailView.style.display = '';
+        }
 
         if (typeof renderCharacterDetail === 'function') {
             renderCharacterDetail(param);
