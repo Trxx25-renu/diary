@@ -1125,6 +1125,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
+// 💡 【超重要】ページ読み込み完了時に、強制的にホーム画面（1階層目）を表示状態に初期化する
+document.addEventListener('DOMContentLoaded', () => {
+    // もしURLや初期状態で特定の画面を指定していなければ、強制的にホームを表示
+    if (!window.selectedSystemId) {
+        navigateTo('home');
+    }
+});
+
 // ==========================================
 // 💡 1階層目のビューモード切り替え関数（完全統合版）
 // ==========================================
