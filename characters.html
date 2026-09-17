@@ -418,6 +418,7 @@ window.handleFolderSearchInput = handleFolderSearchInput;
     }
     window.normalizeText = normalizeText;
 
+
     // ==========================================
     // 💡 キャラクター一覧描画関数（完全クリーン版）
     // ==========================================
@@ -480,8 +481,9 @@ function renderCharacterList(systemId, filterKeyword = "") {
         return;
     }
 
-    // 現在のソートモードを判定
+// 現在のソートモードを判定
     const currentSortMode = window.currentCharacterSortMode || 'default';
+    console.log("🔍 現在のソートモード:", currentSortMode); // 👈 これを追加
 
     // ==========================================
     // ① 誕生日順モードの場合：月ごとにグループ分けして描画
