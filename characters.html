@@ -460,6 +460,13 @@ window.handleFolderSearchInput = handleFolderSearchInput;
 // ==========================================
 function renderCharacterList(systemId, filterKeyword = "") {
     window.selectedSystemId = systemId;
+   
+   // 💡 デバッグ用：実際に渡ってきたキャラクターデータをコンソールに出力
+    console.log("🐛 [デバッグ] renderCharacterList に渡された全キャラクター:", window.characters);
+    console.log("🐛 [デバッグ] 絞り込み対象の systemChars:", systemChars);
+    if (systemChars.length > 0) {
+        console.log("🐛 [デバッグ] 1件目のキャラクターオブジェクト詳細:", systemChars[0]);
+    }
     
     // 💡 大文字・小文字を区別せずにシステム情報を取得
     const sys = (window.systems || []).find(s => s.id.toLowerCase() === String(systemId).toLowerCase());
