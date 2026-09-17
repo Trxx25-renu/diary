@@ -1085,6 +1085,19 @@ function navigateTo(target, param) {
 window.navigateTo = navigateTo;
 
 // ==========================================
+// 💡 動作追跡用のデバッグ用ラッパー
+// ==========================================
+const originalNavigateTo = window.navigateTo;
+if (typeof originalNavigateTo === 'function') {
+    window.navigateTo = function(viewName, param) {
+        console.log("🕵️‍♂️ [navigateTo 呼び出し検知]", { viewName, param, currentViewMode: window.currentViewMode });
+        return originalNavigateTo(viewName, param);
+    };
+} else {
+    console.warn("⚠️ navigateTo が見つかりません");
+}
+
+// ==========================================
 // 💡 1階層目のビューモード切り替え関数（安全・競合防止版）
 // ==========================================
 function switchViewMode(mode) {
