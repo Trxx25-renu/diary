@@ -479,13 +479,12 @@ function renderCharacterList(systemId, filterKeyword = "") {
     
     const keyword = normalizeText(filterKeyword);
     
-    // 💡 先に `systemChars` を定義する（※ここがポイント！）
+    // 💡 先に `systemChars` を定義する
     const systemChars = (window.characters || []).filter(c => {
         if (!c.systemId) return false;
         return c.systemId.toLowerCase() === String(systemId).toLowerCase();
     });
     
-    // 💡 定義したあとなので、エラーにならず安全にデバッグ出力できる
     console.log("🐛 [デバッグ] renderCharacterList に渡された全キャラクター:", window.characters);
     console.log("🐛 [デバッグ] 絞り込み対象の systemChars:", systemChars);
     if (systemChars.length > 0) {
@@ -588,6 +587,10 @@ function renderCharacterList(systemId, filterKeyword = "") {
 
         grid.appendChild(card);
     });
+
+    // 💡 描画完了直後にグリッドの中身がどうなっているかを検証するログ
+    console.log("🐛 [デバッグ] characterGrid の子要素数:", grid.children.length);
+    console.log("🐛 [デバッグ] grid 内の HTML 文字列:", grid.innerHTML);
 }
 window.renderCharacterList = renderCharacterList;
     
