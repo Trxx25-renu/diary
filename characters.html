@@ -1019,7 +1019,7 @@ function getAdaptiveTextColor(hexColor) {
 window.getAdaptiveTextColor = getAdaptiveTextColor;
        
 // ==========================================
-// 💡 画面やビューを切り替えるルーター関数（完全安定・初期化対応版）
+// 💡 画面やビューを切り替えるルーター関数（HTML構造完全対応版）
 // ==========================================
 function navigateTo(target, param) {
     console.log("🚀 navigateTo 実行 -> target:", target, "param:", param);
@@ -1042,11 +1042,11 @@ function navigateTo(target, param) {
             }
         }
 
-        // 💡 各ビュー要素の取得
-        const folderView = document.getElementById('view-folders');
-        const listView = document.getElementById('view-list');
-        const detailView = document.getElementById('view-detail');
-        const characterGrid = document.getElementById('characterGrid');
+        // 💡 実際のHTML側のID（systemFoldersContainer）に正しく合わせる
+        const folderView = document.getElementById('systemFoldersContainer'); // 1階層目
+        const listView = document.getElementById('view-list');                 // 2階層目のラッパー
+        const detailView = document.getElementById('view-detail');             // 3階層目の詳細ビュー
+        const characterGrid = document.getElementById('characterGrid');        // 2階層目のグリッド
 
         // ヘルパー関数：要素の表示・非表示を安全に切り替える
         const toggleView = (element, show, displayType = '') => {
@@ -1060,12 +1060,16 @@ function navigateTo(target, param) {
             }
         };
 
-        // 0.5. ホーム画面（1階層目）へ戻る場合
+        // 0.5. ホーム画面（1階層目・システム一覧）へ戻る場合
         if (target === 'home' || !target) {
-            toggleView(folderView, true, '');
+            toggleView(folderView, true, 'grid');
             toggleView(listView, false);
             toggleView(detailView, false);
             toggleView(characterGrid, false);
+
+            if (typeof renderSystemFolders === 'function') {
+                renderSystemFolders();
+            }
 
             if (typeof renderBreadcrumbAndActions === 'function') {
                 renderBreadcrumbAndActions('home');
@@ -1077,7 +1081,7 @@ function navigateTo(target, param) {
             window.selectedSystemId = targetSystemId;
 
             toggleView(folderView, false);
-            toggleView(listView, true, '');
+            toggleView(listView, true, 'block');
             toggleView(characterGrid, true, 'grid');
             toggleView(detailView, false);
 
@@ -1096,7 +1100,7 @@ function navigateTo(target, param) {
             toggleView(folderView, false);
             toggleView(listView, false);
             toggleView(characterGrid, false);
-            toggleView(detailView, true, '');
+            toggleView(detailView, true, 'block');
 
             if (typeof renderCharacterDetail === 'function') {
                 renderCharacterDetail(param);
@@ -1117,7 +1121,9 @@ function navigateTo(target, param) {
 }
 window.navigateTo = navigateTo;
 
+// ==========================================
 // 💡 【超重要】ページ読み込み完了時に、強制的にホーム画面（1階層目）を表示状態に初期化する
+// ==========================================
 document.addEventListener('DOMContentLoaded', () => {
     // もしURLや初期状態で特定の画面を指定していなければ、強制的にホームを表示
     if (!window.selectedSystemId) {
@@ -1125,13 +1131,42 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// 💡 【超重要】ページ読み込み完了時に、強制的にホーム画面（1階層目）を表示状態に初期化する
-document.addEventListener('DOMContentLoaded', () => {
-    // もしURLや初期状態で特定の画面を指定していなければ、強制的にホームを表示
-    if (!window.selectedSystemId) {
-        navigateTo('home');
+// ==========================================
+// 💡 保険用の簡易キャラクター詳細描画関数
+// ==========================================
+function renderDefaultCharacterDetail(container, characterId) {
+    const ch = (window.characters || []).find(c => String(c.id) === String(characterId));
+    const sys = ch && (window.systems || []).find(s => String(s.id) === String(ch.systemId));
+
+    if (!ch) {
+        container.innerHTML = '<p class="text-xs text-stone-400 p-6">キャラクターデータが見つかりませんでした。</p>';
+        return;
     }
-});
+
+    container.innerHTML = `
+        <div class="bg-white rounded-3xl p-6 border border-stone-200 shadow-sm flex flex-col gap-6">
+            <!-- パンくず & 戻るボタン -->
+            <div class="flex items-center justify-between border-b border-stone-100 pb-4">
+                <div class="flex items-center gap-2 text-xs text-stone-500">
+                    <span class="hover:text-stone-800 cursor-pointer font-bold" onclick="navigateTo('home')">システム一覧</span>
+                    <i class="fa-solid fa-chevron-right text-[10px] text-stone-300"></i>
+                    <span class="hover:text-stone-800 cursor-pointer font-bold" onclick="navigateTo('characterList', '${ch.systemId}')">${sys ? sys.name : 'システム'}</span>
+                    <i class="fa-solid fa-chevron-right text-[10px] text-stone-300"></i>
+                    <span class="text-stone-800 font-bold">${ch.name}</span>
+                </div>
+                <button onclick="navigateTo('characterList', '${ch.systemId}')" class="text-xs bg-stone-100 hover:bg-stone-200 text-stone-700 px-3 py-1.5 rounded-xl font-bold transition-all">
+                    <i class="fa-solid fa-arrow-left mr-1"></i>一覧へ戻る
+                </button>
+            </div>
+            <!-- 基本プロフィール -->
+            <div class="flex flex-col gap-2">
+                <h2 class="text-xl font-bold text-stone-800">${ch.name}</h2>
+                <p class="text-xs text-stone-500">${ch.occupation || ''} / ${ch.age ? ch.age + '歳' : ''}</p>
+                <p class="text-xs text-stone-600 mt-2 whitespace-pre-wrap">${ch.profile || ch.description || '詳細プロフィールが未設定です。'}</p>
+            </div>
+        </div>
+    `;
+}
 
 // ==========================================
 // 💡 1階層目のビューモード切り替え関数（完全統合版）
