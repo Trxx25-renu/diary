@@ -531,10 +531,10 @@ function renderCharacterList(systemId, filterKeyword = "") {
         return;
     }
 
-    // ==========================================
+// ==========================================
     // ② 五十音順モードの場合：行ごとにグループ分けして描画
     // ==========================================
-    if (currentSortMode === 'gojuon') {
+    if (currentSortMode === 'gojuon' || currentSortMode === 'name') {
         const sortedGojuonChars = typeof sortCharacters === 'function' ? sortCharacters(filteredChars) : filteredChars;
         const sections = [
             { title: 'あ行', match: ['あ','い','う','え','お','ア','イ','ウ','エ','オ'] },
@@ -546,7 +546,7 @@ function renderCharacterList(systemId, filterKeyword = "") {
             { title: 'ま行', match: ['ま','み','む','め','も','マ','ミ','ム','メ','モ'] },
             { title: 'や行', match: ['や','ゆ','よ','ヤ','ユ','ヨ'] },
             { title: 'ら行', match: ['ら','り','る','れ','ろ','ラ','リ','ル','レ','ロ'] },
-            { title: 'わ行', match: ['わ','を','ん','ワ','ヲ','ン'] }, // 👈 謎文字を削除しました
+            { title: 'わ行', match: ['わ','を','ん','ワ','ヲ','ン'] },
             { title: 'A - E', match: ['A','B','C','D','E','a','b','c','d','e'] },
             { title: 'F - J', match: ['F','G','H','I','J','f','g','h','i','j'] },
             { title: 'K - O', match: ['K','L','M','N','O','k','l','m','n','o'] },
