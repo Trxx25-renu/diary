@@ -451,12 +451,8 @@ window.handleFolderSearchInput = handleFolderSearchInput;
             .toLowerCase()
             .replace(/[\u30a1-\u30f6]/g, match => {
                 const chr = match.charCodeAt(0) - 0x60;
-                return String.fromCharCode(chr);
-            })
-            .replace(/\s+/g, '');
-    }
 // ==========================================
-// 💡 キャラクター一覧描画関数（共通カード生成対応版）
+// 💡 キャラクター一覧描画関数（ソート・グループ分け完全連動版）
 // ==========================================
 function renderCharacterList(systemId, filterKeyword = "") {
     window.selectedSystemId = systemId;
@@ -468,10 +464,10 @@ function renderCharacterList(systemId, filterKeyword = "") {
         return;
     }
 
-    grid.style.display = 'grid';
+    grid.style.display = 'block'; // グループごとのセクションを縦に積むため block に変更
     grid.classList.remove('hidden');
 
-    // 💡 大文字・小文字を区別せずにシステム情報を取得
+    // 💡 システム情報を取得
     const sys = (window.systems || []).find(s => s.id.toLowerCase() === String(systemId).toLowerCase());
     const titleEl = document.getElementById('currentSystemTitle');
     if (titleEl) {
@@ -506,9 +502,8 @@ function renderCharacterList(systemId, filterKeyword = "") {
         });
     });
 
-    const sortedChars = (typeof sortCharacters === 'function') ? sortCharacters(filteredChars) : filteredChars;
-
-    if (sortedChars.length === 0) {
+    if (filteredChars.length === 0) {
+        grid.style.display = 'grid'; // 空のときは中央寄せなどのためにgridに戻す
         grid.innerHTML = `
             <div class="col-span-full text-center py-12 text-stone-400 text-xs">
                 <i class="fa-solid fa-user-slash text-2xl mb-2"></i>
@@ -518,11 +513,141 @@ function renderCharacterList(systemId, filterKeyword = "") {
         return;
     }
 
-    // 💡 共通のカード生成ヘルパー関数を使ってカードをスッキリ描画
+    // 💡 現在のソートモード（window.currentCharacterSortMode など）を判定
+    const currentSortMode = window.currentCharacterSortMode || 'default';
+
+    // ==========================================
+    // ① 誕生日順モードの場合：月ごとにグループ分けして描画
+    // ==========================================
+    if (currentSortMode === 'birthdate') {
+        const sortedChars = typeof sortCharacters === 'function' ? sortCharacters(filteredChars) : filteredChars;
+        const groups = {};
+        
+        sortedChars.forEach(ch => {
+            const [month] = typeof parseBirthdate === 'function' ? parseBirthdate(ch.birthdate) : [99, 99];
+            const monthKey = (month >= 1 && month <= 12) ? `${month}月` : '誕生日未設定';
+            if (!groups[monthKey]) groups[monthKey] = [];
+            groups[monthKey].push(ch);
+        });
+
+        const monthOrder = ["1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月", "誕生日未設定"];
+        
+        monthOrder.forEach(monthKey => {
+            const list = groups[monthKey];
+            if (!list || list.length === 0) return;
+
+            const sectionWrapper = document.createElement('div');
+            sectionWrapper.className = 'mb-6 w-full';
+
+            // 💡 1階層目と同じカレンダーアイコン付きヘッダー
+            sectionWrapper.innerHTML = `
+                <div class="flex items-center gap-2 mb-3 pb-1 border-b border-stone-200">
+                    <i class="fa-solid fa-calendar-days text-stone-400 text-xs"></i>
+                    <h3 class="text-xs font-bold text-stone-600 tracking-wider">${monthKey}</h3>
+                    <span class="text-[10px] text-stone-400 font-medium">(${list.length}人)</span>
+                </div>
+            `;
+
+            const subGrid = document.createElement('div');
+            subGrid.className = 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4';
+
+            list.forEach(ch => {
+                if (typeof createCharacterCardElement === 'function') {
+                    subGrid.appendChild(createCharacterCardElement(ch));
+                }
+            });
+
+            sectionWrapper.appendChild(subGrid);
+            grid.appendChild(sectionWrapper);
+        });
+        return;
+    }
+
+    // ==========================================
+    // ② 五十音順モードの場合：行ごとにグループ分けして描画
+    // ==========================================
+    if (currentSortMode === 'gojuon') {
+        const sortedChars = typeof sortCharacters === 'function' ? sortCharacters(filteredChars) : filteredChars;
+        const sections = [
+            { title: 'あ行', match: ['あ','い','う','え','お','ア','イ','ウ','エ','オ'] },
+            { title: 'か行', match: ['か','き','く','け','こ','が','ぎ','ぐ','げ','ご','カ','キ','ク','ケ','コ','ガ','ギ','グ','ゲ','ゴ'] },
+            { title: 'さ行', match: ['さ','し','す','せ','そ','ざ','じ','ず','ぜ','ぞ','サ','シ','ス','セ','ソ','ザ','ジ','ズ','ゼ','ゾ'] },
+            { title: 'た行', match: ['た','ち','つ','て','と','だ','ぢ','づ','で','ど','タ','チ','ツ','テ','ト','ダ','ヂ','ヅ','デ','ド'] },
+            { title: 'な行', match: ['な','に','ぬ','ね','の','ナ','ニ','ヌ','ネ','ノ'] },
+            { title: 'は行', match: ['は','ひ','ふ','へ','ほ','ば','び','ぶ','べ','ぼ','ぱ','ぴ','ぷ','ぺ','ぽ','ハ','ヒ','フ','ヘ','ホ','バ','ビ','ブ','ベ','ボ','パ','ピ','プ','ペ','ポ'] },
+            { title: 'ま行', match: ['ま','み','む','め','も','マ','ミ','ム','メ','モ'] },
+            { title: 'や行', match: ['や','ゆ','よ','ヤ','ユ','ヨ'] },
+            { title: 'ら行', match: ['ら','り','る','れ','ろ','ラ','リ','ル','レ','ロ'] },
+            { title: 'わ行', match: ['わ','を','ん','ワ','ヲ','ン'] },
+            { title: 'A - E', match: ['A','B','C','D','E','a','b','c','d','e'] },
+            { title: 'F - J', match: ['F','G','H','I','J','f','g','h','i','j'] },
+            { title: 'K - O', match: ['K','L','M','N','O','k','l','m','n','o'] },
+            { title: 'P - T', match: ['P','Q','R','S','T','p','q','r','s','t'] },
+            { title: 'U - Z', match: ['U','V','W','X','Y','Z','u','v','w','x','y','z'] },
+            { title: 'その他・記号', match: [] }
+        ];
+
+        const grouped = {};
+        sections.forEach(sec => grouped[sec.title] = []);
+
+        sortedChars.forEach(ch => {
+            const kana = (ch.nameKana || ch.yomigana || ch.name || '').trim();
+            let firstChar = kana.charAt(0);
+            const nameFirstChar = (ch.name || '').trim().charAt(0);
+            if (/^[a-zA-Zａ-ｚＡ-Ｚ]$/.test(firstChar) && /^[\u3040-\u309F\u30A0-\u30FF]$/.test(nameFirstChar)) {
+                firstChar = nameFirstChar;
+            }
+
+            let placed = false;
+            for (const sec of sections) {
+                if (sec.match.includes(firstChar)) {
+                    grouped[sec.title].push(ch);
+                    placed = true;
+                    break;
+                }
+            }
+            if (!placed) grouped['その他・記号'].push(ch);
+        });
+
+        sections.forEach(sec => {
+            const list = grouped[sec.title];
+            if (!list || list.length === 0) return;
+
+            const sectionWrapper = document.createElement('div');
+            sectionWrapper.className = 'mb-6 w-full';
+
+            // 💡 1階層目と同じフォントアイコン付きヘッダー
+            sectionWrapper.innerHTML = `
+                <div class="flex items-center gap-2 mb-3 pb-1 border-b border-stone-200">
+                    <i class="fa-solid fa-font text-stone-400 text-xs"></i>
+                    <h3 class="text-xs font-bold text-stone-600 tracking-wider">${sec.title}</h3>
+                    <span class="text-[10px] text-stone-400 font-medium">(${list.length}件)</span>
+                </div>
+            `;
+
+            const subGrid = document.createElement('div');
+            subGrid.className = 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4';
+
+            list.forEach(ch => {
+                if (typeof createCharacterCardElement === 'function') {
+                    subGrid.appendChild(createCharacterCardElement(ch));
+                }
+            });
+
+            sectionWrapper.appendChild(subGrid);
+            grid.appendChild(sectionWrapper);
+        });
+        return;
+    }
+
+    // ==========================================
+    // ③ 通常モード（システム別など）：通常のグリッドで描画
+    // ==========================================
+    grid.style.display = 'grid';
+    const sortedChars = (typeof sortCharacters === 'function') ? sortCharacters(filteredChars) : filteredChars;
     sortedChars.forEach(ch => {
         if (typeof createCharacterCardElement === 'function') {
-            const card = createCharacterCardElement(ch);
-            grid.appendChild(card);
+            grid.appendChild(createCharacterCardElement(ch));
         }
     });
 }
