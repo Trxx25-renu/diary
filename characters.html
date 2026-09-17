@@ -3374,7 +3374,9 @@ function importCharacterFromJson(event) {
 }
 window.importCharacterFromJson = importCharacterFromJson;
 
-       // 引っ張り更新（プル・トゥ・リフレッシュ）の処理
+// ==========================================
+// 💡 引っ張り更新（プル・トゥ・リフレッシュ・鈍感調整版）
+// ==========================================
 document.addEventListener('DOMContentLoaded', () => {
     let startY = 0;
     let currentY = 0;
@@ -3384,7 +3386,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const indicator = document.getElementById('pullToRefreshIndicator');
     const pullIcon = document.getElementById('pullIcon');
     const pullText = document.getElementById('pullText');
-    const threshold = 70;
+    const threshold = 90; // 💡 閾値を少し増やして、しっかり引っ張らないと反応しないように変更
 
     if (!indicator) return;
 
@@ -3402,7 +3404,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const diff = currentY - startY;
 
         if (diff > 0) {
-            const pullDistance = Math.min(diff * 0.5, 100);
+            // 💡 係数を 0.5 から 0.3 に下げて、動きを重く（鈍く）する
+            const pullDistance = Math.min(diff * 0.3, 100);
             indicator.style.transform = `translateY(${pullDistance - 64}px)`;
 
             if (pullDistance > threshold) {
@@ -3422,7 +3425,8 @@ document.addEventListener('DOMContentLoaded', () => {
         isPulling = false;
 
         const diff = currentY - startY;
-        const pullDistance = diff * 0.5;
+        // 💡 こちらの計算係数も 0.5 から 0.3 に合わせる
+        const pullDistance = diff * 0.3;
 
         if (pullDistance > threshold) {
             isRefreshing = true;
