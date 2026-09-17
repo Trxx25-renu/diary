@@ -591,6 +591,17 @@ function renderCharacterList(systemId, filterKeyword = "") {
     // 💡 描画完了直後にグリッドの中身がどうなっているかを検証するログ
     console.log("🐛 [デバッグ] characterGrid の子要素数:", grid.children.length);
     console.log("🐛 [デバッグ] grid 内の HTML 文字列:", grid.innerHTML);
+
+    // 📱 スマホ環境用・実際の要素サイズ計測ログ
+    const gridRect = grid.getBoundingClientRect();
+    const gridComputed = window.getComputedStyle(grid);
+    console.log(`📏 [グリッド計測] width: ${gridRect.width}px, height: ${gridRect.height}px, display: ${gridComputed.display}`);
+
+    Array.from(grid.children).forEach((card, idx) => {
+        const rect = card.getBoundingClientRect();
+        const computed = window.getComputedStyle(card);
+        console.log(`📏 [カード${idx + 1}計測] width: ${rect.width}px, height: ${rect.height}px, display: ${computed.display}, visibility: ${computed.visibility}`);
+    });
 }
 window.renderCharacterList = renderCharacterList;
     
