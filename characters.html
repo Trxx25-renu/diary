@@ -1019,7 +1019,7 @@ function getAdaptiveTextColor(hexColor) {
 window.getAdaptiveTextColor = getAdaptiveTextColor;
        
 // ==========================================
-// 💡 画面やビューを切り替えるルーター関数（全方位・完全網羅版）
+// 💡 画面やビューを切り替えるルーター関数（HTML構造完全一致版）
 // ==========================================
 function navigateTo(target, param) {
     console.log("🚀 navigateTo 実行 -> target:", target, "param:", param);
@@ -1041,23 +1041,14 @@ function navigateTo(target, param) {
         }
     }
 
-    // 各ビュー要素を確実に対象取得（考えられるIDをすべてカバー）
-    const folderView = document.getElementById('systemFolderView') || document.getElementById('view-folders');
-    
-    // 💡 一覧用ビューの候補をさらに拡張
-    const listView = document.getElementById('characterListView') || 
-                     document.getElementById('view-list') || 
-                     document.getElementById('characterListContainer') || 
-                     document.getElementById('characterGrid')?.parentElement ||
-                     document.querySelector('.character-list-view');
+    // 💡 実際のHTML構造（view-folders / view-list）に合わせた要素取得
+    const folderView = document.getElementById('view-folders');
+    const listView = document.getElementById('view-list');
+    const detailView = document.getElementById('view-detail'); // もし存在すれば
 
-    const detailView = document.getElementById('view-detail') || document.getElementById('characterDetailView');
-    const systemSelectView = document.getElementById('systemSelectView');
-
-    // 0.5. トップ画面（ホーム・システム一覧）へ戻る場合
+    // 0.5. トップ画面（ホーム・システム選択）へ戻る場合
     if (target === 'home' || !target) {
         if (folderView) folderView.classList.remove('hidden');
-        if (systemSelectView) systemSelectView.classList.remove('hidden');
         if (listView) listView.classList.add('hidden');
         if (detailView) detailView.classList.add('hidden');
 
@@ -1070,24 +1061,17 @@ function navigateTo(target, param) {
         const targetSystemId = param || window.selectedSystemId;
         window.selectedSystemId = targetSystemId;
 
-        // 💡 画面を表示する前にまずリストを描画
+        // リストを描画
         if (targetSystemId && typeof renderCharacterList === 'function') {
             renderCharacterList(targetSystemId);
         }
 
+        // 💡 フォルダビューを隠し、一覧ビュー（view-list）を表示する！
         if (folderView) folderView.classList.add('hidden');
-        if (systemSelectView) systemSelectView.classList.add('hidden');
-        
-        // 💡 一覧ビューの hidden を確実に解除（もし親が取れなければ grid 自体の hidden も解除）
         if (listView) {
             listView.classList.remove('hidden');
-            listView.style.display = ''; // 万が一のインラインstyle対策
+            listView.style.display = ''; // 非表示スタイルが残っていればクリア
         }
-        const grid = document.getElementById('characterGrid');
-        if (grid) {
-            grid.classList.remove('hidden');
-        }
-
         if (detailView) detailView.classList.add('hidden');
 
         if (typeof renderBreadcrumbAndActions === 'function') {
@@ -1097,11 +1081,7 @@ function navigateTo(target, param) {
     // 2. 個別の「キャラクター詳細画面」へ移動する場合
     else if (target === 'detail') {
         if (folderView) folderView.classList.add('hidden');
-        if (systemSelectView) systemSelectView.classList.add('hidden');
         if (listView) listView.classList.add('hidden');
-        const grid = document.getElementById('characterGrid');
-        if (grid) grid.classList.add('hidden');
-
         if (detailView) {
             detailView.classList.remove('hidden');
             detailView.style.display = '';
@@ -1115,6 +1095,9 @@ function navigateTo(target, param) {
             renderBreadcrumbAndActions('detail', param);
         }
     }
+
+    // 画面一番上にスクロール
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 window.navigateTo = navigateTo;
 
