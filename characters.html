@@ -1083,7 +1083,7 @@ function navigateTo(target, param) {
 window.navigateTo = navigateTo;
 
 // ==========================================
-// 💡 1階層目のビューモード切り替え関数（完全対応・貼り付け用）
+// 💡 1階層目のビューモード切り替え関数（安全・競合防止版）
 // ==========================================
 function switchViewMode(mode) {
     console.log("🚀 switchViewMode 実行 -> モード:", mode);
@@ -1102,10 +1102,7 @@ function switchViewMode(mode) {
         }
     });
 
-    // 2. ホーム画面内のコンテナ要素を取得（システム選択画面のベース部分）
-    const folderView = document.getElementById('view-folders');
-    
-    // システムフォルダまたはキャラクターリストを表示する共通のコンテナ
+    // 2. ホーム画面内のコンテナ要素を取得
     const container = document.getElementById('systemFoldersContainer');
     if (!container) {
         console.warn("⚠️ systemFoldersContainer 要素が見つかりません");
@@ -1115,37 +1112,32 @@ function switchViewMode(mode) {
     const searchInput = document.getElementById('folderSearchInput');
     const keyword = searchInput ? searchInput.value : '';
 
-    // 3. モードに応じた表示切り替え
+    // 3. モードに応じた表示切り替え（IDの書き換えは行わず、クラスと中身の描画だけを制御する）
     if (mode === 'systems') {
         window.selectedSystemId = null;
         // システムフォルダ用のグリッドクラスに戻す
         container.className = "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4";
 
         if (typeof renderSystemFolders === 'function') {
-            renderSystemFolders();
+            renderSystemFolders(keyword);
         }
     } else {
         window.selectedSystemId = null;
-        // 五十音順・誕生日順のときは、キャラクターカードが綺麗に並ぶグリッドクラスに変更する
+        // 五十音順・誕生日順のときは、キャラクターカード用のグリッドクラスに変更する
         container.className = "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4";
-
-        // リスト描画関数が 'characterGrid' を探しに行く仕様に対応するため、一時的にIDを化けさせる
-        container.id = 'characterGrid';
 
         if (mode === 'index') {
             if (typeof renderKanaList === 'function') {
                 renderKanaList(keyword);
+            } else {
+                console.warn("⚠️ renderKanaList 関数が見つかりません");
             }
         } else if (mode === 'birthday') {
             if (typeof renderBirthdayList === 'function') {
                 renderBirthdayList(keyword);
+            } else {
+                console.warn("⚠️ renderBirthdayList 関数が見つかりません");
             }
-        }
-
-        // 描画が終わったら、元のID（systemFoldersContainer）に戻して他の機能と競合させない
-        const activeGrid = document.getElementById('characterGrid');
-        if (activeGrid) {
-            activeGrid.id = 'systemFoldersContainer';
         }
     }
 }
