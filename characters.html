@@ -1116,7 +1116,8 @@ window.getGrowthColor = getGrowthColor;
 // 💡 画面やビューを切り替えるルーター関数（ハッシュ連動・完全対応版）
 // ==========================================
 function navigateTo(target, param, updateHash = true) {
-    console.log("🚀 navigateTo 実行 -> target:", target, "param:", param);
+    // 🔍 どこから呼ばれたのかの履歴（呼び出し元トレース）をコンソールに出力
+    console.trace(`🚀 navigateTo 実行 -> target: ${target}, param: ${param}`);
 
     try {
         // 0. 開いているモーダルをすべて閉じる
@@ -1155,9 +1156,9 @@ function navigateTo(target, param, updateHash = true) {
         }
 
         // 💡 各階層のコンテナ要素を取得
-        const viewFolders = document.getElementById('view-folders');     // 1階層目全体（フォルダビュー）
-        const listView = document.getElementById('view-list');                 // 2階層目のラッパー
-        const detailView = document.getElementById('view-detail');             // 3階層目の詳細ビュー
+        const viewFolders = document.getElementById('view-folders');    // 1階層目全体（フォルダビュー）
+        const listView = document.getElementById('view-list');              // 2階層目のラッパー
+        const detailView = document.getElementById('view-detail');            // 3階層目の詳細ビュー
 
         const toggleView = (element, show, displayType = 'block') => {
             if (!element) return;
