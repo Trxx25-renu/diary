@@ -2355,72 +2355,76 @@ function triggerAdminAccess() {
 // グローバルに登録
 window.triggerAdminAccess = triggerAdminAccess;
 
-        // 引っ張り更新（プル・トゥ・リフレッシュ）の処理
-        document.addEventListener('DOMContentLoaded', () => {
-            let startY = 0;
-            let currentY = 0;
-            let isPulling = false;
-            let isRefreshing = false;
+        // ==========================================
+// 💡 引っ張り更新（プル・トゥ・リフレッシュ・鈍感調整版）
+// ==========================================
+document.addEventListener('DOMContentLoaded', () => {
+    let startY = 0;
+    let currentY = 0;
+    let isPulling = false;
+    let isRefreshing = false;
+    
+    const indicator = document.getElementById('pullToRefreshIndicator');
+    const pullIcon = document.getElementById('pullIcon');
+    const pullText = document.getElementById('pullText');
+    const threshold = 90; // 💡 閾値を少し増やして、しっかり引っ張らないと反応しないように変更
+
+    if (!indicator) return;
+
+    window.addEventListener('touchstart', (e) => {
+        if (window.scrollY <= 0 && !isRefreshing) {
+            startY = e.touches[0].clientY;
+            isPulling = true;
+        }
+    }, { passive: true });
+
+    window.addEventListener('touchmove', (e) => {
+        if (!isPulling || isRefreshing) return;
+
+        currentY = e.touches[0].clientY;
+        const diff = currentY - startY;
+
+        if (diff > 0) {
+            // 💡 係数を 0.5 から 0.3 に下げて、動きを重く（鈍く）する
+            const pullDistance = Math.min(diff * 0.3, 100);
+            indicator.style.transform = `translateY(${pullDistance - 64}px)`;
+
+            if (pullDistance > threshold) {
+                pullIcon.className = "fa-solid fa-arrow-rotate-right text-stone-800 dark:text-stone-200 animate-spin";
+                pullText.textContent = "指を離して更新";
+            } else {
+                pullIcon.className = "fa-solid fa-arrow-down text-stone-500 transition-transform";
+                pullText.textContent = "下に引っ張って更新";
+            }
+        } else {
+            indicator.style.transform = `translateY(-100%)`;
+        }
+    }, { passive: true });
+
+    window.addEventListener('touchend', () => {
+        if (!isPulling || isRefreshing) return;
+        isPulling = false;
+
+        const diff = currentY - startY;
+        // 💡 こちらの計算係数も 0.5 から 0.3 に合わせる
+        const pullDistance = diff * 0.3;
+
+        if (pullDistance > threshold) {
+            isRefreshing = true;
+            indicator.style.transform = `translateY(0px)`;
+            pullText.textContent = "更新中...";
             
-            const indicator = document.getElementById('pullToRefreshIndicator');
-            const pullIcon = document.getElementById('pullIcon');
-            const pullText = document.getElementById('pullText');
-            const threshold = 70;
-
-            if (!indicator) return;
-
-            window.addEventListener('touchstart', (e) => {
-                if (window.scrollY <= 0 && !isRefreshing) {
-                    startY = e.touches[0].clientY;
-                    isPulling = true;
-                }
-            }, { passive: true });
-
-            window.addEventListener('touchmove', (e) => {
-                if (!isPulling || isRefreshing) return;
-
-                currentY = e.touches[0].clientY;
-                const diff = currentY - startY;
-
-                if (diff > 0) {
-                    const pullDistance = Math.min(diff * 0.5, 100);
-                    indicator.style.transform = `translateY(${pullDistance - 64}px)`;
-
-                    if (pullDistance > threshold) {
-                        pullIcon.className = "fa-solid fa-arrow-rotate-right text-stone-800 animate-spin";
-                        pullText.textContent = "指を離して更新";
-                    } else {
-                        pullIcon.className = "fa-solid fa-arrow-down text-stone-500 transition-transform";
-                        pullText.textContent = "下に引っ張って更新";
-                    }
-                } else {
-                    indicator.style.transform = `translateY(-100%)`;
-                }
-            }, { passive: true });
-
-            window.addEventListener('touchend', () => {
-                if (!isPulling || isRefreshing) return;
-                isPulling = false;
-
-                const diff = currentY - startY;
-                const pullDistance = diff * 0.5;
-
-                if (pullDistance > threshold) {
-                    isRefreshing = true;
-                    indicator.style.transform = `translateY(0px)`;
-                    pullText.textContent = "更新中...";
-                    
-                    setTimeout(() => {
-                        location.reload();
-                    }, 500);
-                } else {
-                    indicator.style.transform = `translateY(-100%)`;
-                }
-                
-                startY = 0;
-                currentY = 0;
-            });
-        });
+            setTimeout(() => {
+                location.reload();
+            }, 500);
+        } else {
+            indicator.style.transform = `translateY(-100%)`;
+        }
+        
+        startY = 0;
+        currentY = 0;
+    });
+});
         
     </script>
 </head>
