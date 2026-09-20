@@ -224,12 +224,24 @@ document.addEventListener("DOMContentLoaded", async () => {
         window.rosterSettings = window.rosterSettings || { title: "", favicon: "" };
     }
 
+    // 💡【ここを追加】設定データ読み込み完了後に、ファビコン＆スマホ用アイコンを動的に反映する関数
+    if (window.rosterSettings && window.rosterSettings.favicon) {
+        const faviconUrl = window.rosterSettings.favicon;
+        
+        // 1. PCやブラウザタブ用のファビコンを更新
+        const faviconTag = document.getElementById('dynamicFavicon');
+        if (faviconTag) faviconTag.href = faviconUrl;
+
+        // 2. iPhoneのホーム画面・ブックマーク用のアイコンを更新
+        const appleIconTag = document.getElementById('dynamicAppleTouchIcon');
+        if (appleIconTag) appleIconTag.href = faviconUrl;
+    }
+
     // 2. キャラクターデータの読み込み（安全にラップ）
     try {
         if (typeof loadCharactersFromLocal === 'function') {
             await loadCharactersFromLocal();
         } else {
-            // もし関数がなければローカルストレージから直接取得を試みる
             const localData = localStorage.getItem('characters_backup');
             window.characters = localData ? JSON.parse(localData) : [];
         }
@@ -257,6 +269,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     console.log("🎉 キャラクター管理ページの初期化がすべて完了しました！");
 });
+
 
     
 // ==========================================
