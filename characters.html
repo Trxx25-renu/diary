@@ -2852,7 +2852,7 @@ window.initAutoResizeTextareas = initAutoResizeTextareas;
 
 
 // ==========================================
-// 💡 編集モーダルを開く関数（自動リサイズ対応版）
+// 💡 編集モーダルを開く関数（自動リサイズ対応版・修正版）
 // ==========================================
 function openEditCharacterModal(characterId) {
     const ch = window.characters.find(c => String(c.id) === String(characterId));
@@ -2861,7 +2861,7 @@ function openEditCharacterModal(characterId) {
         return; 
     }
 
-    // システムの選択肢を先に生成
+    // 1. システムの選択肢を先に生成
     if (typeof renderCharacterModalSystemSelect === 'function') {
         renderCharacterModalSystemSelect();
     }
@@ -2910,9 +2910,10 @@ function openEditCharacterModal(characterId) {
         renderCharacterLinksEditor();
     }
 
+    // 🌟 【修正】編集時はシステムを変更できないように確実に固定（disabled = true）し、値を反映
     if (systemInput) {
-        systemInput.disabled = false;
         systemInput.value = ch.systemId || '';
+        systemInput.disabled = true; // 編集時は変更不可にする
         systemInput.classList.add('opacity-60', 'pointer-events-none', 'bg-stone-100');
     }
 
@@ -2941,6 +2942,7 @@ function openEditCharacterModal(characterId) {
         switchImageCategory('thumb');
     }
 
+    // 🌟 【重要】システムIDが完全にセットされたあとにカスタム項目・数値を描画する
     if (typeof handleSystemChangeInModal === 'function') {
         handleSystemChangeInModal(ch.customValues || {});
     }
@@ -2958,7 +2960,7 @@ function openEditCharacterModal(characterId) {
     if (modal) {
         modal.classList.remove('hidden');
         
-        // 🌟 【追加】編集モーダルを開いたときにテキストエリアの高さを一括調整
+        // 🌟 編集モーダルを開いたときにテキストエリアの高さを一括調整
         if (typeof initAutoResizeTextareas === 'function') {
             initAutoResizeTextareas();
         }
@@ -3215,17 +3217,28 @@ function openCharacterModal() {
         const modalTitle = document.querySelector('#characterModal h3 span');
         if (modalTitle) modalTitle.textContent = 'キャラクター登録';
 
-        renderCharacterModalSystemSelect();
+        if (typeof renderCharacterModalSystemSelect === 'function') {
+            renderCharacterModalSystemSelect();
+        }
         
         const form = document.getElementById('characterForm');
         if (form) form.reset();
         
         const systemInput = document.getElementById('charSystemSelect');
-        if (systemInput) systemInput.disabled = false;
+        if (systemInput) {
+            // 🌟 新規作成なので入力を有効にし、固定用のスタイルを完全に剥がす
+            systemInput.disabled = false;
+            systemInput.classList.remove('opacity-60', 'pointer-events-none', 'bg-stone-100');
+        }
+
+        // 新規作成時はデフォルトのカスタム項目を描画
+        if (typeof handleSystemChangeInModal === 'function') {
+            handleSystemChangeInModal({});
+        }
 
         modal.classList.remove('hidden');
 
-        // 🌟 【追加】新規登録モーダルが開いたときにも自動リサイズを初期化
+        // 🌟 新規登録モーダルが開いたときにも自動リサイズを初期化
         if (typeof initAutoResizeTextareas === 'function') {
             initAutoResizeTextareas();
         }
@@ -3239,7 +3252,10 @@ function closeCharacterModal() {
     if (modal) modal.classList.add('hidden');
     
     const systemInput = document.getElementById('charSystemSelect');
-    if (systemInput) systemInput.disabled = false;
+    if (systemInput) {
+        systemInput.disabled = false;
+        systemInput.classList.remove('opacity-60', 'pointer-events-none', 'bg-stone-100');
+    }
 
     window.editingCharacterId = null;
 }
