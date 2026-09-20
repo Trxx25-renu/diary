@@ -3050,9 +3050,16 @@ function renderCharacterModalSystemSelect() {
 window.renderCharacterModalSystemSelect = renderCharacterModalSystemSelect;
         
 // ==========================================
-// 💡 2. モーダル内でシステムが変更された時に動的項目を描画する関数（成長値対応版）
+// 💡 2. モーダル内でシステムが変更された時に動的項目を描画する関数（成長値・二重実行防止対応版）
 // ==========================================
+let _isHandlingSystemChange = false;
+
 function handleSystemChangeInModal(existingCustomValues = {}) {
+    // 🛑 0.1秒以内の連続実行（二重発火）を完全にブロック
+    if (_isHandlingSystemChange) return;
+    _isHandlingSystemChange = true;
+    setTimeout(() => { _isHandlingSystemChange = false; }, 100);
+
     const select = document.getElementById('charSystemSelect');
     const container = document.getElementById('dynamicCustomFieldsContainer');
     if (!select || !container) return;
