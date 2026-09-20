@@ -3842,16 +3842,16 @@ window.importCharactersJSON = importCharactersJSON;
 </div>
 
 <!-- 🌐 ヘッダー -->
-    <header class="bg-white/80 backdrop-blur-md border-b border-stone-200/60 sticky top-0 z-30">
-        <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
-            <!-- 左側：アイコン ＆ タイトル・サブタイトル -->
-            <div class="flex items-center gap-3">
-                <img id="headerFaviconImg" class="w-9 h-9 rounded-lg object-cover border border-stone-200 shadow-sm hidden" alt="Icon">
-                <div>
-                    <h1 id="siteHeaderTitle" class="text-base font-bold tracking-tight text-stone-800 group-hover:text-stone-600 transition-colors">PC一覧</h1>
-                    <p id="siteHeaderSubtitle" class="text-[10px] text-stone-400 font-serif-title tracking-wider uppercase">CHARACTER LOG</p>
-                </div>
+<header class="bg-white/80 backdrop-blur-md border-b border-stone-200/60 sticky top-0 z-30">
+    <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
+        <!-- 左側：アイコン ＆ タイトル・サブタイトル（クリックでホームへ戻る） -->
+        <a href="javascript:void(0)" onclick="navigateTo('home')" class="flex items-center gap-3 group cursor-pointer text-left">
+            <img id="headerFaviconImg" class="w-9 h-9 rounded-lg object-cover border border-stone-200 shadow-sm hidden" alt="Icon">
+            <div>
+                <h1 id="siteHeaderTitle" class="text-base font-bold tracking-tight text-stone-800 group-hover:text-stone-600 transition-colors">PC一覧</h1>
+                <p id="siteHeaderSubtitle" class="text-[10px] text-stone-400 font-serif-title tracking-wider uppercase">CHARACTER LOG</p>
             </div>
+        </a>
 
             <!-- 右側：各種ボタン群 -->
             <div class="flex items-center gap-2">
