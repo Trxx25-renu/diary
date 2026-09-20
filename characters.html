@@ -3790,7 +3790,9 @@ if (viewType === 'characterList') {
             
             window.renderBreadcrumbAndActions = renderBreadcrumbAndActions;
 
-            // 💡 個別キャラクターのデータをJSONファイルとしてダウンロードする関数
+            // ==========================================
+// 💡 個別キャラクターのデータをJSONファイルとしてダウンロードする関数（Blob対応・確実動作版）
+// ==========================================
 function exportCharacterJson(characterId) {
     const ch = window.characters?.find(c => String(c.id) === String(characterId));
     if (!ch) {
@@ -3798,19 +3800,35 @@ function exportCharacterJson(characterId) {
         return;
     }
 
-    // ファイル名に使いやすいよう、キャラクター名から安全な文字列を作る
-    const safeName = (ch.name || 'character').replace(/[\/\\?%*:|"<>]/g, '_');
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(ch, null, 2));
-    
-    const downloadAnchor = document.createElement('a');
-    downloadAnchor.setAttribute("href", dataStr);
-    downloadAnchor.setAttribute("download", `${safeName}_data.json`);
-    document.body.appendChild(downloadAnchor);
-    downloadAnchor.click();
-    downloadAnchor.remove();
+    try {
+        // 1. JSON文字列に整形
+        const jsonString = JSON.stringify(ch, null, 2);
+        
+        // 2. Blobを使って安全なファイルオブジェクトを作成
+        const blob = new Blob([jsonString], { type: 'application/json;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        
+        // ファイル名に使いやすいよう、キャラクター名から安全な文字列を作る
+        const safeName = (ch.name || 'character').replace(/[\/\\?%*:|"<>]/g, '_');
+        
+        // 3. ダウンロード用のリンクを動的に作成
+        const downloadAnchor = document.createElement('a');
+        downloadAnchor.href = url;
+        downloadAnchor.download = `${safeName}_data.json`;
+        
+        document.body.appendChild(downloadAnchor);
+        downloadAnchor.click();
+        document.body.removeChild(downloadAnchor);
+        
+        // 4. メモリ解放
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
 
-    if (typeof showToast === 'function') {
-        showToast("キャラクターのJSONファイルを書き出しました！", "info");
+        if (typeof showToast === 'function') {
+            showToast("キャラクターのJSONファイルを書き出しました！", "info");
+        }
+    } catch (e) {
+        console.error("JSON出力エラー:", e);
+        alert("JSONの出力に失敗しました。");
     }
 }
 window.exportCharacterJson = exportCharacterJson;
