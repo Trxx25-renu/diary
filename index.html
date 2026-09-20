@@ -2426,22 +2426,20 @@ document.addEventListener('DOMContentLoaded', () => {
     </script>
 </head>
     
-<body class="min-h-screen flex flex-col bg-[#fcfbf9] text-stone-800">
-
-    <header class="bg-white/80 backdrop-blur-md border-b border-stone-200/60 sticky top-0 z-30">
-        <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
-            <div class="flex items-center gap-3">
-                <a href="javascript:void(0)" onclick="navigateTo('months')" class="flex items-center gap-2 group">
-                    <div id="siteHeaderLogoBox" class="w-9 h-9 rounded-xl bg-stone-50 text-stone-700 flex items-center justify-center font-serif-title font-bold text-lg group-hover:scale-105 transition-transform overflow-hidden">
-                        <span id="siteHeaderLogo">P</span>
-                        <img id="siteHeaderLogoImg" src="" alt="Logo" class="w-full h-full object-cover hidden">
-                    </div>
-                    <div>
-                        <h1 id="siteHeaderTitle" class="text-base font-bold tracking-tight text-stone-800 group-hover:text-stone-600 transition-colors">卓日記</h1>
-                        <p id="siteHeaderSubtitle" class="text-[10px] text-stone-400 font-serif-title tracking-wider uppercase">Session Log</p>
-                    </div>
-                </a>
+<!-- 🌐 ヘッダー -->
+<header class="bg-white/80 backdrop-blur-md border-b border-stone-200/60 sticky top-0 z-30">
+    <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
+        <!-- 左側：アイコン ＆ タイトル・サブタイトル（クリックでホームへ戻る） -->
+        <a href="javascript:void(0)" onclick="navigateTo('months')" class="flex items-center gap-3 group cursor-pointer text-left">
+            <div id="siteHeaderLogoBox" class="w-9 h-9 rounded-xl bg-stone-50 text-stone-700 flex items-center justify-center font-serif-title font-bold text-lg group-hover:scale-105 transition-transform overflow-hidden border border-stone-200 shadow-sm">
+                <span id="siteHeaderLogo">P</span>
+                <img id="siteHeaderLogoImg" src="" alt="Logo" class="w-full h-full object-cover hidden">
             </div>
+            <div>
+                <h1 id="siteHeaderTitle" class="text-base font-bold tracking-tight text-stone-800 group-hover:text-stone-600 transition-colors">卓日記</h1>
+                <p id="siteHeaderSubtitle" class="text-[10px] text-stone-400 font-serif-title tracking-wider uppercase">Session Log</p>
+            </div>
+        </a>
 
             <!-- アクションボタン領域 -->
             <div class="flex items-center gap-2">
