@@ -1257,6 +1257,15 @@ function renderCharacterDetail(characterId) {
     const detailContainer = document.getElementById('view-detail');
     if (!detailContainer) return;
 
+    // 💡 【ここにガードを入れる】
+    // まだキャラクターデータが読み込まれていない場合は、エラーを出さずに一度処理を中断する
+    // （データロード完了後にハッシュルーティングがもう一度ここを呼び出してくれます）
+    if (!window.characters || window.characters.length === 0) {
+        console.warn("⏳ キャラクターデータがまだ読み込まれていないため、詳細表示を待機します...");
+        detailContainer.innerHTML = `<p class="text-xs text-stone-400 py-12 text-center">データを読み込んでいます...</p>`;
+        return;
+    }
+
     const ch = window.characters.find(c => String(c.id) === String(characterId));
     if (!ch) {
         detailContainer.innerHTML = `<p class="text-xs text-stone-400 py-12 text-center">キャラクターが見つかりませんでした。</p>`;
