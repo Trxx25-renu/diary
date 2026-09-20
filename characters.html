@@ -273,7 +273,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     
 // ==========================================
-// 💡 キャラクターデータの読み込み（Firestore版）
+// 💡 キャラクターデータの読み込み（Firestore版・成長値対応の正規化付き）
 // ==========================================
 async function loadCharactersFromLocal() {
     try {
@@ -282,10 +282,13 @@ async function loadCharactersFromLocal() {
         
         if (charSnap.exists() && charSnap.data().list) {
             window.characters = charSnap.data().list;
-            localStorage.setItem('local_characters', JSON.stringify(window.characters));
-            console.log('📂 Firestoreからキャラクターデータをロードしました（画像・データ完全同期）');
             
-            // 💡 【追加】ここでロード完了直後にハッシュルートを再評価して画面を描画する！
+            // 🛠️ 【追加】ステータスを「基本値 + 成長値」形式に正規化する
+            normalizeCharacterStats();
+
+            localStorage.setItem('local_characters', JSON.stringify(window.characters));
+            console.log('📂 Firestoreからキャラクターデータをロードし、ステータス構造を正規化しました');
+            
             if (typeof handleHashRoute === 'function') {
                 handleHashRoute();
             }
@@ -299,13 +302,13 @@ async function loadCharactersFromLocal() {
         const saved = localStorage.getItem('local_characters');
         if (saved) {
             window.characters = JSON.parse(saved);
+            normalizeCharacterStats(); // 🛠️ こちらも同様に正規化
             console.log('📂 ローカルストレージからキャラクターデータをロードしました');
         } else {
             window.characters = [];
             console.log('ℹ️ キャラクターデータが空です');
         }
 
-        // 💡 【追加】ローカルストレージからのロード完了時も同様に再描画する
         if (typeof handleHashRoute === 'function') {
             handleHashRoute();
         }
@@ -314,13 +317,39 @@ async function loadCharactersFromLocal() {
         console.error("Characters load error:", e);
         window.characters = [];
         
-        // エラー時でも一応ルート処理を走らせておく場合
         if (typeof handleHashRoute === 'function') {
             handleHashRoute();
         }
     }
 }
 window.loadCharactersFromLocal = loadCharactersFromLocal;
+
+// 💡 ステータス構造を { base, growth } の形に自動変換するヘルパー関数
+function normalizeCharacterStats() {
+    if (!Array.isArray(window.characters)) return;
+    
+    window.characters = window.characters.map(char => {
+        if (char.status && typeof char.status === 'object') {
+            const newStatus = {};
+            for (const [key, val] of Object.entries(char.status)) {
+                if (typeof val === 'number') {
+                    // 古い形式（単一の数値）の場合：すべて基本値とし、成長値は0にする
+                    newStatus[key] = { base: val, growth: 0 };
+                } else if (val && typeof val === 'object') {
+                    // すでにオブジェクト形式の場合
+                    newStatus[key] = {
+                        base: Number(val.base) || 0,
+                        growth: Number(val.growth) || 0
+                    };
+                } else {
+                    newStatus[key] = { base: 0, growth: 0 };
+                }
+            }
+            char.status = newStatus;
+        }
+        return char;
+    });
+}
 
 
 // ==========================================
@@ -642,7 +671,7 @@ function getGalleryCategoryName(categoryKey) {
         base: '基本',
         combat: '戦闘',
         sd: 'SD・他',
-        doodle: '落書き'
+        doodle: '絵log'
     };
 
     // window.rosterSettings.galleryCategories からカスタム名を取得、なければデフォルト
@@ -866,7 +895,7 @@ function removeCharacterImage(categoryKey, index) {
 window.removeCharacterImage = removeCharacterImage;
 
 // ==========================================
-// 💡 キャラクター保存関数（Base64完全ブロック・Firestore同期版）
+// 💡 キャラクター保存関数（Base64完全ブロック・Firestore同期版・成長値対応）
 // ==========================================
 async function saveCharacter(event) {
     event.preventDefault();
@@ -939,11 +968,23 @@ async function saveCharacter(event) {
 
     const customValues = {};
     
+    // 🛠️ 【変更】基本値と成長値をセットで取得して { base, growth } 構造にまとめる
     document.querySelectorAll('.char-custom-status-input').forEach(inputEl => {
         const sId = inputEl.id;
         if (sId && sId.startsWith('custom_status_')) {
             const fieldId = sId.replace('custom_status_', '');
-            customValues[fieldId] = inputEl.value ? Number(inputEl.value) : '';
+            
+            // 基本値を取得
+            const baseVal = inputEl.value !== '' ? Number(inputEl.value) : 0;
+            
+            // 対応する成長値の入力欄を取得（id="custom_growth_[fieldId]" を想定）
+            const growthInputEl = document.getElementById(`custom_growth_${fieldId}`);
+            const growthVal = growthInputEl && growthInputEl.value !== '' ? Number(growthInputEl.value) : 0;
+            
+            customValues[fieldId] = {
+                base: baseVal,
+                growth: growthVal
+            };
         }
     });
 
@@ -988,7 +1029,7 @@ async function saveCharacter(event) {
         const jsonString = JSON.stringify(window.characters);
         localStorage.setItem('local_characters', jsonString);
 
-        // 💡 ② Firestore（クラウド）へ一括保存・同期（window.doc / window.setDoc を使用）
+        // 💡 ② Firestore（クラウド）へ一括保存・同期
         if (typeof showToast === 'function') showToast("Firestoreへ同期中...", "info");
 
         const charDocRef = window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'characters', 'master');
@@ -1018,8 +1059,8 @@ async function saveCharacter(event) {
 }
 window.saveCharacter = saveCharacter;
 
-    // ==========================================
-// 💡 カラー調整・文字色判定のヘルパー関数（先に追加する）
+// ==========================================
+// 💡 カラー調整・文字色判定・成長値カラー生成のヘルパー関数群
 // ==========================================
 function getAdjustedColor(hexColor) {
     if (!hexColor || !hexColor.startsWith('#')) return '#44403c';
@@ -1050,6 +1091,26 @@ function getAdaptiveTextColor(hexColor) {
     return yiq >= 150 ? '#292524' : '#ffffff';
 }
 window.getAdaptiveTextColor = getAdaptiveTextColor;
+
+// 💡 成長値用：イメージカラーを基準に、より濃い同系色を自動生成する関数
+function getGrowthColor(hexColor) {
+    if (!hexColor || !hexColor.startsWith('#')) return '#1c1917';
+    let hex = hexColor.replace('#', '');
+    if (hex.length === 3) {
+        hex = hex.split('').map(char => char + char).join('');
+    }
+    let r = parseInt(hex.substr(0, 2), 16);
+    let g = parseInt(hex.substr(2, 2), 16);
+    let b = parseInt(hex.substr(4, 2), 16);
+
+    // 各チャンネルを暗くして引き締める（数値は微調整可能です）
+    r = Math.max(0, Math.floor(r * 0.6));
+    g = Math.max(0, Math.floor(g * 0.6));
+    b = Math.max(0, Math.floor(b * 0.6));
+
+    return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
+}
+window.getGrowthColor = getGrowthColor;
        
 // ==========================================
 // 💡 画面やビューを切り替えるルーター関数（ハッシュ連動・完全対応版）
