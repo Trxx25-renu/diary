@@ -2487,10 +2487,12 @@ document.addEventListener('DOMContentLoaded', () => {
     </div>
 </header>
 
-<!-- 下に引っ張ったときに現れるローディング表示（PC一覧に合わせた黒いフローティング仕様） -->
-    <div id="pullToRefreshIndicator" class="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-stone-900 text-white px-4 py-2 rounded-full shadow-lg text-xs font-medium flex items-center gap-2 transition-transform duration-200 -translate-y-20">
-        <i id="pullIcon" class="fa-solid fa-arrow-down text-stone-300 transition-transform"></i>
-        <span id="pullText">下に引っ張って更新</span>
+<!-- 下に引っ張ったときに現れるローディング表示 -->
+    <div id="pullToRefreshIndicator" class="fixed top-0 left-0 right-0 h-16 flex items-center justify-center bg-stone-900 text-white backdrop-blur-sm border-b border-stone-800 text-xs font-medium z-50 transition-transform duration-200 -translate-y-full">
+        <div class="flex items-center gap-2">
+            <i id="pullIcon" class="fa-solid fa-arrow-down text-stone-300 transition-transform"></i>
+            <span id="pullText">下に引っ張って更新</span>
+        </div>
     </div>
 
     <main class="max-w-5xl mx-auto w-full px-4 pt-3 pb-4 flex-1">
