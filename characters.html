@@ -171,6 +171,11 @@ document.addEventListener("DOMContentLoaded", async () => {
         renderBreadcrumbAndActions('home');
     }
 
+    // 💡 起動時に管理者ステータスを即座に反映して不要なボタンを隠す
+    if (typeof updateAdminUI === 'function') {
+        updateAdminUI();
+    }
+
     // 1. Firebase接続（タイムアウト付き）
     try {
         const firebaseConfig = {
