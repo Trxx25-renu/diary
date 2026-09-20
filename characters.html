@@ -3537,8 +3537,8 @@ window.updateHeaderBranding = updateHeaderBranding;
 }
 window.toggleSecretMemo = toggleSecretMemo;
 
-       // ==========================================
-// 💡 JSONファイルからキャラクターデータをモーダルに復元する関数（システム自動適応版）
+// ==========================================
+// 💡 JSONファイルからキャラクターデータをモーダルに復元する関数（完全・堅牢版）
 // ==========================================
 function importCharacterFromJson(event) {
     const file = event.target.files[0];
@@ -3548,13 +3548,14 @@ function importCharacterFromJson(event) {
     reader.onload = function(e) {
         try {
             const data = JSON.parse(e.target.result);
+            console.log("📥 インポートデータ解析成功:", data);
             
             // 1. システムIDを先にセットし、カスタム項目欄のHTMLを動的に生成させる
             if (document.getElementById('charSystemSelect') && data.systemId) {
                 const systemSelect = document.getElementById('charSystemSelect');
                 systemSelect.value = data.systemId;
                 
-                // 🌟 【ポイント】システム変更時の描画関数を呼び出してカスタム入力欄を生成する
+                // 🌟 システム変更時の描画関数を呼び出してカスタム入力欄を生成する
                 if (typeof handleSystemChangeInModal === 'function') {
                     handleSystemChangeInModal(data.customValues || {});
                 }
@@ -3568,12 +3569,15 @@ function importCharacterFromJson(event) {
             if (document.getElementById('charAge')) document.getElementById('charAge').value = data.age ?? '';
             if (document.getElementById('charGender')) document.getElementById('charGender').value = data.gender || '';
             if (document.getElementById('charBirthdate')) document.getElementById('charBirthdate').value = data.birthdate || '';
-            if (document.getElementById('charOccupation')) document.getElementById('charOccupation').value = data.occupation || '';
+            
             if (document.getElementById('charThemeColor')) {
-                document.getElementById('charThemeColor').value = data.themeColor || '#292524';
-                if (typeof handleThemeColorInput === 'function') handleThemeColorInput(data.themeColor || '#292524');
+                const tColor = data.themeColor || '#292524';
+                document.getElementById('charThemeColor').value = tColor;
+                const colorText = document.getElementById('charThemeColorText');
+                if (colorText) colorText.value = tColor;
+                if (typeof handleThemeColorInput === 'function') handleThemeColorInput(tColor);
             }
-            if (document.getElementById('charSheetUrl')) document.getElementById('charSheetUrl').value = data.sheetUrl || '';
+            
             if (document.getElementById('charMemo')) document.getElementById('charMemo').value = data.memo || '';
             if (document.getElementById('charSecret')) document.getElementById('charSecret').value = data.secret || '';
 
@@ -3587,25 +3591,56 @@ function importCharacterFromJson(event) {
                     base: [], combat: [], sd: [], doodle: []
                 };
             }
+            // 画像サムネイル等の再描画関数があればここで呼ぶ
+            if (typeof renderImageThumbnails === 'function') {
+                renderImageThumbnails();
+            }
 
             // 4. リンクの復元 ＆ エディタ再描画
-            window.editingCharacterLinks = data.links || [];
+            window.editingCharacterLinks = data.links || (data.sheetUrl ? [{ title: 'キャラクターシート', url: data.sheetUrl }] : []);
             if (typeof renderCharacterLinksEditor === 'function') {
-                renderCharacterLinksEditor(); // 🔗 新しいリンクエディタ用
-            } else if (typeof renderCharacterLinksList === 'function') {
-                renderCharacterLinksList(); // 念のため古い方にもフォールバック
+                renderCharacterLinksEditor();
             }
 
-            // 5. カスタムステータス・テキストの復元（※すでに1番で生成されているので確実に値が入ります）
+            // 5. カスタムステータス・テキスト・成長値の復元
             if (data.customValues) {
-                for (const [fieldId, val] of Object.entries(data.customValues)) {
-                    const statusInput = document.getElementById(`custom_status_${fieldId}`);
-                    if (statusInput) statusInput.value = val;
+                setTimeout(() => { // DOMの生成完了をわずかに待つための安全策
+                    for (const [fieldId, val] of Object.entries(data.customValues)) {
+                        // オブジェクト（基本値・成長値などを持つ場合）の処理
+                        if (typeof val === 'object' && val !== null) {
+                            const baseInput = document.getElementById(`custom_status_${fieldId}_base`);
+                            if (baseInput) baseInput.value = val.base ?? '';
 
-                    const textInput = document.getElementById(`custom_text_${fieldId}`);
-                    if (textInput) textInput.value = val;
-                }
+                            const growthInput = document.getElementById(`custom_status_${fieldId}_growth`);
+                            if (growthInput) growthInput.value = val.growth ?? '';
+                        } else {
+                            // 単一の値（数値や文字列）の場合
+                            const statusInput = document.getElementById(`custom_status_${fieldId}`);
+                            if (statusInput) statusInput.value = val;
+
+                            const textInput = document.getElementById(`custom_text_${fieldId}`);
+                            if (textInput) textInput.value = val;
+                        }
+                    }
+                }, 50);
             }
+
+            if (typeof showToast === 'function') {
+                showToast("JSONからデータを復元しました！", "success");
+            } else {
+                alert("JSONからデータを復元しました！");
+            }
+
+        } catch (err) {
+            console.error("❌ JSONインポートエラー:", err);
+            alert("JSONファイルの読み込みに失敗しました。ファイル形式を確認してください。");
+        } finally {
+            event.target.value = ''; // 同じファイルを連続選択できるようにリセット
+        }
+    };
+    reader.readAsText(file);
+}
+window.importCharacterFromJson = importCharacterFromJson;
 
             // 6. 画像プレビュー等の再描画
             if (typeof renderCharacterImagesPreview === 'function') {
@@ -4254,7 +4289,7 @@ window.importCharactersJSON = importCharactersJSON;
 </footer>
 
 <!-- ========================================== -->
-<!-- 💡 キャラクター追加・編集モーダル本体（完全版・復元） -->
+<!-- 💡 キャラクター追加・編集モーダル本体（完全版・すべて入り） -->
 <!-- ========================================== -->
 <div id="characterModal" class="fixed inset-0 bg-stone-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 space-y-6">
@@ -4349,14 +4384,29 @@ window.importCharactersJSON = importCharactersJSON;
                 </div>
             </div>
 
-            <!-- 保存・キャンセルボタン -->
-            <div class="flex justify-end gap-2 pt-4 border-t border-stone-200">
-                <button type="button" onclick="closeCharacterModal()" class="bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-bold px-4 py-2 rounded-xl transition-all">
-                    キャンセル
-                </button>
-                <button type="button" onclick="saveCharacter()" class="bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold px-5 py-2 rounded-xl shadow-sm transition-all">
-                    保存する
-                </button>
+            <!-- フッター：JSON保存・読込 ＋ キャンセル・保存ボタン -->
+            <div class="flex flex-wrap justify-between items-center gap-2 pt-4 border-t border-stone-200">
+                
+                <!-- 左側：JSONデータのファイル入出力 -->
+                <div class="flex items-center gap-2">
+                    <button type="button" onclick="exportCharacterJson()" class="bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-bold px-3 py-2 rounded-xl transition-all flex items-center gap-1" title="現在の入力内容をJSONで保存">
+                        <span>📤 JSON保存</span>
+                    </button>
+                    <button type="button" onclick="document.getElementById('jsonImportInput').click()" class="bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-bold px-3 py-2 rounded-xl transition-all flex items-center gap-1" title="JSONファイルから読み込む">
+                        <span>📥 JSON読込</span>
+                    </button>
+                    <input type="file" id="jsonImportInput" accept=".json" class="hidden" onchange="importCharacterJson(event)">
+                </div>
+
+                <!-- 右側：キャンセル・保存する -->
+                <div class="flex items-center gap-2">
+                    <button type="button" onclick="closeCharacterModal()" class="bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-bold px-4 py-2 rounded-xl transition-all">
+                        キャンセル
+                    </button>
+                    <button type="button" onclick="saveCharacter()" class="bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold px-5 py-2 rounded-xl shadow-sm transition-all">
+                        保存する
+                    </button>
+                </div>
             </div>
         </form>
     </div>
