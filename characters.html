@@ -4217,5 +4217,69 @@ window.importCharactersJSON = importCharactersJSON;
 <footer class="text-center py-6 text-[11px] text-stone-400 border-t border-stone-100 mt-12">
     <p>© Character log</p>
 </footer>
+
+<!-- ========================================== -->
+<!-- 💡 キャラクター追加・編集モーダル本体 -->
+<!-- ========================================== -->
+<div id="characterModal" class="fixed inset-0 bg-stone-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 space-y-6">
+        
+        <!-- モーダルヘッダー -->
+        <div class="flex justify-between items-center border-b border-stone-200 pb-4">
+            <h3 class="text-lg font-bold text-stone-800">キャラクター登録・編集</h3>
+            <button onclick="document.getElementById('characterModal').classList.add('hidden')" class="text-stone-400 hover:text-stone-600 text-xl font-bold px-2">&times;</button>
+        </div>
+
+        <!-- フォーム本体 -->
+        <form id="characterForm" class="space-y-4" onsubmit="event.preventDefault();">
+            
+            <!-- システム選択 -->
+            <div>
+                <label class="block text-xs font-bold text-stone-700 mb-1">システム選択</label>
+                <select id="charSystemSelect" onchange="handleSystemChangeInModal()" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-800 focus:outline-none focus:border-stone-400">
+                    <!-- システムの選択肢が動的に入る想定 -->
+                </select>
+            </div>
+
+            <!-- 基本情報入力エリア -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-bold text-stone-700 mb-1">キャラクター名</label>
+                    <input type="text" id="charName" placeholder="名前を入力" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-800 focus:outline-none focus:border-stone-400">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-stone-700 mb-1">名前（カナ）</label>
+                    <input type="text" id="charNameKana" placeholder="カナを入力" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-800 focus:outline-none focus:border-stone-400">
+                </div>
+            </div>
+
+            <!-- 動的カスタムフィールドの挿入先 -->
+            <div id="dynamicCustomFieldsContainer" class="space-y-4"></div>
+
+            <!-- メモ・秘話など -->
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-xs font-bold text-stone-700 mb-1">メモ</label>
+                    <textarea id="charMemo" rows="3" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-800 focus:outline-none focus:border-stone-400"></textarea>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-stone-700 mb-1">秘話・秘密</label>
+                    <textarea id="charSecret" rows="2" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-800 focus:outline-none focus:border-stone-400"></textarea>
+                </div>
+            </div>
+
+            <!-- 保存・キャンセルボタン -->
+            <div class="flex justify-end gap-2 pt-4 border-t border-stone-200">
+                <button type="button" onclick="document.getElementById('characterModal').classList.add('hidden')" class="bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-bold px-4 py-2 rounded-xl transition-all">
+                    キャンセル
+                </button>
+                <button type="button" onclick="saveCharacter()" class="bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold px-5 py-2 rounded-xl shadow-sm transition-all">
+                    保存する
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
 </body>
 </html>
