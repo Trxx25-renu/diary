@@ -968,17 +968,17 @@ async function saveCharacter(event) {
 
     const customValues = {};
     
-    // 🛠️ 【変更】基本値と成長値をセットで取得して { base, growth } 構造にまとめる
-    document.querySelectorAll('.char-custom-status-input').forEach(inputEl => {
+    // 🛠️ 【修正】基本値の入力欄からフィールドIDを正しく取得し、対応する成長値とセットで保存
+    document.querySelectorAll('.char-custom-status-base').forEach(inputEl => {
         const sId = inputEl.id;
-        if (sId && sId.startsWith('custom_status_')) {
-            const fieldId = sId.replace('custom_status_', '');
+        if (sId && sId.startsWith('custom_status_base_')) {
+            const fieldId = sId.replace('custom_status_base_', '');
             
             // 基本値を取得
             const baseVal = inputEl.value !== '' ? Number(inputEl.value) : 0;
             
-            // 対応する成長値の入力欄を取得（id="custom_growth_[fieldId]" を想定）
-            const growthInputEl = document.getElementById(`custom_growth_${fieldId}`);
+            // 対応する成長値の入力欄を取得
+            const growthInputEl = document.getElementById(`custom_status_growth_${fieldId}`);
             const growthVal = growthInputEl && growthInputEl.value !== '' ? Number(growthInputEl.value) : 0;
             
             customValues[fieldId] = {
@@ -3050,7 +3050,7 @@ function renderCharacterModalSystemSelect() {
 window.renderCharacterModalSystemSelect = renderCharacterModalSystemSelect;
         
 // ==========================================
-// 💡 2. モーダル内でシステムが変更された時に動ティブ項目を描画する関数
+// 💡 2. モーダル内でシステムが変更された時に動的項目を描画する関数（成長値対応版）
 // ==========================================
 function handleSystemChangeInModal(existingCustomValues = {}) {
     const select = document.getElementById('charSystemSelect');
@@ -3066,26 +3066,54 @@ function handleSystemChangeInModal(existingCustomValues = {}) {
     if (fields.status && fields.status.length > 0) {
         const statusWrapper = document.createElement('div');
         statusWrapper.className = 'space-y-2';
-        statusWrapper.innerHTML = `<label class="block text-xs font-bold text-stone-700">ステータス設定</label>`;
+        statusWrapper.innerHTML = `<label class="block text-xs font-bold text-stone-700">ステータス設定 (基本値 / 成長値)</label>`;
         
         const grid = document.createElement('div');
-        grid.className = 'grid grid-cols-2 gap-2';
+        grid.className = 'grid grid-cols-1 sm:grid-cols-2 gap-3';
 
         fields.status.forEach(st => {
             const div = document.createElement('div');
-            const inputId = `custom_status_${st.id}`;
-            const savedVal = existingCustomValues[st.id] !== undefined ? existingCustomValues[st.id] : '';
+            const baseId = `custom_status_base_${st.id}`;
+            const growthId = `custom_status_growth_${st.id}`;
+            
+            // 💡 既存データの取得（オブジェクト形式または旧形式の数値対応）
+            const valObj = existingCustomValues[st.id];
+            let baseVal = '';
+            let growthVal = '';
 
+            if (valObj && typeof valObj === 'object') {
+                baseVal = valObj.base !== undefined ? valObj.base : '';
+                growthVal = valObj.growth !== undefined ? valObj.growth : '';
+            } else if (valObj !== undefined && valObj !== '') {
+                baseVal = valObj; // 旧形式の単一数値があれば基本値として扱う
+            }
+
+            div.className = 'bg-stone-50/70 p-2.5 rounded-xl border border-stone-200/80 space-y-1.5';
             div.innerHTML = `
-                <label class="block text-[10px] font-bold text-stone-600 mb-0.5" for="${inputId}">
-                    ${st.label} (max: ${st.max || '-'})
-                    <input type="number" 
-                           id="${inputId}" 
-                           name="${inputId}" 
-                           value="${savedVal}" 
-                           placeholder="0" 
-                           class="char-custom-status-input w-full mt-1 bg-stone-50 border border-stone-200 rounded-xl px-3 py-1.5 text-xs text-stone-800 font-normal focus:outline-none focus:border-stone-400">
-                </label>
+                <div class="flex justify-between items-center text-[11px] font-bold text-stone-700">
+                    <span>${st.label}</span>
+                    <span class="text-[10px] text-stone-400 font-normal">max: ${st.max || '-'}</span>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-[9px] font-bold text-stone-500 mb-0.5" for="${baseId}">基本値</label>
+                        <input type="number" 
+                               id="${baseId}" 
+                               name="${baseId}" 
+                               value="${baseVal}" 
+                               placeholder="0" 
+                               class="char-custom-status-base w-full bg-white border border-stone-200 rounded-lg px-2.5 py-1 text-xs text-stone-800 font-normal focus:outline-none focus:border-stone-400">
+                    </div>
+                    <div>
+                        <label class="block text-[9px] font-bold text-stone-500 mb-0.5" for="${growthId}">成長値</label>
+                        <input type="number" 
+                               id="${growthId}" 
+                               name="${growthId}" 
+                               value="${growthVal}" 
+                               placeholder="0" 
+                               class="char-custom-status-growth w-full bg-white border border-stone-200 rounded-lg px-2.5 py-1 text-xs text-stone-800 font-normal focus:outline-none focus:border-stone-400">
+                    </div>
+                </div>
             `;
             grid.appendChild(div);
         });
@@ -3095,7 +3123,7 @@ function handleSystemChangeInModal(existingCustomValues = {}) {
 
     if (fields.text && fields.text.length > 0) {
         const textWrapper = document.createElement('div');
-        textWrapper.className = 'space-y-2 mt-2';
+        textWrapper.className = 'space-y-2 mt-4 pt-3 border-t border-stone-200/60';
         textWrapper.innerHTML = `<label class="block text-xs font-bold text-stone-700">カスタムテキスト項目</label>`;
 
         fields.text.forEach(tx => {
@@ -3118,7 +3146,6 @@ function handleSystemChangeInModal(existingCustomValues = {}) {
         container.appendChild(textWrapper);
     }
 
-    // 🌟 【追加】動的にカスタム項目が生成された直後にも、テキストエリアの高さを再適応させる
     if (typeof initAutoResizeTextareas === 'function') {
         initAutoResizeTextareas();
     }
