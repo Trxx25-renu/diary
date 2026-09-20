@@ -6,6 +6,10 @@
     <meta name="robots" content="noindex, nofollow">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title id="siteTitleTag">卓日記 - Session Log</title>
+    
+    <!-- スマホ用コンソール表示ツール（Eruda） -->
+<script src="https://cdn.jsdelivr.net/npm/eruda"></script>
+<script>eruda.init();</script>
 
     <!-- 🚀 【超重要】通信やJSファイルの読み込みを待たずに、一瞬でローカルのキャッシュを適用するスクリプト -->
     <script>
@@ -41,7 +45,7 @@
    <!-- ホーム画面追加用アイコン & PWA設定タグ（初期値として透明なダミーを入れて404を防ぐ） -->
     <link rel="apple-touch-icon" id="appleTouchIcon" href="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7">
     <link rel="icon" type="image/png" id="faviconIcon" href="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7">
-    <meta name="apple-mobile-web-app-title" id="appleAppTitle" content="写真日記">
+    <meta name="apple-mobile-web-app-title" id="appleAppTitle" content="卓日記">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="theme-color" content="#fcfbf9">
@@ -124,23 +128,34 @@
             };
         }
         
-        // 🚀 【ここに追加】通信を待たずに即座にキャッシュを適用してチラつきを防ぐ
-        try {
-            const cachedConfig = localStorage.getItem('cachedSiteConfig');
-            if (cachedConfig) {
-                const config = JSON.parse(cachedConfig);
-                if (config.title) document.title = config.title;
-                if (config.logoImageUrl) {
-                    const appleIcon = document.getElementById('appleTouchIcon');
-                    if (appleIcon) appleIcon.href = config.logoImageUrl;
+// 🚀 【ここに追加】通信を待たずに即座にキャッシュを適用してチラつきを防ぐ
+try {
+    const cachedConfig = localStorage.getItem('cachedSiteConfig');
+    if (cachedConfig) {
+        const config = JSON.parse(cachedConfig);
+        if (config.title) document.title = config.title;
+        if (config.logoImageUrl) {
+            const appleIcon = document.getElementById('appleTouchIcon');
+            if (appleIcon) appleIcon.href = config.logoImageUrl;
 
-                    const favicon = document.getElementById('faviconIcon');
-                    if (favicon) favicon.href = config.logoImageUrl;
-                }
+            const favicon = document.getElementById('faviconIcon');
+            if (favicon) favicon.href = config.logoImageUrl;
+
+            // 🌟 ここを追加：画面内のヘッダーロゴも一瞬で画像に差し替えてPを隠す
+            const headerImg = document.getElementById('siteHeaderLogoImg');
+            const headerLogoText = document.getElementById('siteHeaderLogo');
+            const headerBox = document.getElementById('siteHeaderLogoBox');
+            if (headerImg && headerLogoText && headerBox) {
+                headerImg.src = config.logoImageUrl;
+                headerImg.classList.remove('hidden');
+                headerLogoText.classList.add('hidden');
+                headerBox.classList.remove('opacity-0'); // 透明度を解除して一瞬で表示
             }
-        } catch (e) {
-            console.error("Instant cache load error:", e);
         }
+    }
+} catch (e) {
+    console.error("Instant cache load error:", e);
+}
 
         // 🌟 【ここに管理者状態の復元を追加】
         try {
@@ -483,7 +498,7 @@ window.navigateTo = navigateTo;
             }
         };
 
-        // 2. 設定を画面（タイトル・アイコン・テーマカラー等）に一括反映させる関数
+// 2. 設定を画面（タイトル・アイコン・テーマカラー等）に一括反映させる関数
         function applySiteConfig() {
             const config = window.siteConfig;
             if (!config) return;
@@ -508,6 +523,9 @@ window.navigateTo = navigateTo;
             const logoBg = document.getElementById('siteHeaderLogoBox');
             if (logoBg) {
                 logoBg.className = `w-9 h-9 rounded-xl ${theme.bgLight} ${theme.textPrimary} flex items-center justify-center font-serif-title font-bold text-lg group-hover:scale-105 transition-transform overflow-hidden`;
+                
+                // 🌟 ここを追加：デザインが適用されたタイミングで透明（opacity-0）を解除してスッと表示
+                logoBg.classList.remove('opacity-0');
             }
 
             const writeBtn = document.getElementById('newPostBtn');
@@ -515,7 +533,7 @@ window.navigateTo = navigateTo;
                 writeBtn.className = `${window.isAdmin ? 'flex' : 'hidden'} px-3.5 py-1.5 rounded-xl text-xs font-medium text-white ${theme.bgPrimary} ${theme.hoverPrimary} transition-colors shadow-sm items-center gap-1.5`;
             }
 
-// 2. ロゴ（文字 または 画像）の反映
+        // 2. ロゴ（文字 または 画像）の反映
         const logoTextEl = document.getElementById('siteHeaderLogo');
         const logoImgEl = document.getElementById('siteHeaderLogoImg');
         const appleIconEl = document.getElementById('appleTouchIcon');
@@ -577,9 +595,9 @@ window.navigateTo = navigateTo;
                 calBtn.className = `px-3.5 py-1.5 rounded-lg text-xs transition-all flex items-center gap-1 ${inactiveClass}`;
             }
         }
-    } // ← ここで applySiteConfig が正しく閉じるようにする
+    } 
     window.applySiteConfig = applySiteConfig;
-
+    
         // 3. フィルターボタン描画関数
         function renderWeatherFilterButtons() {
             const container = document.getElementById('weatherFilterContainer');
@@ -2431,7 +2449,7 @@ document.addEventListener('DOMContentLoaded', () => {
     <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
         <!-- 左側：アイコン ＆ タイトル・サブタイトル（クリックでホームへ戻る） -->
         <a href="javascript:void(0)" onclick="navigateTo('months')" class="flex items-center gap-3 group cursor-pointer text-left">
-            <div id="siteHeaderLogoBox" class="w-9 h-9 rounded-xl bg-stone-50 text-stone-700 flex items-center justify-center font-serif-title font-bold text-lg group-hover:scale-105 transition-transform overflow-hidden border border-stone-200 shadow-sm">
+            <div id="siteHeaderLogoBox" class="w-9 h-9 rounded-xl bg-stone-50 text-stone-700 flex items-center justify-center font-serif-title font-bold text-lg group-hover:scale-105 transition-transform overflow-hidden border border-stone-200 shadow-sm transition-opacity duration-300 opacity-0">
                 <span id="siteHeaderLogo">P</span>
                 <img id="siteHeaderLogoImg" src="" alt="Logo" class="w-full h-full object-cover hidden">
             </div>
@@ -2441,33 +2459,33 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
         </a>
 
-            <!-- アクションボタン領域 -->
-            <div class="flex items-center gap-2">
-                <!-- 1. 共有ボタン -->
-                <button id="shareBtn" onclick="sharePublicUrl()" class="hidden px-3 py-1.5 rounded-lg text-xs font-medium text-stone-600 bg-stone-100 hover:bg-stone-200 transition-colors flex items-center gap-1.5" title="URL共有">
-                    <i class="fa-solid fa-share-nodes text-stone-400"></i>
-                    <span class="hidden sm:inline">共有</span>
-                </button>
+        <!-- アクションボタン領域 -->
+        <div class="flex items-center gap-2">
+            <!-- 1. 共有ボタン -->
+            <button id="shareBtn" onclick="sharePublicUrl()" class="hidden px-3 py-1.5 rounded-lg text-xs font-medium text-stone-600 bg-stone-100 hover:bg-stone-200 transition-colors flex items-center gap-1.5" title="URL共有">
+                <i class="fa-solid fa-share-nodes text-stone-400"></i>
+                <span class="hidden sm:inline">共有</span>
+            </button>
 
-                <!-- 2. サイト設定ボタン -->
-                <button id="siteConfigBtn" onclick="openConfigModal()" class="hidden px-2.5 py-1.5 rounded-lg text-xs font-medium text-stone-700 bg-stone-100 hover:bg-stone-200 transition-colors flex items-center gap-1" title="ホームページの大枠設定">
-                    <i class="fa-solid fa-gear text-stone-500"></i>
-                    <span class="hidden sm:inline">サイト設定</span>
-                </button>
+            <!-- 2. サイト設定ボタン -->
+            <button id="siteConfigBtn" onclick="openConfigModal()" class="hidden px-2.5 py-1.5 rounded-lg text-xs font-medium text-stone-700 bg-stone-100 hover:bg-stone-200 transition-colors flex items-center gap-1" title="ホームページの大枠設定">
+                <i class="fa-solid fa-gear text-stone-500"></i>
+                <span class="hidden sm:inline">サイト設定</span>
+            </button>
 
-                <!-- 3. 管理者ログイン制御（鍵アイコン） -->
-                <button id="adminTrigger" onclick="handleHeaderKeyClick()" class="p-2 text-stone-400 hover:text-stone-600 transition-colors rounded-lg text-xs" title="管理者ログイン / ログアウト">
-                    <i id="authLockIcon" class="fa-solid fa-lock text-stone-400"></i>
-                </button>
+            <!-- 3. 管理者ログイン制御（鍵アイコン） -->
+            <button id="adminTrigger" onclick="handleHeaderKeyClick()" class="p-2 text-stone-400 hover:text-stone-600 transition-colors rounded-lg text-xs" title="管理者ログイン / ログアウト">
+                <i id="authLockIcon" class="fa-solid fa-lock text-stone-400"></i>
+            </button>
 
-                <!-- 🌟 4. 【一番右に移動】新規投稿ボタン -->
-                <button id="newPostBtn" onclick="openPostModal()" class="hidden px-3.5 py-1.5 rounded-xl text-xs font-medium text-white bg-stone-600 hover:bg-stone-700 transition-colors shadow-sm items-center gap-1.5">
-                    <i class="fa-solid fa-plus"></i>
-                    <span>日記を書く</span>
-                </button>
-           </div>
-        </div>
-    </header>
+            <!-- 🌟 4. 新規投稿ボタン -->
+            <button id="newPostBtn" onclick="openPostModal()" class="hidden px-3.5 py-1.5 rounded-xl text-xs font-medium text-white bg-stone-600 hover:bg-stone-700 transition-colors shadow-sm items-center gap-1.5">
+                <i class="fa-solid fa-plus"></i>
+                <span>日記を書く</span>
+            </button>
+         </div>
+    </div>
+</header>
 
    <!-- 下に引っ張ったときに現れるローディング表示 -->
     <div id="pullToRefreshIndicator" class="fixed top-0 left-0 right-0 h-16 flex items-center justify-center bg-stone-100/90 backdrop-blur-sm border-b border-stone-200 text-stone-600 text-xs font-medium z-50 transition-transform duration-200 -translate-y-full">
