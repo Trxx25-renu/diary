@@ -3350,15 +3350,32 @@ function handleAuthSubmit(e) {
 }
 window.handleAuthSubmit = handleAuthSubmit;
         
-        // ==========================================
-        // 💡 ヘッダーのタイトルやアイコンを最新の設定に更新する関数
-        // ==========================================
-        function updateHeaderBranding() {
-            if (window.rosterSettings) {
-                applyRosterSettings(window.rosterSettings);
+// ==========================================
+// 💡 ヘッダーのタイトルやアイコンを最新の設定に更新する関数
+// ==========================================
+function updateHeaderBranding() {
+    if (window.rosterSettings) {
+        applyRosterSettings(window.rosterSettings);
+        
+        // 💡 ここにアイコン（ファビコン＆スマホ用アイコン）を動的に反映する処理を追加！
+        const faviconUrl = window.rosterSettings.favicon;
+        if (faviconUrl) {
+            // 1. PCやブラウザタブ用のファビコンを更新
+            const faviconTag = document.getElementById('dynamicFavicon');
+            if (faviconTag) {
+                faviconTag.href = faviconUrl;
+            }
+
+            // 2. iPhoneのホーム画面・ブックマーク用のアイコンを更新
+            const appleIconTag = document.getElementById('dynamicAppleTouchIcon');
+            if (appleIconTag) {
+                appleIconTag.href = faviconUrl;
             }
         }
-        window.updateHeaderBranding = updateHeaderBranding;
+    }
+}
+window.updateHeaderBranding = updateHeaderBranding;
+
 
        // ==========================================
        // 💡 秘匿メモ（ネタバレ）の表示・非表示を切り替える関数（トグル対応版）
