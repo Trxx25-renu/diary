@@ -266,6 +266,11 @@ async function loadCharactersFromLocal() {
             window.characters = charSnap.data().list;
             localStorage.setItem('local_characters', JSON.stringify(window.characters));
             console.log('📂 Firestoreからキャラクターデータをロードしました（画像・データ完全同期）');
+            
+            // 💡 【追加】ここでロード完了直後にハッシュルートを再評価して画面を描画する！
+            if (typeof handleHashRoute === 'function') {
+                handleHashRoute();
+            }
             return;
         }
     } catch (e) {
@@ -281,9 +286,20 @@ async function loadCharactersFromLocal() {
             window.characters = [];
             console.log('ℹ️ キャラクターデータが空です');
         }
+
+        // 💡 【追加】ローカルストレージからのロード完了時も同様に再描画する
+        if (typeof handleHashRoute === 'function') {
+            handleHashRoute();
+        }
+
     } catch (e) {
         console.error("Characters load error:", e);
         window.characters = [];
+        
+        // エラー時でも一応ルート処理を走らせておく場合
+        if (typeof handleHashRoute === 'function') {
+            handleHashRoute();
+        }
     }
 }
 window.loadCharactersFromLocal = loadCharactersFromLocal;
