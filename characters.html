@@ -1344,7 +1344,7 @@ function switchViewMode(mode) {
 window.switchViewMode = switchViewMode;
     
 // ==========================================
-// 💡 3. キャラクター詳細描画関数（ギャラリー・秘匿メモ対応版）
+// 💡 3. キャラクター詳細描画関数（ギャラリー・秘匿メモ・成長値対応版）
 // ==========================================
 window._currentGalleryState = window._currentGalleryState || { characterId: null, category: 'base', index: 0 };
 
@@ -1352,9 +1352,7 @@ function renderCharacterDetail(characterId) {
     const detailContainer = document.getElementById('view-detail');
     if (!detailContainer) return;
 
-    // 💡 【ここにガードを入れる】
-    // まだキャラクターデータが読み込まれていない場合は、エラーを出さずに一度処理を中断する
-    // （データロード完了後にハッシュルーティングがもう一度ここを呼び出してくれます）
+    // 💡 まだキャラクターデータが読み込まれていない場合のガード
     if (!window.characters || window.characters.length === 0) {
         console.warn("⏳ キャラクターデータがまだ読み込まれていないため、詳細表示を待機します...");
         detailContainer.innerHTML = `<p class="text-xs text-stone-400 py-12 text-center">データを読み込んでいます...</p>`;
@@ -1374,8 +1372,9 @@ function renderCharacterDetail(characterId) {
     }
     const themeColor = getAdjustedColor(rawThemeColor);
     const badgeTextColor = getAdaptiveTextColor(themeColor);
+    const growthColor = typeof getGrowthColor === 'function' ? getGrowthColor(themeColor) : '#78716c'; // 💡 成長値用の同系色カラー
 
-    // 💡【統合処理】画像リストの抽出
+    // 💡 画像リストの抽出
     let avatars = [];
     if (ch.images && typeof ch.images === 'object') {
         ['base', 'combat', 'sd', 'doodle'].forEach(catKey => {
@@ -1406,7 +1405,7 @@ function renderCharacterDetail(characterId) {
         { key: 'base', name: '基本' },
         { key: 'combat', name: '戦闘' },
         { key: 'sd', name: 'SD・他' },
-        { key: 'doodle', name: '落書き' }
+        { key: 'doodle', name: '絵log' }
     ];
 
     let activeCat = window._currentGalleryState.category;
@@ -1620,7 +1619,7 @@ function renderCharacterDetail(characterId) {
                     ${linksList.map(link => `
                         <a href="${link.url}" target="_blank" rel="noopener noreferrer" 
                            class="inline-flex items-center gap-2 text-xs font-bold px-3.5 py-2 rounded-xl shadow-sm hover:opacity-95 transition-all" 
-                           style="background-color: ${themeColor}; color: ${badgeTextColor};">
+                           style="background-color: ${themeColor}; color:${badgeTextColor};">
                             <i class="fa-solid fa-external-link-alt text-[10px]"></i>
                             <span>${link.label || 'キャラクターシート'}</span>
                         </a>
@@ -1649,27 +1648,51 @@ function renderCharacterDetail(characterId) {
         customFieldsHtml += `</div>`;
     }
 
+    // 📊 ステータス / ゲージ描画（基本値 ＋ 成長値対応 ＆ 2色積み上げグラフ）
     const statusFields = sysFields.status || [];
     if (statusFields.length > 0) {
         customFieldsHtml += `<div class="space-y-3 mt-4 pt-4 border-t border-stone-100"><h4 class="text-xs font-bold text-stone-500">ステータス / ゲージ</h4>`;
+        
         statusFields.forEach(f => {
-            const val = ch.customValues && ch.customValues[f.id] !== undefined ? ch.customValues[f.id] : '-';
-            const numVal = Number(val) || 0;
-            const maxVal = Number(f.max) || 100;
-            const percentage = Math.min(Math.round((numVal / maxVal) * 100), 100);
-            const isExceeded = numVal > maxVal;
+            const valObj = ch.customValues ? ch.customValues[f.id] : null;
             
-            const barColor = isExceeded ? '#9333ea' : themeColor;
+            let baseVal = 0;
+            let growthVal = 0;
+            
+            if (valObj && typeof valObj === 'object') {
+                baseVal = Number(valObj.base) || 0;
+                growthVal = Number(valObj.growth) || 0;
+            } else if (typeof valObj === 'number' || (typeof valObj === 'string' && valObj !== '-')) {
+                baseVal = Number(valObj) || 0;
+            }
+
+            const totalVal = baseVal + growthVal;
+            const maxVal = Number(f.max) || 100;
+            
+            // バーの幅割合計算
+            const baseWidthPct = Math.min(100, Math.max(0, (baseVal / maxVal) * 100));
+            const remainingPct = Math.max(0, 100 - baseWidthPct);
+            const growthWidthPct = Math.min(remainingPct, Math.max(0, (growthVal / maxVal) * 100));
+
+            const isExceeded = totalVal > maxVal;
             const badgeText = isExceeded ? `<span class="text-[10px] text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded font-bold ml-1">上限突破!</span>` : '';
+
+            // 💡 数値表示形式：基本値 + 成長値 (合計) （成長値がある場合のみ色付きで表示）
+            let displayText = `${baseVal}`;
+            if (growthVal > 0) {
+                displayText = `${baseVal} <span style="color: ${growthColor}; font-weight: bold;">+ ${growthVal}</span> <span class="text-stone-400 font-normal">(${totalVal})</span>`;
+            }
 
             customFieldsHtml += `
                 <div>
                     <div class="flex justify-between text-xs mb-1">
                         <span class="font-medium text-stone-600">${f.label}</span>
-                        <span><strong class="text-stone-800">${val}</strong> ${badgeText}</span>
+                        <span><strong class="text-stone-800 font-mono">${displayText}</strong> ${badgeText}</span>
                     </div>
-                    <div class="w-full h-2.5 bg-stone-100 rounded-full overflow-hidden">
-                        <div class="h-full rounded-full transition-all duration-500" style="width: ${percentage}%; background-color: ${barColor};"></div>
+                    <!-- 📊 2色積み上げバーグラフ -->
+                    <div class="w-full h-2.5 bg-stone-100 rounded-full overflow-hidden flex border border-stone-200/50 shadow-inner">
+                        <div class="h-full transition-all duration-500" style="width: ${baseWidthPct}%; background-color: ${themeColor};" title="基本値: ${baseVal}"></div>
+                        <div class="h-full transition-all duration-500" style="width: ${growthWidthPct}%; background-color: ${growthColor};" title="成長値: ${growthVal}"></div>
                     </div>
                 </div>
             `;
