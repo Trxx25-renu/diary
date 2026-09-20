@@ -1020,13 +1020,9 @@ function getAdaptiveTextColor(hexColor) {
 window.getAdaptiveTextColor = getAdaptiveTextColor;
        
 // ==========================================
-// 💡 画面やビューを切り替えるルーター関数（履歴記憶対応版）
+// 💡 画面やビューを切り替えるルーター関数（ハッシュ連動・完全対応版）
 // ==========================================
-// グローバル変数で直前の画面を保持しておく
-window.previousView = 'home';
-window.previousParam = null;
-
-function navigateTo(target, param) {
+function navigateTo(target, param, updateHash = true) {
     console.log("🚀 navigateTo 実行 -> target:", target, "param:", param);
 
     try {
@@ -1036,6 +1032,18 @@ function navigateTo(target, param) {
             const m = document.getElementById(modalId);
             if (m) m.classList.add('hidden');
         });
+
+        // 💡 URLのハッシュ（#）を更新する（無限ループ防止のフラグ制御付き）
+        if (updateHash) {
+            let hashVal = target || 'home';
+            if (param) {
+                hashVal += `/${param}`;
+            }
+            if (location.hash !== `#${hashVal}`) {
+                location.hash = hashVal;
+                return; // hashchange イベントが発火するため、ここでは一旦処理を抜ける
+            }
+        }
 
         // 💡 【重要】詳細画面（detail）以外への移動なら、そこを「直前の画面」として記憶する
         if (target && target !== 'detail') {
@@ -1117,14 +1125,34 @@ function navigateTo(target, param) {
 window.navigateTo = navigateTo;
 
 // ==========================================
-// 💡 【超重要】ページ読み込み完了時に、強制的にホーム画面（1階層目）を表示状態に初期化する
+// 💡 【超重要】ブラウザの「戻る」「進む」やURL直叩き・リロード時のハッシュ解析
 // ==========================================
+function handleHashRoute() {
+    const hash = location.hash.replace('#', '');
+    if (!hash || hash === 'home') {
+        navigateTo('home', null, false);
+        return;
+    }
+
+    // スラッシュ区切りでターゲットとパラメータを分解 (例: characterList/dx3 や detail/char_123)
+    const [target, param] = hash.split('/');
+    if (target) {
+        navigateTo(target, param || null, false);
+    }
+}
+
+// ページ読み込み完了時、またはハッシュが変更されたときにルートを判定
+window.addEventListener('hashchange', handleHashRoute);
+
 document.addEventListener('DOMContentLoaded', () => {
-    // もしURLや初期状態で特定の画面を指定していなければ、強制的にホームを表示
-    if (!window.selectedSystemId) {
-        navigateTo('home');
+    // 起動時にURLにハッシュがあればそれを優先、なければホームへ
+    if (location.hash && location.hash.length > 1) {
+        handleHashRoute();
+    } else {
+        navigateTo('home', null, false);
     }
 });
+
 
 // ==========================================
 // 💡 保険用の簡易キャラクター詳細描画関数
