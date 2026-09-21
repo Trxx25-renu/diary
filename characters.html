@@ -2033,10 +2033,10 @@ function openAuthModal() {
 
     // 複数のID候補に対応してパスコード入力欄を取得する
     const passInput = document.getElementById('inputPasscode') || 
-                      document.getElementById('passcode') || 
-                      document.getElementById('authPassword') || 
-                      modal.querySelector('input[type="password"], input[type="text"]');
-                      
+                        document.getElementById('passcode') || 
+                        document.getElementById('authPassword') || 
+                        modal.querySelector('input[type="password"], input[type="text"]');
+                        
     if (passInput) passInput.value = '';
 
     // すでに管理者（ログイン中）の場合はログアウト確認
@@ -2071,8 +2071,9 @@ function openAuthModal() {
         if (desc) desc.textContent = 'キャラクターの追加や設定変更をするにはパスコードが必要です。';
     }
 
-    // モーダルを表示状態にする
-    modal.classList.remove('opacity-0', 'pointer-events-none');
+    // 💡 モーダル本体の hidden を解除し、不透明度・ポインター有効化を同時に適用する
+    modal.classList.remove('hidden', 'opacity-0', 'pointer-events-none');
+    
     const innerDiv = modal.querySelector('div');
     if (innerDiv) {
         innerDiv.classList.remove('scale-95');
