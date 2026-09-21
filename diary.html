@@ -2634,14 +2634,19 @@ document.addEventListener('DOMContentLoaded', () => {
         </section>
 
 <!-- 第1階層：月別アルバムフォルダー表示 -->
-        <section id="view-months" class="hidden flex flex-col gap-4">
-            <div class="flex items-center justify-between">
-                <h2 class="text-lg font-serif-title font-bold text-stone-800">月別アルバム</h2>
-                <span class="text-xs text-stone-400">フォルダを選択して閲覧</span>
-            </div>
-            <div id="monthFolderGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            </div>
-        </section>
+            <section id="view-months" class="hidden flex flex-col gap-4">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-lg font-serif-title font-bold text-stone-800">月別アルバム</h2>
+                    <span class="text-xs text-stone-400">フォルダを選択して閲覧</span>
+                </div>
+                <div id="monthFolderGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <!-- 🚀 リロード時のチラつき防止 -->
+                    <div class="col-span-full py-12 flex flex-col items-center justify-center gap-2 text-stone-400">
+                        <i class="fa-solid fa-spinner animate-spin text-base"></i>
+                        <span class="text-xs">アルバムを読み込んでいます...</span>
+                    </div>
+                </div>
+            </section>
 
         <!-- 第2階層：サムネイルギャラリー表示 -->
         <section id="view-gallery" class="hidden flex flex-col gap-4">
