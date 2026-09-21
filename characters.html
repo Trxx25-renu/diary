@@ -1938,33 +1938,26 @@ window.handleHeaderKeyClick = function() {
 // ==========================================
 // 🔓 ログアウト処理
 // ==========================================
-function logoutAdmin() {
-    if (typeof showConfirm === 'function') {
-        showConfirm('ログアウト', '管理者モードからログアウトしますか？', () => {
-            window.isAdmin = false;
-            sessionStorage.removeItem('isAdminSession');
-            
-            if (window.GIST_CONFIG) {
-                window.GIST_CONFIG.token = '';
-            }
-            
-            updateAdminUI();
-            showToast('ログアウトしました', 'info');
-        });
-    } else {
-        if (confirm('管理者モードからログアウトしますか？')) {
-            window.isAdmin = false;
-            sessionStorage.removeItem('isAdminSession');
-            
-            if (window.GIST_CONFIG) {
-                window.GIST_CONFIG.token = '';
-            }
-            
+window.logoutAdmin = function() {
+    if (confirm('管理者モードからログアウトしますか？')) {
+        window.isAdmin = false;
+        sessionStorage.removeItem('isAdminSession');
+        
+        if (window.GIST_CONFIG) {
+            window.GIST_CONFIG.token = '';
+        }
+        
+        if (typeof updateAdminUI === 'function') {
             updateAdminUI();
         }
+        
+        if (typeof showToast === 'function') {
+            showToast('ログアウトしました', 'info');
+        } else {
+            console.log('ログアウトしました');
+        }
     }
-}
-window.logoutAdmin = logoutAdmin;
+};
 
 
 // ==========================================
