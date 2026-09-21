@@ -2847,7 +2847,7 @@ window.initAutoResizeTextareas = initAutoResizeTextareas;
 
 
 // ==========================================
-// 💡 編集モーダルを開く関数（自動リサイズ対応版・修正版）
+// 💡 編集モーダルを開く関数（データ読み込み完全修正版）
 // ==========================================
 function openEditCharacterModal(characterId) {
     const ch = window.characters.find(c => String(c.id) === String(characterId));
@@ -2905,11 +2905,17 @@ function openEditCharacterModal(characterId) {
         renderCharacterLinksEditor();
     }
 
-    // 🌟 【修正】編集時はシステムを変更できないように確実に固定（disabled = true）し、値を反映
+    // 🌟 【修正】システムIDをセットし、ONCHANGEの暴発を防ぎつつ確実にカスタム項目を既存データ付きで描画
     if (systemInput) {
         systemInput.value = ch.systemId || '';
         systemInput.disabled = true; // 編集時は変更不可にする
         systemInput.classList.add('opacity-60', 'pointer-events-none', 'bg-stone-100');
+    }
+
+    // 🌟 ここで確実にキャラクターが持っているカスタム値（ch.customValues）を渡して描画する
+    if (typeof handleSystemChangeInModal === 'function') {
+        // システムIDを明示的に指定してカスタム項目を描画
+        handleSystemChangeInModal(ch.customValues || {});
     }
 
     // 💡 統合された画像管理オブジェクトの復元
@@ -2935,11 +2941,6 @@ function openEditCharacterModal(characterId) {
 
     if (typeof switchImageCategory === 'function') {
         switchImageCategory('thumb');
-    }
-
-    // 🌟 【重要】システムIDが完全にセットされたあとにカスタム項目・数値を描画する
-    if (typeof handleSystemChangeInModal === 'function') {
-        handleSystemChangeInModal(ch.customValues || {});
     }
 
     if (typeof handleThemeColorInput === 'function') {
