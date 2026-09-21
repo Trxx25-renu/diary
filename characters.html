@@ -1863,161 +1863,7 @@ window.closeConfirmModal = function() {
 };
 
 // ==========================================
-// 🛡️ 権限チェック＆パスコード・ログアウト制御ロジック
-// ==========================================
-let pendingAction = null;
-
-function checkAdminPermission(callback) {
-    if (window.isAdmin) {
-        callback();
-    } else {
-        pendingAction = callback;
-        openAuthModal();
-    }
-}
-window.checkAdminPermission = checkAdminPermission;
-
-// 管理者ステータスに応じてヘッダーの鍵アイコンや追加ボタン、各種管理UIを一括切り替えする関数
-function updateAdminUI() {
-    const keyBtn = document.getElementById('headerKeyBtn');
-    if (keyBtn) {
-        if (window.isAdmin) {
-            keyBtn.className = "text-stone-600 hover:text-stone-800 transition-colors p-2 text-base";
-            keyBtn.innerHTML = '<i class="fa-solid fa-unlock"></i>';
-            keyBtn.title = "管理者モード（クリックでログアウト）";
-        } else {
-            keyBtn.className = "text-stone-600 hover:text-stone-800 transition-colors p-2 text-base";
-            keyBtn.innerHTML = '<i class="fa-solid fa-lock"></i>';
-            keyBtn.title = "管理者ログイン";
-        }
-    }
-
-    // 💡 .admin-only クラスを持つすべての要素（PC追加、編集・削除、HP設定ボタン等）を一括で表示・非表示切り替え
-    const adminElements = document.querySelectorAll('.admin-only');
-    adminElements.forEach(el => {
-        if (window.isAdmin) {
-            el.classList.remove('hidden');
-        } else {
-            el.classList.add('hidden');
-        }
-    });
-
-    // 現在キャラクター詳細画面を開いている場合、管理ボタンを即座に再描画する
-    if (typeof window._currentGalleryState !== 'undefined' && window._currentGalleryState.characterId) {
-        if (typeof renderCharacterDetail === 'function') {
-            renderCharacterDetail(window._currentGalleryState.characterId);
-        }
-    }
-}
-window.updateAdminUI = updateAdminUI;
-        
-// ==========================================
-// 🔑 ヘッダーの鍵アイコンが押されたときの分岐
-// ==========================================
-window.handleHeaderKeyClick = function() {
-    if (window.isAdmin) {
-        logoutAdmin();
-    } else {
-        if (typeof openAuthModal === 'function') {
-            openAuthModal();
-        } else {
-            console.error("❌ openAuthModal 関数が見つかりません");
-        }
-    }
-};
-
-// ==========================================
-// 🔓 ログアウト処理
-// ==========================================
-window.logoutAdmin = function() {
-    if (confirm('管理者モードからログアウトしますか？')) {
-        window.isAdmin = false;
-        sessionStorage.removeItem('isAdminSession');
-        
-        if (window.GIST_CONFIG) {
-            window.GIST_CONFIG.token = '';
-        }
-        
-        if (typeof updateAdminUI === 'function') {
-            updateAdminUI();
-        }
-        
-        if (typeof showToast === 'function') {
-            showToast('ログアウトしました', 'info');
-        } else {
-            console.log('ログアウトしました');
-        }
-    }
-};
-
-// ==========================================
-// 🔑 パスコードを検証してログインする
-// ==========================================
-function verifyPasscode() {
-    const passInput = document.getElementById('inputPasscode');
-    const err = document.getElementById('authErrorMsg');
-    const enteredValue = passInput ? passInput.value.trim() : '';
-
-    if (err) err.classList.add('hidden');
-
-    // 初回パスコード設定
-    if (!window.storedPasscode) {
-        if (!enteredValue) {
-            if (err) {
-                err.textContent = 'パスコードを入力してください';
-                err.classList.remove('hidden');
-            }
-            return;
-        }
-        window.storedPasscode = enteredValue;
-        localStorage.setItem('adminStoredPasscode', enteredValue);
-        
-        window.isAdmin = true;
-        sessionStorage.setItem('isAdminSession', 'true');
-        
-        updateAdminUI();
-        if (typeof showToast === 'function') showToast('初期パスコードを設定しました', 'success');
-        
-        closeAuthModal();
-
-        if (typeof pendingAction === 'function') {
-            const action = pendingAction;
-            pendingAction = null;
-            action();
-        }
-        return;
-    }
-
-    // パスコード照合
-    if (enteredValue === window.storedPasscode) {
-        window.isAdmin = true;
-        sessionStorage.setItem('isAdminSession', 'true');
-        
-        updateAdminUI();
-        if (typeof showToast === 'function') showToast('管理者ログインしました', 'success');
-        
-        closeAuthModal();
-
-        if (typeof pendingAction === 'function') {
-            const action = pendingAction;
-            pendingAction = null;
-            action();
-        }
-    } else {
-        if (err) {
-            err.textContent = 'パスコードが違います';
-            err.classList.remove('hidden');
-        }
-        if (passInput) {
-            passInput.value = '';
-            passInput.focus();
-        }
-    }
-}
-window.verifyPasscode = verifyPasscode;
-
-// ==========================================
-// 🔑 パスコード入力モーダルを開く（完全修正版）
+// 🔑 パスコード入力モーダルを開く（超確実に表示させる決定版）
 // ==========================================
 function openAuthModal() {
     const modal = document.getElementById('authModal');
@@ -2032,7 +1878,6 @@ function openAuthModal() {
 
     if (err) err.classList.add('hidden');
 
-    // 複数のID候補に対応してパスコード入力欄を取得する
     const passInput = document.getElementById('inputPasscode') || 
                         document.getElementById('passcode') || 
                         document.getElementById('authPassword') || 
@@ -2046,9 +1891,7 @@ function openAuthModal() {
             showConfirm('ログアウト', '管理者モードからログアウトしますか？', () => {
                 window.isAdmin = false;
                 sessionStorage.removeItem('isAdminSession');
-                if (window.GIST_CONFIG) {
-                    window.GIST_CONFIG.token = '';
-                }
+                if (window.GIST_CONFIG) window.GIST_CONFIG.token = '';
                 if (typeof updateAdminUI === 'function') updateAdminUI();
                 if (typeof showToast === 'function') showToast('ログアウトしました', 'info');
             });
@@ -2072,21 +1915,13 @@ function openAuthModal() {
         if (desc) desc.textContent = 'キャラクターの追加や設定変更をするにはパスコードが必要です。';
     }
 
-    // 💡 インラインスタイルの残留をクリアし、モーダル本体の hidden を確実に解除して flex 表示に戻す
-    modal.style.display = '';
-    modal.style.position = '';
-    modal.style.top = '';
-    modal.style.left = '';
-    modal.style.transform = '';
-    modal.style.zIndex = '';
-    modal.style.backgroundColor = '';
-    modal.style.padding = '';
-    modal.style.borderRadius = '';
-
+    // 💡 確実に非表示状態を解除し、インラインスタイルでも強制表示させる
     modal.classList.remove('hidden', 'opacity-0', 'pointer-events-none');
-    modal.classList.add('opacity-100');
+    modal.classList.add('flex', 'opacity-100');
+    modal.style.display = 'flex';
+    modal.style.opacity = '1';
+    modal.style.pointerEvents = 'auto';
 
-    // モーダル内部のカード（子div）のアニメーション状態を確実に復元する
     const innerDiv = modal.querySelector('div');
     if (innerDiv) {
         innerDiv.classList.remove('scale-95', 'opacity-0');
@@ -2095,7 +1930,6 @@ function openAuthModal() {
         innerDiv.style.opacity = '1';
     }
 
-    // 入力欄にフォーカスを当てる
     if (passInput) {
         setTimeout(() => passInput.focus(), 50);
     } else {
@@ -2110,19 +1944,17 @@ window.openAuthModal = openAuthModal;
 function closeAuthModal() {
     const modal = document.getElementById('authModal');
     if (modal) {
-        modal.classList.add('opacity-0', 'pointer-events-none');
-        modal.classList.remove('opacity-100');
+        modal.classList.remove('flex', 'opacity-100');
+        modal.classList.add('opacity-0', 'pointer-events-none', 'hidden');
+        modal.style.display = 'none';
+        
         const innerDiv = modal.querySelector('div');
         if (innerDiv) {
             innerDiv.classList.remove('scale-100', 'opacity-100');
             innerDiv.classList.add('scale-95', 'opacity-0');
+            innerDiv.style.transform = 'scale(0.95)';
+            innerDiv.style.opacity = '0';
         }
-        // トランジション終了後に確実に hidden を付与して完全に隠す
-        setTimeout(() => {
-            if (modal.classList.contains('opacity-0')) {
-                modal.classList.add('hidden');
-            }
-        }, 200);
     }
 }
 window.closeAuthModal = closeAuthModal;
