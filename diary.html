@@ -762,7 +762,7 @@ function goBack() {
 }
 window.goBack = goBack;
         
-        function updateBackButtonVisibility() {
+function updateBackButtonVisibility() {
             const btn = document.getElementById('floatingBackBtn');
             const textEl = document.getElementById('floatingBackBtnText');
             if (!btn) return;
@@ -857,11 +857,23 @@ if (typeof window.insertSpoilerTag !== 'function') {
     window.insertSpoilerTag = insertSpoilerTag;
 }
 
-// 📂 月別フォルダー一覧を描画する関数（重複防止ガード付き）
+// 📂 月別フォルダー一覧を描画する関数（重複防止ガード付き・ローディング対応版）
 if (typeof window.renderMonthFolders !== 'function') {
     function renderMonthFolders() {
         const container = document.getElementById('monthFolderGrid');
         if (!container) return;
+
+        // 🚀 まだFirebaseからの読み込みが完了していない場合（ローディング表示を維持）
+        if (!window.isDataLoaded) {
+            container.innerHTML = `
+                <div class="col-span-full py-12 flex flex-col items-center justify-center gap-2 text-stone-400">
+                    <i class="fa-solid fa-spinner animate-spin text-base"></i>
+                    <span class="text-xs">アルバムを読み込み中...</span>
+                </div>
+            `;
+            return;
+        }
+
         container.innerHTML = '';
 
         const monthMap = {};
@@ -919,6 +931,7 @@ if (typeof window.renderMonthFolders !== 'function') {
     }
     window.renderMonthFolders = renderMonthFolders;
 }
+
 function renderBreadcrumbs() {
     const nav = document.getElementById('breadcrumbs');
     if (!nav) return;
