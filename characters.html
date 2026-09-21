@@ -735,79 +735,47 @@ function copyImageToCategory(sourceCategory, index, targetCategory) {
 }
 window.copyImageToCategory = copyImageToCategory;
 
-// 2. 画像ファイルが選択されたときの処理（画質を綺麗に保ちつつ容量負荷を最適化）
+// 2. 画像ファイルが選択されたときの処理（Base64を完全に排除し、オブジェクトURLで超軽量化・発熱防止）
 function handleCharacterImagesSelect(event) {
     const files = event.target.files;
     if (!files || files.length === 0) return;
 
-    const isSingleSlot = (window.currentImageCategory === 'thumb' || window.currentImageCategory === 'avatar');
+    const currentCat = window.currentImageCategory || 'thumb';
+    const isSingleSlot = (currentCat === 'thumb' || currentCat === 'avatar');
     const targetFiles = isSingleSlot ? [files[0]] : Array.from(files);
 
+    if (!window.editingCharacterImages) {
+        window.editingCharacterImages = { thumb: [], avatar: [], base: [], combat: [], sd: [], doodle: [] };
+    }
+    if (!window.editingCharacterImages[currentCat]) {
+        window.editingCharacterImages[currentCat] = [];
+    }
+
     targetFiles.forEach(file => {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const img = new Image();
-            img.onload = function() {
-                const canvas = document.createElement('canvas');
-                // 💡 立ち絵やギャラリーが荒れないよう、最大サイズを調整（画質保持）
-                const MAX_SIZE = (window.currentImageCategory === 'thumb') ? 150 : 1200;
-                let width = img.width;
-                let height = img.height;
+        // ❌ FileReaderやcanvasでのBase64変換を完全に廃止し、ブラウザ専用の軽量URLを発行
+        const blobUrl = URL.createObjectURL(file);
 
-                if (width > height) {
-                    if (width > MAX_SIZE) {
-                        height *= MAX_SIZE / width;
-                        width = MAX_SIZE;
-                    }
-                } else {
-                    if (height > MAX_SIZE) {
-                        width *= MAX_SIZE / height;
-                        height = MAX_SIZE;
-                    }
-                }
+        const defaultName = isSingleSlot 
+            ? (currentCat === 'thumb' ? '一覧アイコン' : '立ち絵')
+            : file.name.replace(/\.[^/.]+$/, "");
 
-                canvas.width = width;
-                canvas.height = height;
-                const ctx = canvas.getContext('2d');
-                
-                // 💡 縮小時の画像のガタつき（ジャギー）を防ぐため、滑らかさの補正を有効化
-                ctx.imageSmoothingEnabled = true;
-                ctx.imageSmoothingQuality = 'high';
-
-                ctx.clearRect(0, 0, width, height);
-                ctx.drawImage(img, 0, 0, width, height);
-
-                // 💡 画質が荒れないよう、WebPの圧縮率を少し高め（0.85）に調整
-                const compressedBase64 = canvas.toDataURL('image/webp', 0.85);
-
-                const defaultName = isSingleSlot 
-                    ? (window.currentImageCategory === 'thumb' ? '一覧アイコン' : '立ち絵')
-                    : file.name.replace(/\.[^/.]+$/, "");
-
-                if (!window.editingCharacterImages[window.currentImageCategory]) {
-                    window.editingCharacterImages[window.currentImageCategory] = [];
-                }
-
-                const newImageObj = {
-                    url: compressedBase64,
-                    name: defaultName,
-                    uploadedAt: Date.now()
-                };
-
-                if (isSingleSlot) {
-                    window.editingCharacterImages[window.currentImageCategory] = [newImageObj];
-                } else {
-                    window.editingCharacterImages[window.currentImageCategory].push(newImageObj);
-                }
-
-                if (typeof renderCharacterImagesPreview === 'function') {
-                    renderCharacterImagesPreview();
-                }
-            };
-            img.src = e.target.result;
+        const newImageObj = {
+            url: blobUrl,          // 👈 永続化時は空になる、ブラウザ内一時表示用の安全なURL
+            name: defaultName,
+            file: file,            // 👈 必要に応じて元のFileオブジェクトを保持
+            uploadedAt: Date.now()
         };
-        reader.readAsDataURL(file);
+
+        if (isSingleSlot) {
+            window.editingCharacterImages[currentCat] = [newImageObj];
+        } else {
+            window.editingCharacterImages[currentCat].push(newImageObj);
+        }
     });
+
+    if (typeof renderCharacterImagesPreview === 'function') {
+        renderCharacterImagesPreview();
+    }
 
     event.target.value = '';
 }
