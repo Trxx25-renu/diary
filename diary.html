@@ -22,6 +22,50 @@
                 }
             }
         } catch(e) {}
+        
+        // ==========================================
+// 🔗 日記のハッシュルーティング管理
+// ==========================================
+
+// 1. URLのハッシュ（#以降）を読み取って画面を切り替える関数
+function handleDiaryRouting() {
+    const hash = window.location.hash.substring(1); // '#' を除いた文字列を取得
+    
+    if (!hash) {
+        // ハッシュがない場合のデフォルト表示（例: 最新の月やメインタブ）
+        showDefaultView();
+        return;
+    }
+
+    // 例1: 月別表示の場合（#2026-09 など）
+    if (hash.startsWith('2026-') || hash.startsWith('2025-')) {
+        switchToMonthTab(hash); // 該当の月に切り替える既存の関数を呼ぶ
+    }
+    // 例2: 個別記事モーダルを開く場合（#entry-xxxx など）
+    else if (hash.startsWith('entry-')) {
+        const entryId = hash.replace('entry-', '');
+        openEntryModal(entryId); // 該当の記事を開く既存の関数を呼ぶ
+    }
+}
+
+// 2. ページ読み込み時にハッシュを確認して実行
+window.addEventListener('DOMContentLoaded', () => {
+    handleDiaryRouting();
+});
+
+// 3. ブラウザの「戻る」「進む」ボタンや、URL直接書き換えに対応
+window.addEventListener('hashchange', () => {
+    handleDiaryRouting();
+});
+
+// 4. 【重要】タブや月をクリックした時にURLのハッシュを書き換える関数
+// 例：タブを押したときに `updateDiaryHash('2026-09')` のように呼び出すようにします
+function updateDiaryHash(targetHash) {
+    // ページ内リロードを防ぎつつハッシュを更新
+    history.pushState(null, null, `#${targetHash}`);
+    handleDiaryRouting();
+}
+        
     </script>
 
     <!-- Firebase App & SDK (CDN Module) -->
