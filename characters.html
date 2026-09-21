@@ -42,12 +42,16 @@ html {
 }
 
 
-        /* 自由変形型のテキストエリア（textarea）の文字位置を整えるCSS */
-        #characterModal textarea,
-        .character-form textarea {
-            padding: 0.6rem 0.75rem !important; /* 上下左右に適度な余白を持たせる */
-            line-height: 1.6 !important;        /* 行の高さを少し持たせて詰まり感をなくす */
-            box-sizing: border-box !important;
+/* 自由変形型のテキストエリア（textarea）の文字位置とモザイク防止を整えるCSS */
+#characterModal textarea,
+.character-form textarea {
+    padding: 0.6rem 0.75rem !important; /* 上下左右に適度な余白を持たせる */
+    line-height: 1.6 !important;         /* 行の高さを少し持たせて詰まり感をなくす */
+    box-sizing: border-box !important;
+    text-align: left !important;         /* 念のため文字を左揃えに固定 */
+    filter: none !important;             /* 🌟 じんわりモザイクを絶対にさせない */
+    backdrop-filter: none !important;    /* 🌟 背景のぼかしも完全に無効化 */
+}
         }
         
         body {
@@ -2852,7 +2856,7 @@ window.initAutoResizeTextareas = initAutoResizeTextareas;
 
 
 // ==========================================
-// 💡 編集モーダルを開く関数（データ読み込み完全修正版）
+// 💡 編集モーダルを開く関数（データ読み込み完全修正版・システム＆リンク完全対応）
 // ==========================================
 function openEditCharacterModal(characterId) {
     const ch = window.characters.find(c => String(c.id) === String(characterId));
@@ -2910,17 +2914,19 @@ function openEditCharacterModal(characterId) {
         renderCharacterLinksEditor();
     }
 
-    // 🌟 先にシステムIDをセットし、有効な状態のままカスタム項目を描画させる
+    // 🌟 システムIDを確実にセット（systemId と system の両方に対応）
+    const targetSystemId = ch.systemId || ch.system || '';
     if (systemInput) {
-        systemInput.value = ch.systemId || '';
+        systemInput.value = targetSystemId;
         // 一旦disabledは解除しておく（描画のため）
         systemInput.disabled = false;
         systemInput.classList.remove('opacity-60', 'pointer-events-none', 'bg-stone-100');
     }
 
-    // 🌟 確実にキャラクターが持っているカスタム値（ch.customValues）を渡して描画する
+    // 🌟 カスタム値（customValues と customFields の両方に対応）を渡して描画する
+    const targetCustomValues = ch.customValues || ch.customFields || {};
     if (typeof handleSystemChangeInModal === 'function') {
-        handleSystemChangeInModal(ch.customValues || {});
+        handleSystemChangeInModal(targetCustomValues);
     }
 
     // 🌟 描画が完了したあとに、編集時不可のロックをかける
@@ -2974,7 +2980,6 @@ function openEditCharacterModal(characterId) {
     }
 }
 window.openEditCharacterModal = openEditCharacterModal;
-
 
 // ==========================================
 // 💡 HP設定（全体設定）を保存する関数（管理者専用ガード・グローバル関数対応版）
@@ -3861,10 +3866,11 @@ if (viewType === 'characterList') {
                     window.exportCharacterJson = exportCharacterJson;
 
 // ==========================================
-// 🔗 リンク入力エリアを描画する関数（スマホ対応・はみ出し防止版）
+// 🔗 リンク入力エリアを描画する関数（修正完全版）
 // ==========================================
 function renderCharacterLinksEditor() {
-    const container = document.getElementById('charLinksContainer');
+    // 🌟 HTML側のID「characterLinksEditorContainer」に合わせる
+    const container = document.getElementById('characterLinksEditorContainer');
     if (!container) return;
 
     container.innerHTML = '';
@@ -3885,7 +3891,7 @@ function renderCharacterLinksEditor() {
                 class="w-full sm:w-1/3 px-3 py-1.5 text-xs sm:text-sm border border-stone-300 rounded-xl bg-white focus:outline-none focus:border-stone-400"
                 oninput="window.editingCharacterLinks[${index}].label = this.value">
             
-            <!-- URLと削除ボタンを囲むラッパー（右側のはみ出し防止） -->
+            <!-- URLと削除ボタンを囲むラッパー -->
             <div class="flex items-center gap-2 w-full sm:flex-1 min-w-0">
                 <input type="url" placeholder="https://..." value="${escapeHtml(link.url || '')}" 
                     class="flex-1 min-w-0 px-3 py-1.5 text-xs sm:text-sm border border-stone-300 rounded-xl bg-white focus:outline-none focus:border-stone-400"
