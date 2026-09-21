@@ -1922,21 +1922,15 @@ function updateAdminUI() {
 }
 window.updateAdminUI = updateAdminUI;
 
+// ==========================================
+// 🔑 鍵ボタンが押されたときの入口
+// ==========================================
 function handleHeaderKeyClick() {
-    if (window.isAdmin) {
-        if (typeof logoutAdmin === 'function') {
-            logoutAdmin();
-        } else {
-            showConfirm('ログアウト', '管理者モードからログアウトしますか？', () => {
-                window.isAdmin = false;
-                sessionStorage.removeItem('isAdminSession');
-                if (window.GIST_CONFIG) window.GIST_CONFIG.token = '';
-                updateAdminUI();
-                showToast('ログアウトしました', 'info');
-            });
-        }
-    } else {
+    // 確実に openAuthModal を呼び出す
+    if (typeof openAuthModal === 'function') {
         openAuthModal();
+    } else {
+        console.error("❌ openAuthModal が定義されていません");
     }
 }
 window.handleHeaderKeyClick = handleHeaderKeyClick;
@@ -4552,6 +4546,7 @@ window.importCharactersJSON = importCharactersJSON;
             </form>
         </div>
     </div>
+   
    
 <!-- 🔑 パスコード入力モーダル（スマホ上部寄せ・テンキー・はみ出し防止版） -->
 <div id="authModal" class="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-4 pt-12 sm:pt-4 bg-stone-900/40 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-200 overflow-y-auto">
