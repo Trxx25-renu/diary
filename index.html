@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="robots" content="noindex, nofollow">
+    <title>卓ポータル - Session Portal</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        body {
+            touch-action: manipulation;
+        }
+    </style>
+</head>
+<body class="bg-stone-100 text-stone-800 min-h-screen flex flex-col justify-between font-sans selection:bg-stone-300">
+
+    <!-- ヘッダー -->
+    <header class="w-full bg-white/80 backdrop-blur-md border-b border-stone-200 sticky top-0 z-10">
+        <div class="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between">
+            <h1 class="text-sm font-bold tracking-wider text-stone-700 flex items-center gap-2">
+                <i class="fa-solid fa-compass text-stone-500"></i>
+                Session Portal
+            </h1>
+            <span class="text-xs text-stone-400 font-medium">卓管理・アーカイブ</span>
+        </div>
+    </header>
+
+    <!-- メインコンテンツ -->
+    <main class="max-w-2xl w-full mx-auto px-4 py-8 flex flex-col gap-6 my-auto">
+        
+        <!-- 導入メッセージ -->
+        <div class="text-center flex flex-col gap-1.5 mb-2">
+            <h2 class="text-xl font-bold text-stone-800 tracking-tight">どちらのページを開きますか？</h2>
+            <p class="text-xs text-stone-500">キャラクターの管理、または月別のシナリオログ・アルバムへ移動できます。</p>
+        </div>
+
+        <!-- リンクカード群 -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            
+            <!-- キャラクター一覧へ -->
+            <a href="characters.html" class="group bg-white rounded-3xl p-6 border border-stone-200 shadow-sm hover:shadow-md hover:border-stone-300 transition-all flex flex-col justify-between gap-4">
+                <div class="flex items-center justify-between">
+                    <div class="w-12 h-12 rounded-2xl bg-stone-100 flex items-center justify-center text-stone-700 group-hover:bg-stone-800 group-hover:text-white transition-colors">
+                        <i class="fa-solid fa-users text-lg"></i>
+                    </div>
+                    <span class="text-xs text-stone-400 group-hover:text-stone-600 transition-colors flex items-center gap-1 font-medium">
+                        開く <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                    </span>
+                </div>
+                <div>
+                    <h3 class="text-base font-bold text-stone-800 mb-1">キャラクター一覧</h3>
+                    <p class="text-xs text-stone-500 leading-relaxed">オリキャラのプロファイルやシステムデータ、設定を管理します。</p>
+                </div>
+            </a>
+
+            <!-- 日記・アルバムへ -->
+            <a href="diary.html" class="group bg-white rounded-3xl p-6 border border-stone-200 shadow-sm hover:shadow-md hover:border-stone-300 transition-all flex flex-col justify-between gap-4">
+                <div class="flex items-center justify-between">
+                    <div class="w-12 h-12 rounded-2xl bg-stone-100 flex items-center justify-center text-stone-700 group-hover:bg-stone-800 group-hover:text-white transition-colors">
+                        <i class="fa-solid fa-book-open text-lg"></i>
+                    </div>
+                    <span class="text-xs text-stone-400 group-hover:text-stone-600 transition-colors flex items-center gap-1 font-medium">
+                        開く <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                    </span>
+                </div>
+                <div>
+                    <h3 class="text-base font-bold text-stone-800 mb-1">月別アルバム・日記</h3>
+                    <p class="text-xs text-stone-500 leading-relaxed">セッションの思い出や写真、シナリオログの月別アルバムを閲覧します。</p>
+                </div>
+            </a>
+
+        </div>
+
+    </main>
+
+    <!-- フッター -->
+    <footer class="w-full py-6 text-center border-t border-stone-200/60 bg-white/40">
+        <p class="text-[11px] text-stone-400 font-medium">Session & Character Management System</p>
+    </footer>
+
+</body>
+</html>
