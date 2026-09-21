@@ -2019,7 +2019,7 @@ function verifyPasscode() {
 window.verifyPasscode = verifyPasscode;
 
 // ==========================================
-// 🔑 パスコード入力モーダルを開く
+// 🔑 パスコード入力モーダルを開く（修正版）
 // ==========================================
 function openAuthModal() {
     const modal = document.getElementById('authModal');
@@ -2043,12 +2043,12 @@ function openAuthModal() {
         return;
     }
 
-    // 💡 HTMLの仕様通り opacity と pointer-events だけを操作
+    // 💡 1. モーダル本体を表示
     modal.classList.remove('opacity-0', 'pointer-events-none');
     modal.classList.add('opacity-100');
 
-    // 内部カードのスケールアニメーション
-    const innerDiv = modal.querySelector('div');
+    // 💡 2. 直下の白いカード要素を確実に取得してスケール変更
+    const innerDiv = modal.firstElementChild; 
     if (innerDiv) {
         innerDiv.classList.remove('scale-95');
         innerDiv.classList.add('scale-100');
@@ -2071,7 +2071,7 @@ function closeAuthModal() {
         modal.classList.remove('opacity-100');
         modal.classList.add('opacity-0', 'pointer-events-none');
         
-        const innerDiv = modal.querySelector('div');
+        const innerDiv = modal.firstElementChild;
         if (innerDiv) {
             innerDiv.classList.remove('scale-100');
             innerDiv.classList.add('scale-95');
