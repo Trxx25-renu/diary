@@ -2019,7 +2019,7 @@ function verifyPasscode() {
 window.verifyPasscode = verifyPasscode;
 
 // ==========================================
-// 🔑 パスコード入力モーダルを開く（修正版）
+// 🔑 パスコード入力モーダルを開く（確実表示版）
 // ==========================================
 function openAuthModal() {
     const modal = document.getElementById('authModal');
@@ -2043,15 +2043,20 @@ function openAuthModal() {
         return;
     }
 
-    // 💡 1. モーダル本体を表示
+    // クラスを整えつつ、インラインスタイルで確実に可視化・flex化する
     modal.classList.remove('opacity-0', 'pointer-events-none');
     modal.classList.add('opacity-100');
+    modal.style.display = 'flex';
+    modal.style.opacity = '1';
+    modal.style.pointerEvents = 'auto';
 
-    // 💡 2. 直下の白いカード要素を確実に取得してスケール変更
-    const innerDiv = modal.firstElementChild; 
+    // 内部カード
+    const innerDiv = modal.firstElementChild;
     if (innerDiv) {
         innerDiv.classList.remove('scale-95');
         innerDiv.classList.add('scale-100');
+        innerDiv.style.transform = 'scale(1)';
+        innerDiv.style.opacity = '1';
     }
 
     const passInput = document.getElementById('inputPasscode') || modal.querySelector('input');
@@ -2070,11 +2075,14 @@ function closeAuthModal() {
     if (modal) {
         modal.classList.remove('opacity-100');
         modal.classList.add('opacity-0', 'pointer-events-none');
+        modal.style.display = 'none';
         
         const innerDiv = modal.firstElementChild;
         if (innerDiv) {
             innerDiv.classList.remove('scale-100');
             innerDiv.classList.add('scale-95');
+            innerDiv.style.transform = '';
+            innerDiv.style.opacity = '';
         }
     }
 }
