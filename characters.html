@@ -1818,7 +1818,9 @@ function renderCharacterDetail(characterId) {
 }
 window.renderCharacterDetail = renderCharacterDetail;
        
+// ==========================================
 // 🍞 トースト通知・確認モーダルヘルパー
+// ==========================================
 function showToast(message, type = 'info') {
     const container = document.getElementById('toastContainer');
     if (!container) return;
@@ -1832,6 +1834,7 @@ function showToast(message, type = 'info') {
         setTimeout(() => toast.remove(), 300);
     }, 3000);
 }
+window.showToast = showToast;
 
 function showConfirm(title, message, onYes) {
     const modal = document.getElementById('confirmModal');
@@ -1841,26 +1844,179 @@ function showConfirm(title, message, onYes) {
     if (titleEl) titleEl.textContent = title;
     if (descEl) descEl.textContent = message;
     
-    const newYesBtn = yesBtn.cloneNode(true);
-    yesBtn.parentNode.replaceChild(newYesBtn, yesBtn);
-    newYesBtn.onclick = () => {
-        closeConfirmModal();
-        onYes();
-    };
+    if (yesBtn) {
+        const newYesBtn = yesBtn.cloneNode(true);
+        yesBtn.parentNode.replaceChild(newYesBtn, yesBtn);
+        newYesBtn.onclick = () => {
+            closeConfirmModal();
+            onYes();
+        };
+    }
     if (modal) {
         modal.classList.remove('opacity-0', 'pointer-events-none');
-        modal.querySelector('div').classList.remove('scale-95');
-        modal.querySelector('div').classList.add('scale-100');
+        const innerDiv = modal.querySelector('.max-w-sm') || modal.querySelector('div');
+        if (innerDiv) {
+            innerDiv.classList.remove('scale-95');
+            innerDiv.classList.add('scale-100');
+        }
     }
 }
-window.closeConfirmModal = function() {
+window.showConfirm = showConfirm;
+
+function closeConfirmModal() {
     const modal = document.getElementById('confirmModal');
     if (modal) {
         modal.classList.add('opacity-0', 'pointer-events-none');
-        modal.querySelector('div').classList.remove('scale-100');
-        modal.querySelector('div').classList.add('scale-95');
+        const innerDiv = modal.querySelector('.max-w-sm') || modal.querySelector('div');
+        if (innerDiv) {
+            innerDiv.classList.remove('scale-100');
+            innerDiv.classList.add('scale-95');
+        }
     }
-};
+}
+window.closeConfirmModal = closeConfirmModal;
+
+// ==========================================
+// 🛡️ 権限チェック＆管理者UI更新ロジック
+// ==========================================
+let pendingAction = null;
+
+function checkAdminPermission(callback) {
+    if (window.isAdmin) {
+        callback();
+    } else {
+        pendingAction = callback;
+        openAuthModal();
+    }
+}
+window.checkAdminPermission = checkAdminPermission;
+
+function updateAdminUI() {
+    const keyBtn = document.getElementById('headerKeyBtn');
+    if (keyBtn) {
+        if (window.isAdmin) {
+            keyBtn.className = "text-stone-600 hover:text-stone-800 transition-colors p-2 text-base";
+            keyBtn.innerHTML = '<i class="fa-solid fa-unlock"></i>';
+            keyBtn.title = "管理者モード（クリックでログアウト）";
+        } else {
+            keyBtn.className = "text-stone-600 hover:text-stone-800 transition-colors p-2 text-base";
+            keyBtn.innerHTML = '<i class="fa-solid fa-lock"></i>';
+            keyBtn.title = "管理者ログイン";
+        }
+    }
+
+    const adminElements = document.querySelectorAll('.admin-only');
+    adminElements.forEach(el => {
+        if (window.isAdmin) {
+            el.classList.remove('hidden');
+        } else {
+            el.classList.add('hidden');
+        }
+    });
+
+    if (typeof window._currentGalleryState !== 'undefined' && window._currentGalleryState.characterId) {
+        if (typeof renderCharacterDetail === 'function') {
+            renderCharacterDetail(window._currentGalleryState.characterId);
+        }
+    }
+}
+window.updateAdminUI = updateAdminUI;
+
+function handleHeaderKeyClick() {
+    if (window.isAdmin) {
+        if (typeof logoutAdmin === 'function') {
+            logoutAdmin();
+        } else {
+            showConfirm('ログアウト', '管理者モードからログアウトしますか？', () => {
+                window.isAdmin = false;
+                sessionStorage.removeItem('isAdminSession');
+                if (window.GIST_CONFIG) window.GIST_CONFIG.token = '';
+                updateAdminUI();
+                showToast('ログアウトしました', 'info');
+            });
+        }
+    } else {
+        openAuthModal();
+    }
+}
+window.handleHeaderKeyClick = handleHeaderKeyClick;
+
+function logoutAdmin() {
+    showConfirm('ログアウト', '管理者モードからログアウトしますか？', () => {
+        window.isAdmin = false;
+        sessionStorage.removeItem('isAdminSession');
+        if (window.GIST_CONFIG) {
+            window.GIST_CONFIG.token = '';
+        }
+        updateAdminUI();
+        showToast('ログアウトしました', 'info');
+    });
+}
+window.logoutAdmin = logoutAdmin;
+
+// ==========================================
+// 🔑 パスコード検証関数
+// ==========================================
+function verifyPasscode() {
+    const passInput = document.getElementById('inputPasscode') || document.getElementById('passcode') || document.getElementById('authPassword');
+    const err = document.getElementById('authErrorMsg');
+    const enteredValue = passInput ? passInput.value.trim() : '';
+
+    if (err) err.classList.add('hidden');
+
+    // 初回パスコード設定
+    if (!window.storedPasscode) {
+        if (!enteredValue) {
+            if (err) {
+                err.textContent = 'パスコードを入力してください';
+                err.classList.remove('hidden');
+            }
+            return;
+        }
+        window.storedPasscode = enteredValue;
+        localStorage.setItem('adminStoredPasscode', enteredValue);
+        
+        window.isAdmin = true;
+        sessionStorage.setItem('isAdminSession', 'true');
+        
+        updateAdminUI();
+        showToast('初期パスコードを設定しました', 'success');
+        closeAuthModal();
+
+        if (typeof pendingAction === 'function') {
+            const action = pendingAction;
+            pendingAction = null;
+            action();
+        }
+        return;
+    }
+
+    // パスコード照合
+    if (enteredValue === window.storedPasscode) {
+        window.isAdmin = true;
+        sessionStorage.setItem('isAdminSession', 'true');
+        
+        updateAdminUI();
+        showToast('管理者ログインしました', 'success');
+        closeAuthModal();
+
+        if (typeof pendingAction === 'function') {
+            const action = pendingAction;
+            pendingAction = null;
+            action();
+        }
+    } else {
+        if (err) {
+            err.textContent = 'パスコードが違います';
+            err.classList.remove('hidden');
+        }
+        if (passInput) {
+            passInput.value = '';
+            passInput.focus();
+        }
+    }
+}
+window.verifyPasscode = verifyPasscode;
 
 // ==========================================
 // 🔑 パスコード入力モーダルを開く
@@ -1885,24 +2041,9 @@ function openAuthModal() {
                         
     if (passInput) passInput.value = '';
 
-    // すでに管理者（ログイン中）の場合はログアウト確認
+    // すでに管理者（ログイン中）の場合はログアウト確認へ分岐
     if (window.isAdmin) {
-        if (typeof showConfirm === 'function') {
-            showConfirm('ログアウト', '管理者モードからログアウトしますか？', () => {
-                window.isAdmin = false;
-                sessionStorage.removeItem('isAdminSession');
-                if (window.GIST_CONFIG) window.GIST_CONFIG.token = '';
-                if (typeof updateAdminUI === 'function') updateAdminUI();
-                if (typeof showToast === 'function') showToast('ログアウトしました', 'info');
-            });
-        } else {
-            if (confirm('管理者モードからログアウトしますか？')) {
-                window.isAdmin = false;
-                sessionStorage.removeItem('isAdminSession');
-                if (window.GIST_CONFIG) window.GIST_CONFIG.token = '';
-                if (typeof updateAdminUI === 'function') updateAdminUI();
-            }
-        }
+        handleHeaderKeyClick();
         return;
     }
 
@@ -1915,7 +2056,7 @@ function openAuthModal() {
         if (desc) desc.textContent = 'キャラクターの追加や設定変更をするにはパスコードが必要です。';
     }
 
-    // 💡 ユーザー様のHTML仕様（opacityとpointer-eventsの切り替え）に合わせる
+    // モーダルを表示（ユーザー様のHTML仕様：opacityとpointer-eventsの切り替え）
     modal.classList.remove('opacity-0', 'pointer-events-none');
     modal.classList.add('opacity-100');
 
