@@ -1925,7 +1925,75 @@ function handleHeaderKeyClick() {
 }
 window.handleHeaderKeyClick = handleHeaderKeyClick;
 
+// ==========================================
+// 🔑 パスコードを検証してログインする
+// ==========================================
+function verifyPasscode() {
+    const passInput = document.getElementById('inputPasscode');
+    const err = document.getElementById('authErrorMsg');
+    const enteredValue = passInput ? passInput.value.trim() : '';
 
+    // エラー表示を一旦リセット
+    if (err) err.classList.add('hidden');
+
+    // まだパスコードが未設定の場合（初回設定）
+    if (!window.storedPasscode) {
+        if (!enteredValue) {
+            if (err) {
+                err.textContent = 'パスコードを入力してください';
+                err.classList.remove('hidden');
+            }
+            return;
+        }
+        window.storedPasscode = enteredValue;
+        localStorage.setItem('adminStoredPasscode', enteredValue);
+        
+        window.isAdmin = true;
+        sessionStorage.setItem('isAdminSession', 'true');
+        
+        updateAdminUI();
+        if (typeof showToast === 'function') showToast('初期パスコードを設定しました', 'success');
+        
+        closeAuthModal();
+
+        // 保留していた処理（キャラクター追加・編集等）があれば実行
+        if (typeof pendingAction === 'function') {
+            const action = pendingAction;
+            pendingAction = null;
+            action();
+        }
+        return;
+    }
+
+    // パスコード照合
+    if (enteredValue === window.storedPasscode) {
+        window.isAdmin = true;
+        sessionStorage.setItem('isAdminSession', 'true');
+        
+        updateAdminUI();
+        if (typeof showToast === 'function') showToast('管理者ログインしました', 'success');
+        
+        closeAuthModal();
+
+        // 保留していた処理（キャラクター追加・編集等）があれば実行
+        if (typeof pendingAction === 'function') {
+            const action = pendingAction;
+            pendingAction = null;
+            action();
+        }
+    } else {
+        // パスコード間違い
+        if (err) {
+            err.textContent = 'パスコードが違います';
+            err.classList.remove('hidden');
+        }
+        if (passInput) {
+            passInput.value = '';
+            passInput.focus();
+        }
+    }
+}
+window.verifyPasscode = verifyPasscode;
 
 // ==========================================
 // 🔑 パスコード入力モーダルを開く
