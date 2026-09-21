@@ -3104,13 +3104,13 @@ function renderCharacterModalSystemSelect() {
 window.renderCharacterModalSystemSelect = renderCharacterModalSystemSelect;
         
 // ==========================================
-// 💡 3. モーダル内でシステムが変更された時に動的項目を描画する関数（完全同期・リトライ安全版）
+// 💡 3. モーダル内でシステムが変更された時に動的項目を描画する関数（安全・高速化版）
 // ==========================================
 let _isHandlingSystemChange = false;
 
-function handleSystemChangeInModal(existingCustomValues = {}, forcedSystemId = null, retryCount = 0) {
+function handleSystemChangeInModal(existingCustomValues = {}, forcedSystemId = null) {
     // 🛑 0.1秒以内の連続実行（二重発火）を完全にブロック
-    if (_isHandlingSystemChange && retryCount === 0) return;
+    if (_isHandlingSystemChange) return;
     _isHandlingSystemChange = true;
     setTimeout(() => { _isHandlingSystemChange = false; }, 100);
 
@@ -3123,24 +3123,15 @@ function handleSystemChangeInModal(existingCustomValues = {}, forcedSystemId = n
         select.value = forcedSystemId;
     }
 
-    const systemId = select.value;
-
-    // 🛑 まだシステム定義（window.systemCustomFields）が読み込まれていない場合の安全ガード（最大5回・計0.5秒リトライ）
-    if ((!window.systemCustomFields || !window.systemCustomFields[systemId]) && retryCount < 5) {
-        console.warn(`⏳ [DEBUG] システム定義の読み込み待ち中... (リトライ ${retryCount + 1}/5)`);
-        setTimeout(() => {
-            handleSystemChangeInModal(existingCustomValues, forcedSystemId, retryCount + 1);
-        }, 100);
-        return;
-    }
+    const systemId = select.value || 'coc'; // 万が一空ならデフォルトをCoCにする
 
     container.innerHTML = '';
 
-    const fields = window.systemCustomFields?.[systemId];
-    if (!fields) {
-        console.warn(`⚠️ [DEBUG] システムID "${systemId}" のカスタムフィールド定義が見つかりませんでした。`, window.systemCustomFields);
-        return;
-    }
+    // 🛑 システム定義がない場合の安全フォールバック（無限リトライを廃止してフリーズを防止）
+    const fields = window.systemCustomFields?.[systemId] || {
+        status: [{ id: 'hp', label: 'HP', max: 20 }],
+        text: [{ id: 'memo', label: '備考' }]
+    };
 
     // 1. ステータス項目（数値：基本値 / 成長値）の描画
     if (fields.status && fields.status.length > 0) {
