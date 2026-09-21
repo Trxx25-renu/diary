@@ -2817,9 +2817,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 <p id="authModalDesc" class="text-xs text-stone-500 mt-1">日記の追加・削除・設定変更を行うにはパスコードを入力してください。</p>
             </div>
 
-            <form onsubmit="handleAuthSubmit(event)" class="flex flex-col gap-3">
+    <!-- モーダル: パスコード入力 -->
+<form onsubmit="handleAuthSubmit(event)" class="flex flex-col gap-3">
                 <div>
-                    <input type="password" id="inputPasscode" placeholder="パスコードを入力" required class="w-full px-4 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-center text-sm focus:outline-none focus:ring-2 focus:ring-stone-500/20 focus:border-stone-500 transition-all">
+                    <!-- 🚀 inputmode="numeric" と pattern="[0-9]*" を追加してスマホで数字キーパッドを開くようにしました -->
+                    <input type="password" inputmode="numeric" pattern="[0-9]*" id="inputPasscode" placeholder="パスコードを入力" required class="w-full px-4 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-center text-sm focus:outline-none focus:ring-2 focus:ring-stone-500/20 focus:border-stone-500 transition-all">
                     <p id="authErrorMsg" class="hidden text-[11px] text-rose-500 text-center mt-1">パスコードが違います。</p>
                 </div>
                 <div class="flex items-center gap-2 mt-2">
