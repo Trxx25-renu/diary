@@ -4448,8 +4448,8 @@ window.importCharactersJSON = importCharactersJSON;
         </div>
     </div>
    
-   <!-- 🔑 パスコード入力モーダル（スマホ上部寄せ・はみ出し防止版） -->
-   <div id="authModal" class="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-4 pt-12 sm:pt-4 bg-stone-900/40 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-200 overflow-y-auto">
+<!-- 🔑 パスコード入力モーダル（スマホ上部寄せ・テンキー・はみ出し防止版） -->
+<div id="authModal" class="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-4 pt-12 sm:pt-4 bg-stone-900/40 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-200 overflow-y-auto">
     <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-xl border border-stone-200 scale-95 transition-transform duration-200 flex flex-col gap-4 my-4 sm:my-auto">
         
         <div class="flex items-center justify-between">
@@ -4462,7 +4462,7 @@ window.importCharactersJSON = importCharactersJSON;
         <p id="authModalDesc" class="text-xs text-stone-500">キャラクターの追加や設定変更をするにはパスコードが必要です。</p>
 
         <div class="flex flex-col gap-2">
-            <input type="password" id="inputPasscode" placeholder="パスコードを入力" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2.5 text-sm text-stone-800 focus:outline-none focus:ring-2 focus:ring-stone-400">
+            <input type="password" inputmode="numeric" pattern="[0-9]*" id="inputPasscode" placeholder="パスコードを入力" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2.5 text-sm text-stone-800 focus:outline-none focus:ring-2 focus:ring-stone-400">
             <p id="authErrorMsg" class="text-xs text-red-500 hidden">パスコードが違います</p>
         </div>
 
