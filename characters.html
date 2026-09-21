@@ -2968,7 +2968,7 @@ window.initAutoResizeTextareas = initAutoResizeTextareas;
 
 
 // ==========================================
-// 💡 編集を開く関数（完全保持版）
+// 💡 編集を開く関数（完全保持・修正版）
 // ==========================================
 function openEditCharacterModal(characterId, retryCount = 0) {
     const t0 = performance.now();
@@ -3008,6 +3008,9 @@ function openEditCharacterModal(characterId, retryCount = 0) {
             return; 
         }
 
+        // 🌟 グローバルにも保持しておく（デバッグや外部参照用）
+        window.currentEditingCharacter = ch;
+
         console.log(`⏱️ [計測] 1. キャラ取得まで: ${Math.round(performance.now() - t0)}ms`);
 
         // 2. システムの選択肢を生成
@@ -3016,7 +3019,7 @@ function openEditCharacterModal(characterId, retryCount = 0) {
         }
         console.log(`⏱️ [計測] 2. システム選択肢生成後: ${Math.round(performance.now() - t0)}ms`);
 
-        // 🌟 システムIDを確実に特定しセレクトボックスへ反映
+        // 🌟 システムIDを確実に特定
         const targetSystemId = ch.systemId || ch.system || '';
         if (systemInput) {
             systemInput.value = targetSystemId;
@@ -3065,7 +3068,12 @@ function openEditCharacterModal(characterId, retryCount = 0) {
         }
         console.log(`⏱️ [計測] 4. リンクエディタ描画後: ${Math.round(performance.now() - t0)}ms`);
 
-        // 🌟 正しいシステムIDが選択された状態でカスタム項目を描画
+        // 🌟 【最重要修正】カスタム項目を描画する前に、セレクトボックスの値を強制的にターゲットシステムにする
+        if (systemInput) {
+            systemInput.value = targetSystemId;
+        }
+
+        // 🌟 正しいシステムIDとカスタムデータを渡してカスタム項目を描画・値埋め
         const targetCustomValues = ch.customValues || ch.customFields || {};
         if (typeof handleSystemChangeInModal === 'function') {
             handleSystemChangeInModal(targetCustomValues, targetSystemId);
@@ -3211,7 +3219,8 @@ function renderCharacterModalSystemSelect() {
         select.value = currentVal;
     }
     
-    handleSystemChangeInModal();
+    // ❌ ここで勝手に走らせると後からのシステム変更（DX3等への切り替え）がブロックされるため削除
+    // handleSystemChangeInModal();
 }
 window.renderCharacterModalSystemSelect = renderCharacterModalSystemSelect;
         
