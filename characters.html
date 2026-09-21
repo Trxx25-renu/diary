@@ -1920,10 +1920,20 @@ function updateAdminUI() {
 }
 window.updateAdminUI = updateAdminUI;
        
-function handleHeaderKeyClick() {
-    openAuthModal();
-}
-window.handleHeaderKeyClick = handleHeaderKeyClick;
+// ==========================================
+// 🔑 ヘッダーの鍵アイコンが押されたときの分岐（※ここだけ書き換え）
+// ==========================================
+window.handleHeaderKeyClick = function() {
+    if (window.isAdmin) {
+        logoutAdmin();
+    } else {
+        if (typeof openAuthModal === 'function') {
+            openAuthModal();
+        } else {
+            console.error("❌ openAuthModal 関数が見つかりません");
+        }
+    }
+};
 
 // ==========================================
 // 🔓 ログアウト処理
@@ -1956,16 +1966,6 @@ function logoutAdmin() {
 }
 window.logoutAdmin = logoutAdmin;
 
-// ==========================================
-// 🔑 ヘッダーの鍵アイコンが押されたときの分岐（上書き）
-// ==========================================
-window.handleHeaderKeyClick = function() {
-    if (window.isAdmin) {
-        logoutAdmin();
-    } else {
-        openAuthModal();
-    }
-};
 
 // ==========================================
 // 🔑 パスコードを検証してログインする
