@@ -2905,17 +2905,23 @@ function openEditCharacterModal(characterId) {
         renderCharacterLinksEditor();
     }
 
-    // 🌟 【修正】システムIDをセットし、ONCHANGEの暴発を防ぎつつ確実にカスタム項目を既存データ付きで描画
+    // 🌟 先にシステムIDをセットし、有効な状態のままカスタム項目を描画させる
     if (systemInput) {
         systemInput.value = ch.systemId || '';
-        systemInput.disabled = true; // 編集時は変更不可にする
-        systemInput.classList.add('opacity-60', 'pointer-events-none', 'bg-stone-100');
+        // 一旦disabledは解除しておく（描画のため）
+        systemInput.disabled = false;
+        systemInput.classList.remove('opacity-60', 'pointer-events-none', 'bg-stone-100');
     }
 
-    // 🌟 ここで確実にキャラクターが持っているカスタム値（ch.customValues）を渡して描画する
+    // 🌟 確実にキャラクターが持っているカスタム値（ch.customValues）を渡して描画する
     if (typeof handleSystemChangeInModal === 'function') {
-        // システムIDを明示的に指定してカスタム項目を描画
         handleSystemChangeInModal(ch.customValues || {});
+    }
+
+    // 🌟 描画が完了したあとに、編集時不可のロックをかける
+    if (systemInput) {
+        systemInput.disabled = true;
+        systemInput.classList.add('opacity-60', 'pointer-events-none', 'bg-stone-100');
     }
 
     // 💡 統合された画像管理オブジェクトの復元
