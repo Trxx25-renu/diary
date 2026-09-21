@@ -1926,6 +1926,48 @@ function handleHeaderKeyClick() {
 window.handleHeaderKeyClick = handleHeaderKeyClick;
 
 // ==========================================
+// 🔓 ログアウト処理
+// ==========================================
+function logoutAdmin() {
+    if (typeof showConfirm === 'function') {
+        showConfirm('ログアウト', '管理者モードからログアウトしますか？', () => {
+            window.isAdmin = false;
+            sessionStorage.removeItem('isAdminSession');
+            
+            if (window.GIST_CONFIG) {
+                window.GIST_CONFIG.token = '';
+            }
+            
+            updateAdminUI();
+            showToast('ログアウトしました', 'info');
+        });
+    } else {
+        if (confirm('管理者モードからログアウトしますか？')) {
+            window.isAdmin = false;
+            sessionStorage.removeItem('isAdminSession');
+            
+            if (window.GIST_CONFIG) {
+                window.GIST_CONFIG.token = '';
+            }
+            
+            updateAdminUI();
+        }
+    }
+}
+window.logoutAdmin = logoutAdmin;
+
+// ==========================================
+// 🔑 ヘッダーの鍵アイコンが押されたときの分岐（上書き）
+// ==========================================
+window.handleHeaderKeyClick = function() {
+    if (window.isAdmin) {
+        logoutAdmin();
+    } else {
+        openAuthModal();
+    }
+};
+
+// ==========================================
 // 🔑 パスコードを検証してログインする
 // ==========================================
 function verifyPasscode() {
@@ -1933,10 +1975,9 @@ function verifyPasscode() {
     const err = document.getElementById('authErrorMsg');
     const enteredValue = passInput ? passInput.value.trim() : '';
 
-    // エラー表示を一旦リセット
     if (err) err.classList.add('hidden');
 
-    // まだパスコードが未設定の場合（初回設定）
+    // 初回パスコード設定
     if (!window.storedPasscode) {
         if (!enteredValue) {
             if (err) {
@@ -1956,7 +1997,6 @@ function verifyPasscode() {
         
         closeAuthModal();
 
-        // 保留していた処理（キャラクター追加・編集等）があれば実行
         if (typeof pendingAction === 'function') {
             const action = pendingAction;
             pendingAction = null;
@@ -1975,14 +2015,12 @@ function verifyPasscode() {
         
         closeAuthModal();
 
-        // 保留していた処理（キャラクター追加・編集等）があれば実行
         if (typeof pendingAction === 'function') {
             const action = pendingAction;
             pendingAction = null;
             action();
         }
     } else {
-        // パスコード間違い
         if (err) {
             err.textContent = 'パスコードが違います';
             err.classList.remove('hidden');
@@ -1994,45 +2032,6 @@ function verifyPasscode() {
     }
 }
 window.verifyPasscode = verifyPasscode;
-
-// ==========================================
-// 🔓 ログアウト処理
-// ==========================================
-function logoutAdmin() {
-    if (confirm('管理者モードからログアウトしますか？')) {
-        window.isAdmin = false;
-        sessionStorage.removeItem('isAdminSession');
-        
-        if (window.GIST_CONFIG) {
-            window.GIST_CONFIG.token = '';
-        }
-        
-        if (typeof updateAdminUI === 'function') {
-            updateAdminUI();
-        }
-        
-        if (typeof showToast === 'function') {
-            showToast('ログアウトしました', 'info');
-        } else {
-            console.log('ログアウトしました');
-        }
-    }
-}
-window.logoutAdmin = logoutAdmin;
-
-// ==========================================
-// 🔑 ヘッダーの鍵アイコンが押されたときの分岐
-// ==========================================
-function handleHeaderKeyClick() {
-    if (window.isAdmin) {
-        // すでにログイン中ならログアウト処理を実行
-        logoutAdmin();
-    } else {
-        // ログインしていなければパスコード入力モーダルを開く
-        openAuthModal();
-    }
-}
-window.handleHeaderKeyClick = handleHeaderKeyClick;
 
 // ==========================================
 // 🔑 パスコード入力モーダルを開く
