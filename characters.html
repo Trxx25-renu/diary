@@ -2858,13 +2858,14 @@ window.initAutoResizeTextareas = initAutoResizeTextareas;
 
 
 // ==========================================
-// 💡 編集を開く関数（高速・本番用）
+// 💡 編集を開く関数（詳細パフォーマンス計測版）
 // ==========================================
 function openEditCharacterModal(characterId, retryCount = 0) {
+    const t0 = performance.now();
     try {
         console.log("🔍 [DEBUG openEdit] 呼び出し成功 ID:", characterId);
 
-        // 1. まず最初に、前回のゴミデータや入力欄の残骸を完全にクリア
+        // 1. ゴミデータクリア
         const container = document.getElementById('dynamicCustomFieldsContainer');
         if (container) container.innerHTML = '';
         
@@ -2897,12 +2898,13 @@ function openEditCharacterModal(characterId, retryCount = 0) {
             return; 
         }
 
+        console.log(`⏱️ [計測] 1. キャラ取得まで: ${Math.round(performance.now() - t0)}ms`);
+
         // 2. システムの選択肢を生成
         if (typeof renderCharacterModalSystemSelect === 'function') {
             renderCharacterModalSystemSelect();
-        } else {
-            console.warn("⚠️ renderCharacterModalSystemSelect が定義されていません");
         }
+        console.log(`⏱️ [計測] 2. システム選択肢生成後: ${Math.round(performance.now() - t0)}ms`);
 
         // 基本フォーム要素へ値をセット
         const nameInput = document.getElementById('charName');
@@ -2931,6 +2933,8 @@ function openEditCharacterModal(characterId, retryCount = 0) {
         if (memoInput) memoInput.value = ch.memo || '';
         if (secretInput) secretInput.value = ch.secret || '';
 
+        console.log(`⏱️ [計測] 3. 基本フォーム値セット後: ${Math.round(performance.now() - t0)}ms`);
+
         // 🔗 複数リンク（links）の復元
         if (ch.links && Array.isArray(ch.links)) {
             window.editingCharacterLinks = JSON.parse(JSON.stringify(ch.links));
@@ -2943,6 +2947,7 @@ function openEditCharacterModal(characterId, retryCount = 0) {
         if (typeof renderCharacterLinksEditor === 'function') {
             renderCharacterLinksEditor();
         }
+        console.log(`⏱️ [計測] 4. リンクエディタ描画後: ${Math.round(performance.now() - t0)}ms`);
 
         // 🌟 システムIDを確実に特定
         const targetSystemId = ch.systemId || ch.system || '';
@@ -2950,15 +2955,12 @@ function openEditCharacterModal(characterId, retryCount = 0) {
             systemInput.value = targetSystemId;
         }
 
-        // 🌟 カスタム値の取得
+        // 🌟 カスタム値の取得 & システム変更・項目描画
         const targetCustomValues = ch.customValues || ch.customFields || {};
-
-        // 🌟 システム変更・項目描画関数を呼び出す
         if (typeof handleSystemChangeInModal === 'function') {
             handleSystemChangeInModal(targetCustomValues, targetSystemId);
-        } else {
-            console.warn("⚠️ handleSystemChangeInModal が定義されていません");
         }
+        console.log(`⏱️ [計測] 5. カスタム項目描画後: ${Math.round(performance.now() - t0)}ms`);
 
         // 🌟 描画完了後にシステム選択をロック
         if (systemInput) {
@@ -2991,6 +2993,7 @@ function openEditCharacterModal(characterId, retryCount = 0) {
         if (typeof switchImageCategory === 'function') {
             switchImageCategory('thumb');
         }
+        console.log(`⏱️ [計測] 6. 画像カテゴリ切替後: ${Math.round(performance.now() - t0)}ms`);
 
         if (typeof handleThemeColorInput === 'function') {
             handleThemeColorInput(ch.themeColor || '#292524');
@@ -3009,6 +3012,8 @@ function openEditCharacterModal(characterId, retryCount = 0) {
         } else {
             console.error("❌ #characterModal 要素が見つかりません！");
         }
+
+        console.log(`🎉 [計測] 7. すべて完了 (トータル): ${Math.round(performance.now() - t0)}ms`);
 
     } catch (err) {
         console.error("❌ openEditCharacterModal 内部で致命的なエラーが発生しました:", err);
