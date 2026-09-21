@@ -1643,7 +1643,7 @@ function renderCharacterDetail(characterId) {
         customFieldsHtml += `</div>`;
     }
 
-    // 📊 ステータス / ゲージ描画（基本値 ＋ 成長値対応 ＆ 2色積み上げグラフ）
+    // 📊 ステータス / ゲージ描画（基本値 ＋ 成長値対応 ＆ 上限突破色変化・2色積み上げグラフ）
     const statusFields = sysFields.status || [];
     if (statusFields.length > 0) {
         customFieldsHtml += `<div class="space-y-3 mt-4 pt-4 border-t border-stone-100"><h4 class="text-xs font-bold text-stone-500">ステータス / ゲージ</h4>`;
@@ -1670,12 +1670,17 @@ function renderCharacterDetail(characterId) {
             const growthWidthPct = Math.min(remainingPct, Math.max(0, (growthVal / maxVal) * 100));
 
             const isExceeded = totalVal > maxVal;
+            
+            // 💡 上限突破時のカラー切り替え（突破時はパープル系の警告・特別カラーに変化）
+            const currentThemeColor = isExceeded ? '#9333ea' : themeColor;
+            const currentGrowthColor = isExceeded ? '#c084fc' : growthColor;
+
             const badgeText = isExceeded ? `<span class="text-[10px] text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded font-bold ml-1">上限突破!</span>` : '';
 
-            // 💡 数値表示形式：基本値 + 成長値 (合計) （成長値がある場合のみ色付きで表示）
+            // 💡 数値表示形式：基本値 + 成長値 (合計)
             let displayText = `${baseVal}`;
             if (growthVal > 0) {
-                displayText = `${baseVal} <span style="color: ${growthColor}; font-weight: bold;">+ ${growthVal}</span> <span class="text-stone-400 font-normal">(${totalVal})</span>`;
+                displayText = `${baseVal} <span style="color: ${currentGrowthColor}; font-weight: bold;">+ ${growthVal}</span> <span class="text-stone-400 font-normal">(${totalVal})</span>`;
             }
 
             customFieldsHtml += `
@@ -1684,10 +1689,10 @@ function renderCharacterDetail(characterId) {
                         <span class="font-medium text-stone-600">${f.label}</span>
                         <span><strong class="text-stone-800 font-mono">${displayText}</strong> ${badgeText}</span>
                     </div>
-                    <!-- 📊 2色積み上げバーグラフ -->
+                    <!-- 📊 2色積み上げバーグラフ（上限突破時は自動でカラー変化） -->
                     <div class="w-full h-2.5 bg-stone-100 rounded-full overflow-hidden flex border border-stone-200/50 shadow-inner">
-                        <div class="h-full transition-all duration-500" style="width: ${baseWidthPct}%; background-color: ${themeColor};" title="基本値: ${baseVal}"></div>
-                        <div class="h-full transition-all duration-500" style="width: ${growthWidthPct}%; background-color: ${growthColor};" title="成長値: ${growthVal}"></div>
+                        <div class="h-full transition-all duration-500" style="width: ${baseWidthPct}%; background-color: ${currentThemeColor};" title="基本値: ${baseVal}"></div>
+                        <div class="h-full transition-all duration-500" style="width: ${growthWidthPct}%; background-color: ${currentGrowthColor};" title="成長値: ${growthVal}"></div>
                     </div>
                 </div>
             `;
