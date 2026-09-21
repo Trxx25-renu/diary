@@ -455,6 +455,62 @@ function navigateTo(view, param = null) {
     }
 }
 window.navigateTo = navigateTo;
+
+// ==========================================
+// 🔗 ハッシュルーティング連動の拡張
+// ==========================================
+
+// 1. 画面遷移時にURLのハッシュを自動で書き換えるラッパー関数
+function navigateWithHash(view, param = null) {
+    let hash = `#${view}`;
+    if (param) {
+        hash += `=${encodeURIComponent(param)}`;
+    }
+    // 履歴にプッシュしてURLを変更（これによって history.pushState でURLが綺麗に変わる）
+    if (window.location.hash !== hash) {
+        history.pushState({ view, param }, '', hash);
+    }
+    // 実際の画面切り替えを実行
+    navigateTo(view, param);
+}
+
+// 2. URLのハッシュを読み取って対応するビューを復元するメイン処理
+function handleRoutingFromHash() {
+    const hash = window.location.hash.substring(1); // 先頭の '#' を外す
+    
+    if (!hash) {
+        // ハッシュがない（初回アクセスなど）場合はデフォルトで 'months' へ
+        navigateTo('months');
+        return;
+    }
+
+    // "view=param" の形式を分解する
+    let view = hash;
+    let param = null;
+
+    if (hash.includes('=')) {
+        const parts = hash.split('=');
+        view = parts[0];
+        param = decodeURIComponent(parts[1]);
+    }
+
+    // 該当のビューが存在するかチェックして呼び出し
+    if (['months', 'gallery', 'detail'].includes(view)) {
+        navigateTo(view, param);
+    } else {
+        navigateTo('months');
+    }
+}
+
+// 3. ページ読み込み時にハッシュを解析して初期表示を決定
+window.addEventListener('DOMContentLoaded', () => {
+    handleRoutingFromHash();
+});
+
+// 4. ブラウザの「戻る」「進む」ボタンを押したときに画面を追従させる
+window.addEventListener('popstate', () => {
+    handleRoutingFromHash();
+});
         
         // 🌟 指定した方向に1ヶ月分ズラしてギャラリーを再描画する関数
         function changeMonth(direction) {
