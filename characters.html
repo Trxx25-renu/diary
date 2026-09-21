@@ -4245,9 +4245,9 @@ window.importCharactersJSON = importCharactersJSON;
         </div>
     </div>
 
-<!-- 🔑 パスコード入力モーダル -->
-<div id="authModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/40 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-200">
-    <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-xl border border-stone-200 scale-95 transition-transform duration-200 flex flex-col gap-4">
+<!-- 🔑 パスコード入力モーダル（スマホ上部寄せ・はみ出し防止版） -->
+<div id="authModal" class="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-4 pt-16 sm:pt-4 bg-stone-900/40 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-200 overflow-y-auto">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-xl border border-stone-200 scale-95 transition-transform duration-200 flex flex-col gap-4 my-auto">
         <div class="text-center">
             <div class="w-12 h-12 rounded-2xl bg-stone-50 text-stone-600 flex items-center justify-center mx-auto text-xl mb-2">
                 <i class="fa-solid fa-key"></i>
@@ -4306,130 +4306,35 @@ window.importCharactersJSON = importCharactersJSON;
     <p>© Character log</p>
 </footer>
 
-<!-- ========================================== -->
-<!-- 💡 キャラクター追加・編集モーダル本体（修正完全版） -->
-<!-- ========================================== -->
-<div id="characterModal" class="fixed inset-0 bg-stone-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-white rounded-2xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto p-6 space-y-6">
-        
-        <!-- モーダルヘッダー -->
-        <div class="flex justify-between items-center border-b border-stone-200 pb-4">
-            <h3 class="text-lg font-bold text-stone-800"><span>キャラクター登録・編集</span></h3>
-            <button onclick="closeCharacterModal()" class="text-stone-400 hover:text-stone-600 text-xl font-bold px-2">&times;</button>
+<!-- モダールのスクロール部分のコンテナ、またはモーダル内の最後の要素 -->
+<div class="space-y-4 pb-32 sm:pb-12"> <!-- 🌟 スマホの時だけ下に特大の余白(pb-32)を空けて、バーに被らないようにする -->
+    
+    <!-- 秘話・秘密などの入力欄 -->
+    <div>
+        <div class="flex justify-between items-center mb-1">
+            <label class="block text-xs font-bold text-rose-700">秘話・秘密 <span class="text-[10px] font-normal text-stone-400">（※ここに入力した内容は通常時は隠されます）</span></label>
         </div>
+        <textarea id="charSecret" rows="3" style="filter: none !important; backdrop-filter: none !important;" class="w-full bg-rose-50/60 border border-rose-200/80 rounded-xl px-3 py-2 text-xs text-stone-800 text-left focus:outline-none focus:border-rose-400 auto-resize" placeholder="秘匿情報や秘密などを入力..."></textarea>
+    </div>
 
-        <!-- フォーム本体 -->
-        <form id="characterForm" class="space-y-4" onsubmit="event.preventDefault();">
-            
-            <!-- システム選択 -->
-            <div>
-                <label class="block text-xs font-bold text-stone-700 mb-1">システム選択</label>
-                <select id="charSystemSelect" onchange="handleSystemChangeInModal()" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-800 focus:outline-none focus:border-stone-400">
-                    <!-- システムの選択肢が動的に入る -->
-                </select>
-            </div>
-
-            <!-- 称号・ルビ等 -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                    <label class="block text-xs font-bold text-stone-700 mb-1">称号・異名</label>
-                    <input type="text" id="charEpithet" placeholder="例: ルミナスキーパー" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-800 focus:outline-none focus:border-stone-400">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-stone-700 mb-1">称号（カナ）</label>
-                    <input type="text" id="charEpithetKana" placeholder="カナを入力" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-800 focus:outline-none focus:border-stone-400">
-                </div>
-            </div>
-
-            <!-- 基本情報入力エリア（名前・カナ） -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                    <label class="block text-xs font-bold text-stone-700 mb-1">キャラクター名 <span class="text-rose-500">*</span></label>
-                    <input type="text" id="charName" placeholder="名前を入力" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-800 focus:outline-none focus:border-stone-400">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-stone-700 mb-1">名前の読み仮名</label>
-                    <input type="text" id="charNameKana" placeholder="カナを入力" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-800 focus:outline-none focus:border-stone-400">
-                </div>
-            </div>
-
-            <!-- 詳細プロフィール（年齢・性別・誕生日・テーマカラー） -->
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <div>
-                    <label class="block text-xs font-bold text-stone-700 mb-1">年齢</label>
-                    <input type="text" id="charAge" placeholder="例: 26" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-800 focus:outline-none focus:border-stone-400">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-stone-700 mb-1">性別</label>
-                    <input type="text" id="charGender" placeholder="例: 女性" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-800 focus:outline-none focus:border-stone-400">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-stone-700 mb-1">誕生日</label>
-                    <input type="text" id="charBirthdate" placeholder="例: 11月1日" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-800 focus:outline-none focus:border-stone-400">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-stone-700 mb-1">テーマカラー</label>
-                    <div class="flex items-center gap-2">
-                        <input type="color" id="charThemeColor" value="#292524" oninput="handleThemeColorInput(this.value)" class="w-8 h-8 rounded-lg border border-stone-200 cursor-pointer bg-transparent p-0">
-                        <input type="text" id="charThemeColorText" value="#292524" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-2 py-2 text-xs text-stone-800 focus:outline-none focus:border-stone-400 font-mono">
-                    </div>
-                </div>
-            </div>
-
-            <!-- 関連リンク（複数リンクエディター挿入先） -->
-            <div class="space-y-2">
-                <div class="flex justify-between items-center">
-                    <label class="block text-xs font-bold text-stone-700">関連リンク（キャラクターシート等）</label>
-                    <button type="button" onclick="addCharacterLinkField()" class="text-xs font-bold text-rose-600 hover:text-rose-700">+ リンクを追加</button>
-                </div>
-                <div id="characterLinksEditorContainer" class="space-y-2">
-                    <!-- 動的にリンク入力行が生成 -->
-                </div>
-            </div>
-
-            <!-- 動的カスタムフィールド（システムごとの特有項目：ステータスやワークス・カバー等） -->
-            <div id="dynamicCustomFieldsContainer" class="space-y-4"></div>
-
-            <!-- メモ・秘話など -->
-            <div class="space-y-3">
-                <div>
-                    <label class="block text-xs font-bold text-stone-700 mb-1">メモ・設定</label>
-                    <textarea id="charMemo" rows="3" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-800 focus:outline-none focus:border-stone-400 auto-resize" placeholder="キャラクターの設定やメモを入力..."></textarea>
-                </div>
-                <div>
-                    <div class="flex justify-between items-center mb-1">
-                        <label class="block text-xs font-bold text-rose-700">秘話・秘密 <span class="text-[10px] font-normal text-stone-400">（※ここに入力した内容は通常時は隠されます）</span></label>
-                    </div>
-                    <!-- モザイクや中央寄せを完全に排除し、左揃えでハッキリ読めるように修正 -->
-                    <textarea id="charSecret" rows="3" class="w-full bg-rose-50/60 border border-rose-200/80 rounded-xl px-3 py-2 text-xs text-stone-800 text-left focus:outline-none focus:border-rose-400 auto-resize" placeholder="秘匿情報や秘密などを入力..."></textarea>
-                </div>
-            </div>
-
-            <!-- フッター：JSON保存・読込 ＋ キャンセル・保存ボタン -->
-            <div class="flex flex-wrap justify-between items-center gap-2 pt-4 border-t border-stone-200">
-                
-                <!-- 左側：JSONデータのファイル入出力 -->
-                <div class="flex items-center gap-2">
-                    <button type="button" onclick="exportCharacterJson()" class="bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-bold px-3 py-2 rounded-xl transition-all flex items-center gap-1" title="現在の入力内容をJSONで保存">
-                        <span>📤 JSON保存</span>
-                    </button>
-                    <button type="button" onclick="document.getElementById('jsonImportInput').click()" class="bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-bold px-3 py-2 rounded-xl transition-all flex items-center gap-1" title="JSONファイルから読み込む">
-                        <span>📥 JSON読込</span>
-                    </button>
-                    <input type="file" id="jsonImportInput" accept=".json" class="hidden" onchange="importCharacterJson(event)">
-                </div>
-
-                <!-- 右側：キャンセル・保存する -->
-                <div class="flex items-center gap-2">
-                    <button type="button" onclick="closeCharacterModal()" class="bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-bold px-4 py-2 rounded-xl transition-all">
-                        キャンセル
-                    </button>
-                    <button type="button" onclick="saveCharacter()" class="bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold px-5 py-2 rounded-xl shadow-sm transition-all">
-                        保存する
-                    </button>
-                </div>
-            </div>
-        </form>
+    <!-- JSON保存・読込、キャンセル・保存ボタン群 -->
+    <div class="pt-2 flex flex-col gap-2">
+        <div class="flex gap-2">
+            <button type="button" onclick="exportCharacterJson()" class="flex-1 py-2 bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-bold rounded-xl transition-colors">
+                📤 JSON保存
+            </button>
+            <button type="button" onclick="document.getElementById('jsonFileInput').click()" class="flex-1 py-2 bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-bold rounded-xl transition-colors">
+                📥 JSON読込
+            </button>
+        </div>
+        <div class="flex gap-2">
+            <button type="button" onclick="closeCharacterModal()" class="flex-1 py-3 bg-stone-200 hover:bg-stone-300 text-stone-800 text-sm font-bold rounded-xl transition-colors">
+                キャンセル
+            </button>
+            <button type="button" onclick="saveCharacterFromModal()" class="flex-1 py-3 bg-rose-600 hover:bg-rose-700 text-white text-sm font-bold rounded-xl transition-colors shadow-sm">
+                保存する
+            </button>
+        </div>
     </div>
 </div>
         
