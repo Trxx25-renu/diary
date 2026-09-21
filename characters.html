@@ -1718,60 +1718,57 @@ function renderCharacterDetail(characterId) {
     const secret = ch.secret || '';
     let settingsMemoHtml = '';
 
-// 秘匿メモ（ネタバレ）の部分（完全不透明＆左上揃え版）
-    if (memo || secret) {
-        settingsMemoHtml = `
-            <div class="mt-6 pt-6 border-t border-stone-100 space-y-4">
-                ${memo ? `
-                    <div>
-                        <h4 class="text-xs font-bold text-stone-500 mb-1.5 flex items-center gap-1.5">
-                            <i class="fa-solid fa-note-sticky text-stone-400"></i> 設定 / メモ
-                        </h4>
-                        <div class="bg-stone-50 rounded-2xl p-4 text-xs text-stone-700 whitespace-pre-wrap border border-stone-100 leading-relaxed">${memo}</div>
-                    </div>
-                ` : ''}
-                
-                ${secret ? `
-                <div class="mb-4">
-                    <h4 class="text-xs font-bold text-rose-600 mb-1.5 flex items-center gap-1.5">
-                        <i class="fa-solid fa-user-secret text-rose-500"></i> 秘匿メモ（ネタバレ）
+// ==========================================
+// 💡 秘匿メモ部分（最終完全版）
+// ==========================================
+if (memo || secret) {
+    settingsMemoHtml = `
+        <div class="mt-6 pt-6 border-t border-stone-100 space-y-4">
+            ${memo ? `
+                <div>
+                    <h4 class="text-xs font-bold text-stone-500 mb-1.5 flex items-center gap-1.5">
+                        <i class="fa-solid fa-note-sticky text-stone-400"></i> 設定 / メモ
                     </h4>
-                    <div class="relative bg-rose-50/40 text-stone-800 rounded-2xl p-4 border border-rose-200/70 cursor-pointer overflow-hidden transition-all shadow-xs group" onclick="
-                        const container = this;
-                        const overlay = container.querySelector('.js-secret-overlay');
-                        const isHidden = overlay.style.display !== 'none';
-                        overlay.style.display = isHidden ? 'none' : 'flex';
-                    ">
-                        <div class="flex items-center justify-between mb-2 pb-1.5 border-b border-rose-200/60 text-xs text-rose-800 font-bold select-none">
-                            <span class="flex items-center gap-1.5">
-                                <i class="fa-solid fa-triangle-exclamation text-rose-500"></i> ネタバレ防止用本文
-                            </span>
-                            <span class="text-[10px] text-rose-400 font-normal">タップで切替</span>
-                        </div>
-                        <!-- 文字色を濃くし、左寄せ -->
-                        <div class="text-xs text-stone-800 font-medium leading-relaxed whitespace-pre-wrap text-left py-1">
-                            ${secret}
-                        </div>
-                        
-                        <!-- 🌟 修正点：bg-rose-100/90 → bg-rose-50（完全不透明）、justify-center → justify-start（上寄せ）、上パディング追加 -->
-                        <div class="js-secret-overlay absolute inset-0 bg-rose-50 flex flex-col items-start justify-start gap-2 text-stone-800 transition-all select-none z-10 text-left p-4">
-                            <div class="flex items-center justify-between w-full mb-2 pb-1.5 border-b border-rose-200/60 text-xs text-rose-800 font-bold select-none">
-                                <span class="flex items-center gap-1.5">
-                                    <i class="fa-solid fa-triangle-exclamation text-rose-500"></i> ネタバレ防止用本文
-                                </span>
-                                <span class="text-[10px] text-rose-400 font-normal">タップで切替</span>
-                            </div>
-                            <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center text-rose-600 text-sm shadow-xs group-hover:scale-110 transition-transform mt-1">
-                                <i class="fa-solid fa-eye-slash"></i>
-                            </div>
-                            <span class="text-xs font-bold text-rose-900 mt-1">タップしてネタバレを表示</span>
-                        </div>
-                    </div>
+                    <div class="bg-stone-50 rounded-2xl p-4 text-xs text-stone-700 whitespace-pre-wrap border border-stone-100 leading-relaxed">${memo}</div>
                 </div>
             ` : ''}
+            
+            ${secret ? `
+            <div class="mb-4">
+                <h4 class="text-xs font-bold text-rose-600 mb-1.5 flex items-center gap-1.5">
+                    <i class="fa-solid fa-user-secret text-rose-500"></i> 秘匿メモ（ネタバレ）
+                </h4>
+                <div class="relative bg-rose-50/40 text-stone-800 rounded-2xl p-4 border border-rose-200/70 cursor-pointer overflow-hidden transition-all shadow-xs group" onclick="
+                    const container = this;
+                    const overlay = container.querySelector('.js-secret-overlay');
+                    const isHidden = overlay.style.display !== 'none';
+                    overlay.style.display = isHidden ? 'none' : 'flex';
+                ">
+                    <div class="flex items-center justify-between mb-2 pb-1.5 border-b border-rose-200/60 text-xs text-rose-800 font-bold select-none">
+                        <span class="flex items-center gap-1.5">
+                            <i class="fa-solid fa-triangle-exclamation text-rose-500"></i> ネタバレ防止用本文
+                        </span>
+                        <span class="text-[10px] text-rose-400 font-normal">タップで切替</span>
+                    </div>
+                    
+                    <!-- 🌟 本文（下敷き）：w-full と text-left で完全に左上から開始 -->
+                    <div class="w-full text-left text-xs text-stone-800 font-medium leading-relaxed whitespace-pre-wrap py-1">
+                        ${secret}
+                    </div>
+                    
+                    <!-- 🌟 カバー（オーバーレイ）：完全不透明（bg-rose-50）＆ 中央寄せ -->
+                    <div class="js-secret-overlay absolute inset-0 bg-rose-50 flex flex-col items-center justify-center gap-1.5 text-stone-800 transition-all select-none z-10">
+                        <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center text-rose-600 text-sm shadow-xs group-hover:scale-110 transition-transform">
+                            <i class="fa-solid fa-eye-slash"></i>
+                        </div>
+                        <span class="text-xs font-bold text-rose-900">タップしてネタバレを表示</span>
+                    </div>
+                </div>
             </div>
-        `;
-    }
+        ` : ''}
+        </div>
+    `;
+}
 
     const scenariosHtml = `
         <div class="mt-6 pt-6 border-t border-stone-100">
