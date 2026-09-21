@@ -25,11 +25,13 @@
         
     </script>
 
-    <!-- Firebase App & SDK (CDN Module) -->
+<!-- Firebase App & SDK (CDN Module) -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        // ⬇️ Firebase Storage の機能をインポート
+        import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js";
 
         window.initializeApp = initializeApp;
@@ -40,6 +42,11 @@
         window.getDoc = getDoc;
         window.collection = collection;
         window.getDocs = getDocs;
+        // ⬇️ Firebase Storage の機能もグローバル（window）に登録
+        window.getStorage = getStorage;
+        window.ref = ref;
+        window.uploadBytes = uploadBytes;
+        window.getDownloadURL = getDownloadURL;
         window.getAnalytics = getAnalytics;
     </script>
 
@@ -291,6 +298,31 @@ try {
         window.applyCurrentThemeToUI();
     }
 });
+
+// ==========================================
+// ☁️ Firebase Storageへ画像をアップロードする関数
+// ==========================================
+async function uploadImageToFirebase(fileObject) {
+    if (!fileObject) return null;
+
+    try {
+        const storage = window.getStorage();
+        const uniqueFileName = `diary_images/${Date.now()}_${fileObject.name}`;
+        const storageRef = window.ref(storage, uniqueFileName);
+
+        console.log("画像をアップロード中...");
+        const snapshot = await window.uploadBytes(storageRef, fileObject);
+        const downloadURL = await window.getDownloadURL(snapshot.ref);
+        
+        console.log("アップロード成功！ URL:", downloadURL);
+        return downloadURL;
+    } catch (error) {
+        console.error("画像のアップロードに失敗しました:", error);
+        alert("画像のアップロード中にエラーが発生しました。");
+        return null;
+    }
+}
+window.uploadImageToFirebase = uploadImageToFirebase;
 
 // 🌟 日記アプリ専用：画面切り替え ＆ パンくず・アクション更新を行うルーター関数
 function navigateTo(view, param = null) {
