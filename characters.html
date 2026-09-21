@@ -28,12 +28,6 @@
 html {
     touch-action: manipulation;
 }
-/* 💡 一旦、通常の img 全体の image-rendering を外してみる */
-img {
-    /* 削除またはコメントアウト */
-    /* image-rendering: -webkit-optimize-contrast; */
-    /* image-rendering: crisp-edges; */
-}
 
 /* キャラクター詳細の画像 */
 .character-detail-img, 
@@ -3591,9 +3585,13 @@ function importCharacterFromJson(event) {
                     base: [], combat: [], sd: [], doodle: []
                 };
             }
-            // 画像サムネイル等の再描画関数があればここで呼ぶ
+            
+            // 画像サムネイル等の再描画
             if (typeof renderImageThumbnails === 'function') {
                 renderImageThumbnails();
+            }
+            if (typeof renderCharacterImagesPreview === 'function') {
+                renderCharacterImagesPreview();
             }
 
             // 4. リンクの復元 ＆ エディタ再描画
@@ -3606,7 +3604,6 @@ function importCharacterFromJson(event) {
             if (data.customValues) {
                 setTimeout(() => { // DOMの生成完了をわずかに待つための安全策
                     for (const [fieldId, val] of Object.entries(data.customValues)) {
-                        // オブジェクト（基本値・成長値などを持つ場合）の処理
                         if (typeof val === 'object' && val !== null) {
                             const baseInput = document.getElementById(`custom_status_${fieldId}_base`);
                             if (baseInput) baseInput.value = val.base ?? '';
@@ -3614,7 +3611,6 @@ function importCharacterFromJson(event) {
                             const growthInput = document.getElementById(`custom_status_${fieldId}_growth`);
                             if (growthInput) growthInput.value = val.growth ?? '';
                         } else {
-                            // 単一の値（数値や文字列）の場合
                             const statusInput = document.getElementById(`custom_status_${fieldId}`);
                             if (statusInput) statusInput.value = val;
 
@@ -3626,7 +3622,7 @@ function importCharacterFromJson(event) {
             }
 
             if (typeof showToast === 'function') {
-                showToast("JSONからデータを復元しました！", "success");
+                showToast("JSONからデータを正常に読み込みました！", "success");
             } else {
                 alert("JSONからデータを復元しました！");
             }
@@ -3639,24 +3635,6 @@ function importCharacterFromJson(event) {
         }
     };
     reader.readAsText(file);
-}
-window.importCharacterFromJson = importCharacterFromJson;
-
-            // 6. 画像プレビュー等の再描画
-            if (typeof renderCharacterImagesPreview === 'function') {
-                renderCharacterImagesPreview();
-            }
-
-            if (typeof showToast === 'function') {
-                showToast("JSONからデータを正常に読み込みました！", "info");
-            }
-        } catch (err) {
-            console.error("JSON parse error:", err);
-            alert("JSONファイルの読み込みに失敗しました。正しいキャラクターJSONファイルか確認してください。");
-        }
-    };
-    reader.readAsText(file);
-    event.target.value = ''; 
 }
 window.importCharacterFromJson = importCharacterFromJson;
 
