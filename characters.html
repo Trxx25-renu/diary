@@ -2858,12 +2858,9 @@ window.initAutoResizeTextareas = initAutoResizeTextareas;
 
 
 // ==========================================
-// 💡 編集を開く関数（デバッグアラート＆エラー完全ガード版）
+// 💡 編集を開く関数（高速・本番用）
 // ==========================================
 function openEditCharacterModal(characterId, retryCount = 0) {
-    // 💡 確実にボタンが反応しているかテストするためのアラート
-    alert("🔍 編集ボタンがクリックされました！ ID: " + characterId);
-
     try {
         console.log("🔍 [DEBUG openEdit] 呼び出し成功 ID:", characterId);
 
