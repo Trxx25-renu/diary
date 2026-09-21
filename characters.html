@@ -2856,12 +2856,19 @@ window.initAutoResizeTextareas = initAutoResizeTextareas;
 
 
 // ==========================================
-// 💡 編集モーダルを開く関数（データ読み込み完全修正版・システム＆リンク完全対応）
+// 💡 編集モーダルを開く関数（システム不一致＆JSONエラー完全解決版）
 // ==========================================
 function openEditCharacterModal(characterId) {
-    const ch = window.characters.find(c => String(c.id) === String(characterId));
+    // 🌟 先に編集対象のIDをグローバル変数に確実にセットする（JSON出力対策）
+    window.editingCharacterId = characterId;
+
+    const ch = window.characters?.find(c => String(c.id) === String(characterId));
     if (!ch) {
-        showToast('キャラクターが見つかりませんでした', 'error');
+        if (typeof showToast === 'function') {
+            showToast('キャラクターが見つかりませんでした', 'error');
+        } else {
+            alert('キャラクターが見つかりませんでした');
+        }
         return; 
     }
 
@@ -2914,23 +2921,29 @@ function openEditCharacterModal(characterId) {
         renderCharacterLinksEditor();
     }
 
-    // 🌟 システムIDを確実にセット（systemId と system の両方に対応）
+    // 🌟 システムIDを確実に特定（systemId と system の両方に対応）
     const targetSystemId = ch.systemId || ch.system || '';
+    
     if (systemInput) {
-        systemInput.value = targetSystemId;
-        // 一旦disabledは解除しておく（描画のため）
         systemInput.disabled = false;
         systemInput.classList.remove('opacity-60', 'pointer-events-none', 'bg-stone-100');
+        systemInput.value = targetSystemId;
     }
 
-    // 🌟 カスタム値（customValues と customFields の両方に対応）を渡して描画する
+    // 🌟 カスタム値の取得（customValues と customFields の両方に対応）
     const targetCustomValues = ch.customValues || ch.customFields || {};
+
+    // 🌟 システム変更・項目描画関数を呼び出す
+    // （もし関数側が引数を受け取れる設計であればシステムIDを渡し、無ければセレクトボックス経由で連動させる）
     if (typeof handleSystemChangeInModal === 'function') {
-        handleSystemChangeInModal(targetCustomValues);
+        // 関数がシステムIDを受け取れる、あるいは内部でセレクトボックスを読む仕様の場合の両方に対応
+        handleSystemChangeInModal(targetCustomValues, targetSystemId);
     }
 
-    // 🌟 描画が完了したあとに、編集時不可のロックをかける
+    // 🌟 描画が完了したあとに、システム選択を変更不可（ロック）にする
     if (systemInput) {
+        // 万が一DOM描画のラグで値がずれないよう、再度セットしてロック
+        systemInput.value = targetSystemId;
         systemInput.disabled = true;
         systemInput.classList.add('opacity-60', 'pointer-events-none', 'bg-stone-100');
     }
@@ -2964,8 +2977,6 @@ function openEditCharacterModal(characterId) {
         handleThemeColorInput(ch.themeColor || '#292524');
     }
 
-    window.editingCharacterId = characterId;
-
     const modalTitle = document.querySelector('#characterModal h3 span');
     if (modalTitle) modalTitle.textContent = 'キャラクター編集';
 
@@ -2980,7 +2991,6 @@ function openEditCharacterModal(characterId) {
     }
 }
 window.openEditCharacterModal = openEditCharacterModal;
-
 // ==========================================
 // 💡 HP設定（全体設定）を保存する関数（管理者専用ガード・グローバル関数対応版）
 // ==========================================
@@ -3823,16 +3833,23 @@ if (viewType === 'characterList') {
             window.renderBreadcrumbAndActions = renderBreadcrumbAndActions;
 
                     // ==========================================
-                    // 💡 個別キャラクターのデータをJSONファイルとしてダウンロードする関数（Blob対応・確実動作版）
-                    // ==========================================
-                    function exportCharacterJson(characterId) {
-                        const ch = window.characters?.find(c => String(c.id) === String(characterId));
-                        if (!ch) {
-                            alert("キャラクターデータが見つかりませんでした。");
-                            return;
-                        }
+// 💡 個別キャラクターのデータをJSONファイルとしてダウンロードする関数（引数なし対応・完全版）
+// ==========================================
+function exportCharacterJson(characterId) {
+    // 🌟 引数がない場合は、現在モーダルで編集中のID（window.editingCharacterId）を自動で使う
+    const targetId = characterId || window.editingCharacterId;
+    
+    const ch = window.characters?.find(c => String(c.id) === String(targetId));
+    if (!ch) {
+        if (typeof showToast === 'function') {
+            showToast("キャラクターデータが見つかりませんでした", "error");
+        } else {
+            alert("キャラクターデータが見つかりませんでした。");
+        }
+        return;
+    }
 
-                        try {
+    try {
         // 1. JSON文字列に整形
         const jsonString = JSON.stringify(ch, null, 2);
         
@@ -3854,16 +3871,20 @@ if (viewType === 'characterList') {
         
         // 4. メモリ解放
         setTimeout(() => URL.revokeObjectURL(url), 1000);
-                            
-                            if (typeof showToast === 'function') {
-            showToast("キャラクターのJSONファイルを書き出しました！", "info");
+            
+        if (typeof showToast === 'function') {
+            showToast("キャラクターのJSONファイルを書き出しました！", "success");
         }
-                        } catch (e) {
-                            console.error("JSON出力エラー:", e);
-                            alert("JSONの出力に失敗しました。");
-                        }
-                    }
-                    window.exportCharacterJson = exportCharacterJson;
+    } catch (e) {
+        console.error("JSON出力エラー:", e);
+        if (typeof showToast === 'function') {
+            showToast("JSONの出力に失敗しました", "error");
+        } else {
+            alert("JSONの出力に失敗しました。");
+        }
+    }
+}
+window.exportCharacterJson = exportCharacterJson;
 
 // ==========================================
 // 🔗 リンク入力エリアを描画する関数（修正完全版）
