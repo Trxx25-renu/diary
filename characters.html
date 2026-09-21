@@ -2858,13 +2858,23 @@ window.initAutoResizeTextareas = initAutoResizeTextareas;
 
 
 // ==========================================
-// 💡 編集モーダルを開く関数（システム不一致＆JSONエラー完全解決版）
+// 💡 編集を開く関数（データ＆システム定義の非同期ロード完全対応・安全版）
 // ==========================================
-function openEditCharacterModal(characterId) {
+function openEditCharacterModal(characterId, retryCount = 0) {
     // 🌟 先に編集対象のIDをグローバル変数に確実にセットする（JSON出力対策）
     window.editingCharacterId = characterId;
 
     const ch = window.characters?.find(c => String(c.id) === String(characterId));
+    
+    // 🛑 まだキャラクターデータがグローバル配列に読み込まれていない場合の安全ガード（最大5回・計0.5秒リトライ）
+    if (!ch && retryCount < 5) {
+        console.warn(`⏳ [DEBUG] キャラクターデータ読み込み待ち中... (リトライ ${retryCount + 1}/5):`, characterId);
+        setTimeout(() => {
+            openEditCharacterModal(characterId, retryCount + 1);
+        }, 100);
+        return;
+    }
+
     if (!ch) {
         if (typeof showToast === 'function') {
             showToast('キャラクターが見つかりませんでした', 'error');
@@ -2935,16 +2945,13 @@ function openEditCharacterModal(characterId) {
     // 🌟 カスタム値の取得（customValues と customFields の両方に対応）
     const targetCustomValues = ch.customValues || ch.customFields || {};
 
-    // 🌟 システム変更・項目描画関数を呼び出す
-    // （もし関数側が引数を受け取れる設計であればシステムIDを渡し、無ければセレクトボックス経由で連動させる）
+    // 🌟 システム変更・項目描画関数を呼び出す（強制システムIDを渡す）
     if (typeof handleSystemChangeInModal === 'function') {
-        // 関数がシステムIDを受け取れる、あるいは内部でセレクトボックスを読む仕様の場合の両方に対応
         handleSystemChangeInModal(targetCustomValues, targetSystemId);
     }
 
     // 🌟 描画が完了したあとに、システム選択を変更不可（ロック）にする
     if (systemInput) {
-        // 万が一DOM描画のラグで値がずれないよう、再度セットしてロック
         systemInput.value = targetSystemId;
         systemInput.disabled = true;
         systemInput.classList.add('opacity-60', 'pointer-events-none', 'bg-stone-100');
@@ -3077,13 +3084,13 @@ function renderCharacterModalSystemSelect() {
 window.renderCharacterModalSystemSelect = renderCharacterModalSystemSelect;
         
 // ==========================================
-// 💡 2. モーダル内でシステムが変更された時に動的項目を描画する関数（システムID強制対応版）
+// 💡 3. モーダル内でシステムが変更された時に動的項目を描画する関数（完全同期・リトライ安全版）
 // ==========================================
 let _isHandlingSystemChange = false;
 
-function handleSystemChangeInModal(existingCustomValues = {}, forcedSystemId = null) {
+function handleSystemChangeInModal(existingCustomValues = {}, forcedSystemId = null, retryCount = 0) {
     // 🛑 0.1秒以内の連続実行（二重発火）を完全にブロック
-    if (_isHandlingSystemChange) return;
+    if (_isHandlingSystemChange && retryCount === 0) return;
     _isHandlingSystemChange = true;
     setTimeout(() => { _isHandlingSystemChange = false; }, 100);
 
@@ -3097,10 +3104,23 @@ function handleSystemChangeInModal(existingCustomValues = {}, forcedSystemId = n
     }
 
     const systemId = select.value;
+
+    // 🛑 まだシステム定義（window.systemCustomFields）が読み込まれていない場合の安全ガード（最大5回・計0.5秒リトライ）
+    if ((!window.systemCustomFields || !window.systemCustomFields[systemId]) && retryCount < 5) {
+        console.warn(`⏳ [DEBUG] システム定義の読み込み待ち中... (リトライ ${retryCount + 1}/5)`);
+        setTimeout(() => {
+            handleSystemChangeInModal(existingCustomValues, forcedSystemId, retryCount + 1);
+        }, 100);
+        return;
+    }
+
     container.innerHTML = '';
 
     const fields = window.systemCustomFields?.[systemId];
-    if (!fields) return;
+    if (!fields) {
+        console.warn(`⚠️ [DEBUG] システムID "${systemId}" のカスタムフィールド定義が見つかりませんでした。`, window.systemCustomFields);
+        return;
+    }
 
     // 1. ステータス項目（数値：基本値 / 成長値）の描画
     if (fields.status && fields.status.length > 0) {
@@ -3116,7 +3136,6 @@ function handleSystemChangeInModal(existingCustomValues = {}, forcedSystemId = n
             const baseId = `custom_status_base_${st.id}`;
             const growthId = `custom_status_growth_${st.id}`;
             
-            // 💡 既存データの取得（オブジェクト形式または旧形式の数値対応）
             const valObj = existingCustomValues[st.id];
             let baseVal = '';
             let growthVal = '';
@@ -3125,7 +3144,7 @@ function handleSystemChangeInModal(existingCustomValues = {}, forcedSystemId = n
                 baseVal = valObj.base !== undefined ? valObj.base : '';
                 growthVal = valObj.growth !== undefined ? valObj.growth : '';
             } else if (valObj !== undefined && valObj !== '') {
-                baseVal = valObj; // 旧形式の単一数値があれば基本値として扱う
+                baseVal = valObj; 
             }
 
             div.className = 'bg-stone-50/70 p-2.5 rounded-xl border border-stone-200/80 space-y-1.5';
@@ -3161,7 +3180,7 @@ function handleSystemChangeInModal(existingCustomValues = {}, forcedSystemId = n
         container.appendChild(statusWrapper);
     }
 
-    // 2. カスタムテキスト項目の描画（ラベルとテキストエリアを綺麗に分離）
+    // 2. カスタムテキスト項目の描画
     if (fields.text && fields.text.length > 0) {
         const textWrapper = document.createElement('div');
         textWrapper.className = 'space-y-2.5 mt-4 pt-3 border-t border-stone-200/60';
