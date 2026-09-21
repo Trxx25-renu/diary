@@ -4068,10 +4068,9 @@ function exportCharacterJson(characterId) {
 window.exportCharacterJson = exportCharacterJson;
 
 // ==========================================
-// 🔗 リンク入力エリアを描画する関数（修正完全版）
+// 🔗 リンク入力エリアを描画する関数
 // ==========================================
 function renderCharacterLinksEditor() {
-    // 🌟 HTML側のID「characterLinksEditorContainer」に合わせる
     const container = document.getElementById('characterLinksEditorContainer');
     if (!container) return;
 
@@ -4089,13 +4088,13 @@ function renderCharacterLinksEditor() {
         
         row.innerHTML = `
             <!-- ラベル入力欄 -->
-            <input type="text" placeholder="ラベル (例: キャラシ)" value="${escapeHtml(link.label || '')}" 
+            <input type="text" placeholder="ラベル (例: キャラシ)" value="${typeof escapeHtml === 'function' ? escapeHtml(link.label || '') : (link.label || '')}" 
                 class="w-full sm:w-1/3 px-3 py-1.5 text-xs sm:text-sm border border-stone-300 rounded-xl bg-white focus:outline-none focus:border-stone-400"
                 oninput="window.editingCharacterLinks[${index}].label = this.value">
             
             <!-- URLと削除ボタンを囲むラッパー -->
             <div class="flex items-center gap-2 w-full sm:flex-1 min-w-0">
-                <input type="url" placeholder="https://..." value="${escapeHtml(link.url || '')}" 
+                <input type="url" placeholder="https://..." value="${typeof escapeHtml === 'function' ? escapeHtml(link.url || '') : (link.url || '')}" 
                     class="flex-1 min-w-0 px-3 py-1.5 text-xs sm:text-sm border border-stone-300 rounded-xl bg-white focus:outline-none focus:border-stone-400"
                     oninput="window.editingCharacterLinks[${index}].url = this.value">
                 <button type="button" onclick="removeEditingLink(${index})" 
@@ -4108,6 +4107,30 @@ function renderCharacterLinksEditor() {
     });
 }
 window.renderCharacterLinksEditor = renderCharacterLinksEditor;
+
+
+// ==========================================
+// ➕ リンク行を追加する関数
+// ==========================================
+function addCharacterLinkField() {
+    if (!window.editingCharacterLinks) {
+        window.editingCharacterLinks = [];
+    }
+    window.editingCharacterLinks.push({ label: '', url: '' });
+    renderCharacterLinksEditor();
+}
+window.addCharacterLinkField = addCharacterLinkField;
+
+
+// ==========================================
+// 🗑️ 指定したインデックスのリンクを削除する関数（名前を完全統一）
+// ==========================================
+function removeEditingLink(index) {
+    if (!window.editingCharacterLinks) return;
+    window.editingCharacterLinks.splice(index, 1);
+    renderCharacterLinksEditor();
+}
+window.removeEditingLink = removeEditingLink;
 
 // ==========================================
 // 💡 編集モーダル内：リンクの追加・削除用関数（ここに追加！）
