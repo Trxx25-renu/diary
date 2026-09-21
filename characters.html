@@ -2991,6 +2991,7 @@ function openEditCharacterModal(characterId) {
     }
 }
 window.openEditCharacterModal = openEditCharacterModal;
+    
 // ==========================================
 // 💡 HP設定（全体設定）を保存する関数（管理者専用ガード・グローバル関数対応版）
 // ==========================================
@@ -4331,7 +4332,7 @@ window.importCharactersJSON = importCharactersJSON;
             <button type="button" onclick="closeCharacterModal()" class="flex-1 py-3 bg-stone-200 hover:bg-stone-300 text-stone-800 text-sm font-bold rounded-xl transition-colors">
                 キャンセル
             </button>
-            <button type="button" onclick="saveCharacterFromModal()" class="flex-1 py-3 bg-rose-600 hover:bg-rose-700 text-white text-sm font-bold rounded-xl transition-colors shadow-sm">
+            <button type="button" onclick="saveCharacter(event)" class="flex-1 py-3 bg-rose-600 hover:bg-rose-700 text-white text-sm font-bold rounded-xl transition-colors shadow-sm">
                 保存する
             </button>
         </div>
