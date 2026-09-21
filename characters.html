@@ -2858,145 +2858,163 @@ window.initAutoResizeTextareas = initAutoResizeTextareas;
 
 
 // ==========================================
-// 💡 編集を開く関数（データ＆システム定義の非同期ロード完全対応・安全版）
+// 💡 編集を開く関数（エラー完全ガード＆強制オープン版）
 // ==========================================
 function openEditCharacterModal(characterId, retryCount = 0) {
-    // 🌟 先に編集対象のIDをグローバル変数に確実にセットする（JSON出力対策）
-    window.editingCharacterId = characterId;
+    try {
+        console.log("🔍 [DEBUG openEdit] 呼び出し成功 ID:", characterId);
 
-    const ch = window.characters?.find(c => String(c.id) === String(characterId));
-    
-    // 🛑 まだキャラクターデータがグローバル配列に読み込まれていない場合の安全ガード（最大5回・計0.5秒リトライ）
-    if (!ch && retryCount < 5) {
-        console.warn(`⏳ [DEBUG] キャラクターデータ読み込み待ち中... (リトライ ${retryCount + 1}/5):`, characterId);
-        setTimeout(() => {
-            openEditCharacterModal(characterId, retryCount + 1);
-        }, 100);
-        return;
-    }
-
-    if (!ch) {
-        if (typeof showToast === 'function') {
-            showToast('キャラクターが見つかりませんでした', 'error');
-        } else {
-            alert('キャラクターが見つかりませんでした');
-        }
-        return; 
-    }
-
-    // 1. システムの選択肢を先に生成
-    if (typeof renderCharacterModalSystemSelect === 'function') {
-        renderCharacterModalSystemSelect();
-    }
-
-    // 基本フォーム要素へ値をセット
-    const nameInput = document.getElementById('charName');
-    const nameKanaInput = document.getElementById('charNameKana');
-    const epithetInput = document.getElementById('charEpithet');
-    const epithetKanaInput = document.getElementById('charEpithetKana');
-    const ageInput = document.getElementById('charAge');
-    const genderInput = document.getElementById('charGender');
-    const birthdateInput = document.getElementById('charBirthdate');
-    const occupationInput = document.getElementById('charOccupation');
-    const colorInput = document.getElementById('charThemeColor');
-    const sheetUrlInput = document.getElementById('charSheetUrl');
-    const systemInput = document.getElementById('charSystemSelect');
-
-    // 設定／メモ と 秘匿メモの入力欄を取得して値をセット
-    const memoInput = document.getElementById('charMemo');
-    const secretInput = document.getElementById('charSecret');
-
-    if (nameInput) nameInput.value = ch.name || '';
-    if (nameKanaInput) nameKanaInput.value = ch.nameKana || '';
-    if (epithetInput) epithetInput.value = ch.epithet || '';
-    if (epithetKanaInput) epithetKanaInput.value = ch.epithetKana || '';
-    if (ageInput) ageInput.value = ch.age || '';
-    if (genderInput) genderInput.value = ch.gender || '';
-    if (birthdateInput) birthdateInput.value = ch.birthdate || '';
-    if (occupationInput) occupationInput.value = ch.occupation || '';
-    if (colorInput) colorInput.value = ch.themeColor || '#292524';
-    if (sheetUrlInput) sheetUrlInput.value = ch.sheetUrl || '';
-
-    if (memoInput) memoInput.value = ch.memo || '';
-    if (secretInput) secretInput.value = ch.secret || '';
-
-    // 🔗 複数リンク（links）の復元と初期化・レンダリング
-    if (ch.links && Array.isArray(ch.links)) {
-        window.editingCharacterLinks = JSON.parse(JSON.stringify(ch.links));
-    } else if (ch.sheetUrl) {
-        window.editingCharacterLinks = [{ label: 'キャラクターシート', url: ch.sheetUrl }];
-    } else {
-        window.editingCharacterLinks = [];
-    }
-
-    if (typeof renderCharacterLinksEditor === 'function') {
-        renderCharacterLinksEditor();
-    }
-
-    // 🌟 システムIDを確実に特定（systemId と system の両方に対応）
-    const targetSystemId = ch.systemId || ch.system || '';
-    
-    if (systemInput) {
-        systemInput.disabled = false;
-        systemInput.classList.remove('opacity-60', 'pointer-events-none', 'bg-stone-100');
-        systemInput.value = targetSystemId;
-    }
-
-    // 🌟 カスタム値の取得（customValues と customFields の両方に対応）
-    const targetCustomValues = ch.customValues || ch.customFields || {};
-
-    // 🌟 システム変更・項目描画関数を呼び出す（強制システムIDを渡す）
-    if (typeof handleSystemChangeInModal === 'function') {
-        handleSystemChangeInModal(targetCustomValues, targetSystemId);
-    }
-
-    // 🌟 描画が完了したあとに、システム選択を変更不可（ロック）にする
-    if (systemInput) {
-        systemInput.value = targetSystemId;
-        systemInput.disabled = true;
-        systemInput.classList.add('opacity-60', 'pointer-events-none', 'bg-stone-100');
-    }
-
-    // 💡 統合された画像管理オブジェクトの復元
-    if (ch.images) {
-        window.editingCharacterImages = {
-            thumb: ch.images.thumb || (ch.thumbnail ? [{ url: ch.thumbnail, name: '一覧アイコン', uploadedAt: Date.now() }] : []),
-            avatar: ch.images.avatar || (ch.avatar ? [{ url: ch.avatar, name: '立ち絵', uploadedAt: Date.now() }] : []),
-            base: ch.images.base || [],
-            combat: ch.images.combat || [],
-            sd: ch.images.sd || [],
-            doodle: ch.images.doodle || []
-        };
-    } else {
-        window.editingCharacterImages = {
-            thumb: ch.thumbnail ? [{ url: ch.thumbnail, name: '一覧アイコン', uploadedAt: Date.now() }] : [],
-            avatar: ch.avatar ? [{ url: ch.avatar, name: '立ち絵', uploadedAt: Date.now() }] : [],
-            base: [],
-            combat: [],
-            sd: [],
-            doodle: []
-        };
-    }
-
-    if (typeof switchImageCategory === 'function') {
-        switchImageCategory('thumb');
-    }
-
-    if (typeof handleThemeColorInput === 'function') {
-        handleThemeColorInput(ch.themeColor || '#292524');
-    }
-
-    const modalTitle = document.querySelector('#characterModal h3 span');
-    if (modalTitle) modalTitle.textContent = 'キャラクター編集';
-
-    const modal = document.getElementById('characterModal');
-    if (modal) {
-        modal.classList.remove('hidden');
+        // 1. まず最初に、前回のゴミデータや入力欄の残骸を完全にクリア
+        const container = document.getElementById('dynamicCustomFieldsContainer');
+        if (container) container.innerHTML = '';
         
-        // 🌟 編集モーダルを開いたときにテキストエリアの高さを一括調整
-        if (typeof initAutoResizeTextareas === 'function') {
-            initAutoResizeTextareas();
+        const systemInput = document.getElementById('charSystemSelect');
+        if (systemInput) {
+            systemInput.disabled = false;
+            systemInput.classList.remove('opacity-60', 'pointer-events-none', 'bg-stone-100');
+            systemInput.value = '';
         }
+
+        window.editingCharacterId = characterId;
+
+        const ch = window.characters?.find(c => String(c.id) === String(characterId));
+        
+        if (!ch && retryCount < 5) {
+            console.warn(`⏳ [DEBUG] キャラクターデータ読み込み待ち中... (リトライ ${retryCount + 1}/5):`, characterId);
+            setTimeout(() => {
+                openEditCharacterModal(characterId, retryCount + 1);
+            }, 100);
+            return;
+        }
+
+        if (!ch) {
+            console.error("❌ [DEBUG openEdit] キャラクターデータが見つかりませんでした:", characterId);
+            if (typeof showToast === 'function') {
+                showToast('キャラクターが見つかりませんでした', 'error');
+            } else {
+                alert('キャラクターが見つかりませんでした');
+            }
+            return; 
+        }
+
+        // 2. システムの選択肢を生成
+        if (typeof renderCharacterModalSystemSelect === 'function') {
+            renderCharacterModalSystemSelect();
+        } else {
+            console.warn("⚠️ renderCharacterModalSystemSelect が定義されていません");
+        }
+
+        // 基本フォーム要素へ値をセット
+        const nameInput = document.getElementById('charName');
+        const nameKanaInput = document.getElementById('charNameKana');
+        const epithetInput = document.getElementById('charEpithet');
+        const epithetKanaInput = document.getElementById('charEpithetKana');
+        const ageInput = document.getElementById('charAge');
+        const genderInput = document.getElementById('charGender');
+        const birthdateInput = document.getElementById('charBirthdate');
+        const occupationInput = document.getElementById('charOccupation');
+        const colorInput = document.getElementById('charThemeColor');
+        const sheetUrlInput = document.getElementById('charSheetUrl');
+        const memoInput = document.getElementById('charMemo');
+        const secretInput = document.getElementById('charSecret');
+
+        if (nameInput) nameInput.value = ch.name || '';
+        if (nameKanaInput) nameKanaInput.value = ch.nameKana || '';
+        if (epithetInput) epithetInput.value = ch.epithet || '';
+        if (epithetKanaInput) epithetKanaInput.value = ch.epithetKana || '';
+        if (ageInput) ageInput.value = ch.age || '';
+        if (genderInput) genderInput.value = ch.gender || '';
+        if (birthdateInput) birthdateInput.value = ch.birthdate || '';
+        if (occupationInput) occupationInput.value = ch.occupation || '';
+        if (colorInput) colorInput.value = ch.themeColor || '#292524';
+        if (sheetUrlInput) sheetUrlInput.value = ch.sheetUrl || '';
+        if (memoInput) memoInput.value = ch.memo || '';
+        if (secretInput) secretInput.value = ch.secret || '';
+
+        // 🔗 複数リンク（links）の復元
+        if (ch.links && Array.isArray(ch.links)) {
+            window.editingCharacterLinks = JSON.parse(JSON.stringify(ch.links));
+        } else if (ch.sheetUrl) {
+            window.editingCharacterLinks = [{ label: 'キャラクターシート', url: ch.sheetUrl }];
+        } else {
+            window.editingCharacterLinks = [];
+        }
+
+        if (typeof renderCharacterLinksEditor === 'function') {
+            renderCharacterLinksEditor();
+        }
+
+        // 🌟 システムIDを確実に特定
+        const targetSystemId = ch.systemId || ch.system || '';
+        if (systemInput) {
+            systemInput.value = targetSystemId;
+        }
+
+        // 🌟 カスタム値の取得
+        const targetCustomValues = ch.customValues || ch.customFields || {};
+
+        // 🌟 システム変更・項目描画関数を呼び出す
+        if (typeof handleSystemChangeInModal === 'function') {
+            handleSystemChangeInModal(targetCustomValues, targetSystemId);
+        } else {
+            console.warn("⚠️ handleSystemChangeInModal が定義されていません");
+        }
+
+        // 🌟 描画完了後にシステム選択をロック
+        if (systemInput) {
+            systemInput.value = targetSystemId;
+            systemInput.disabled = true;
+            systemInput.classList.add('opacity-60', 'pointer-events-none', 'bg-stone-100');
+        }
+
+        // 💡 画像管理オブジェクトの復元
+        if (ch.images) {
+            window.editingCharacterImages = {
+                thumb: ch.images.thumb || (ch.thumbnail ? [{ url: ch.thumbnail, name: '一覧アイコン', uploadedAt: Date.now() }] : []),
+                avatar: ch.images.avatar || (ch.avatar ? [{ url: ch.avatar, name: '立ち絵', uploadedAt: Date.now() }] : []),
+                base: ch.images.base || [],
+                combat: ch.images.combat || [],
+                sd: ch.images.sd || [],
+                doodle: ch.images.doodle || []
+            };
+        } else {
+            window.editingCharacterImages = {
+                thumb: ch.thumbnail ? [{ url: ch.thumbnail, name: '一覧アイコン', uploadedAt: Date.now() }] : [],
+                avatar: ch.avatar ? [{ url: ch.avatar, name: '立ち絵', uploadedAt: Date.now() }] : [],
+                base: [],
+                combat: [],
+                sd: [],
+                doodle: []
+            };
+        }
+
+        if (typeof switchImageCategory === 'function') {
+            switchImageCategory('thumb');
+        }
+
+        if (typeof handleThemeColorInput === 'function') {
+            handleThemeColorInput(ch.themeColor || '#292524');
+        }
+
+        const modalTitle = document.querySelector('#characterModal h3 span');
+        if (modalTitle) modalTitle.textContent = 'キャラクター編集';
+
+        // 🌟 最後に必ずモーダルを表示する
+        const modal = document.getElementById('characterModal');
+        if (modal) {
+            modal.classList.remove('hidden');
+            if (typeof initAutoResizeTextareas === 'function') {
+                initAutoResizeTextareas();
+            }
+        } else {
+            console.error("❌ #characterModal 要素が見つかりません！");
+        }
+
+    } catch (err) {
+        console.error("❌ openEditCharacterModal 内部で致命的なエラーが発生しました:", err);
+        // エラーが起きても可能な限りモーダルを開く試み
+        const modal = document.getElementById('characterModal');
+        if (modal) modal.classList.remove('hidden');
     }
 }
 window.openEditCharacterModal = openEditCharacterModal;
