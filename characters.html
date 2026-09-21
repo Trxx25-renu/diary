@@ -2013,7 +2013,7 @@ function verifyPasscode() {
 window.verifyPasscode = verifyPasscode;
 
 // ==========================================
-// 🔑 パスコード入力モーダルを開く（確実表示版）
+// 🔑 パスコード入力モーダルを開く（完全強制表示版）
 // ==========================================
 function openAuthModal() {
     const modal = document.getElementById('authModal');
@@ -2037,14 +2037,24 @@ function openAuthModal() {
         return;
     }
 
-    // クラスを整えつつ、インラインスタイルで確実に可視化・flex化する
+    // ★ ゼロになっていたサイズと位置を強制的に画面いっぱいに固定する
+    modal.style.position = 'fixed';
+    modal.style.top = '0';
+    modal.style.left = '0';
+    modal.style.width = '100vw';
+    modal.style.height = '100vh';
+    modal.style.display = 'flex';
+    modal.style.alignItems = 'flex-start';
+    modal.style.justifyContent = 'center';
+    modal.style.zIndex = '99999';
+
+    // クラスの切り替え
     modal.classList.remove('opacity-0', 'pointer-events-none');
     modal.classList.add('opacity-100');
-    modal.style.display = 'flex';
     modal.style.opacity = '1';
     modal.style.pointerEvents = 'auto';
 
-    // 内部カード
+    // 内部の白いカード
     const innerDiv = modal.firstElementChild;
     if (innerDiv) {
         innerDiv.classList.remove('scale-95');
@@ -2053,6 +2063,7 @@ function openAuthModal() {
         innerDiv.style.opacity = '1';
     }
 
+    // 入力欄にフォーカス
     const passInput = document.getElementById('inputPasscode') || modal.querySelector('input');
     if (passInput) {
         passInput.value = '';
