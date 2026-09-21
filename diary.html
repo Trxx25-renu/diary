@@ -333,20 +333,23 @@ function navigateTo(view, param = null) {
     window.currentView = view;
 
     // 日記アプリ用のHTMLのIDを取得
-    const viewMonths = document.getElementById('view-months');     // 第1階層：月別アルバム
-    const viewGallery = document.getElementById('view-gallery');   // 第2階層：カレンダー・ギャラリー
-    const viewDetail = document.getElementById('view-detail');     // 詳細画面（もしあれば）
+    const viewMonths = document.getElementById('view-months');    // 第1階層：月別アルバム
+    const viewGallery = document.getElementById('view-gallery');  // 第2階層：カレンダー・ギャラリー
+    const viewDetail = document.getElementById('view-detail');    // 詳細画面（もしあれば）
+    const searchResultsArea = document.getElementById('searchResultsArea'); // 🔍 検索結果エリア
     const breadcrumbs = document.getElementById('breadcrumbs');
     const breadcrumbAction = document.getElementById('breadcrumbAction');
 
-    // すべてのビューを一度非表示にする
+    // すべてのビューおよび検索結果エリアを一度非表示にする
     if (viewMonths) viewMonths.classList.add('hidden');
     if (viewGallery) viewGallery.classList.add('hidden');
     if (viewDetail) viewDetail.classList.add('hidden');
+    if (searchResultsArea) searchResultsArea.classList.add('hidden'); // 🚀 検索結果もここで必ず隠す！
 
     // 1. 第1階層：月別アルバム一覧画面
     if (view === 'months') {
         if (viewMonths) viewMonths.classList.remove('hidden');
+        if (searchResultsArea) searchResultsArea.classList.add('hidden'); // 🚀 月一覧に戻った時も検索結果を確実に隠す
         
         // パンくずの更新
         if (breadcrumbs) {
@@ -1496,12 +1499,29 @@ window.renderGridPhotoLayout = renderGridPhotoLayout;
         }
         window.navigateDetail = navigateDetail;
         
-       function setWeatherFilter(weatherKey) {
-        window.selectedWeatherFilter = weatherKey;
-        renderWeatherFilterButtons();
-        handleSearch();
-    }
-    window.setWeatherFilter = setWeatherFilter;
+function setWeatherFilter(weatherKey) {
+            window.selectedWeatherFilter = weatherKey;
+            renderWeatherFilterButtons();
+            
+            // 🚀 フィルター（タグ）が選ばれたときの表示・非表示の切り替え
+            const viewMonths = document.getElementById('view-months');
+            const searchResultsArea = document.getElementById('searchResultsArea');
+
+            if (weatherKey === 'all') {
+                // 「すべて」が選ばれた場合は、検索結果を隠して月別アルバム（または元のビュー）に戻す
+                if (searchResultsArea) searchResultsArea.classList.add('hidden');
+                // もし現在のビューが months なら月別アルバムを表示する
+                if (window.currentView === 'months' && viewMonths) {
+                    viewMonths.classList.remove('hidden');
+                }
+            } else {
+                // 個別のタグが選ばれて絞り込む場合は、月別アルバムを隠して検索結果を表示する
+                if (viewMonths) viewMonths.classList.add('hidden');
+            }
+
+            handleSearch();
+        }
+        window.setWeatherFilter = setWeatherFilter;
 
     function clearSearchInput() {
         const el = document.getElementById('searchInput');
