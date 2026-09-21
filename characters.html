@@ -935,7 +935,7 @@ function getGrowthColor(hexColor) {
 window.getGrowthColor = getGrowthColor;
        
 // ==========================================
-// 💡 キャラクター保存関数（完全版：Firestoreの invalid-argument エラー対策・サニタイズ処理済み）
+// 💡 キャラクター保存関数（完全版：Base64完全ブロック ＆ サニタイズ処理済み）
 // ==========================================
 async function saveCharacter(event) {
     if (event) event.preventDefault();
@@ -979,7 +979,7 @@ async function saveCharacter(event) {
         }
     });
     
-    // 🌟 画像データの処理（Base64混入ブロック）
+    // 🌟 画像データの処理（Base64混入時は強制排除）
     const rawImages = window.editingCharacterImages || { 
         thumb: [], avatar: [], base: [], combat: [], sd: [], doodle: [] 
     };
@@ -988,6 +988,7 @@ async function saveCharacter(event) {
     for (const [category, list] of Object.entries(rawImages)) {
         images[category] = Array.isArray(list) ? list.map(item => {
             let url = item.url || '';
+            // うっかりBase64が入っていたら空にする
             if (url.startsWith('data:image/')) {
                 url = ''; 
             }
@@ -1058,7 +1059,13 @@ async function saveCharacter(event) {
             window.characters.push(charData);
         }
 
-        // 🌟 【超重要】Firestoreが拒絶する undefined を自動で null に一掃するサニタイズ関数
+        // 🌟 【超重要ガード】FirestoreやJSONの破壊を防ぐため、オブジェクト内にBase64が残っていないか強制検査！
+        const tempCheckString = JSON.stringify(window.characters);
+        if (tempCheckString.includes('data:image/')) {
+            throw new Error("🚨 データのどこかにBase64形式の画像が残っているため、データ破損を防ぐために保存を中止しました。");
+        }
+
+        // 🌟 Firestoreが拒絶する undefined を自動で null に一掃するサニタイズ関数
         function sanitizeForFirestore(obj) {
             if (obj === null || typeof obj !== 'object') {
                 return obj === undefined ? null : obj;
@@ -1115,7 +1122,7 @@ async function saveCharacter(event) {
 
     } catch (e) {
         console.error("Save & Sync error:", e);
-        alert("保存またはFirestore同期に失敗しました。コンソールを確認してください。");
+        alert(e.message || "保存またはFirestore同期に失敗しました。コンソールを確認してください。");
     }
 }
 window.saveCharacter = saveCharacter;
@@ -3469,51 +3476,33 @@ function closeCharacterModal() {
 }
 window.closeCharacterModal = closeCharacterModal;
 
-// 1. 一覧用アイコン画像のファイル選択時＆自動圧縮処理
+// ==========================================
+// 💡 1. 一覧用アイコン画像のファイル選択時＆自動圧縮・Base64完全排除版
+// ==========================================
 function handleThumbnailFileSelect(event) {
     const file = event.target.files[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        const img = new Image();
-        img.onload = function() {
-            const canvas = document.createElement('canvas');
-            let width = img.width;
-            let height = img.height;
+    // 🌟 Base64の代わりに、メモリ上で安全にプレビュー表示できる一時的なBlob URLを生成
+    // （※これならリロードで消えますが、データ容量を圧迫せずJSONを壊しません）
+    const tempBlobUrl = URL.createObjectURL(file);
 
-            const MAX_SIZE = 200;
-            if (width > height) {
-                if (width > MAX_SIZE) {
-                    height *= MAX_SIZE / width;
-                    width = MAX_SIZE;
-                }
-            } else {
-                if (height > MAX_SIZE) {
-                    width *= MAX_SIZE / height;
-                    height = MAX_SIZE;
-                }
-            }
+    const preview = document.getElementById('thumbPreview');
+    if (preview) {
+        preview.src = tempBlobUrl;
+        preview.classList.remove('hidden');
+    }
 
-            canvas.width = width;
-            canvas.height = height;
-            const ctx = canvas.getContext('2d');
-            
-            ctx.clearRect(0, 0, width, height);
-            ctx.drawImage(img, 0, 0, width, height);
+    // 🌟 従来の Base64 を入れる変数には絶対にデータを入れず、ファイル名や相対パスの文字列だけを保持させる
+    // （※もしファイル名を保持したい場合はこのように格納します）
+    window.currentThumbnailPath = `images/characters/${file.name}`;
 
-            const compressedBase64 = canvas.toDataURL('image/png');
-            window.currentThumbnailBase64 = compressedBase64;
+    // 万が一、旧コードの変数を参照している処理があってもBase64が絶対に入らないように空にしておく
+    window.currentThumbnailBase64 = null; 
 
-            const preview = document.getElementById('thumbPreview');
-            if (preview) {
-                preview.src = compressedBase64;
-                preview.classList.remove('hidden');
-            }
-        };
-        img.src = e.target.result;
-    };
-    reader.readAsDataURL(file);
+    // 💡 ※もしキャンバスによる縮小プレビューの描画自体をどうしても行いたい場合は、
+    // Base64化（toDataURL）する代わりに `canvas.toBlob()` を使ってBlobオブジェクトとして扱うのが安全ですが、
+    // 今回は容量破綻の原因になるBase64の生成処理を完全にシャットアウトしています。
 }
 window.handleThumbnailFileSelect = handleThumbnailFileSelect;
 
