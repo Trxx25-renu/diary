@@ -1996,6 +1996,45 @@ function verifyPasscode() {
 window.verifyPasscode = verifyPasscode;
 
 // ==========================================
+// 🔓 ログアウト処理
+// ==========================================
+function logoutAdmin() {
+    if (confirm('管理者モードからログアウトしますか？')) {
+        window.isAdmin = false;
+        sessionStorage.removeItem('isAdminSession');
+        
+        if (window.GIST_CONFIG) {
+            window.GIST_CONFIG.token = '';
+        }
+        
+        if (typeof updateAdminUI === 'function') {
+            updateAdminUI();
+        }
+        
+        if (typeof showToast === 'function') {
+            showToast('ログアウトしました', 'info');
+        } else {
+            console.log('ログアウトしました');
+        }
+    }
+}
+window.logoutAdmin = logoutAdmin;
+
+// ==========================================
+// 🔑 ヘッダーの鍵アイコンが押されたときの分岐
+// ==========================================
+function handleHeaderKeyClick() {
+    if (window.isAdmin) {
+        // すでにログイン中ならログアウト処理を実行
+        logoutAdmin();
+    } else {
+        // ログインしていなければパスコード入力モーダルを開く
+        openAuthModal();
+    }
+}
+window.handleHeaderKeyClick = handleHeaderKeyClick;
+
+// ==========================================
 // 🔑 パスコード入力モーダルを開く
 // ==========================================
 function openAuthModal() {
