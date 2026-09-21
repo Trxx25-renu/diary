@@ -240,7 +240,7 @@ try {
             const appleIcon = document.getElementById('appleTouchIcon');
             if (appleIcon) appleIcon.href = window.siteConfig.logoImageUrl;
 
-            const favicon = document.getElementById('faviconIcon');
+const favicon = document.getElementById('faviconIcon');
             if (favicon) favicon.href = window.siteConfig.logoImageUrl;
         }
 
@@ -284,7 +284,10 @@ try {
         console.error("❌ 初期化処理でエラーが発生しました:", e);
     }
 
-    // 🌟 【追加】画面を表示する前に必ず月別アルバムのカードを生成する
+    // 🚀 読み込み完了のフラグをここで立てる
+    window.isDataLoaded = true;
+
+    // 🌟 画面を表示する前に必ず月別アルバムのカードを生成する
     if (typeof renderMonthFolders === 'function') {
         renderMonthFolders();
     }
