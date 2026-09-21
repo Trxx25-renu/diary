@@ -2019,7 +2019,7 @@ function verifyPasscode() {
 window.verifyPasscode = verifyPasscode;
 
 // ==========================================
-// 🔑 パスコード入力モーダルを開く
+// 🔑 パスコード入力を開く（確実に強制表示させる決定版）
 // ==========================================
 function openAuthModal() {
     const modal = document.getElementById('authModal');
@@ -2028,7 +2028,8 @@ function openAuthModal() {
     const err = document.getElementById('authErrorMsg');
 
     if (!modal) {
-        console.error("❌ #authModal が見つかりません");
+        console.error("❌ #authModal が見つかりません。HTMLにIDが正しくあるか確認してください。");
+        alert("エラー: ログインモーダルが見つかりません");
         return;
     }
 
@@ -2043,7 +2044,16 @@ function openAuthModal() {
 
     // すでに管理者（ログイン中）の場合はログアウト確認へ分岐
     if (window.isAdmin) {
-        handleHeaderKeyClick();
+        if (typeof logoutAdmin === 'function') {
+            logoutAdmin();
+        } else {
+            if (confirm('管理者モードからログアウトしますか？')) {
+                window.isAdmin = false;
+                sessionStorage.removeItem('isAdminSession');
+                if (window.GIST_CONFIG) window.GIST_CONFIG.token = '';
+                if (typeof updateAdminUI === 'function') updateAdminUI();
+            }
+        }
         return;
     }
 
@@ -2056,21 +2066,24 @@ function openAuthModal() {
         if (desc) desc.textContent = 'キャラクターの追加や設定変更をするにはパスコードが必要です。';
     }
 
-    // モーダルを表示（ユーザー様のHTML仕様：opacityとpointer-eventsの切り替え）
+    // 💡 クラスの切り替えに加え、確実に画面に出るようインラインスタイルでも強制表示させる
     modal.classList.remove('opacity-0', 'pointer-events-none');
     modal.classList.add('opacity-100');
+    modal.style.display = 'flex';
+    modal.style.opacity = '1';
+    modal.style.pointerEvents = 'auto';
 
     // 内部カードの拡大アニメーション
     const innerDiv = modal.querySelector('.max-w-sm') || modal.querySelector('div');
     if (innerDiv) {
         innerDiv.classList.remove('scale-95');
         innerDiv.classList.add('scale-100');
+        innerDiv.style.transform = 'scale(1)';
+        innerDiv.style.opacity = '1';
     }
 
     if (passInput) {
         setTimeout(() => passInput.focus(), 50);
-    } else {
-        console.warn("⚠️ パスコード入力用の <input> 要素が見つかりませんでした");
     }
 }
 window.openAuthModal = openAuthModal;
@@ -2083,11 +2096,16 @@ function closeAuthModal() {
     if (modal) {
         modal.classList.remove('opacity-100');
         modal.classList.add('opacity-0', 'pointer-events-none');
+        modal.style.display = 'none';
+        modal.style.opacity = '0';
+        modal.style.pointerEvents = 'none';
         
         const innerDiv = modal.querySelector('.max-w-sm') || modal.querySelector('div');
         if (innerDiv) {
             innerDiv.classList.remove('scale-100');
             innerDiv.classList.add('scale-95');
+            innerDiv.style.transform = 'scale(0.95)';
+            innerDiv.style.opacity = '0';
         }
     }
 }
