@@ -3506,51 +3506,43 @@ function handleThumbnailFileSelect(event) {
 }
 window.handleThumbnailFileSelect = handleThumbnailFileSelect;
 
-// 2. 立ち絵画像のファイル選択時＆自動圧縮処理
+// ==========================================
+// 💡 2. 立ち絵画像のファイル選択時（ガビガビ解消・Base64完全排除版）
+// ==========================================
 function handleAvatarFileSelect(event) {
     const file = event.target.files[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        const img = new Image();
-        img.onload = function() {
-            const canvas = document.createElement('canvas');
-            let width = img.width;
-            let height = img.height;
+    // 🌟 画質を落とすキャンバス縮小やBase64変換を一切やめ、
+    // ブラウザ内で原画のまま綺麗にプレビューできる一時的なBlob URLを生成する
+    const tempBlobUrl = URL.createObjectURL(file);
 
-            const MAX_SIZE = 800;
-            if (width > height) {
-                if (width > MAX_SIZE) {
-                    height *= MAX_SIZE / width;
-                    width = MAX_SIZE;
-                }
-            } else {
-                if (height > MAX_SIZE) {
-                    width *= MAX_SIZE / height;
-                    height = MAX_SIZE;
-                }
-            }
+    const preview = document.getElementById('avatarPreview');
+    if (preview) {
+        preview.src = tempBlobUrl;
+        preview.classList.remove('hidden');
+    }
 
-            canvas.width = width;
-            canvas.height = height;
-            const ctx = canvas.getContext('2d');
-            
-            ctx.clearRect(0, 0, width, height);
-            ctx.drawImage(img, 0, 0, width, height);
+    // 🌟 保存データには「ファイル名」または「相対パス」の文字列だけを持たせる
+    // （※ これによりJSONやFirestoreが容量オーバーで壊れるのを完全に防ぎます）
+    const imagePath = `images/characters/${file.name}`;
+    
+    // もし window.editingCharacterImages などの配列構造にデータを格納している場合：
+    if (!window.editingCharacterImages) {
+        window.editingCharacterImages = { thumb: [], avatar: [], base: [], combat: [], sd: [], doodle: [] };
+    }
+    if (!window.editingCharacterImages.avatar) {
+        window.editingCharacterImages.avatar = [];
+    }
+    
+    // パスをデータとして保持（先頭にセット、または追加）
+    window.editingCharacterImages.avatar = [{
+        url: imagePath,
+        name: file.name
+    }];
 
-            const compressedBase64 = canvas.toDataURL('image/png');
-            window.currentAvatarBase64 = compressedBase64;
-
-            const preview = document.getElementById('avatarPreview');
-            if (preview) {
-                preview.src = compressedBase64;
-                preview.classList.remove('hidden');
-            }
-        };
-        img.src = e.target.result;
-    };
-    reader.readAsDataURL(file);
+    // 旧コードの変数を参照している処理対策（Base64を絶対に入れない）
+    window.currentAvatarBase64 = null;
 }
 window.handleAvatarFileSelect = handleAvatarFileSelect;
 
