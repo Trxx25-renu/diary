@@ -1862,7 +1862,9 @@ window.closeConfirmModal = function() {
     }
 };
 
+// ==========================================
 // 🛡️ 権限チェック＆パスコード・ログアウト制御ロジック
+// ==========================================
 let pendingAction = null;
 
 function checkAdminPermission(callback) {
@@ -1908,9 +1910,9 @@ function updateAdminUI() {
     }
 }
 window.updateAdminUI = updateAdminUI;
-       
+        
 // ==========================================
-// 🔑 ヘッダーの鍵アイコンが押されたときの分岐（※ここだけ書き換え）
+// 🔑 ヘッダーの鍵アイコンが押されたときの分岐
 // ==========================================
 window.handleHeaderKeyClick = function() {
     if (window.isAdmin) {
@@ -1947,7 +1949,6 @@ window.logoutAdmin = function() {
         }
     }
 };
-
 
 // ==========================================
 // 🔑 パスコードを検証してログインする
@@ -2016,7 +2017,7 @@ function verifyPasscode() {
 window.verifyPasscode = verifyPasscode;
 
 // ==========================================
-// 🔑 パスコード入力モーダルを開く
+// 🔑 パスコード入力モーダルを開く（完全修正版）
 // ==========================================
 function openAuthModal() {
     const modal = document.getElementById('authModal');
@@ -2071,13 +2072,27 @@ function openAuthModal() {
         if (desc) desc.textContent = 'キャラクターの追加や設定変更をするにはパスコードが必要です。';
     }
 
-    // 💡 モーダル本体の hidden を解除し、不透明度・ポインター有効化を同時に適用する
+    // 💡 インラインスタイルの残留をクリアし、モーダル本体の hidden を確実に解除して flex 表示に戻す
+    modal.style.display = '';
+    modal.style.position = '';
+    modal.style.top = '';
+    modal.style.left = '';
+    modal.style.transform = '';
+    modal.style.zIndex = '';
+    modal.style.backgroundColor = '';
+    modal.style.padding = '';
+    modal.style.borderRadius = '';
+
     modal.classList.remove('hidden', 'opacity-0', 'pointer-events-none');
-    
+    modal.classList.add('opacity-100');
+
+    // モーダル内部のカード（子div）のアニメーション状態を確実に復元する
     const innerDiv = modal.querySelector('div');
     if (innerDiv) {
-        innerDiv.classList.remove('scale-95');
-        innerDiv.classList.add('scale-100');
+        innerDiv.classList.remove('scale-95', 'opacity-0');
+        innerDiv.classList.add('scale-100', 'opacity-100');
+        innerDiv.style.transform = 'scale(1)';
+        innerDiv.style.opacity = '1';
     }
 
     // 入力欄にフォーカスを当てる
@@ -2096,11 +2111,18 @@ function closeAuthModal() {
     const modal = document.getElementById('authModal');
     if (modal) {
         modal.classList.add('opacity-0', 'pointer-events-none');
+        modal.classList.remove('opacity-100');
         const innerDiv = modal.querySelector('div');
         if (innerDiv) {
-            innerDiv.classList.remove('scale-100');
-            innerDiv.classList.add('scale-95');
+            innerDiv.classList.remove('scale-100', 'opacity-100');
+            innerDiv.classList.add('scale-95', 'opacity-0');
         }
+        // トランジション終了後に確実に hidden を付与して完全に隠す
+        setTimeout(() => {
+            if (modal.classList.contains('opacity-0')) {
+                modal.classList.add('hidden');
+            }
+        }, 200);
     }
 }
 window.closeAuthModal = closeAuthModal;
