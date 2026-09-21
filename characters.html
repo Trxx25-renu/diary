@@ -2858,9 +2858,12 @@ window.initAutoResizeTextareas = initAutoResizeTextareas;
 
 
 // ==========================================
-// 💡 編集を開く関数（エラー完全ガード＆強制オープン版）
+// 💡 編集を開く関数（デバッグアラート＆エラー完全ガード版）
 // ==========================================
 function openEditCharacterModal(characterId, retryCount = 0) {
+    // 💡 確実にボタンが反応しているかテストするためのアラート
+    alert("🔍 編集ボタンがクリックされました！ ID: " + characterId);
+
     try {
         console.log("🔍 [DEBUG openEdit] 呼び出し成功 ID:", characterId);
 
@@ -3012,7 +3015,6 @@ function openEditCharacterModal(characterId, retryCount = 0) {
 
     } catch (err) {
         console.error("❌ openEditCharacterModal 内部で致命的なエラーが発生しました:", err);
-        // エラーが起きても可能な限りモーダルを開く試み
         const modal = document.getElementById('characterModal');
         if (modal) modal.classList.remove('hidden');
     }
