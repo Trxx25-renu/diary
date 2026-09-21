@@ -2990,7 +2990,7 @@ window.initAutoResizeTextareas = initAutoResizeTextareas;
 
 
 // ==========================================
-// 💡 編集を開く関数（詳細パフォーマンス計測版）
+// 💡 編集を開く関数（完全保持版）
 // ==========================================
 function openEditCharacterModal(characterId, retryCount = 0) {
     const t0 = performance.now();
@@ -3038,7 +3038,7 @@ function openEditCharacterModal(characterId, retryCount = 0) {
         }
         console.log(`⏱️ [計測] 2. システム選択肢生成後: ${Math.round(performance.now() - t0)}ms`);
 
-        // 🌟 【修正】選択肢生成の直後にシステムIDを特定し、セレクトボックスへ確実に反映させる
+        // 🌟 システムIDを確実に特定しセレクトボックスへ反映
         const targetSystemId = ch.systemId || ch.system || '';
         if (systemInput) {
             systemInput.value = targetSystemId;
@@ -3087,7 +3087,7 @@ function openEditCharacterModal(characterId, retryCount = 0) {
         }
         console.log(`⏱️ [計測] 4. リンクエディタ描画後: ${Math.round(performance.now() - t0)}ms`);
 
-        // 🌟 【修正】正しいシステムIDが選択された状態で、対応するカスタム項目と値を一発で描画する
+        // 🌟 正しいシステムIDが選択された状態でカスタム項目を描画
         const targetCustomValues = ch.customValues || ch.customFields || {};
         if (typeof handleSystemChangeInModal === 'function') {
             handleSystemChangeInModal(targetCustomValues, targetSystemId);
@@ -3101,7 +3101,7 @@ function openEditCharacterModal(characterId, retryCount = 0) {
             systemInput.classList.add('opacity-60', 'pointer-events-none', 'bg-stone-100');
         }
 
-        // 💡 画像管理オブジェクトの復元
+        // 💡 画像管理オブジェクトの復元（完全保持）
         if (ch.images) {
             window.editingCharacterImages = {
                 thumb: ch.images.thumb || (ch.thumbnail ? [{ url: ch.thumbnail, name: '一覧アイコン', uploadedAt: Date.now() }] : []),
