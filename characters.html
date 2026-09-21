@@ -1718,7 +1718,7 @@ function renderCharacterDetail(characterId) {
     const secret = ch.secret || '';
     let settingsMemoHtml = '';
 
-   // 秘匿メモ（ネタバレ）の部分（余白詰め＆文字色濃く・左寄せ版）
+// 秘匿メモ（ネタバレ）の部分（完全不透明＆左上揃え版）
     if (memo || secret) {
         settingsMemoHtml = `
             <div class="mt-6 pt-6 border-t border-stone-100 space-y-4">
@@ -1748,16 +1748,23 @@ function renderCharacterDetail(characterId) {
                             </span>
                             <span class="text-[10px] text-rose-400 font-normal">タップで切替</span>
                         </div>
-                        <!-- 💡 文字色を濃く（text-stone-800）し、余白をスッキリ詰める -->
+                        <!-- 文字色を濃くし、左寄せ -->
                         <div class="text-xs text-stone-800 font-medium leading-relaxed whitespace-pre-wrap text-left py-1">
                             ${secret}
                         </div>
-                        <!-- 💡 オーバーレイの文字やアイコンの配置を調整（左寄せ・文字をくっきり） -->
-                        <div class="js-secret-overlay absolute inset-0 bg-rose-100/90 flex flex-col items-start justify-center gap-1.5 text-stone-800 transition-all select-none z-10 text-left pl-6">
-                            <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center text-rose-600 text-sm shadow-xs group-hover:scale-110 transition-transform">
+                        
+                        <!-- 🌟 修正点：bg-rose-100/90 → bg-rose-50（完全不透明）、justify-center → justify-start（上寄せ）、上パディング追加 -->
+                        <div class="js-secret-overlay absolute inset-0 bg-rose-50 flex flex-col items-start justify-start gap-2 text-stone-800 transition-all select-none z-10 text-left p-4">
+                            <div class="flex items-center justify-between w-full mb-2 pb-1.5 border-b border-rose-200/60 text-xs text-rose-800 font-bold select-none">
+                                <span class="flex items-center gap-1.5">
+                                    <i class="fa-solid fa-triangle-exclamation text-rose-500"></i> ネタバレ防止用本文
+                                </span>
+                                <span class="text-[10px] text-rose-400 font-normal">タップで切替</span>
+                            </div>
+                            <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center text-rose-600 text-sm shadow-xs group-hover:scale-110 transition-transform mt-1">
                                 <i class="fa-solid fa-eye-slash"></i>
                             </div>
-                            <span class="text-xs font-bold text-rose-900">タップしてネタバレを表示</span>
+                            <span class="text-xs font-bold text-rose-900 mt-1">タップしてネタバレを表示</span>
                         </div>
                     </div>
                 </div>
