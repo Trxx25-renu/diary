@@ -2019,61 +2019,36 @@ function verifyPasscode() {
 window.verifyPasscode = verifyPasscode;
 
 // ==========================================
-// 🔑 パスコード入力を開く（確実に強制表示させる決定版）
+// 🔑 パスコード入力モーダル（デバッグ・動作確認版）
 // ==========================================
 function openAuthModal() {
-    const modal = document.getElementById('authModal');
-    const title = document.getElementById('authModalTitle');
-    const desc = document.getElementById('authModalDesc');
-    const err = document.getElementById('authErrorMsg');
+    alert("🔍 モーダル関数が呼ばれました！"); // ←ここでボタンが反応しているか確認
 
+    const modal = document.getElementById('authModal');
     if (!modal) {
-        console.error("❌ #authModal が見つかりません。HTMLにIDが正しくあるか確認してください。");
-        alert("エラー: ログインモーダルが見つかりません");
+        alert("❌ エラー: #authModal がHTML内に見つかりません！");
         return;
     }
 
-    if (err) err.classList.add('hidden');
-
-    const passInput = document.getElementById('inputPasscode') || 
-                        document.getElementById('passcode') || 
-                        document.getElementById('authPassword') || 
-                        modal.querySelector('input[type="password"], input[type="text"]');
-                        
-    if (passInput) passInput.value = '';
-
     // すでに管理者（ログイン中）の場合はログアウト確認へ分岐
     if (window.isAdmin) {
-        if (typeof logoutAdmin === 'function') {
-            logoutAdmin();
-        } else {
-            if (confirm('管理者モードからログアウトしますか？')) {
-                window.isAdmin = false;
-                sessionStorage.removeItem('isAdminSession');
-                if (window.GIST_CONFIG) window.GIST_CONFIG.token = '';
-                if (typeof updateAdminUI === 'function') updateAdminUI();
-            }
+        if (confirm('管理者モードからログアウトしますか？')) {
+            window.isAdmin = false;
+            sessionStorage.removeItem('isAdminSession');
+            if (window.GIST_CONFIG) window.GIST_CONFIG.token = '';
+            if (typeof updateAdminUI === 'function') updateAdminUI();
+            alert("ログアウトしました");
         }
         return;
     }
 
-    // パスコードの設定状態によってテキストを切り替え
-    if (!window.storedPasscode) {
-        if (title) title.textContent = '初期パスコード設定';
-        if (desc) desc.textContent = '管理者用のお好きなパスコードを設定してください。';
-    } else {
-        if (title) title.textContent = '管理者ログイン';
-        if (desc) desc.textContent = 'キャラクターの追加や設定変更をするにはパスコードが必要です。';
-    }
-
-    // 💡 クラスの切り替えに加え、確実に画面に出るようインラインスタイルでも強制表示させる
-    modal.classList.remove('opacity-0', 'pointer-events-none');
+    // モーダルを表示させる強制処理
+    modal.classList.remove('opacity-0', 'pointer-events-none', 'hidden');
     modal.classList.add('opacity-100');
     modal.style.display = 'flex';
     modal.style.opacity = '1';
     modal.style.pointerEvents = 'auto';
 
-    // 内部カードの拡大アニメーション
     const innerDiv = modal.querySelector('.max-w-sm') || modal.querySelector('div');
     if (innerDiv) {
         innerDiv.classList.remove('scale-95');
@@ -2082,30 +2057,25 @@ function openAuthModal() {
         innerDiv.style.opacity = '1';
     }
 
+    const passInput = document.getElementById('inputPasscode');
     if (passInput) {
+        passInput.value = '';
         setTimeout(() => passInput.focus(), 50);
     }
 }
 window.openAuthModal = openAuthModal;
 
-// ==========================================
-// 🔒 パスコード入力モーダルを閉じる
-// ==========================================
 function closeAuthModal() {
     const modal = document.getElementById('authModal');
     if (modal) {
         modal.classList.remove('opacity-100');
         modal.classList.add('opacity-0', 'pointer-events-none');
         modal.style.display = 'none';
-        modal.style.opacity = '0';
-        modal.style.pointerEvents = 'none';
         
         const innerDiv = modal.querySelector('.max-w-sm') || modal.querySelector('div');
         if (innerDiv) {
             innerDiv.classList.remove('scale-100');
             innerDiv.classList.add('scale-95');
-            innerDiv.style.transform = 'scale(0.95)';
-            innerDiv.style.opacity = '0';
         }
     }
 }
