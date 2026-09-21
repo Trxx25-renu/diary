@@ -893,10 +893,10 @@ function removeCharacterImage(categoryKey, index) {
 window.removeCharacterImage = removeCharacterImage;
 
 // ==========================================
-// 💡 キャラクター保存関数（Base64完全ブロック・Firestore同期版・成長値対応）
+// 💡 キャラクター保存関数（修正版：データ消失＆トースト消滅対策）
 // ==========================================
 async function saveCharacter(event) {
-    event.preventDefault();
+    if (event) event.preventDefault();
 
     // 🔒 ログインしていなければ強制的に中断
     if (!window.isAdmin) {
@@ -937,7 +937,7 @@ async function saveCharacter(event) {
         }
     });
     
-    // 🌟 画像データの処理（Base64の混入を完全に防止・排除）
+    // 🌟 画像データの処理
     const rawImages = window.editingCharacterImages || { 
         thumb: [], avatar: [], base: [], combat: [], sd: [], doodle: [] 
     };
@@ -946,14 +946,12 @@ async function saveCharacter(event) {
     for (const [category, list] of Object.entries(rawImages)) {
         images[category] = Array.isArray(list) ? list.map(item => {
             let url = item.url || '';
-            // 🛑 Base64形式（data:image/...）が紛れ込んでいたら強制的に空にする
             if (url.startsWith('data:image/')) {
-                console.warn(`[Security Guard] Base64 image detected in category '${category}' and blocked.`);
                 url = ''; 
             }
             return {
                 ...item,
-                url: url // パスや通常URLのみ保持
+                url: url
             };
         }) : [];
     }
@@ -966,16 +964,11 @@ async function saveCharacter(event) {
 
     const customValues = {};
     
-    // 🛠️ 【修正】基本値の入力欄からフィールドIDを正しく取得し、対応する成長値とセットで保存
     document.querySelectorAll('.char-custom-status-base').forEach(inputEl => {
         const sId = inputEl.id;
         if (sId && sId.startsWith('custom_status_base_')) {
             const fieldId = sId.replace('custom_status_base_', '');
-            
-            // 基本値を取得
             const baseVal = inputEl.value !== '' ? Number(inputEl.value) : 0;
-            
-            // 対応する成長値の入力欄を取得
             const growthInputEl = document.getElementById(`custom_status_growth_${fieldId}`);
             const growthVal = growthInputEl && growthInputEl.value !== '' ? Number(growthInputEl.value) : 0;
             
@@ -1023,11 +1016,11 @@ async function saveCharacter(event) {
             window.characters.push(charData);
         }
 
-        // 💡 ① 手元のブラウザ（localStorage）に保存
+        // 💡 ① 手元のブラウザ（localStorage）に即座に保存
         const jsonString = JSON.stringify(window.characters);
         localStorage.setItem('local_characters', jsonString);
 
-        // 💡 ② Firestore（クラウド）へ一括保存・同期
+        // 💡 ② Firestore（クラウド）へ同期
         if (typeof showToast === 'function') showToast("Firestoreへ同期中...", "info");
 
         const charDocRef = window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'characters', 'master');
@@ -1036,20 +1029,26 @@ async function saveCharacter(event) {
             updatedAt: new Date().toISOString()
         });
 
+        // 💡 保存成功のトーストを確実に表示
         if (typeof showToast === 'function') {
             showToast("キャラクターを保存・同期しました！", "info");
         }
 
+        // モーダルを閉じる
         closeCharacterModal();
         if (typeof renderSystemFolders === 'function') renderSystemFolders();
 
-        if (targetCharacterId) {
-            if (typeof navigateTo === 'function') {
-                navigateTo('detail', targetCharacterId);
-            } else if (typeof renderCharacterDetail === 'function') {
-                renderCharacterDetail(targetCharacterId);
+        // 💡 わずかにウェイト（0.3秒）を入れてから詳細画面へ遷移することで、トースト表示を保証し競合を防ぐ
+        setTimeout(() => {
+            if (targetCharacterId) {
+                if (typeof navigateTo === 'function') {
+                    navigateTo('detail', targetCharacterId);
+                } else if (typeof renderCharacterDetail === 'function') {
+                    renderCharacterDetail(targetCharacterId);
+                }
             }
-        }
+        }, 300);
+
     } catch (e) {
         console.error("Save & Sync error:", e);
         alert("保存またはFirestore同期に失敗しました。コンソールを確認してください。");
@@ -1111,111 +1110,168 @@ function getGrowthColor(hexColor) {
 window.getGrowthColor = getGrowthColor;
        
 // ==========================================
-// 💡 画面やビューを切り替えるルーター関数（ハッシュ連動・完全対応版）
+// 💡 キャラクター保存関数（完全版：データ消失＆トースト消滅対策済み）
 // ==========================================
-function navigateTo(target, param, updateHash = true) {
-    // 🔍 どこから呼ばれたのかの履歴（呼び出し元トレース）をコンソールに出力
-    console.trace(`🚀 navigateTo 実行 -> target: ${target}, param: ${param}`);
+async function saveCharacter(event) {
+    if (event) event.preventDefault();
+
+    // 🔒 ログインしていなければ強制的に中断
+    if (!window.isAdmin) {
+        if (typeof showToast === 'function') {
+            showToast("管理者権限がありません。", "error");
+        } else {
+            alert("管理者権限がありません。");
+        }
+        return;
+    }
+
+    const systemId = document.getElementById('charSystemSelect').value;
+    
+    const name = document.getElementById('charName')?.value?.trim() || '';
+    const nameKana = document.getElementById('charNameKana')?.value?.trim() || '';
+    const epithet = document.getElementById('charEpithet')?.value?.trim() || '';
+    const epithetKana = document.getElementById('charEpithetKana')?.value?.trim() || '';
+    const age = document.getElementById('charAge')?.value;
+    const gender = document.getElementById('charGender')?.value?.trim() || '';
+    const birthdate = document.getElementById('charBirthdate')?.value?.trim() || '';
+    const occupation = document.getElementById('charOccupation')?.value?.trim() || '';
+    const themeColor = document.getElementById('charThemeColor')?.value || '#292524';
+    const sheetUrl = document.getElementById('charSheetUrl')?.value?.trim() || '';
+    const memo = document.getElementById('charMemo')?.value || '';
+    const secret = document.getElementById('charSecret')?.value || '';
+    
+    const links = [];
+    const linkRows = document.querySelectorAll('#charLinksContainer > div');
+    linkRows.forEach(row => {
+        const inputs = row.querySelectorAll('input');
+        const labelInput = inputs[0]; 
+        const urlInput = inputs[1];    
+        if (urlInput && urlInput.value.trim() !== '') {
+            links.push({
+                label: labelInput ? labelInput.value.trim() : '',
+                url: urlInput.value.trim()
+            });
+        }
+    });
+    
+    // 🌟 画像データの処理（Base64混入ブロック）
+    const rawImages = window.editingCharacterImages || { 
+        thumb: [], avatar: [], base: [], combat: [], sd: [], doodle: [] 
+    };
+
+    const images = {};
+    for (const [category, list] of Object.entries(rawImages)) {
+        images[category] = Array.isArray(list) ? list.map(item => {
+            let url = item.url || '';
+            if (url.startsWith('data:image/')) {
+                url = ''; 
+            }
+            return {
+                ...item,
+                url: url
+            };
+        }) : [];
+    }
+    
+    let thumbnail = images.thumb?.[0]?.url || "";
+    if (thumbnail.startsWith('data:image/')) thumbnail = "";
+
+    let avatar = images.avatar?.[0]?.url || "";
+    if (avatar.startsWith('data:image/')) avatar = "";
+
+    const customValues = {};
+    
+    document.querySelectorAll('.char-custom-status-base').forEach(inputEl => {
+        const sId = inputEl.id;
+        if (sId && sId.startsWith('custom_status_base_')) {
+            const fieldId = sId.replace('custom_status_base_', '');
+            const baseVal = inputEl.value !== '' ? Number(inputEl.value) : 0;
+            const growthInputEl = document.getElementById(`custom_status_growth_${fieldId}`);
+            const growthVal = growthInputEl && growthInputEl.value !== '' ? Number(growthInputEl.value) : 0;
+            
+            customValues[fieldId] = {
+                base: baseVal,
+                growth: growthVal
+            };
+        }
+    });
+
+    document.querySelectorAll('.char-custom-text-input').forEach(inputEl => {
+        const tId = inputEl.id;
+        if (tId && tId.startsWith('custom_text_')) {
+            const fieldId = tId.replace('custom_text_', '');
+            customValues[fieldId] = inputEl.value;
+        }
+    });
+
+    if (!name) { 
+        alert("キャラクター名は必須です。"); 
+        return; 
+    }
+
+    let targetCharacterId = window.editingCharacterId || ('char_' + Math.random().toString(36).substring(2, 11));
+
+    const charData = {
+        id: targetCharacterId,
+        systemId, name, nameKana, epithet, epithetKana,
+        age: age ? Number(age) : '',
+        gender, birthdate, occupation, themeColor, 
+        sheetUrl: links.length > 0 ? links[0].url : sheetUrl,
+        links, memo, secret, thumbnail, avatar, images,
+        customValues,
+        updatedAt: new Date().toISOString()
+    };
 
     try {
-        // 0. 開いているモーダルをすべて閉じる
-        const modals = ['characterModal', 'characterDetailModal'];
-        modals.forEach(modalId => {
-            const m = document.getElementById(modalId);
-            if (m) m.classList.add('hidden');
+        if (!window.characters) window.characters = [];
+        const index = window.characters.findIndex(c => String(c.id) === String(targetCharacterId));
+        if (index !== -1) {
+            charData.createdAt = window.characters[index].createdAt || new Date().toISOString();
+            window.characters[index] = { ...window.characters[index], ...charData };
+        } else {
+            charData.createdAt = new Date().toISOString();
+            window.characters.push(charData);
+        }
+
+        // 💡 ① 手元のブラウザ（localStorage）に即座に保存
+        const jsonString = JSON.stringify(window.characters);
+        localStorage.setItem('local_characters', jsonString);
+
+        // 💡 ② Firestore（クラウド）へ同期
+        if (typeof showToast === 'function') showToast("Firestoreへ同期中...", "info");
+
+        const charDocRef = window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'characters', 'master');
+        await window.setDoc(charDocRef, {
+            list: window.characters,
+            updatedAt: new Date().toISOString()
         });
 
-        // 💡 URLのハッシュ（#）を更新する（無限ループ防止のフラグ制御付き）
-        if (updateHash) {
-            let hashVal = target || 'home';
-            if (param) {
-                hashVal += `/${param}`;
-            }
-            if (location.hash !== `#${hashVal}`) {
-                location.hash = hashVal;
-                return; // hashchange イベントが発火するため、ここでは一旦処理を抜ける
-            }
+        // 💡 ③ 保存成功のトーストを確実に表示
+        if (typeof showToast === 'function') {
+            showToast("キャラクターを保存・同期しました！", "info");
         }
 
-        // 💡 【重要】詳細画面（detail）以外への移動なら、そこを「直前の画面」として記憶する
-        if (target && target !== 'detail') {
-            window.previousView = target;
-            window.previousParam = param;
-        }
+        // モーダルを閉じる
+        closeCharacterModal();
+        if (typeof renderSystemFolders === 'function') renderSystemFolders();
 
-        // 🔍 検索バーのプレースホルダーを切り替える
-        const searchInput = document.getElementById('searchInput');
-        if (searchInput) {
-            if (target === 'home' || !target) {
-                searchInput.placeholder = 'システムやPC名で検索';
-            } else if (target === 'characterList') {
-                searchInput.placeholder = 'このシステム内を検索…';
+        // 💡 ④ 0.3秒のウェイトを挟み、`updateHash: false` で安全に詳細画面へ遷移
+        setTimeout(() => {
+            if (targetCharacterId) {
+                if (typeof navigateTo === 'function') {
+                    navigateTo('detail', targetCharacterId, false);
+                } else if (typeof renderCharacterDetail === 'function') {
+                    renderCharacterDetail(targetCharacterId);
+                }
             }
-        }
+        }, 300);
 
-        // 💡 各階層のコンテナ要素を取得
-        const viewFolders = document.getElementById('view-folders');    // 1階層目全体（フォルダビュー）
-        const listView = document.getElementById('view-list');              // 2階層目のラッパー
-        const detailView = document.getElementById('view-detail');            // 3階層目の詳細ビュー
-
-        const toggleView = (element, show, displayType = 'block') => {
-            if (!element) return;
-            if (show) {
-                element.classList.remove('hidden');
-                element.style.display = displayType;
-            } else {
-                element.classList.add('hidden');
-                element.style.display = 'none';
-            }
-        };
-
-        // 0.5. ホーム画面（1階層目）へ移動
-        if (target === 'home' || !target) {
-            toggleView(viewFolders, true, 'block');
-            toggleView(listView, false);
-            toggleView(detailView, false);
-
-            if (typeof renderSystemFolders === 'function') renderSystemFolders();
-            if (typeof renderBreadcrumbAndActions === 'function') renderBreadcrumbAndActions('home');
-        }
-        // 1. キャラクター一覧画面（2階層目）へ移動
-        else if (target === 'characterList') {
-            const targetSystemId = param || window.selectedSystemId;
-            window.selectedSystemId = targetSystemId;
-
-            toggleView(viewFolders, false);
-            toggleView(listView, true, 'block');
-            toggleView(detailView, false);
-
-            if (targetSystemId && typeof renderCharacterList === 'function') {
-                renderCharacterList(targetSystemId);
-            }
-            if (typeof renderBreadcrumbAndActions === 'function') {
-                renderBreadcrumbAndActions('characterList', targetSystemId);
-            }
-        } 
-        // 2. キャラクター詳細画面（3階層目）へ移動
-        else if (target === 'detail') {
-            toggleView(viewFolders, false);
-            toggleView(listView, false);
-            toggleView(detailView, true, 'block');
-
-            if (typeof renderCharacterDetail === 'function') {
-                renderCharacterDetail(param);
-            }
-            if (typeof renderBreadcrumbAndActions === 'function') {
-                renderBreadcrumbAndActions('detail', param);
-            }
-        }
-
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-
-    } catch (err) {
-        console.error("❌ navigateTo 内部でエラーが発生しました:", err);
+    } catch (e) {
+        console.error("Save & Sync error:", e);
+        alert("保存またはFirestore同期に失敗しました。コンソールを確認してください。");
     }
 }
-window.navigateTo = navigateTo;
-
+window.saveCharacter = saveCharacter;
 // ==========================================
 // 💡 【超重要】ブラウザの「戻る」「進む」やURL直叩き・リロード時のハッシュ解析
 // ==========================================
@@ -4047,6 +4103,9 @@ window.importCharactersJSON = importCharactersJSON;
     <i id="pullIcon" class="fa-solid fa-arrow-down"></i>
     <span id="pullText" class="text-sm font-medium">下に引っ張って更新</span>
 </div>
+
+    <!-- トースト通知用のコンテナ -->
+<div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
 
 <!-- 🌐 ヘッダー -->
 <header class="bg-white/80 backdrop-blur-md border-b border-stone-200/60 sticky top-0 z-30">
