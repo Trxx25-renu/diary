@@ -935,7 +935,7 @@ function getGrowthColor(hexColor) {
 window.getGrowthColor = getGrowthColor;
        
 // ==========================================
-// 💡 キャラクター保存関数（完全版：データ消失＆トースト消滅対策済み）
+// 💡 キャラクター保存関数（完全版：Firestoreの invalid-argument エラー対策・サニタイズ処理済み）
 // ==========================================
 async function saveCharacter(event) {
     if (event) event.preventDefault();
@@ -1058,8 +1058,30 @@ async function saveCharacter(event) {
             window.characters.push(charData);
         }
 
+        // 🌟 【超重要】Firestoreが拒絶する undefined を自動で null に一掃するサニタイズ関数
+        function sanitizeForFirestore(obj) {
+            if (obj === null || typeof obj !== 'object') {
+                return obj === undefined ? null : obj;
+            }
+            if (Array.isArray(obj)) {
+                return obj.map(item => sanitizeForFirestore(item));
+            }
+            const sanitized = {};
+            for (const key of Object.keys(obj)) {
+                const val = obj[key];
+                if (val !== undefined) {
+                    sanitized[key] = sanitizeForFirestore(val);
+                } else {
+                    sanitized[key] = null;
+                }
+            }
+            return sanitized;
+        }
+
+        const cleanCharacters = sanitizeForFirestore(window.characters);
+
         // 💡 ① 手元のブラウザ（localStorage）に即座に保存
-        const jsonString = JSON.stringify(window.characters);
+        const jsonString = JSON.stringify(cleanCharacters);
         localStorage.setItem('local_characters', jsonString);
 
         // 💡 ② Firestore（クラウド）へ同期
@@ -1067,7 +1089,7 @@ async function saveCharacter(event) {
 
         const charDocRef = window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'characters', 'master');
         await window.setDoc(charDocRef, {
-            list: window.characters,
+            list: cleanCharacters,
             updatedAt: new Date().toISOString()
         });
 
@@ -1080,7 +1102,7 @@ async function saveCharacter(event) {
         closeCharacterModal();
         if (typeof renderSystemFolders === 'function') renderSystemFolders();
 
-        // 💡 ④ 0.3秒のウェイトを挟み、`updateHash: false` で安全に詳細画面へ遷移
+        // 💡 ④ 0.3秒のウェイトを挟み、安全に詳細画面へ遷移
         setTimeout(() => {
             if (targetCharacterId) {
                 if (typeof navigateTo === 'function') {
