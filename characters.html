@@ -2019,45 +2019,42 @@ function verifyPasscode() {
 window.verifyPasscode = verifyPasscode;
 
 // ==========================================
-// 🔑 パスコード入力モーダル（デバッグ・動作確認版）
+// 🔑 パスコード入力モーダルを開く
 // ==========================================
 function openAuthModal() {
-    alert("🔍 モーダル関数が呼ばれました！"); // ←ここでボタンが反応しているか確認
-
     const modal = document.getElementById('authModal');
     if (!modal) {
-        alert("❌ エラー: #authModal がHTML内に見つかりません！");
+        console.error("❌ #authModal が見つかりません");
         return;
     }
 
     // すでに管理者（ログイン中）の場合はログアウト確認へ分岐
     if (window.isAdmin) {
-        if (confirm('管理者モードからログアウトしますか？')) {
-            window.isAdmin = false;
-            sessionStorage.removeItem('isAdminSession');
-            if (window.GIST_CONFIG) window.GIST_CONFIG.token = '';
-            if (typeof updateAdminUI === 'function') updateAdminUI();
-            alert("ログアウトしました");
+        if (typeof logoutAdmin === 'function') {
+            logoutAdmin();
+        } else {
+            if (confirm('管理者モードからログアウトしますか？')) {
+                window.isAdmin = false;
+                sessionStorage.removeItem('isAdminSession');
+                if (window.GIST_CONFIG) window.GIST_CONFIG.token = '';
+                if (typeof updateAdminUI === 'function') updateAdminUI();
+            }
         }
         return;
     }
 
-    // モーダルを表示させる強制処理
-    modal.classList.remove('opacity-0', 'pointer-events-none', 'hidden');
+    // 💡 HTMLの仕様通り opacity と pointer-events だけを操作
+    modal.classList.remove('opacity-0', 'pointer-events-none');
     modal.classList.add('opacity-100');
-    modal.style.display = 'flex';
-    modal.style.opacity = '1';
-    modal.style.pointerEvents = 'auto';
 
-    const innerDiv = modal.querySelector('.max-w-sm') || modal.querySelector('div');
+    // 内部カードのスケールアニメーション
+    const innerDiv = modal.querySelector('div');
     if (innerDiv) {
         innerDiv.classList.remove('scale-95');
         innerDiv.classList.add('scale-100');
-        innerDiv.style.transform = 'scale(1)';
-        innerDiv.style.opacity = '1';
     }
 
-    const passInput = document.getElementById('inputPasscode');
+    const passInput = document.getElementById('inputPasscode') || modal.querySelector('input');
     if (passInput) {
         passInput.value = '';
         setTimeout(() => passInput.focus(), 50);
@@ -2065,14 +2062,16 @@ function openAuthModal() {
 }
 window.openAuthModal = openAuthModal;
 
+// ==========================================
+// 🔒 パスコード入力モーダルを閉じる
+// ==========================================
 function closeAuthModal() {
     const modal = document.getElementById('authModal');
     if (modal) {
         modal.classList.remove('opacity-100');
         modal.classList.add('opacity-0', 'pointer-events-none');
-        modal.style.display = 'none';
         
-        const innerDiv = modal.querySelector('.max-w-sm') || modal.querySelector('div');
+        const innerDiv = modal.querySelector('div');
         if (innerDiv) {
             innerDiv.classList.remove('scale-100');
             innerDiv.classList.add('scale-95');
