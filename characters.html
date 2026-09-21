@@ -1863,7 +1863,7 @@ window.closeConfirmModal = function() {
 };
 
 // ==========================================
-// 🔑 パスコード入力モーダルを開く（超確実に表示させる決定版）
+// 🔑 パスコード入力モーダルを開く
 // ==========================================
 function openAuthModal() {
     const modal = document.getElementById('authModal');
@@ -1915,19 +1915,15 @@ function openAuthModal() {
         if (desc) desc.textContent = 'キャラクターの追加や設定変更をするにはパスコードが必要です。';
     }
 
-    // 💡 確実に非表示状態を解除し、インラインスタイルでも強制表示させる
-    modal.classList.remove('hidden', 'opacity-0', 'pointer-events-none');
-    modal.classList.add('flex', 'opacity-100');
-    modal.style.display = 'flex';
-    modal.style.opacity = '1';
-    modal.style.pointerEvents = 'auto';
+    // 💡 ユーザー様のHTML仕様（opacityとpointer-eventsの切り替え）に合わせる
+    modal.classList.remove('opacity-0', 'pointer-events-none');
+    modal.classList.add('opacity-100');
 
-    const innerDiv = modal.querySelector('div');
+    // 内部カードの拡大アニメーション
+    const innerDiv = modal.querySelector('.max-w-sm') || modal.querySelector('div');
     if (innerDiv) {
-        innerDiv.classList.remove('scale-95', 'opacity-0');
-        innerDiv.classList.add('scale-100', 'opacity-100');
-        innerDiv.style.transform = 'scale(1)';
-        innerDiv.style.opacity = '1';
+        innerDiv.classList.remove('scale-95');
+        innerDiv.classList.add('scale-100');
     }
 
     if (passInput) {
@@ -1944,16 +1940,13 @@ window.openAuthModal = openAuthModal;
 function closeAuthModal() {
     const modal = document.getElementById('authModal');
     if (modal) {
-        modal.classList.remove('flex', 'opacity-100');
-        modal.classList.add('opacity-0', 'pointer-events-none', 'hidden');
-        modal.style.display = 'none';
+        modal.classList.remove('opacity-100');
+        modal.classList.add('opacity-0', 'pointer-events-none');
         
-        const innerDiv = modal.querySelector('div');
+        const innerDiv = modal.querySelector('.max-w-sm') || modal.querySelector('div');
         if (innerDiv) {
-            innerDiv.classList.remove('scale-100', 'opacity-100');
-            innerDiv.classList.add('scale-95', 'opacity-0');
-            innerDiv.style.transform = 'scale(0.95)';
-            innerDiv.style.opacity = '0';
+            innerDiv.classList.remove('scale-100');
+            innerDiv.classList.add('scale-95');
         }
     }
 }
