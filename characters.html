@@ -3077,11 +3077,11 @@ function renderCharacterModalSystemSelect() {
 window.renderCharacterModalSystemSelect = renderCharacterModalSystemSelect;
         
 // ==========================================
-// 💡 2. モーダル内でシステムが変更された時に動的項目を描画する関数（修正完全版）
+// 💡 2. モーダル内でシステムが変更された時に動的項目を描画する関数（システムID強制対応版）
 // ==========================================
 let _isHandlingSystemChange = false;
 
-function handleSystemChangeInModal(existingCustomValues = {}) {
+function handleSystemChangeInModal(existingCustomValues = {}, forcedSystemId = null) {
     // 🛑 0.1秒以内の連続実行（二重発火）を完全にブロック
     if (_isHandlingSystemChange) return;
     _isHandlingSystemChange = true;
@@ -3090,6 +3090,11 @@ function handleSystemChangeInModal(existingCustomValues = {}) {
     const select = document.getElementById('charSystemSelect');
     const container = document.getElementById('dynamicCustomFieldsContainer');
     if (!select || !container) return;
+
+    // 🌟 引数でシステムIDが指定されている場合は、セレクトボックスの値を強制的にセットする
+    if (forcedSystemId) {
+        select.value = forcedSystemId;
+    }
 
     const systemId = select.value;
     container.innerHTML = '';
