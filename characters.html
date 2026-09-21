@@ -678,15 +678,19 @@ function getGalleryCategoryName(categoryKey) {
 }
 window.getGalleryCategoryName = getGalleryCategoryName;
 
+// ==========================================
+// 💡 画像管理関連の全関数（完全統合・そのまま貼り付け用）
+// ==========================================
+
 // 1. 画像カテゴリタブを切り替える関数
 function switchImageCategory(categoryKey) {
-    window.currentImageCategory = categoryKey;
+    window.currentImageCategory = categoryKey || 'thumb';
 
     // タブの見た目をアクティブ・非アクティブに切り替え
     ['thumb', 'avatar', 'base', 'combat', 'sd', 'doodle'].forEach(cat => {
         const btn = document.getElementById(`imgTab-${cat}`);
         if (!btn) return;
-        if (cat === categoryKey) {
+        if (cat === window.currentImageCategory) {
             btn.className = 'flex-1 py-1.5 px-2 text-[10px] font-bold rounded-lg bg-white text-stone-800 shadow-sm transition-all whitespace-nowrap';
         } else {
             btn.className = 'flex-1 py-1.5 px-2 text-[10px] font-bold rounded-lg text-stone-500 hover:text-stone-800 transition-all whitespace-nowrap';
@@ -808,7 +812,7 @@ function handleCharacterImagesSelect(event) {
     event.target.value = '';
 }
 window.handleCharacterImagesSelect = handleCharacterImagesSelect;
-       
+        
 // 💡 3. 画像のタイトル（名前）をリアルタイムで更新する関数
 function updateImageLabel(categoryKey, index, newName) {
     if (window.editingCharacterImages?.[categoryKey]?.[index]) {
@@ -820,10 +824,29 @@ window.updateImageLabel = updateImageLabel;
 // 4. プレビュー領域を描画する関数（設定されたカスタムカテゴリ名を反映 ＆ 画質最適化）
 function renderCharacterImagesPreview() {
     const container = document.getElementById('characterImagesPreviewContainer');
-    if (!container) return;
+    if (!container) {
+        console.warn("⚠️ [DEBUG] #characterImagesPreviewContainer が見つかりません。");
+        return;
+    }
 
-    const currentList = window.editingCharacterImages[window.currentImageCategory] || [];
-    const currentCategoryDisplayName = getGalleryCategoryName(window.currentImageCategory);
+    if (!window.editingCharacterImages) {
+        window.editingCharacterImages = { thumb: [], avatar: [], base: [], combat: [], sd: [], doodle: [] };
+    }
+
+    const currentCat = window.currentImageCategory || 'thumb';
+    const currentList = window.editingCharacterImages[currentCat] || [];
+    
+    const categoryNames = {
+        thumb: '一覧アイコン',
+        avatar: '立ち絵',
+        base: '基本イラスト',
+        combat: '戦闘イラスト',
+        sd: 'SDイラスト',
+        doodle: '落書き・その他'
+    };
+    const currentCategoryDisplayName = (typeof getGalleryCategoryName === 'function') 
+        ? getGalleryCategoryName(currentCat) 
+        : (categoryNames[currentCat] || '画像');
 
     if (currentList.length === 0) {
         container.innerHTML = `
@@ -835,7 +858,7 @@ function renderCharacterImagesPreview() {
     }
 
     container.innerHTML = '';
-    const isSingleSlot = (window.currentImageCategory === 'thumb' || window.currentImageCategory === 'avatar');
+    const isSingleSlot = (currentCat === 'thumb' || currentCat === 'avatar');
 
     currentList.forEach((imgObj, index) => {
         const item = document.createElement('div');
@@ -844,17 +867,16 @@ function renderCharacterImagesPreview() {
             item.className = 'col-span-full bg-stone-50 rounded-xl overflow-hidden border border-stone-200 p-3 flex items-center gap-3';
             item.innerHTML = `
                 <div class="relative group w-16 h-16 bg-white rounded-lg overflow-hidden border border-stone-200 shrink-0 flex items-center justify-center">
-                    <!-- 💡 画像が荒れないよう style="image-rendering: auto;" を付与 -->
                     <img src="${imgObj.url}" style="image-rendering: auto;" class="w-full h-full object-contain">
-                    <button type="button" onclick="removeCharacterImage('${window.currentImageCategory}', ${index})" class="absolute top-1 right-1 bg-stone-900/70 hover:bg-rose-600 text-white w-5 h-5 rounded-full flex items-center justify-center text-[10px] opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button type="button" onclick="removeCharacterImage('${currentCat}', ${index})" class="absolute top-1 right-1 bg-stone-900/70 hover:bg-rose-600 text-white w-5 h-5 rounded-full flex items-center justify-center text-[10px] opacity-0 group-hover:opacity-100 transition-opacity">
                         <i class="fa-solid fa-xmark"></i>
                     </button>
                 </div>
                 <div class="flex-1 min-w-0">
-                    <div class="text-xs font-bold text-stone-700 truncate">${imgObj.name}</div>
+                    <div class="text-xs font-bold text-stone-700 truncate">${imgObj.name || ''}</div>
                     <div class="text-[10px] text-stone-400 mt-0.5">登録済み</div>
                 </div>
-                <button type="button" onclick="removeCharacterImage('${window.currentImageCategory}', ${index})" class="text-stone-400 hover:text-rose-600 p-2 text-xs" title="削除する">
+                <button type="button" onclick="removeCharacterImage('${currentCat}', ${index})" class="text-stone-400 hover:text-rose-600 p-2 text-xs" title="削除する">
                     <i class="fa-solid fa-trash-can"></i>
                 </button>
             `;
@@ -862,19 +884,18 @@ function renderCharacterImagesPreview() {
             item.className = 'bg-stone-50 rounded-xl overflow-hidden border border-stone-200 p-2.5 flex flex-col gap-2';
             item.innerHTML = `
                 <div class="relative group aspect-square bg-white rounded-lg overflow-hidden border border-stone-200 flex items-center justify-center">
-                    <!-- 💡 画像が荒れないよう style="image-rendering: auto;" を付与 -->
                     <img src="${imgObj.url}" style="image-rendering: auto;" class="w-full h-full object-contain">
-                    <button type="button" onclick="removeCharacterImage('${window.currentImageCategory}', ${index})" class="absolute top-1 right-1 bg-stone-900/70 hover:bg-rose-600 text-white w-5 h-5 rounded-full flex items-center justify-center text-[10px] opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button type="button" onclick="removeCharacterImage('${currentCat}', ${index})" class="absolute top-1 right-1 bg-stone-900/70 hover:bg-rose-600 text-white w-5 h-5 rounded-full flex items-center justify-center text-[10px] opacity-0 group-hover:opacity-100 transition-opacity">
                         <i class="fa-solid fa-xmark"></i>
                     </button>
                 </div>
                 <div>
                     <label class="text-[10px] text-stone-400 block mb-0.5">画像タイトル</label>
-                    <input type="text" value="${imgObj.name || ''}" oninput="updateImageLabel('${window.currentImageCategory}', ${index}, this.value)" class="w-full text-xs bg-white border border-stone-200 rounded-lg px-2 py-1 text-stone-700 focus:outline-none focus:border-stone-400" placeholder="例: 通常, 笑顔 など">
+                    <input type="text" value="${imgObj.name || ''}" oninput="updateImageLabel('${currentCat}', ${index}, this.value)" class="w-full text-xs bg-white border border-stone-200 rounded-lg px-2 py-1 text-stone-700 focus:outline-none focus:border-stone-400" placeholder="例: 通常, 笑顔 など">
                 </div>
                 <div class="flex gap-1 pt-1 border-t border-stone-200">
-                    <button type="button" onclick="copyImageToCategory('${window.currentImageCategory}', ${index}, 'thumb')" class="flex-1 bg-white hover:bg-stone-100 border border-stone-200 text-stone-600 text-[10px] py-1 rounded-lg transition-all" title="アイコンに流用">アイコン</button>
-                    <button type="button" onclick="copyImageToCategory('${window.currentImageCategory}', ${index}, 'avatar')" class="flex-1 bg-white hover:bg-stone-100 border border-stone-200 text-stone-600 text-[10px] py-1 rounded-lg transition-all" title="立ち絵に流用">立ち絵</button>
+                    <button type="button" onclick="copyImageToCategory('${currentCat}', ${index}, 'thumb')" class="flex-1 bg-white hover:bg-stone-100 border border-stone-200 text-stone-600 text-[10px] py-1 rounded-lg transition-all" title="アイコンに流用">アイコン</button>
+                    <button type="button" onclick="copyImageToCategory('${currentCat}', ${index}, 'avatar')" class="flex-1 bg-white hover:bg-stone-100 border border-stone-200 text-stone-600 text-[10px] py-1 rounded-lg transition-all" title="立ち絵に流用">立ち絵</button>
                 </div>
             `;
         }
@@ -882,7 +903,7 @@ function renderCharacterImagesPreview() {
     });
 }
 window.renderCharacterImagesPreview = renderCharacterImagesPreview;
-       
+        
 // 5. 登録した画像を削除する関数
 function removeCharacterImage(categoryKey, index) {
     if (window.editingCharacterImages?.[categoryKey]) {
@@ -3238,13 +3259,13 @@ function renderCharacterModalSystemSelect() {
 window.renderCharacterModalSystemSelect = renderCharacterModalSystemSelect;
         
 // ==========================================
-// 💡 3. モーダル内でシステムが変更された時に動的項目を描画する関数（安全・高速化版）
+// 💡 3. モーダル内でシステムが変更された時に動的項目を描画する関数（ガード制御修正版）
 // ==========================================
 let _isHandlingSystemChange = false;
 
-function handleSystemChangeInModal(existingCustomValues = {}, forcedSystemId = null) {
-    // 🛑 0.1秒以内の連続実行（二重発火）を完全にブロック
-    if (_isHandlingSystemChange) return;
+function handleSystemChangeInModal(existingCustomValues = {}, forcedSystemId = null, forceRun = false) {
+    // 🛑 0.1秒以内の連続実行をブロック（forceRunがtrueの場合は強制実行）
+    if (_isHandlingSystemChange && !forceRun) return;
     _isHandlingSystemChange = true;
     setTimeout(() => { _isHandlingSystemChange = false; }, 100);
 
@@ -3261,7 +3282,7 @@ function handleSystemChangeInModal(existingCustomValues = {}, forcedSystemId = n
 
     container.innerHTML = '';
 
-    // 🛑 システム定義がない場合の安全フォールバック（無限リトライを廃止してフリーズを防止）
+    // 🛑 システム定義がない場合の安全フォールバック
     const fields = window.systemCustomFields?.[systemId] || {
         status: [{ id: 'hp', label: 'HP', max: 20 }],
         text: [{ id: 'memo', label: '備考' }]
