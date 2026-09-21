@@ -1925,30 +1925,56 @@ function handleHeaderKeyClick() {
 }
 window.handleHeaderKeyClick = handleHeaderKeyClick;
 
+
+
+// ==========================================
+// 🔑 パスコード入力モーダルを開く
+// ==========================================
 function openAuthModal() {
     const modal = document.getElementById('authModal');
     const title = document.getElementById('authModalTitle');
     const desc = document.getElementById('authModalDesc');
     const err = document.getElementById('authErrorMsg');
 
-    if (err) err.classList.add('hidden');
-    const passInput = document.getElementById('inputPasscode');
-    if (passInput) passInput.value = '';
-
-    if (window.isAdmin) {
-        showConfirm('ログアウト', '管理者モードからログアウトしますか？', () => {
-            window.isAdmin = false;
-            sessionStorage.removeItem('isAdminSession');
-            // セッションストレージ等からGistトークンを消去している場合はここで合わせて削除
-            if (window.GIST_CONFIG) {
-                window.GIST_CONFIG.token = '';
-            }
-            updateAdminUI();
-            showToast('ログアウトしました', 'info');
-        });
+    if (!modal) {
+        console.error("❌ #authModal が見つかりません");
         return;
     }
 
+    if (err) err.classList.add('hidden');
+
+    // 複数のID候補に対応してパスコード入力欄を取得する
+    const passInput = document.getElementById('inputPasscode') || 
+                      document.getElementById('passcode') || 
+                      document.getElementById('authPassword') || 
+                      modal.querySelector('input[type="password"], input[type="text"]');
+                      
+    if (passInput) passInput.value = '';
+
+    // すでに管理者（ログイン中）の場合はログアウト確認
+    if (window.isAdmin) {
+        if (typeof showConfirm === 'function') {
+            showConfirm('ログアウト', '管理者モードからログアウトしますか？', () => {
+                window.isAdmin = false;
+                sessionStorage.removeItem('isAdminSession');
+                if (window.GIST_CONFIG) {
+                    window.GIST_CONFIG.token = '';
+                }
+                if (typeof updateAdminUI === 'function') updateAdminUI();
+                if (typeof showToast === 'function') showToast('ログアウトしました', 'info');
+            });
+        } else {
+            if (confirm('管理者モードからログアウトしますか？')) {
+                window.isAdmin = false;
+                sessionStorage.removeItem('isAdminSession');
+                if (window.GIST_CONFIG) window.GIST_CONFIG.token = '';
+                if (typeof updateAdminUI === 'function') updateAdminUI();
+            }
+        }
+        return;
+    }
+
+    // パスコードの設定状態によってテキストを切り替え
     if (!window.storedPasscode) {
         if (title) title.textContent = '初期パスコード設定';
         if (desc) desc.textContent = '管理者用のお好きなパスコードを設定してください。';
@@ -1957,18 +1983,26 @@ function openAuthModal() {
         if (desc) desc.textContent = 'キャラクターの追加や設定変更をするにはパスコードが必要です。';
     }
 
-    if (modal) {
-        modal.classList.remove('opacity-0', 'pointer-events-none');
-        const innerDiv = modal.querySelector('div');
-        if (innerDiv) {
-            innerDiv.classList.remove('scale-95');
-            innerDiv.classList.add('scale-100');
-        }
-        if (passInput) passInput.focus();
+    // モーダルを表示状態にする
+    modal.classList.remove('opacity-0', 'pointer-events-none');
+    const innerDiv = modal.querySelector('div');
+    if (innerDiv) {
+        innerDiv.classList.remove('scale-95');
+        innerDiv.classList.add('scale-100');
+    }
+
+    // 入力欄にフォーカスを当てる
+    if (passInput) {
+        setTimeout(() => passInput.focus(), 50);
+    } else {
+        console.warn("⚠️ パスコード入力用の <input> 要素が見つかりませんでした");
     }
 }
 window.openAuthModal = openAuthModal;
 
+// ==========================================
+// 🔒 パスコード入力モーダルを閉じる
+// ==========================================
 function closeAuthModal() {
     const modal = document.getElementById('authModal');
     if (modal) {
@@ -1979,7 +2013,6 @@ function closeAuthModal() {
             innerDiv.classList.add('scale-95');
         }
     }
-    // pendingAction = null; // 必要に応じて残す
 }
 window.closeAuthModal = closeAuthModal;
        
@@ -4414,6 +4447,32 @@ window.importCharactersJSON = importCharactersJSON;
             </form>
         </div>
     </div>
+   
+   
+   <div id="authModal" class="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-4 pt-12 sm:pt-4 bg-stone-900/40 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-200 overflow-y-auto">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-xl border border-stone-200 scale-95 transition-transform duration-200 flex flex-col gap-4 my-4 sm:my-auto">
+        
+        <div class="flex items-center justify-between">
+            <h3 id="authModalTitle" class="text-base font-bold text-stone-800">管理者ログイン</h3>
+            <button onclick="closeAuthModal()" class="text-stone-400 hover:text-stone-600 p-1 rounded-full">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+
+        <p id="authModalDesc" class="text-xs text-stone-500">キャラクターの追加や設定変更をするにはパスコードが必要です。</p>
+
+        <div class="flex flex-col gap-2">
+            <input type="password" id="inputPasscode" placeholder="パスコードを入力" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2.5 text-sm text-stone-800 focus:outline-none focus:ring-2 focus:ring-stone-400">
+            <p id="authErrorMsg" class="text-xs text-red-500 hidden">パスコードが違います</p>
+        </div>
+
+        <div class="flex items-center justify-end gap-2 mt-2">
+            <button onclick="closeAuthModal()" class="px-4 py-2 text-xs font-medium text-stone-600 bg-stone-100 hover:bg-stone-200 rounded-xl transition-colors">キャンセル</button>
+            <button onclick="verifyPasscode()" class="px-4 py-2 text-xs font-medium text-white bg-stone-800 hover:bg-stone-900 rounded-xl transition-colors">決定</button>
+        </div>
+
+    </div>
+</div>
         
 </body>
 </html>
