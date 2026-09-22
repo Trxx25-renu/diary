@@ -6,7 +6,7 @@
     <meta name="robots" content="noindex, nofollow">
     <title id="pageTitleText">卓ポータル - Session Portal</title>
     
-    <!-- ファビコン動的変更用 -->
+    <!-- ファビコン動적変更用 -->
     <link id="dynamicFavicon" rel="icon" href="">
 
     <!-- Tailwind CSS -->
@@ -134,6 +134,26 @@
         <p class="text-[10px] text-stone-400 font-medium">Session & Character Management System</p>
     </footer>
 
+    <!-- 🌟 パスコード入力モーダル（テンキー対応） -->
+    <div id="passcodeModal" class="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4" style="display: none;">
+        <div class="bg-white rounded-3xl max-w-xs w-full p-6 flex flex-col shadow-2xl border border-stone-200 text-center gap-4">
+            <div class="w-12 h-12 rounded-full bg-stone-100 text-stone-600 mx-auto flex items-center justify-center text-lg">
+                <i class="fa-solid fa-lock"></i>
+            </div>
+            <div>
+                <h3 class="text-sm font-bold text-stone-800">管理者パスコード入力</h3>
+                <p class="text-[10px] text-stone-400 mt-0.5">数字のパスコードを入力してください</p>
+            </div>
+            <!-- 🌟 テンキーが確実に開くよう inputmode="numeric" を指定 -->
+            <input type="password" id="passcodeInput" inputmode="numeric" pattern="[0-9]*" class="w-full px-3 py-2.5 text-center text-lg tracking-widest border border-stone-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-stone-500 bg-stone-50" placeholder="••••">
+            
+            <div class="grid grid-cols-2 gap-2">
+                <button onclick="closePasscodeModal()" class="py-2 bg-stone-200 hover:bg-stone-300 text-stone-700 rounded-xl font-bold text-xs transition-colors">キャンセル</button>
+                <button onclick="submitPasscode()" class="py-2 bg-stone-800 hover:bg-stone-700 text-white rounded-xl font-bold text-xs transition-colors">決定</button>
+            </div>
+        </div>
+    </div>
+
     <!-- 設定・編集モーダル -->
     <div id="editModal" class="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4" style="display: none;">
         <div class="bg-white rounded-3xl max-w-md w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden border border-stone-200">
@@ -149,6 +169,7 @@
 
             <div class="p-5 overflow-y-auto custom-scroll flex flex-col gap-5 text-xs">
                 
+                <!-- 基本設定 -->
                 <div class="flex flex-col gap-3">
                     <h4 class="font-bold text-stone-700 border-b pb-1">基本情報・外観</h4>
                     <div>
@@ -163,8 +184,13 @@
                         <label class="block font-semibold text-stone-600 mb-1">最背面 背景画像URL</label>
                         <input type="text" id="inputBgImage" class="w-full px-3 py-2 border border-stone-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-stone-500" placeholder="https://...">
                     </div>
+                    <div>
+                        <label class="block font-semibold text-stone-600 mb-1">管理者パスコード（数字のみ）</label>
+                        <input type="password" id="inputAdminPass" inputmode="numeric" pattern="[0-9]*" class="w-full px-3 py-2 border border-stone-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-stone-500" placeholder="例: 1234">
+                    </div>
                 </div>
 
+                <!-- 固定リンクの名称変更 -->
                 <div class="flex flex-col gap-3">
                     <h4 class="font-bold text-stone-700 border-b pb-1">固定リンクの名称変更（削除不可）</h4>
                     <div class="grid grid-cols-2 gap-2">
@@ -179,6 +205,7 @@
                     </div>
                 </div>
 
+                <!-- カスタム追加リンクの管理 -->
                 <div class="flex flex-col gap-3">
                     <div class="flex items-center justify-between border-b pb-1">
                         <h4 class="font-bold text-stone-700">カスタム追加リンク（小サイズ・横2列）</h4>
@@ -201,13 +228,11 @@
 
     <!-- スクリプト制御 -->
     <script>
-        // 検索エンジン・画像検索ブロック用メタタグ追加
         const metaNoImageIndex = document.createElement('meta');
         metaNoImageIndex.name = 'googlebot';
         metaNoImageIndex.content = 'noimageindex';
         document.head.appendChild(metaNoImageIndex);
 
-        // 画像長押し保存防止
         document.addEventListener('contextmenu', (e) => {
             if (e.target.tagName === 'IMG') {
                 e.preventDefault();
@@ -225,6 +250,7 @@
                 portalTitle: "卓ポータル",
                 mainIconUrl: "",
                 bgImageUrl: "",
+                adminPasscode: "1234", // 🌟 初期パスコード（数字）
                 nameChar: "キャラクター一覧",
                 nameDiary: "月別アルバム・日記",
                 customLinks: []
@@ -311,6 +337,7 @@
             }
         }
 
+        // 🔐 管理者認証ロジック（テンキー対応の専用モーダルを表示）
         let isAdminLoggedIn = false;
         function handleAuthAction() {
             if (isAdminLoggedIn) {
@@ -321,19 +348,32 @@
                 document.getElementById('adminEditContainer').style.display = 'none';
                 alert('管理者モードを終了しました。');
             } else {
-                const passcode = prompt("管理者パスコードを入力してください：");
-                const savedPass = window.storedPasscode || localStorage.getItem('adminPasscode') || 'admin';
-                
-                if (passcode === savedPass || passcode === 'admin') {
-                    isAdminLoggedIn = true;
-                    document.getElementById('authButton').classList.remove('bg-stone-100', 'text-stone-500');
-                    document.getElementById('authButton').classList.add('bg-stone-800', 'text-white');
-                    document.getElementById('authIcon').className = 'fa-solid fa-lock-open';
-                    document.getElementById('adminEditContainer').style.display = 'block';
-                    alert('管理者としてログインしました。');
-                } else if (passcode !== null) {
-                    alert('パスコードが違います。');
-                }
+                document.getElementById('passcodeInput').value = '';
+                document.getElementById('passcodeModal').style.display = 'flex';
+                setTimeout(() => document.getElementById('passcodeInput').focus(), 50);
+            }
+        }
+
+        function closePasscodeModal() {
+            document.getElementById('passcodeModal').style.display = 'none';
+        }
+
+        function submitPasscode() {
+            const inputVal = document.getElementById('passcodeInput').value;
+            const config = loadSettings();
+            const correctPass = config.adminPasscode || '1234';
+
+            if (inputVal === correctPass) {
+                isAdminLoggedIn = true;
+                document.getElementById('authButton').classList.remove('bg-stone-100', 'text-stone-500');
+                document.getElementById('authButton').classList.add('bg-stone-800', 'text-white');
+                document.getElementById('authIcon').className = 'fa-solid fa-lock-open';
+                document.getElementById('adminEditContainer').style.display = 'block';
+                closePasscodeModal();
+                alert('管理者としてログインしました。');
+            } else {
+                alert('パスコードが違います。');
+                document.getElementById('passcodeInput').value = '';
             }
         }
 
@@ -342,6 +382,7 @@
             document.getElementById('inputPortalTitle').value = config.portalTitle;
             document.getElementById('inputMainIcon').value = config.mainIconUrl;
             document.getElementById('inputBgImage').value = config.bgImageUrl;
+            document.getElementById('inputAdminPass').value = config.adminPasscode || '1234';
             document.getElementById('inputNameChar').value = config.nameChar;
             document.getElementById('inputNameDiary').value = config.nameDiary;
 
@@ -410,6 +451,7 @@
                 portalTitle: document.getElementById('inputPortalTitle').value || "卓ポータル",
                 mainIconUrl: document.getElementById('inputMainIcon').value,
                 bgImageUrl: document.getElementById('inputBgImage').value,
+                adminPasscode: document.getElementById('inputAdminPass').value || "1234",
                 nameChar: document.getElementById('inputNameChar').value || "キャラクター一覧",
                 nameDiary: document.getElementById('inputNameDiary').value || "月別アルバム・日記",
                 customLinks: customLinks
