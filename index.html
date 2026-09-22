@@ -9,10 +9,6 @@
     <link id="dynamicFavicon" rel="icon" href="">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-        
-        <!-- スマホ用コンソール表示ツール（Eruda） -->
-<script src="https://cdn.jsdelivr.net/npm/eruda"></script>
-<script>eruda.init();</script>
     
     <!-- Firebase SDK (Firestore用) -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
@@ -179,14 +175,14 @@
                         <input type="text" id="inputPortalTitle" class="w-full px-3 py-2 border border-stone-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-stone-500" placeholder="卓ポータル">
                     </div>
                     <div>
-                        <label class="block font-semibold text-stone-600 mb-1">中央メインアイコン画像</label>
+                        <label class="block font-semibold text-stone-600 mb-1">中央メインアイコン画像（自動圧縮されます）</label>
                         <div class="flex items-center gap-2">
                             <input type="file" id="inputMainIconFile" accept="image/*" class="w-full text-xs text-stone-500 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-stone-800 file:text-white hover:file:bg-stone-700 cursor-pointer">
                             <button type="button" onclick="clearMainIcon()" class="px-3 py-2 bg-stone-200 hover:bg-stone-300 text-stone-700 rounded-xl font-bold">削除</button>
                         </div>
                     </div>
                     <div>
-                        <label class="block font-semibold text-stone-600 mb-1">最背面 背景画像</label>
+                        <label class="block font-semibold text-stone-600 mb-1">最背面 背景画像（自動圧縮されます）</label>
                         <div class="flex items-center gap-2">
                             <input type="file" id="inputBgImageFile" accept="image/*" class="w-full text-xs text-stone-500 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-stone-800 file:text-white hover:file:bg-stone-700 cursor-pointer">
                             <button type="button" onclick="clearBgImage()" class="px-3 py-2 bg-stone-200 hover:bg-stone-300 text-stone-700 rounded-xl font-bold">削除</button>
@@ -232,7 +228,7 @@
         </div>
     </div>
 
-    <!-- スクリプト制御（Firestore連携） -->
+    <!-- スクリプト制御（Firestore連携＆画像自動圧縮機能付き） -->
     <script>
         const metaNoImageIndex = document.createElement('meta');
         metaNoImageIndex.name = 'googlebot';
@@ -245,13 +241,12 @@
 
         // ⚠️ キャラクター一覧等で使っているFirebase設定に書き換えてください
         const firebaseConfig = {
-            apiKey: "AIzaSyA2ctX9sUpJmLSVJomU9cbMzrUX_AXNjuE",
-            authDomain: "diary-36d77.firebaseapp.com",
-            projectId: "diary-36d77",
-            storageBucket: "diary-36d77.firebasestorage.app",
-            messagingSenderId: "1060563209082",
-            appId: "1:1060563209082:web:1c6cfc21a496548309e4c3",
-            measurementId: "G-RBK7ZN6NF1"
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_AUTH_DOMAIN",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_STORAGE_BUCKET",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
         };
 
         if (!firebase.apps.length) {
@@ -269,7 +264,7 @@
             customLinks: []
         };
 
-        // Firestoreから設定を確実に読み込む
+        // Firestoreから設定を読み込む
         async function loadSettings() {
             try {
                 const docRef = db.collection("portalSettings").doc("config");
@@ -290,7 +285,7 @@
                 alert('設定をクラウドに保存しました！');
             } catch (e) {
                 console.error("設定の保存に失敗しました:", e);
-                alert('保存に失敗しました。');
+                alert('保存に失敗しました。画像サイズが大きすぎる可能性があります。');
             }
         }
 
@@ -483,12 +478,38 @@
             return links;
         }
 
-        function fileToBase64(file) {
+        // 画像ファイルを自動で縮小・圧縮して容量を1MB未満にする関数
+        function compressImage(file, maxWidth = 1024, quality = 0.7) {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
-                reader.onload = () => resolve(reader.result);
-                reader.onerror = error => reject(error);
                 reader.readAsDataURL(file);
+                reader.onload = (event) => {
+                    const img = new Image();
+                    img.src = event.target.result;
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        let width = img.width;
+                        let height = img.height;
+
+                        // 大きすぎる場合は最大幅に合わせる（比率維持）
+                        if (width > maxWidth) {
+                            height = Math.round((height * maxWidth) / width);
+                            width = maxWidth;
+                        }
+
+                        canvas.width = width;
+                        canvas.height = height;
+
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+
+                        // JPEG形式に変換して品質を落として圧縮（容量を確実に下げる）
+                        const dataUrl = canvas.toDataURL('image/jpeg', quality);
+                        resolve(dataUrl);
+                    };
+                    img.onerror = (error) => reject(error);
+                };
+                reader.onerror = (error) => reject(error);
             });
         }
 
@@ -512,14 +533,24 @@
                 iconData: link.url ? getFaviconUrl(link.url) : link.iconData
             }));
 
+            // メインアイコンの自動圧縮（3MBなどの大きな画像でも約700KB以下に収まります）
             const mainIconFile = document.getElementById('inputMainIconFile').files[0];
             if (mainIconFile) {
-                try { currentConfig.mainIconData = await fileToBase64(mainIconFile); } catch(e) {}
+                try {
+                    currentConfig.mainIconData = await compressImage(mainIconFile, 600, 0.7);
+                } catch(e) {
+                    console.error("アイコンの圧縮に失敗しました:", e);
+                }
             }
 
+            // 背景画像の自動圧縮（最大幅1024px、画質70%に圧縮）
             const bgImageFile = document.getElementById('inputBgImageFile').files[0];
             if (bgImageFile) {
-                try { currentConfig.bgImageData = await fileToBase64(bgImageFile); } catch(e) {}
+                try {
+                    currentConfig.bgImageData = await compressImage(bgImageFile, 1024, 0.7);
+                } catch(e) {
+                    console.error("背景画像の圧縮に失敗しました:", e);
+                }
             }
 
             closeEditModal();
@@ -573,7 +604,7 @@
 
         window.addEventListener('DOMContentLoaded', () => {
             updateAdminUI();
-            loadSettings(); // 起動時に確実にクラウドから設定をロード
+            loadSettings();
         });
     </script>
 </body>
