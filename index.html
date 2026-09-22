@@ -14,73 +14,90 @@
     <style>
         body {
             touch-action: manipulation;
+            /* 🌟 1画面に固定して絶対にスクロールさせない設定 */
+            height: 100vh;
+            height: 100dvh;
+            overflow: hidden;
         }
     </style>
 </head>
-<body class="bg-stone-100 text-stone-800 min-h-screen flex flex-col justify-between font-sans selection:bg-stone-300">
+<body class="bg-stone-100 text-stone-800 flex flex-col justify-between font-sans selection:bg-stone-300">
 
     <!-- ヘッダー -->
-    <header class="w-full bg-white/80 backdrop-blur-md border-b border-stone-200 sticky top-0 z-10">
-        <div class="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between">
-            <h1 class="text-sm font-bold tracking-wider text-stone-700 flex items-center gap-2">
+    <header class="w-full bg-white/80 backdrop-blur-md border-b border-stone-200 flex-shrink-0">
+        <div class="max-w-md mx-auto px-4 h-12 flex items-center justify-between">
+            <h1 class="text-xs font-bold tracking-wider text-stone-700 flex items-center gap-2">
                 <i class="fa-solid fa-compass text-stone-500"></i>
                 Session Portal
             </h1>
-            <span class="text-xs text-stone-400 font-medium">卓管理・アーカイブ</span>
+            <span class="text-[10px] text-stone-400 font-medium">卓管理・アーカイブ</span>
         </div>
     </header>
 
-    <!-- メインコンテンツ -->
-    <main class="max-w-2xl w-full mx-auto px-4 py-8 flex flex-col gap-6 my-auto">
+    <!-- メインコンテンツ（中央配置・スクロールなし） -->
+    <main class="max-w-sm w-full mx-auto px-4 flex flex-col items-center justify-center gap-5 my-auto">
         
-        <!-- 導入メッセージ -->
-        <div class="text-center flex flex-col gap-1.5 mb-2">
-            <h2 class="text-xl font-bold text-stone-800 tracking-tight">どちらのページを開きますか？</h2>
-            <p class="text-xs text-stone-500">キャラクターの管理、または月別のシナリオログ・アルバムへ移動できます。</p>
+        <!-- タイトルまたはアイコン -->
+        <div class="text-center flex flex-col items-center gap-2">
+            <div class="w-14 h-14 rounded-full bg-white border border-stone-200 shadow-sm flex items-center justify-center text-stone-700">
+                <i class="fa-solid fa-book-bookmark text-xl text-stone-600"></i>
+            </div>
+            <h2 class="text-sm font-bold text-stone-800 tracking-tight">卓ポータル</h2>
         </div>
 
-        <!-- リンクカード群 -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <!-- リンクカード群（リンクリット風・ファビコン自動取得対応） -->
+        <div class="w-full flex flex-col gap-3">
             
             <!-- キャラクター一覧へ -->
-            <a href="characters.html" class="group bg-white rounded-3xl p-6 border border-stone-200 shadow-sm hover:shadow-md hover:border-stone-300 transition-all flex flex-col justify-between gap-4">
-                <div class="flex items-center justify-between">
-                    <div class="w-12 h-12 rounded-2xl bg-stone-100 flex items-center justify-center text-stone-700 group-hover:bg-stone-800 group-hover:text-white transition-colors">
-                        <i class="fa-solid fa-users text-lg"></i>
+            <a href="characters.html" class="group flex items-center justify-between px-4 py-3.5 bg-white hover:bg-stone-50 border border-stone-200 rounded-2xl shadow-sm transition-all">
+                <div class="flex items-center gap-3 min-w-0">
+                    <!-- アイコン部分：自動取得（キャラクター一覧は内部ページのためアイコンまたは固有のファビコン風表示） -->
+                    <div class="w-9 h-9 rounded-xl bg-stone-100 border border-stone-200 flex items-center justify-center text-stone-700 group-hover:bg-stone-800 group-hover:text-white transition-colors flex-shrink-0 overflow-hidden">
+                        <i class="fa-solid fa-users text-sm"></i>
                     </div>
-                    <span class="text-xs text-stone-400 group-hover:text-stone-600 transition-colors flex items-center gap-1 font-medium">
-                        開く <i class="fa-solid fa-arrow-right text-[10px]"></i>
-                    </span>
+                    <span class="text-xs font-bold text-stone-800 truncate">キャラクター一覧</span>
                 </div>
-                <div>
-                    <h3 class="text-base font-bold text-stone-800 mb-1">キャラクター一覧</h3>
-                    <p class="text-xs text-stone-500 leading-relaxed">オリキャラのプロファイルやシステムデータ、設定を管理します。</p>
+                <div class="text-stone-400 group-hover:text-stone-600 transition-colors pr-1 flex-shrink-0">
+                    <i class="fa-solid fa-chevron-right text-xs"></i>
                 </div>
             </a>
 
             <!-- 日記・アルバムへ -->
-            <a href="diary.html" class="group bg-white rounded-3xl p-6 border border-stone-200 shadow-sm hover:shadow-md hover:border-stone-300 transition-all flex flex-col justify-between gap-4">
-                <div class="flex items-center justify-between">
-                    <div class="w-12 h-12 rounded-2xl bg-stone-100 flex items-center justify-center text-stone-700 group-hover:bg-stone-800 group-hover:text-white transition-colors">
-                        <i class="fa-solid fa-book-open text-lg"></i>
+            <a href="diary.html" class="group flex items-center justify-between px-4 py-3.5 bg-white hover:bg-stone-50 border border-stone-200 rounded-2xl shadow-sm transition-all">
+                <div class="flex items-center gap-3 min-w-0">
+                    <div class="w-9 h-9 rounded-xl bg-stone-100 border border-stone-200 flex items-center justify-center text-stone-700 group-hover:bg-stone-800 group-hover:text-white transition-colors flex-shrink-0 overflow-hidden">
+                        <i class="fa-solid fa-book-open text-sm"></i>
                     </div>
-                    <span class="text-xs text-stone-400 group-hover:text-stone-600 transition-colors flex items-center gap-1 font-medium">
-                        開く <i class="fa-solid fa-arrow-right text-[10px]"></i>
-                    </span>
+                    <span class="text-xs font-bold text-stone-800 truncate">月別アルバム・日記</span>
                 </div>
-                <div>
-                    <h3 class="text-base font-bold text-stone-800 mb-1">月別アルバム・日記</h3>
-                    <p class="text-xs text-stone-500 leading-relaxed">セッションの思い出や写真、シナリオログの月別アルバムを閲覧します。</p>
+                <div class="text-stone-400 group-hover:text-stone-600 transition-colors pr-1 flex-shrink-0">
+                    <i class="fa-solid fa-chevron-right text-xs"></i>
                 </div>
             </a>
+
+            <!-- 🌟 Googleファビコン自動取得APIを利用する外部サイトの例（必要に応じて増やせます） -->
+            <!-- 例: キャラクターシート保管所等へのリンクを置く場合 -->
+            <!--
+            <a href="https://charasheet.vampire-blood.net/" target="_blank" rel="noopener noreferrer" class="group flex items-center justify-between px-4 py-3.5 bg-white hover:bg-stone-50 border border-stone-200 rounded-2xl shadow-sm transition-all">
+                <div class="flex items-center gap-3 min-w-0">
+                    <div class="w-9 h-9 rounded-xl bg-stone-100 border border-stone-200 flex items-center justify-center overflow-hidden flex-shrink-0">
+                        <img src="https://www.google.com/s2/favicons?domain=charasheet.vampire-blood.net&sz=128" alt="" class="w-5 h-5 object-contain" onerror="this.onerror=null; this.src='images/default-icon.png';">
+                    </div>
+                    <span class="text-xs font-bold text-stone-800 truncate">キャラクターシート保管所</span>
+                </div>
+                <div class="text-stone-400 group-hover:text-stone-600 transition-colors pr-1 flex-shrink-0">
+                    <i class="fa-solid fa-chevron-right text-xs"></i>
+                </div>
+            </a>
+            -->
 
         </div>
 
     </main>
 
     <!-- フッター -->
-    <footer class="w-full py-6 text-center border-t border-stone-200/60 bg-white/40">
-        <p class="text-[11px] text-stone-400 font-medium">Session & Character Management System</p>
+    <footer class="w-full py-4 text-center border-t border-stone-200/60 bg-white/40 flex-shrink-0">
+        <p class="text-[10px] text-stone-400 font-medium">Session & Character Management System</p>
     </footer>
 
 </body>
