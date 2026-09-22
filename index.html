@@ -14,14 +14,27 @@
     <style>
         body {
             touch-action: manipulation;
-            /* 🌟 1画面に固定して絶対にスクロールさせない設定 */
             height: 100vh;
             height: 100dvh;
             overflow: hidden;
+            overscroll-behavior-y: none; /* スマホ特有のバウンスを抑制 */
+        }
+        /* プルリフレッシュ用インジケーターの初期状態 */
+        #pullRefreshIndicator {
+            transform: translateY(-100%);
+            transition: transform 0.2s cubic-bezier(0, 0, 0.2, 1);
         }
     </style>
 </head>
-<body class="bg-stone-100 text-stone-800 flex flex-col justify-between font-sans selection:bg-stone-300">
+<body class="bg-stone-100 text-stone-800 flex flex-col justify-between font-sans selection:bg-stone-300 relative">
+
+    <!-- 🌟 引き下げたら更新（Pull-to-Refresh）用インジケーター -->
+    <div id="pullRefreshIndicator" class="absolute top-4 left-0 right-0 flex items-center justify-center z-50 pointer-events-none">
+        <div class="bg-white/90 backdrop-blur-md px-4 py-2 rounded-full shadow-md border border-stone-200 text-stone-600 text-xs font-bold flex items-center gap-2">
+            <i id="refreshIcon" class="fa-solid fa-rotate-right transition-transform duration-200"></i>
+            <span id="refreshText">下に引っ張って更新</span>
+        </div>
+    </div>
 
     <!-- ヘッダー -->
     <header class="w-full bg-white/80 backdrop-blur-md border-b border-stone-200 flex-shrink-0">
@@ -51,7 +64,6 @@
             <!-- キャラクター一覧へ -->
             <a href="characters.html" class="group flex items-center justify-between px-4 py-3.5 bg-white hover:bg-stone-50 border border-stone-200 rounded-2xl shadow-sm transition-all">
                 <div class="flex items-center gap-3 min-w-0">
-                    <!-- アイコン部分：自動取得（キャラクター一覧は内部ページのためアイコンまたは固有のファビコン風表示） -->
                     <div class="w-9 h-9 rounded-xl bg-stone-100 border border-stone-200 flex items-center justify-center text-stone-700 group-hover:bg-stone-800 group-hover:text-white transition-colors flex-shrink-0 overflow-hidden">
                         <i class="fa-solid fa-users text-sm"></i>
                     </div>
@@ -75,22 +87,6 @@
                 </div>
             </a>
 
-            <!-- 🌟 Googleファビコン自動取得APIを利用する外部サイトの例（必要に応じて増やせます） -->
-            <!-- 例: キャラクターシート保管所等へのリンクを置く場合 -->
-            <!--
-            <a href="https://charasheet.vampire-blood.net/" target="_blank" rel="noopener noreferrer" class="group flex items-center justify-between px-4 py-3.5 bg-white hover:bg-stone-50 border border-stone-200 rounded-2xl shadow-sm transition-all">
-                <div class="flex items-center gap-3 min-w-0">
-                    <div class="w-9 h-9 rounded-xl bg-stone-100 border border-stone-200 flex items-center justify-center overflow-hidden flex-shrink-0">
-                        <img src="https://www.google.com/s2/favicons?domain=charasheet.vampire-blood.net&sz=128" alt="" class="w-5 h-5 object-contain" onerror="this.onerror=null; this.src='images/default-icon.png';">
-                    </div>
-                    <span class="text-xs font-bold text-stone-800 truncate">キャラクターシート保管所</span>
-                </div>
-                <div class="text-stone-400 group-hover:text-stone-600 transition-colors pr-1 flex-shrink-0">
-                    <i class="fa-solid fa-chevron-right text-xs"></i>
-                </div>
-            </a>
-            -->
-
         </div>
 
     </main>
@@ -99,6 +95,65 @@
     <footer class="w-full py-4 text-center border-t border-stone-200/60 bg-white/40 flex-shrink-0">
         <p class="text-[10px] text-stone-400 font-medium">Session & Character Management System</p>
     </footer>
+
+    <!-- 🌟 プルリフレッシュ制御スクリプト -->
+    <script>
+        let touchStartY = 0;
+        let isPulling = false;
+        const pullThreshold = 70; // 更新を実行する引っ張り距離（px）
+        
+        const indicator = document.getElementById('pullRefreshIndicator');
+        const refreshIcon = document.getElementById('refreshIcon');
+        const refreshText = document.getElementById('refreshText');
+
+        window.addEventListener('touchstart', (e) => {
+            touchStartY = e.touches[0].clientY;
+            isPulling = true;
+        }, { passive: true });
+
+        window.addEventListener('touchmove', (e) => {
+            if (!isPulling) return;
+            const currentY = e.touches[0].clientY;
+            const diff = currentY - touchStartY;
+
+            // 下方向に引っ張っているときのみ
+            if (diff > 0) {
+                const pullDist = Math.min(diff * 0.4, 90); // 減衰を効かせて引っ張りやすくする
+                indicator.style.transform = `translateY(${pullDist}px)`;
+
+                if (diff > pullThreshold) {
+                    refreshText.textContent = '指を離して更新';
+                    refreshIcon.style.transform = 'rotate(180deg)';
+                } else {
+                    refreshText.textContent = '下に引っ張って更新';
+                    refreshIcon.style.transform = 'rotate(0deg)';
+                }
+            }
+        }, { passive: true });
+
+        window.addEventListener('touchend', (e) => {
+            if (!isPulling) return;
+            isPulling = false;
+
+            const currentY = e.changedTouches[0].clientY;
+            const diff = currentY - touchStartY;
+
+            if (diff > pullThreshold) {
+                // 更新アクションへ
+                indicator.style.transform = `translateY(60px)`;
+                refreshText.textContent = '更新中...';
+                refreshIcon.className = 'fa-solid fa-spinner fa-spin text-stone-700';
+                
+                setTimeout(() => {
+                    window.location.reload();
+                }, 400);
+            } else {
+                // 元の位置に戻す
+                indicator.style.transform = `translateY(-100%)`;
+            }
+            touchStartY = 0;
+        });
+    </script>
 
 </body>
 </html>
