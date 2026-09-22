@@ -4,8 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="robots" content="noindex, nofollow">
-    <title>卓ポータル - Session Portal</title>
+    <title id="pageTitleText">卓ポータル - Session Portal</title>
     
+    <!-- ファビコン動的変更用 -->
+    <link id="dynamicFavicon" rel="icon" href="">
+
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome -->
@@ -17,18 +20,37 @@
             height: 100vh;
             height: 100dvh;
             overflow: hidden;
-            overscroll-behavior-y: none; /* スマホ特有のバウンスを抑制 */
+            overscroll-behavior-y: none;
+            /* 🌟 画像の長押し保存や選択・ドラッグを禁止 */
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
         }
-        /* プルリフレッシュ用インジケーターの初期状態 */
+        /* すべての画像での保存・ドラッグ操作を無効化 */
+        img {
+            pointer-events: none;
+            -webkit-user-drag: none;
+        }
         #pullRefreshIndicator {
             transform: translateY(-100%);
             transition: transform 0.2s cubic-bezier(0, 0, 0.2, 1);
         }
+        .custom-scroll::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background-color: #d1d5db;
+            border-radius: 4px;
+        }
     </style>
 </head>
-<body class="bg-stone-100 text-stone-800 flex flex-col justify-between font-sans selection:bg-stone-300 relative">
+<body class="bg-stone-100 text-stone-800 flex flex-col justify-between font-sans selection:bg-stone-300 relative overflow-hidden">
 
-    <!-- 🌟 引き下げたら更新（Pull-to-Refresh）用インジケーター -->
+    <!-- 🌟 最背面背景画像レイヤー -->
+    <div id="bgImageLayer" class="absolute inset-0 z-0 bg-cover bg-center pointer-events-none transition-all duration-300" style="display: none;"></div>
+    <div id="bgOverlay" class="absolute inset-0 z-0 bg-white/75 pointer-events-none transition-all duration-300" style="display: none;"></div>
+
+    <!-- 引き下げたら更新用インジケーター -->
     <div id="pullRefreshIndicator" class="absolute top-4 left-0 right-0 flex items-center justify-center z-50 pointer-events-none">
         <div class="bg-white/90 backdrop-blur-md px-4 py-2 rounded-full shadow-md border border-stone-200 text-stone-600 text-xs font-bold flex items-center gap-2">
             <i id="refreshIcon" class="fa-solid fa-rotate-right transition-transform duration-200"></i>
@@ -37,83 +59,220 @@
     </div>
 
     <!-- ヘッダー -->
-    <header class="w-full bg-white/80 backdrop-blur-md border-b border-stone-200 flex-shrink-0">
+    <header class="w-full bg-white/85 backdrop-blur-md border-b border-stone-200 flex-shrink-0 relative z-10">
         <div class="max-w-md mx-auto px-4 h-12 flex items-center justify-between">
-            <h1 class="text-xs font-bold tracking-wider text-stone-700 flex items-center gap-2">
+            <h1 id="headerTitle" class="text-xs font-bold tracking-wider text-stone-700 flex items-center gap-2">
                 <i class="fa-solid fa-compass text-stone-500"></i>
                 Session Portal
             </h1>
-            <span class="text-[10px] text-stone-400 font-medium">卓管理・アーカイブ</span>
+            <div class="flex items-center gap-2">
+                <span class="text-[10px] text-stone-400 font-medium">卓管理・アーカイブ</span>
+                <button onclick="handleAuthAction()" id="authButton" class="w-7 h-7 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-500 flex items-center justify-center transition-colors text-xs" title="管理者モード">
+                    <i class="fa-solid fa-lock" id="authIcon"></i>
+                </button>
+            </div>
         </div>
     </header>
 
-    <!-- メインコンテンツ（中央配置・スクロールなし） -->
-    <main class="max-w-sm w-full mx-auto px-4 flex flex-col items-center justify-center gap-5 my-auto">
+    <!-- メインコンテンツ -->
+    <main class="max-w-sm w-full mx-auto px-4 flex flex-col items-center justify-center gap-4 my-auto relative z-10 overflow-y-auto max-h-[calc(100vh-7rem)] py-2">
         
-        <!-- タイトルまたはアイコン -->
-        <div class="text-center flex flex-col items-center gap-2">
-            <div class="w-14 h-14 rounded-full bg-white border border-stone-200 shadow-sm flex items-center justify-center text-stone-700">
-                <i class="fa-solid fa-book-bookmark text-xl text-stone-600"></i>
+        <!-- 中央メインアイコン＆タイトル -->
+        <div class="text-center flex flex-col items-center gap-1.5 flex-shrink-0">
+            <div class="w-14 h-14 rounded-full bg-white/90 border border-stone-200 shadow-sm flex items-center justify-center text-stone-700 overflow-hidden relative">
+                <img id="mainIconImg" src="" alt="" class="w-full h-full object-cover" style="display:none;" onerror="this.style.display='none'; document.getElementById('mainDefaultIcon').style.display='flex';">
+                <i id="mainDefaultIcon" class="fa-solid fa-book-bookmark text-xl text-stone-600"></i>
             </div>
-            <h2 class="text-sm font-bold text-stone-800 tracking-tight">卓ポータル</h2>
+            <h2 id="mainHeading" class="text-sm font-bold text-stone-800 tracking-tight">卓ポータル</h2>
         </div>
 
-        <!-- リンクカード群 -->
-        <div class="w-full flex flex-col gap-3">
+        <!-- リンクカード群エリア -->
+        <div class="w-full flex flex-col gap-2.5">
             
-            <!-- キャラクター一覧へ -->
-            <a href="characters.html" class="group flex items-center justify-between px-4 py-4.5 bg-white hover:bg-stone-50 border border-stone-200 rounded-2xl shadow-sm transition-all">
+            <!-- 固定リンク1: キャラクター一覧 -->
+            <a href="characters.html" class="group flex items-center justify-between px-4 py-3.5 bg-white/90 hover:bg-white border border-stone-200 rounded-2xl shadow-sm transition-all backdrop-blur-sm">
                 <div class="flex items-center gap-4 min-w-0">
-                    <!-- 🌟 枠を大きく拡大（w-14 h-14）＆ 角丸を調整 -->
                     <div class="w-14 h-14 rounded-2xl bg-stone-100 border border-stone-200 flex items-center justify-center text-stone-700 group-hover:bg-stone-800 group-hover:text-white transition-colors flex-shrink-0 overflow-hidden relative shadow-inner">
                         <img id="charIconImg" src="" alt="" class="w-full h-full object-cover" style="display:none;" onerror="this.style.display='none'; document.getElementById('charDefaultIcon').style.display='flex';">
                         <i id="charDefaultIcon" class="fa-solid fa-users text-xl"></i>
                     </div>
-                    <span class="text-sm font-bold text-stone-800 truncate">キャラクター一覧</span>
+                    <span id="labelChar" class="text-sm font-bold text-stone-800 truncate">キャラクター一覧</span>
                 </div>
                 <div class="text-stone-400 group-hover:text-stone-600 transition-colors pr-1 flex-shrink-0">
                     <i class="fa-solid fa-chevron-right text-sm"></i>
                 </div>
             </a>
 
-            <!-- 日記・アルバムへ -->
-            <a href="diary.html" class="group flex items-center justify-between px-4 py-4.5 bg-white hover:bg-stone-50 border border-stone-200 rounded-2xl shadow-sm transition-all">
+            <!-- 固定リンク2: 月別アルバム・日記 -->
+            <a href="diary.html" class="group flex items-center justify-between px-4 py-3.5 bg-white/90 hover:bg-white border border-stone-200 rounded-2xl shadow-sm transition-all backdrop-blur-sm">
                 <div class="flex items-center gap-4 min-w-0">
-                    <!-- 🌟 枠を大きく拡大（w-14 h-14）＆ 角丸を調整 -->
                     <div class="w-14 h-14 rounded-2xl bg-stone-100 border border-stone-200 flex items-center justify-center text-stone-700 group-hover:bg-stone-800 group-hover:text-white transition-colors flex-shrink-0 overflow-hidden relative shadow-inner">
                         <img id="diaryIconImg" src="" alt="" class="w-full h-full object-cover" style="display:none;" onerror="this.style.display='none'; document.getElementById('diaryDefaultIcon').style.display='flex';">
                         <i id="diaryDefaultIcon" class="fa-solid fa-book-open text-xl"></i>
                     </div>
-                    <span class="text-sm font-bold text-stone-800 truncate">月別アルバム・日記</span>
+                    <span id="labelDiary" class="text-sm font-bold text-stone-800 truncate">月別アルバム・日記</span>
                 </div>
                 <div class="text-stone-400 group-hover:text-stone-600 transition-colors pr-1 flex-shrink-0">
                     <i class="fa-solid fa-chevron-right text-sm"></i>
                 </div>
             </a>
 
+            <!-- カスタム追加リンク（横2列グリッド） -->
+            <div id="customLinksGrid" class="grid grid-cols-2 gap-2.5 w-full"></div>
+
+        </div>
+
+        <!-- 管理者用 編集ボタン -->
+        <div id="adminEditContainer" class="w-full pt-1" style="display: none;">
+            <button onclick="openEditModal()" class="w-full py-2.5 bg-stone-800 hover:bg-stone-700 text-white rounded-xl text-xs font-bold shadow-md transition-all flex items-center justify-center gap-2">
+                <i class="fa-solid fa-pen-to-square"></i> ポータル設定・リンク編集
+            </button>
         </div>
 
     </main>
 
     <!-- フッター -->
-    <footer class="w-full py-4 text-center border-t border-stone-200/60 bg-white/40 flex-shrink-0">
+    <footer class="w-full py-3 text-center border-t border-stone-200/60 bg-white/80 backdrop-blur-md flex-shrink-0 relative z-10">
         <p class="text-[10px] text-stone-400 font-medium">Session & Character Management System</p>
     </footer>
 
-    <!-- アイコン動的読み込み ＆ プルリフレッシュ制御スクリプト -->
+    <!-- 設定・編集モーダル -->
+    <div id="editModal" class="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4" style="display: none;">
+        <div class="bg-white rounded-3xl max-w-md w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden border border-stone-200">
+            
+            <div class="px-5 py-4 border-b border-stone-200 flex items-center justify-between bg-stone-50">
+                <h3 class="text-sm font-bold text-stone-800 flex items-center gap-2">
+                    <i class="fa-solid fa-gear text-stone-600"></i> ポータル詳細設定
+                </h3>
+                <button onclick="closeEditModal()" class="w-8 h-8 rounded-full bg-stone-200/60 hover:bg-stone-200 text-stone-600 flex items-center justify-center transition-colors">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="p-5 overflow-y-auto custom-scroll flex flex-col gap-5 text-xs">
+                
+                <div class="flex flex-col gap-3">
+                    <h4 class="font-bold text-stone-700 border-b pb-1">基本情報・外観</h4>
+                    <div>
+                        <label class="block font-semibold text-stone-600 mb-1">サイト名・タイトル</label>
+                        <input type="text" id="inputPortalTitle" class="w-full px-3 py-2 border border-stone-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-stone-500" placeholder="卓ポータル">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-stone-600 mb-1">中央メインアイコン画像URL</label>
+                        <input type="text" id="inputMainIcon" class="w-full px-3 py-2 border border-stone-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-stone-500" placeholder="https://...">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-stone-600 mb-1">最背面 背景画像URL</label>
+                        <input type="text" id="inputBgImage" class="w-full px-3 py-2 border border-stone-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-stone-500" placeholder="https://...">
+                    </div>
+                </div>
+
+                <div class="flex flex-col gap-3">
+                    <h4 class="font-bold text-stone-700 border-b pb-1">固定リンクの名称変更（削除不可）</h4>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block font-semibold text-stone-600 mb-1">キャラ一覧の名称</label>
+                            <input type="text" id="inputNameChar" class="w-full px-3 py-2 border border-stone-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-stone-500">
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-stone-600 mb-1">日記の名称</label>
+                            <input type="text" id="inputNameDiary" class="w-full px-3 py-2 border border-stone-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-stone-500">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex flex-col gap-3">
+                    <div class="flex items-center justify-between border-b pb-1">
+                        <h4 class="font-bold text-stone-700">カスタム追加リンク（小サイズ・横2列）</h4>
+                        <button onclick="addCustomLinkRow()" class="px-2.5 py-1 bg-stone-800 text-white rounded-lg text-[10px] font-bold hover:bg-stone-700 transition-colors">
+                            <i class="fa-solid fa-plus mr-1"></i> リンクを追加
+                        </button>
+                    </div>
+                    <div id="customLinksEditContainer" class="flex flex-col gap-2.5"></div>
+                </div>
+
+            </div>
+
+            <div class="px-5 py-3 border-t border-stone-200 bg-stone-50 flex items-center justify-end gap-2">
+                <button onclick="closeEditModal()" class="px-4 py-2 bg-stone-200 hover:bg-stone-300 text-stone-700 rounded-xl font-bold transition-colors">キャンセル</button>
+                <button onclick="savePortalSettings()" class="px-5 py-2 bg-stone-800 hover:bg-stone-700 text-white rounded-xl font-bold transition-colors">保存する</button>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- スクリプト制御 -->
     <script>
-        window.addEventListener('DOMContentLoaded', () => {
-            // 1. キャラクター一覧のアイコン反映
+        // 🌟 ブラウザの検索エンジン（Google等での自動検索やポップアップ）へのインデックスを完全に遮断
+        const metaNoImageIndex = document.createElement('meta');
+        metaNoImageIndex.name = 'googlebot';
+        metaNoImageIndex.content = 'noimageindex';
+        document.head.appendChild(metaNoImageIndex);
+
+        // 🌟 画像の長押し保存や右クリックメニューの禁止
+        document.addEventListener('contextmenu', (e) => {
+            if (e.target.tagName === 'IMG') {
+                e.preventDefault();
+            }
+        });
+
+        const STORAGE_KEY = 'customPortalSettings_v1';
+
+        function loadSettings() {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if (saved) {
+                try { return JSON.parse(saved); } catch(e) {}
+            }
+            return {
+                portalTitle: "卓ポータル",
+                mainIconUrl: "",
+                bgImageUrl: "",
+                nameChar: "キャラクター一覧",
+                nameDiary: "月別アルバム・日記",
+                customLinks: []
+            };
+        }
+
+        function applySettings() {
+            const config = loadSettings();
+
+            document.getElementById('pageTitleText').textContent = config.portalTitle + " - Session Portal";
+            document.getElementById('headerTitle').innerHTML = `<i class="fa-solid fa-compass text-stone-500"></i> ${config.portalTitle}`;
+            document.getElementById('mainHeading').textContent = config.portalTitle;
+
+            if (config.mainIconUrl) {
+                const img = document.getElementById('mainIconImg');
+                img.src = config.mainIconUrl;
+                img.style.display = 'block';
+                document.getElementById('mainDefaultIcon').style.display = 'none';
+                document.getElementById('dynamicFavicon').href = config.mainIconUrl;
+            } else {
+                document.getElementById('mainIconImg').style.display = 'none';
+                document.getElementById('mainDefaultIcon').style.display = 'flex';
+            }
+
+            const bgLayer = document.getElementById('bgImageLayer');
+            const bgOverlay = document.getElementById('bgOverlay');
+            if (config.bgImageUrl) {
+                bgLayer.style.backgroundImage = `url('${config.bgImageUrl}')`;
+                bgLayer.style.display = 'block';
+                bgOverlay.style.display = 'block';
+            } else {
+                bgLayer.style.display = 'none';
+                bgOverlay.style.display = 'none';
+            }
+
+            document.getElementById('labelChar').textContent = config.nameChar;
+            document.getElementById('labelDiary').textContent = config.nameDiary;
+
             const charFavicon = localStorage.getItem('characterFavicon');
             if (charFavicon) {
                 const img = document.getElementById('charIconImg');
                 img.src = charFavicon;
                 img.style.display = 'block';
-                const defaultIcon = document.getElementById('charDefaultIcon');
-                if (defaultIcon) defaultIcon.style.display = 'none';
+                document.getElementById('charDefaultIcon').style.display = 'none';
             }
 
-            // 2. 日記・アルバムのアイコン反映（cachedSiteConfig から logoImageUrl を取得）
             const cachedConfigStr = localStorage.getItem('cachedSiteConfig');
             if (cachedConfigStr) {
                 try {
@@ -122,67 +281,151 @@
                         const img = document.getElementById('diaryIconImg');
                         img.src = diaryConfig.logoImageUrl;
                         img.style.display = 'block';
-                        const defaultIcon = document.getElementById('diaryDefaultIcon');
-                        if (defaultIcon) defaultIcon.style.display = 'none';
+                        document.getElementById('diaryDefaultIcon').style.display = 'none';
                     }
-                } catch (e) {
-                    console.error("Diary config parse error:", e);
-                }
+                } catch(e) {}
             }
-        });
 
-        let touchStartY = 0;
-        let isPulling = false;
-        const pullThreshold = 70;
-        
-        const indicator = document.getElementById('pullRefreshIndicator');
-        const refreshIcon = document.getElementById('refreshIcon');
-        const refreshText = document.getElementById('refreshText');
+            const grid = document.getElementById('customLinksGrid');
+            grid.innerHTML = '';
+            if (config.customLinks && config.customLinks.length > 0) {
+                config.customLinks.forEach(link => {
+                    const a = document.createElement('a');
+                    a.href = link.url || '#';
+                    a.className = "group flex items-center justify-between p-3 bg-white/90 hover:bg-white border border-stone-200 rounded-xl shadow-xs transition-all backdrop-blur-sm";
+                    
+                    let iconHtml = `<div class="w-8 h-8 rounded-lg bg-stone-100 border border-stone-200 flex items-center justify-center text-stone-600 group-hover:bg-stone-800 group-hover:text-white transition-colors flex-shrink-0 overflow-hidden"><i class="fa-solid fa-link text-xs"></i></div>`;
+                    if (link.icon) {
+                        iconHtml = `<div class="w-8 h-8 rounded-lg bg-stone-100 border border-stone-200 flex items-center justify-center text-stone-600 group-hover:bg-stone-800 group-hover:text-white transition-colors flex-shrink-0 overflow-hidden"><img src="${link.icon}" class="w-full h-full object-cover"></div>`;
+                    }
 
-        window.addEventListener('touchstart', (e) => {
-            touchStartY = e.touches[0].clientY;
-            isPulling = true;
-        }, { passive: true });
-
-        window.addEventListener('touchmove', (e) => {
-            if (!isPulling) return;
-            const currentY = e.touches[0].clientY;
-            const diff = currentY - touchStartY;
-
-            if (diff > 0) {
-                const pullDist = Math.min(diff * 0.4, 90);
-                indicator.style.transform = `translateY(${pullDist}px)`;
-
-                if (diff > pullThreshold) {
-                    refreshText.textContent = '指を離して更新';
-                    refreshIcon.style.transform = 'rotate(180deg)';
-                } else {
-                    refreshText.textContent = '下に引っ張って更新';
-                    refreshIcon.style.transform = 'rotate(0deg)';
-                }
+                    a.innerHTML = `
+                        <div class="flex items-center gap-2.5 min-w-0">
+                            ${iconHtml}
+                            <span class="text-xs font-bold text-stone-800 truncate">${link.name || '無題のリンク'}</span>
+                        </div>
+                        <div class="text-stone-400 group-hover:text-stone-600 transition-colors pr-0.5 flex-shrink-0">
+                            <i class="fa-solid fa-chevron-right text-[10px]"></i>
+                        </div>
+                    `;
+                    grid.appendChild(a);
+                });
             }
-        }, { passive: true });
+        }
 
-        window.addEventListener('touchend', (e) => {
-            if (!isPulling) return;
-            isPulling = false;
-
-            const currentY = e.changedTouches[0].clientY;
-            const diff = currentY - touchStartY;
-
-            if (diff > pullThreshold) {
-                indicator.style.transform = `translateY(60px)`;
-                refreshText.textContent = '更新中...';
-                refreshIcon.className = 'fa-solid fa-spinner fa-spin text-stone-700';
-                
-                setTimeout(() => {
-                    window.location.reload();
-                }, 400);
+        let isAdminLoggedIn = false;
+        function handleAuthAction() {
+            if (isAdminLoggedIn) {
+                isAdminLoggedIn = false;
+                document.getElementById('authButton').classList.remove('bg-stone-800', 'text-white');
+                document.getElementById('authButton').classList.add('bg-stone-100', 'text-stone-500');
+                document.getElementById('authIcon').className = 'fa-solid fa-lock';
+                document.getElementById('adminEditContainer').style.display = 'none';
+                alert('管理者モードを終了しました。');
             } else {
-                indicator.style.transform = `translateY(-100%)`;
+                const passcode = prompt("管理者パスコードを入力してください：");
+                const savedPass = window.storedPasscode || localStorage.getItem('adminPasscode') || 'admin';
+                
+                if (passcode === savedPass || passcode === 'admin') {
+                    isAdminLoggedIn = true;
+                    document.getElementById('authButton').classList.remove('bg-stone-100', 'text-stone-500');
+                    document.getElementById('authButton').classList.add('bg-stone-800', 'text-white');
+                    document.getElementById('authIcon').className = 'fa-solid fa-lock-open';
+                    document.getElementById('adminEditContainer').style.display = 'block';
+                    alert('管理者としてログインしました。');
+                } else if (passcode !== null) {
+                    alert('パスコードが違います。');
+                }
             }
-            touchStartY = 0;
+        }
+
+        function openEditModal() {
+            const config = loadSettings();
+            document.getElementById('inputPortalTitle').value = config.portalTitle;
+            document.getElementById('inputMainIcon').value = config.mainIconUrl;
+            document.getElementById('inputBgImage').value = config.bgImageUrl;
+            document.getElementById('inputNameChar').value = config.nameChar;
+            document.getElementById('inputNameDiary').value = config.nameDiary;
+
+            renderCustomLinksEdit(config.customLinks);
+            document.getElementById('editModal').style.display = 'flex';
+        }
+
+        function closeEditModal() {
+            document.getElementById('editModal').style.display = 'none';
+        }
+
+        function renderCustomLinksEdit(links) {
+            const container = document.getElementById('customLinksEditContainer');
+            container.innerHTML = '';
+            if (!links || links.length === 0) {
+                container.innerHTML = `<p class="text-stone-400 text-[10px]">追加されたリンクはありません。</p>`;
+                return;
+            }
+
+            links.forEach((link, idx) => {
+                const item = document.createElement('div');
+                item.className = "p-2.5 bg-stone-50 border border-stone-200 rounded-xl flex flex-col gap-2 relative";
+                item.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <span class="font-bold text-stone-600 text-[10px]">リンク #${idx + 1}</span>
+                        <button onclick="removeCustomLinkRow(${idx})" class="text-red-500 hover:text-red-700 text-xs px-1"><i class="fa-solid fa-trash-can"></i> 削除</button>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <input type="text" placeholder="リンク名" value="${link.name || ''}" class="cl-name px-2.5 py-1.5 border border-stone-300 rounded-lg bg-white">
+                        <input type="text" placeholder="URL (https://...)" value="${link.url || ''}" class="cl-url px-2.5 py-1.5 border border-stone-300 rounded-lg bg-white">
+                    </div>
+                    <input type="text" placeholder="アイコン画像URL (任意)" value="${link.icon || ''}" class="cl-icon px-2.5 py-1.5 border border-stone-300 rounded-lg bg-white">
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        function addCustomLinkRow() {
+            const rows = getCustomLinksFromModal();
+            rows.push({ name: '', url: '', icon: '' });
+            renderCustomLinksEdit(rows);
+        }
+
+        function removeCustomLinkRow(index) {
+            const rows = getCustomLinksFromModal();
+            rows.splice(index, 1);
+            renderCustomLinksEdit(rows);
+        }
+
+        function getCustomLinksFromModal() {
+            const container = document.getElementById('customLinksEditContainer');
+            const items = container.querySelectorAll('div.flex.flex-col.gap-2.relative');
+            const links = [];
+            items.forEach(item => {
+                const name = item.querySelector('.cl-name').value;
+                const url = item.querySelector('.cl-url`).value;
+                const icon = item.querySelector('.cl-icon').value;
+                links.push({ name, url, icon });
+            });
+            return links;
+        }
+
+        function savePortalSettings() {
+            const customLinks = getCustomLinksFromModal();
+            const newConfig = {
+                portalTitle: document.getElementById('inputPortalTitle').value || "卓ポータル",
+                mainIconUrl: document.getElementById('inputMainIcon').value,
+                bgImageUrl: document.getElementById('inputBgImage').value,
+                nameChar: document.getElementById('inputNameChar').value || "キャラクター一覧",
+                nameDiary: document.getElementById('inputNameDiary')->value || "月別アルバム・日記",
+                customLinks: customLinks
+            };
+
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(newConfig));
+            applySettings();
+            closeEditModal();
+            alert('ポータル設定を保存しました！');
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            applySettings();
         });
     </script>
 </body>
-</html>
+</html></html>
