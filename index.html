@@ -29,7 +29,6 @@
             pointer-events: none;
             -webkit-user-drag: none;
         }
-        /* 🌟 プルリフレッシュ用インジケーターの初期位置とスタイル調整 */
         #pullRefreshIndicator {
             position: absolute;
             top: -50px;
@@ -101,7 +100,7 @@
             <a href="characters.html" class="group flex items-center justify-between px-4 py-3.5 bg-white/90 hover:bg-white border border-stone-200 rounded-2xl shadow-sm transition-all backdrop-blur-sm">
                 <div class="flex items-center gap-4 min-w-0">
                     <div class="w-14 h-14 rounded-2xl bg-stone-100 border border-stone-200 flex items-center justify-center text-stone-700 group-hover:bg-stone-800 group-hover:text-white transition-colors flex-shrink-0 overflow-hidden relative shadow-inner">
-                        <img id="charIconImg" src="" alt="" class="w-full h-full object-cover" style="display:none;" onerror="this.style.display='none'; document.getElementById('charDefaultIcon').style.display='flex';">
+                        <img id="charIconImg" src="" alt="" class="w-full h-full object-cover" style="display:none;">
                         <i id="charDefaultIcon" class="fa-solid fa-users text-xl"></i>
                     </div>
                     <span id="labelChar" class="text-sm font-bold text-stone-800 truncate">キャラクター一覧</span>
@@ -115,7 +114,7 @@
             <a href="diary.html" class="group flex items-center justify-between px-4 py-3.5 bg-white/90 hover:bg-white border border-stone-200 rounded-2xl shadow-sm transition-all backdrop-blur-sm">
                 <div class="flex items-center gap-4 min-w-0">
                     <div class="w-14 h-14 rounded-2xl bg-stone-100 border border-stone-200 flex items-center justify-center text-stone-700 group-hover:bg-stone-800 group-hover:text-white transition-colors flex-shrink-0 overflow-hidden relative shadow-inner">
-                        <img id="diaryIconImg" src="" alt="" class="w-full h-full object-cover" style="display:none;" onerror="this.style.display='none'; document.getElementById('diaryDefaultIcon').style.display='flex';">
+                        <img id="diaryIconImg" src="" alt="" class="w-full h-full object-cover" style="display:none;">
                         <i id="diaryDefaultIcon" class="fa-solid fa-book-open text-xl"></i>
                     </div>
                     <span id="labelDiary" class="text-sm font-bold text-stone-800 truncate">月別アルバム・日記</span>
@@ -331,14 +330,22 @@
             document.getElementById('mainHeading').textContent = config.portalTitle;
 
             if (config.hasMainIcon) {
-                const blob = await getFileFromDB('portal_mainIcon');
-                if (blob) {
-                    const objectUrl = URL.createObjectURL(blob);
-                    const img = document.getElementById('mainIconImg');
-                    img.src = objectUrl;
-                    img.style.display = 'block';
-                    document.getElementById('mainDefaultIcon').style.display = 'none';
-                    document.getElementById('dynamicFavicon').href = objectUrl;
+                try {
+                    const blob = await getFileFromDB('portal_mainIcon');
+                    if (blob) {
+                        const objectUrl = URL.createObjectURL(blob);
+                        const img = document.getElementById('mainIconImg');
+                        img.src = objectUrl;
+                        img.style.display = 'block';
+                        document.getElementById('mainDefaultIcon').style.display = 'none';
+                        document.getElementById('dynamicFavicon').href = objectUrl;
+                    } else {
+                        document.getElementById('mainIconImg').style.display = 'none';
+                        document.getElementById('mainDefaultIcon').style.display = 'flex';
+                    }
+                } catch(e) {
+                    document.getElementById('mainIconImg').style.display = 'none';
+                    document.getElementById('mainDefaultIcon').style.display = 'flex';
                 }
             } else {
                 document.getElementById('mainIconImg').style.display = 'none';
@@ -348,12 +355,20 @@
             const bgLayer = document.getElementById('bgImageLayer');
             const bgOverlay = document.getElementById('bgOverlay');
             if (config.hasBgImage) {
-                const blob = await getFileFromDB('portal_bgImage');
-                if (blob) {
-                    const objectUrl = URL.createObjectURL(blob);
-                    bgLayer.style.backgroundImage = `url('${objectUrl}')`;
-                    bgLayer.style.display = 'block';
-                    bgOverlay.style.display = 'block';
+                try {
+                    const blob = await getFileFromDB('portal_bgImage');
+                    if (blob) {
+                        const objectUrl = URL.createObjectURL(blob);
+                        bgLayer.style.backgroundImage = `url('${objectUrl}')`;
+                        bgLayer.style.display = 'block';
+                        bgOverlay.style.display = 'block';
+                    } else {
+                        bgLayer.style.display = 'none';
+                        bgOverlay.style.display = 'none';
+                    }
+                } catch(e) {
+                    bgLayer.style.display = 'none';
+                    bgOverlay.style.display = 'none';
                 }
             } else {
                 bgLayer.style.display = 'none';
@@ -387,14 +402,32 @@
             }
         }
 
-        let isAdminLoggedIn = false;
+        // 🌟 ログイン状態の保持（sessionStorageでタブが開いている間は維持）
+        let isAdminLoggedIn = sessionStorage.getItem('adminLoggedIn') === 'true';
+        
+        function updateAdminUI() {
+            const authButton = document.getElementById('authButton');
+            const authIcon = document.getElementById('authIcon');
+            const adminContainer = document.getElementById('adminEditContainer');
+
+            if (isAdminLoggedIn) {
+                authButton.classList.remove('bg-stone-100', 'text-stone-500');
+                authButton.classList.add('bg-stone-800', 'text-white');
+                authIcon.className = 'fa-solid fa-lock-open';
+                adminContainer.style.display = 'block';
+            } else {
+                authButton.classList.remove('bg-stone-800', 'text-white');
+                authButton.classList.add('bg-stone-100', 'text-stone-500');
+                authIcon.className = 'fa-solid fa-lock';
+                adminContainer.style.display = 'none';
+            }
+        }
+
         function handleAuthAction() {
             if (isAdminLoggedIn) {
                 isAdminLoggedIn = false;
-                document.getElementById('authButton').classList.remove('bg-stone-800', 'text-white');
-                document.getElementById('authButton').classList.add('bg-stone-100', 'text-stone-500');
-                document.getElementById('authIcon').className = 'fa-solid fa-lock';
-                document.getElementById('adminEditContainer').style.display = 'none';
+                sessionStorage.removeItem('adminLoggedIn');
+                updateAdminUI();
                 alert('管理者モードを終了しました。');
             } else {
                 document.getElementById('passcodeInput').value = '';
@@ -414,10 +447,8 @@
 
             if (inputVal === correctPass) {
                 isAdminLoggedIn = true;
-                document.getElementById('authButton').classList.remove('bg-stone-100', 'text-stone-500');
-                document.getElementById('authButton').classList.add('bg-stone-800', 'text-white');
-                document.getElementById('authIcon').className = 'fa-solid fa-lock-open';
-                document.getElementById('adminEditContainer').style.display = 'block';
+                sessionStorage.setItem('adminLoggedIn', 'true');
+                updateAdminUI();
                 closePasscodeModal();
                 alert('管理者としてログインしました。');
             } else {
@@ -538,7 +569,6 @@
             alert('ポータル設定を保存しました！');
         }
 
-        // 🌟 プルリフレッシュ（引っ張って更新）の完全修正ロジック
         let touchStartY = 0;
         let isPulling = false;
         const pullThreshold = 70;
@@ -596,10 +626,9 @@
         });
 
         window.addEventListener('DOMContentLoaded', () => {
+            updateAdminUI();
             applySettings();
         });
     </script>
-    
 </body>
-
 </html>
