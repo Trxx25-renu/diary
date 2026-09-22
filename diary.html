@@ -2853,36 +2853,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 <p id="authModalDesc" class="text-xs text-stone-500 mt-1">日記の追加・削除・設定変更を行うにはパスコードを入力してください。</p>
             </div>
 
-<!-- ========================================== -->
-<!-- 🔑 パスコード認証モーダル（上部配置・stone系統一版） -->
-<!-- ========================================== -->
-<div id="authModal" class="fixed inset-0 z-[99999] flex items-start justify-center bg-stone-900/40 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-300">
-    <div class="bg-white rounded-2xl shadow-xl border border-stone-200 w-full max-w-sm mx-4 mt-16 p-6 transform scale-95 transition-transform duration-300">
-        
-        <!-- ヘッダー -->
-        <div class="flex items-center justify-between mb-4">
-            <h3 class="text-xs font-bold text-stone-700 flex items-center gap-2">
-                <i class="fa-solid fa-lock text-stone-500"></i> 管理者ログイン
-            </h3>
-            <button type="button" onclick="closeAuthModal()" class="text-stone-400 hover:text-stone-600 p-1 rounded-lg transition-colors">
-                <i class="fa-solid fa-xmark text-sm"></i>
-            </button>
-        </div>
-
-        <!-- 本文・入力フォーム -->
-        <form onsubmit="handleAuthSubmit(event)" class="flex flex-col gap-3">
-            <div>
-                <input type="password" inputmode="numeric" pattern="[0-9]*" id="inputPasscode" placeholder="パスコードを入力" required class="w-full px-4 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-center text-sm tracking-widest focus:outline-none focus:ring-2 focus:ring-stone-500/20 focus:border-stone-500 transition-all">
-                <p id="authErrorMsg" class="hidden text-[11px] text-stone-500 text-center mt-1">パスコードが違います。</p>
-            </div>
-            
-            <div class="flex items-center gap-2 mt-1">
-                <button type="button" onclick="closeAuthModal()" class="flex-1 py-2 text-xs font-medium text-stone-600 bg-stone-100 hover:bg-stone-200 rounded-xl transition-colors">キャンセル</button>
-                <button type="submit" class="flex-1 py-2 text-xs font-bold text-white bg-stone-800 hover:bg-stone-900 rounded-xl transition-colors shadow-sm">認証する</button>
-            </div>
-        </form>
-    </div>
-</div>
+<!-- モーダル: パスコード入力 -->
+    <form onsubmit="handleAuthSubmit(event)" class="flex flex-col gap-3">
+                <div>
+                    <input type="password" inputmode="numeric" pattern="[0-9]*" id="inputPasscode" placeholder="パスコードを入力" required class="w-full px-4 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-center text-sm focus:outline-none focus:ring-2 focus:ring-stone-500/20 focus:border-stone-500 transition-all">
+                    <p id="authErrorMsg" class="hidden text-[11px] text-rose-500 text-center mt-1">パスコードが違います。</p>
+                </div>
+                <div class="flex items-center gap-2 mt-2">
+                    <button type="button" onclick="closeAuthModal()" class="flex-1 py-2 text-xs font-medium text-stone-600 bg-stone-100 hover:bg-stone-200 rounded-xl transition-colors">キャンセル</button>
+                    <button type="submit" class="flex-1 py-2 text-xs font-medium text-white bg-stone-600 hover:bg-stone-700 rounded-xl transition-colors shadow-sm">認証する</button>
+                </div>
+            </form>
 
     <!-- モーダル: サイト設定 -->
     <div id="configModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-200">
