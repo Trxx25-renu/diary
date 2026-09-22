@@ -10,6 +10,10 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
+    <!-- Firebase SDK (Firestore用) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    
     <style>
         body {
             touch-action: pan-x pinch-zoom;
@@ -164,17 +168,6 @@
 
             <div class="p-5 overflow-y-auto custom-scroll flex flex-col gap-5 text-xs">
                 
-                <!-- JSONエクスポート用（GitHubへの反映手順案内） -->
-                <div class="p-3 bg-stone-100 rounded-2xl border border-stone-200 flex flex-col gap-2">
-                    <h4 class="font-bold text-stone-700 flex items-center gap-1.5">
-                        <i class="fa-solid fa-cloud-arrow-down text-stone-500"></i> GitHub連携データのエクスポート
-                    </h4>
-                    <p class="text-[10px] text-stone-500 leading-relaxed">設定を変更したあと、このボタンで最新の <code class="bg-white px-1 py-0.5 rounded border border-stone-300">settings.json</code> をダウンロードし、GitHubへアップロード（上書き）してください。</p>
-                    <button onclick="exportSettingsJson()" class="py-2 bg-white hover:bg-stone-50 border border-stone-300 text-stone-700 rounded-xl font-bold text-[11px] shadow-xs transition-all flex items-center justify-center gap-1.5">
-                        <i class="fa-solid fa-download text-stone-500"></i> settings.json をダウンロード
-                    </button>
-                </div>
-
                 <div class="flex flex-col gap-3">
                     <h4 class="font-bold text-stone-700 border-b pb-1">基本情報・外観</h4>
                     <div>
@@ -229,13 +222,13 @@
 
             <div class="px-5 py-3 border-t border-stone-200 bg-stone-50 flex items-center justify-end gap-2">
                 <button onclick="closeEditModal()" class="px-4 py-2 bg-stone-200 hover:bg-stone-300 text-stone-700 rounded-xl font-bold transition-colors">キャンセル</button>
-                <button onclick="savePortalSettings()" class="px-5 py-2 bg-stone-800 hover:bg-stone-700 text-white rounded-xl font-bold transition-colors">設定を適用する</button>
+                <button onclick="savePortalSettings()" class="px-5 py-2 bg-stone-800 hover:bg-stone-700 text-white rounded-xl font-bold transition-colors">設定を保存する</button>
             </div>
 
         </div>
     </div>
 
-    <!-- スクリプト制御 -->
+    <!-- スクリプト制御（Firestore連携） -->
     <script>
         const metaNoImageIndex = document.createElement('meta');
         metaNoImageIndex.name = 'googlebot';
@@ -245,6 +238,21 @@
         document.addEventListener('contextmenu', (e) => {
             if (e.target.tagName === 'IMG') { e.preventDefault(); }
         });
+
+        // ⚠️ キャラクター一覧等で使っているFirebase初期化設定に書き換えてください
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_AUTH_DOMAIN",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_STORAGE_BUCKET",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const db = firebase.firestore();
 
         let currentConfig = {
             portalTitle: "卓ポータル",
@@ -256,18 +264,29 @@
             customLinks: []
         };
 
-        // 外部の settings.json からデータを読み込む
+        // Firestoreから設定を読み込む
         async function loadSettings() {
             try {
-                const response = await fetch('settings.json?t=' + new Date().getTime());
-                if (response.ok) {
-                    const data = await response.json();
-                    currentConfig = { ...currentConfig, ...data };
+                const docRef = db.collection("portalSettings").doc("config");
+                const doc = await docRef.get();
+                if (doc.exists) {
+                    currentConfig = { ...currentConfig, ...doc.data() };
                 }
             } catch (e) {
-                console.log('settings.jsonの読み込みに失敗しました。デフォルト設定を使用します。');
+                console.error("設定の読み込みに失敗しました:", e);
             }
             applySettings();
+        }
+
+        // Firestoreに設定を保存する
+        async function saveSettingsToFirestore() {
+            try {
+                await db.collection("portalSettings").doc("config").set(currentConfig);
+                alert('設定をクラウドに保存しました！');
+            } catch (e) {
+                console.error("設定の保存に失敗しました:", e);
+                alert('保存に失敗しました。');
+            }
         }
 
         function applySettings() {
@@ -401,13 +420,11 @@
         function clearMainIcon() {
             currentConfig.mainIconData = "";
             applySettings();
-            alert('メインアイコンを削除しました。下の「ダウンロード」からsettings.jsonを更新してください。');
         }
 
         function clearBgImage() {
             currentConfig.bgImageData = "";
             applySettings();
-            alert('背景画像を削除しました。下の「ダウンロード」からsettings.jsonを更新してください。');
         }
 
         function renderCustomLinksEdit(links) {
@@ -477,7 +494,6 @@
             } catch(e) { return ''; }
         }
 
-        // 設定を反映し、ダウンロード用JSONを出力する
         async function savePortalSettings() {
             currentConfig.portalTitle = document.getElementById('inputPortalTitle').value || "卓ポータル";
             currentConfig.adminPasscode = document.getElementById('inputAdminPass').value || "1234";
@@ -503,18 +519,7 @@
 
             applySettings();
             closeEditModal();
-            exportSettingsJson();
-            alert('設定が更新されました！自動ダウンロードされた「settings.json」をGitHubにアップロードしてください。');
-        }
-
-        function exportSettingsJson() {
-            const blob = new Blob([JSON.stringify(currentConfig, null, 2)], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'settings.json';
-            a.click();
-            URL.revokeObjectURL(url);
+            await saveSettingsToFirestore();
         }
 
         let touchStartY = 0;
@@ -534,7 +539,7 @@
 
         window.addEventListener('touchmove', (e) => {
             if (!isPulling) return;
-            const diff = e.touches[0].clientY - touchStartY;
+            const diff = e.touches[0],clientY - touchStartY;
             if (diff > 0 && mainContainer.scrollTop <= 0) {
                 const pullDist = Math.min(diff * 0.4, 80);
                 indicator.style.transform = `translateY(${pullDist}px)`;
