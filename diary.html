@@ -1985,7 +1985,110 @@ window.closeConfirmModal = closeConfirmModal;
 }
 window.handleSaveConfig = handleSaveConfig;
 
-        // 📝 新規投稿ボタンを押したときに呼ばれる関数
+// ==========================================
+// 💡 参加キャラクター管理用の変数とロジック
+// ==========================================
+window.tempSelectedParticipants = [];
+
+// 参加キャラのチップ表示を更新する関数
+function renderSelectedParticipantChips() {
+    const container = document.getElementById('selectedParticipantsContainer');
+    if (!container) return;
+
+    container.innerHTML = '';
+
+    if (!window.tempSelectedParticipants || window.tempSelectedParticipants.length === 0) {
+        container.innerHTML = '<span class="text-[11px] text-stone-400">まだ選択されていません</span>';
+        return;
+    }
+
+    const allChars = JSON.parse(localStorage.getItem('local_characters') || '[]');
+
+    window.tempSelectedParticipants.forEach(charId => {
+        const char = allChars.find(c => c.id === charId);
+        if (!char) return;
+
+        const chip = document.createElement('div');
+        chip.className = 'inline-flex items-center gap-1 bg-stone-800 text-white text-[11px] px-2.5 py-1 rounded-lg shadow-sm';
+        chip.innerHTML = `
+            <span>${char.name}</span>
+            <button type="button" onclick="removeParticipant('${char.id}')" class="text-stone-300 hover:text-white ml-1">
+                <i class="fa-solid fa-xmark text-[10px]"></i>
+            </button>
+        `;
+        container.appendChild(chip);
+    });
+}
+
+// 参加キャラを外す関数
+function removeParticipant(charId) {
+    window.tempSelectedParticipants = window.tempSelectedParticipants.filter(id => id !== charId);
+    renderSelectedParticipantChips();
+}
+window.removeParticipant = removeParticipant;
+
+// キャラクター検索＆絞り込みのイベント設定
+document.addEventListener('DOMContentLoaded', () => {
+    const searchInput = document.getElementById('charSearchInput');
+    const resultsContainer = document.getElementById('charSearchResults');
+
+    if (!searchInput || !resultsContainer) return;
+
+    searchInput.addEventListener('input', (e) => {
+        const keyword = e.target.value.trim().toLowerCase();
+        const currentSystemTag = document.getElementById('inputWeather')?.value || ''; // タグをシステムとして利用
+
+        if (!keyword) {
+            resultsContainer.classList.add('hidden');
+            resultsContainer.innerHTML = '';
+            return;
+        }
+
+        const allChars = JSON.parse(localStorage.getItem('local_characters') || '[]');
+
+        const matches = allChars.filter(char => {
+            const matchesSystem = !currentSystemTag || char.system === currentSystemTag;
+            const matchesName = char.name && char.name.toLowerCase().includes(keyword);
+            const notAlreadySelected = !window.tempSelectedParticipants.includes(char.id);
+            return matchesSystem && matchesName && notAlreadySelected;
+        });
+
+        if (matches.length === 0) {
+            resultsContainer.innerHTML = '<div class="p-2.5 text-[11px] text-stone-400 text-center">該当するキャラクターがいません</div>';
+            resultsContainer.classList.remove('hidden');
+            return;
+        }
+
+        resultsContainer.innerHTML = '';
+        matches.forEach(char => {
+            const div = document.createElement('div');
+            div.className = 'p-2.5 text-xs text-stone-700 hover:bg-stone-50 cursor-pointer flex items-center justify-between transition-colors';
+            div.innerHTML = `
+                <span class="font-medium">${char.name}</span>
+                <span class="text-[10px] text-stone-400 bg-stone-100 px-2 py-0.5 rounded">${char.system || '未分類'}</span>
+            `;
+            div.onclick = () => {
+                window.tempSelectedParticipants.push(char.id);
+                renderSelectedParticipantChips();
+                searchInput.value = '';
+                resultsContainer.classList.add('hidden');
+                resultsContainer.innerHTML = '';
+            };
+            resultsContainer.appendChild(div);
+        });
+
+        resultsContainer.classList.remove('hidden');
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!searchInput.contains(e.target) && !resultsContainer.contains(e.target)) {
+            resultsContainer.classList.add('hidden');
+        }
+    });
+});
+
+
+// 📝 新規投稿ボタンを押したときに呼ばれる関数
 function openPostModal() {
     // 新規作成なので編集IDはクリア
     window.editingEntryId = null;
@@ -2004,6 +2107,10 @@ function openPostModal() {
     if (titleEl) titleEl.value = '';
     if (contentEl) contentEl.value = '';
     if (secretEl) secretEl.value = '';
+
+    // 🌟 新規作成時は参加キャラクター選択をクリア
+    window.tempSelectedParticipants = [];
+    renderSelectedParticipantChips();
 
     // 🌟 画像配列・プレビュー関連をすべて完全にクリア
     window.tempImageUrls = [];
@@ -2036,118 +2143,118 @@ function openPostModal() {
 }
 window.openPostModal = openPostModal;
         
-        // 🌟 複数画像（最大3枚）の選択と圧縮を行う関数
-        function handleImageSelect(event) {
-            const files = event.target.files;
-            if (!files || files.length === 0) return;
+// 🌟 複数画像（最大3枚）の選択と圧縮を行う関数
+function handleImageSelect(event) {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
 
-            // 最大3枚までに制限
-            const maxImages = 3;
-            const filesToProcess = Array.from(files).slice(0, maxImages);
-            
-            window.tempImageUrls = [];
-            let processedCount = 0;
+    // 最大3枚までに制限
+    const maxImages = 3;
+    const filesToProcess = Array.from(files).slice(0, maxImages);
+    
+    window.tempImageUrls = [];
+    let processedCount = 0;
 
-            filesToProcess.forEach((file, index) => {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const img = new Image();
-                    img.onload = function() {
-                        const canvas = document.createElement('canvas');
-                        let width = img.width;
-                        let height = img.height;
-                        
-                        const maxDim = 1600;
+    filesToProcess.forEach((file, index) => {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const img = new Image();
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                let width = img.width;
+                let height = img.height;
+                
+                const maxDim = 1600;
 
-                        if (width > height && width > maxDim) {
-                            height *= maxDim / width;
-                            width = maxDim;
-                        } else if (height > maxDim) {
-                            width *= maxDim / height;
-                            height = maxDim;
-                        }
-
-                        canvas.width = width;
-                        canvas.height = height;
-                        const ctx = canvas.getContext('2d');
-                        
-                        ctx.clearRect(0, 0, width, height);
-                        ctx.drawImage(img, 0, 0, width, height);
-
-                        let quality = 0.90;
-                        let base64 = canvas.toDataURL('image/jpeg', quality);
-                        let byteSize = (base64.length * 3) / 4;
-
-                        while (byteSize > 980000 && quality > 0.3) {
-                            quality -= 0.05;
-                            base64 = canvas.toDataURL('image/jpeg', quality);
-                            byteSize = (base64.length * 3) / 4;
-                        }
-
-                        window.tempImageUrls[index] = base64;
-                        processedCount++;
-
-                       // すべてのファイルの処理が終わったら
-                        if (processedCount === filesToProcess.length) {
-                            // 互換性のために1枚目を window.tempBase64Image にも入れておく
-                            window.tempBase64Image = window.tempImageUrls[0] || '';
-                            console.log(`📸 複数画像圧縮完了: 計 ${window.tempImageUrls.length} 枚`);
-
-                            // 🌟 複数枚のサムネイルをプレビューコンテナに並べて表示する処理
-                            const previewContainer = document.getElementById('imagePreviewContainer');
-                            const placeholder = document.getElementById('uploadPlaceholder');
-                            
-                            if (previewContainer) {
-                                // 一旦中身をクリア
-                                previewContainer.innerHTML = '';
-                                
-                                // 選ばれた画像ごとにサムネイル要素を作成して並べる
-                                window.tempImageUrls.forEach((url, i) => {
-                                    const thumbWrapper = document.createElement('div');
-                                    thumbWrapper.className = 'relative w-20 h-20 rounded-xl overflow-hidden border border-stone-200 shrink-0 bg-white shadow-sm';
-                                    
-                                    const img = document.createElement('img');
-                                    img.src = url;
-                                    img.className = 'w-full h-full object-cover';
-                                    
-                                    // 何枚目か分かりやすいように右下に番号をつける
-                                    const badge = document.createElement('span');
-                                    badge.className = 'absolute bottom-1 right-1 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded-md font-bold';
-                                    badge.textContent = `${i + 1}`;
-                                    
-                                    thumbWrapper.appendChild(img);
-                                    thumbWrapper.appendChild(badge);
-                                    previewContainer.appendChild(thumbWrapper);
-                                });
-                            }
-                            
-                            if (placeholder) placeholder.classList.add('hidden');
-                        }
-                    };
-                    img.src = e.target.result;
-                };
-                reader.readAsDataURL(file);
-            });
-        }
-        window.handleImageSelect = handleImageSelect;
-
-        function closePostModal() {
-            const modal = document.getElementById('postModal');
-            if (modal) {
-                modal.classList.add('opacity-0', 'pointer-events-none');
-                const modalBox = modal.querySelector('div');
-                if (modalBox) {
-                    modalBox.classList.remove('scale-100');
-                    modalBox.classList.add('scale-95');
+                if (width > height && width > maxDim) {
+                    height *= maxDim / width;
+                    width = maxDim;
+                } else if (height > maxDim) {
+                    width *= maxDim / height;
+                    height = maxDim;
                 }
-            }
-            
-            const modalTitleEl = document.getElementById('postModalTitle');
-            if (modalTitleEl) modalTitleEl.textContent = '新しく日記を書く';
-        } 
-        window.closePostModal = closePostModal;
 
-     // 💡 【超強力・確実版】どんなに大きい画像でも必ず1MB未満に圧縮するヘルパー関数
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                
+                ctx.clearRect(0, 0, width, height);
+                ctx.drawImage(img, 0, 0, width, height);
+
+                let quality = 0.90;
+                let base64 = canvas.toDataURL('image/jpeg', quality);
+                let byteSize = (base64.length * 3) / 4;
+
+                while (byteSize > 980000 && quality > 0.3) {
+                    quality -= 0.05;
+                    base64 = canvas.toDataURL('image/jpeg', quality);
+                    byteSize = (base64.length * 3) / 4;
+                }
+
+                window.tempImageUrls[index] = base64;
+                processedCount++;
+
+               // すべてのファイルの処理が終わったら
+                if (processedCount === filesToProcess.length) {
+                    // 互換性のために1枚目を window.tempBase64Image にも入れておく
+                    window.tempBase64Image = window.tempImageUrls[0] || '';
+                    console.log(`📸 複数画像圧縮完了: 計 ${window.tempImageUrls.length} 枚`);
+
+                    // 🌟 複数枚のサムネイルをプレビューコンテナに並べて表示する処理
+                    const previewContainer = document.getElementById('imagePreviewContainer');
+                    const placeholder = document.getElementById('uploadPlaceholder');
+                    
+                    if (previewContainer) {
+                        // 一旦中身をクリア
+                        previewContainer.innerHTML = '';
+                        
+                        // 選ばれた画像ごとにサムネイル要素を作成して並べる
+                        window.tempImageUrls.forEach((url, i) => {
+                            const thumbWrapper = document.createElement('div');
+                            thumbWrapper.className = 'relative w-20 h-20 rounded-xl overflow-hidden border border-stone-200 shrink-0 bg-white shadow-sm';
+                            
+                            const img = document.createElement('img');
+                            img.src = url;
+                            img.className = 'w-full h-full object-cover';
+                            
+                            // 何枚目か分かりやすいように右下に番号をつける
+                            const badge = document.createElement('span');
+                            badge.className = 'absolute bottom-1 right-1 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded-md font-bold';
+                            badge.textContent = `${i + 1}`;
+                            
+                            thumbWrapper.appendChild(img);
+                            thumbWrapper.appendChild(badge);
+                            previewContainer.appendChild(thumbWrapper);
+                        });
+                    }
+                    
+                    if (placeholder) placeholder.classList.add('hidden');
+                }
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    });
+}
+window.handleImageSelect = handleImageSelect;
+
+function closePostModal() {
+    const modal = document.getElementById('postModal');
+    if (modal) {
+        modal.classList.add('opacity-0', 'pointer-events-none');
+        const modalBox = modal.querySelector('div');
+        if (modalBox) {
+            modalBox.classList.remove('scale-100');
+            modalBox.classList.add('scale-95');
+        }
+    }
+    
+    const modalTitleEl = document.getElementById('postModalTitle');
+    if (modalTitleEl) modalTitleEl.textContent = '新しく日記を書く';
+} 
+window.closePostModal = closePostModal;
+
+// 💡 【超強力・確実版】どんなに大きい画像でも必ず1MB未満に圧縮するヘルパー関数
 if (typeof window.compressImageIfNeeded !== 'function') {
     async function compressImageIfNeeded(base64Str) {
         if (!base64Str || !base64Str.startsWith('data:image')) return base64Str;
@@ -2276,6 +2383,7 @@ async function handleSaveEntry(event) {
                 secretContent: secretContent.trim(),
                 imageUrls: window.tempImageUrls,
                 imageUrl: window.tempImageUrls[0],
+                participantIds: window.tempSelectedParticipants, // 🌟 更新時も参加キャラID配列を保存
                 updatedAt: new Date().toISOString()
             };
             entryData = window.entries[index];
@@ -2294,6 +2402,7 @@ async function handleSaveEntry(event) {
             secretContent: secretContent.trim(),
             imageUrls: window.tempImageUrls,
             imageUrl: window.tempImageUrls[0],
+            participantIds: window.tempSelectedParticipants, // 🌟 新規作成時も参加キャラID配列を保存
             updatedAt: new Date().toISOString()
         };
         if (!window.entries) window.entries = [];
@@ -2319,6 +2428,9 @@ async function handleSaveEntry(event) {
             await setDoc(docRef, entryData);
             console.log("🔥 Firestoreへの保存に成功しました:", targetId);
         }
+
+        // 🌟 ローカルストレージにもキャッシュを同期保存しておく
+        localStorage.setItem('cachedDiaryEntries', JSON.stringify(window.entries));
 
         closePostModal();
         const ym = date.substring(0, 7);
@@ -2363,6 +2475,9 @@ async function deleteCurrentEntry() {
         }
 
         window.entries = (window.entries || []).filter(e => e.id !== window.selectedEntryId);
+
+        // 🌟 ローカルストレージ側のキャッシュも同期
+        localStorage.setItem('cachedDiaryEntries', JSON.stringify(window.entries));
 
         if (typeof closeDetailModal === 'function') {
             closeDetailModal();
@@ -2413,6 +2528,12 @@ function openEditModalFromDetail() {
     if (weatherInput) weatherInput.value = entry.weather || '';
     if (contentInput) contentInput.value = entry.content || '';
     if (secretContentInput) secretContentInput.value = entry.secretContent || '';
+
+    // 🌟 編集対象記事に紐づく参加キャラクターIDを復元してチップを再描画
+    window.tempSelectedParticipants = entry.participantIds ? [...entry.participantIds] : [];
+    if (typeof renderSelectedParticipantChips === 'function') {
+        renderSelectedParticipantChips();
+    }
 
     // 🌟 複数画像プレビュー＆配列の完全リセットと再構築
     window.tempImageUrls = [];
@@ -2477,37 +2598,37 @@ function openEditModalFromDetail() {
 }
 window.openEditModalFromDetail = openEditModalFromDetail;
         
-        function sharePublicUrl() {
-            const cleanUrl = window.location.origin + window.location.pathname;
+function sharePublicUrl() {
+    const cleanUrl = window.location.origin + window.location.pathname;
 
-            if (navigator.share) {
-                navigator.share({
-                    title: window.siteConfig.title,
-                    text: window.siteConfig.subtitle,
-                    url: cleanUrl
-                }).catch(() => {});
-            } else {
-                const dummy = document.createElement('input');
-                document.body.appendChild(dummy);
-                dummy.value = cleanUrl;
-                dummy.select();
-                document.execCommand('copy');
-                document.body.removeChild(dummy);
-                showToast('閲覧専用のURLをコピーしました！', 'success');
-            }
-        }
-        window.sharePublicUrl = sharePublicUrl;
+    if (navigator.share) {
+        navigator.share({
+            title: window.siteConfig.title,
+            text: window.siteConfig.subtitle,
+            url: cleanUrl
+        }).catch(() => {});
+    } else {
+        const dummy = document.createElement('input');
+        document.body.appendChild(dummy);
+        dummy.value = cleanUrl;
+        dummy.select();
+        document.execCommand('copy');
+        document.body.removeChild(dummy);
+        showToast('閲覧専用のURLをコピーしました！', 'success');
+    }
+}
+window.sharePublicUrl = sharePublicUrl;
 
-        function escapeHtml(str) {
-            if (!str) return '';
-            return str
-                .replace(/&/g, "&amp;")
-                .replace(/</g, "&lt;")
-                .replace(/>/g, "&gt;")
-                .replace(/"/g, "&quot;")
-                .replace(/'/g, "&#039;");
-        }
-        window.escapeHtml = escapeHtml;
+function escapeHtml(str) {
+    if (!str) return '';
+    return str
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+window.escapeHtml = escapeHtml;
 
         // 🔑 HTMLの onclick="triggerAdminAccess()" に対応させる関数
 function triggerAdminAccess() {
@@ -2941,7 +3062,7 @@ document.addEventListener('DOMContentLoaded', () => {
     <div id="postModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-200">
         <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-xl border border-stone-200 scale-95 transition-transform duration-200 flex flex-col gap-4 max-h-[90vh] overflow-y-auto">
             <div class="flex items-center justify-between border-b border-stone-100 pb-3">
-                <h3 class="text-base font-bold text-stone-800">新しい日記を書く</h3>
+                <h3 id="postModalTitle" class="text-base font-bold text-stone-800">新しい日記を書く</h3>
                 <button onclick="closePostModal()" class="text-stone-400 hover:text-stone-600 text-sm">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
@@ -2985,6 +3106,25 @@ document.addEventListener('DOMContentLoaded', () => {
                             <select id="inputWeather" class="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs focus:outline-none focus:border-stone-500">
                             </select>
                         </div>
+                    </div>
+                </div>
+
+                <!-- 🌟 参加キャラクター選択セクション -->
+                <div class="flex flex-col gap-1.5 bg-stone-50/70 p-3 rounded-2xl border border-stone-200/60">
+                    <label class="block text-xs font-medium text-stone-700 flex items-center justify-between">
+                        <span><i class="fa-solid fa-users text-stone-500 mr-1"></i> 参加キャラクター</span>
+                        <span class="text-[10px] text-stone-400 font-normal">シナリオの参加者など</span>
+                    </label>
+                    
+                    <!-- 選択されたキャラクターのチップ表示エリア -->
+                    <div id="selectedParticipantsContainer" class="flex flex-wrap gap-1.5 min-h-[30px] items-center">
+                        <span class="text-[11px] text-stone-400">まだ選択されていません</span>
+                    </div>
+
+                    <!-- キャラクター検索入力欄 ＆ 候補リスト -->
+                    <div class="relative mt-1">
+                        <input type="text" id="charSearchInput" placeholder="キャラクター名で検索して追加..." autocomplete="off" class="w-full px-3 py-1.5 bg-white border border-stone-200 rounded-xl text-xs focus:outline-none focus:border-stone-500">
+                        <div id="charSearchResults" class="absolute left-0 right-0 top-full mt-1 bg-white border border-stone-200 rounded-xl shadow-lg max-h-40 overflow-y-auto hidden z-20"></div>
                     </div>
                 </div>
 
