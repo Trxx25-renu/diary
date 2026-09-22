@@ -58,14 +58,14 @@
             <h2 class="text-sm font-bold text-stone-800 tracking-tight">卓ポータル</h2>
         </div>
 
-        <!-- リンクカード群（各ページのファビコン自動取得・フォールバック対応） -->
+        <!-- リンクカード群 -->
         <div class="w-full flex flex-col gap-3">
             
             <!-- キャラクター一覧へ -->
             <a href="characters.html" class="group flex items-center justify-between px-4 py-3.5 bg-white hover:bg-stone-50 border border-stone-200 rounded-2xl shadow-sm transition-all">
                 <div class="flex items-center gap-3 min-w-0">
                     <div class="w-9 h-9 rounded-xl bg-stone-100 border border-stone-200 flex items-center justify-center text-stone-700 group-hover:bg-stone-800 group-hover:text-white transition-colors flex-shrink-0 overflow-hidden relative">
-                        <img src="characters.html" alt="" class="w-5 h-5 object-contain absolute inset-0 m-auto rounded-sm" onload="this.style.display='block'" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                        <img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" alt="" class="w-5 h-5 object-contain absolute inset-0 m-auto rounded-sm" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                         <i class="fa-solid fa-users text-sm" style="display:none;"></i>
                     </div>
                     <span class="text-xs font-bold text-stone-800 truncate">キャラクター一覧</span>
@@ -79,7 +79,8 @@
             <a href="diary.html" class="group flex items-center justify-between px-4 py-3.5 bg-white hover:bg-stone-50 border border-stone-200 rounded-2xl shadow-sm transition-all">
                 <div class="flex items-center gap-3 min-w-0">
                     <div class="w-9 h-9 rounded-xl bg-stone-100 border border-stone-200 flex items-center justify-center text-stone-700 group-hover:bg-stone-800 group-hover:text-white transition-colors flex-shrink-0 overflow-hidden relative">
-                        <img src="diary.html" alt="" class="w-5 h-5 object-contain absolute inset-0 m-auto rounded-sm" onload="this.style.display='block'" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                        <!-- diary.htmlで使っているアイコン画像のURLに変更してください（現状はcharactersと同じURLにしています） -->
+                        <img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" alt="" class="w-5 h-5 object-contain absolute inset-0 m-auto rounded-sm" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                         <i class="fa-solid fa-book-open text-sm" style="display:none;"></i>
                     </div>
                     <span class="text-xs font-bold text-stone-800 truncate">月別アルバム・日記</span>
@@ -98,11 +99,11 @@
         <p class="text-[10px] text-stone-400 font-medium">Session & Character Management System</p>
     </footer>
 
-    <!-- 🌟 プルリフレッシュ制御スクリプト -->
+    <!-- プルリフレッシュ制御スクリプト -->
     <script>
         let touchStartY = 0;
         let isPulling = false;
-        const pullThreshold = 70; // 更新を実行する引っ張り距離（px）
+        const pullThreshold = 70;
         
         const indicator = document.getElementById('pullRefreshIndicator');
         const refreshIcon = document.getElementById('refreshIcon');
@@ -118,9 +119,8 @@
             const currentY = e.touches[0].clientY;
             const diff = currentY - touchStartY;
 
-            // 下方向に引っ張っているときのみ
             if (diff > 0) {
-                const pullDist = Math.min(diff * 0.4, 90); // 減衰を効かせて引っ張りやすくする
+                const pullDist = Math.min(diff * 0.4, 90);
                 indicator.style.transform = `translateY(${pullDist}px)`;
 
                 if (diff > pullThreshold) {
@@ -141,7 +141,6 @@
             const diff = currentY - touchStartY;
 
             if (diff > pullThreshold) {
-                // 更新アクションへ
                 indicator.style.transform = `translateY(60px)`;
                 refreshText.textContent = '更新中...';
                 refreshIcon.className = 'fa-solid fa-spinner fa-spin text-stone-700';
@@ -150,7 +149,6 @@
                     window.location.reload();
                 }, 400);
             } else {
-                // 元の位置に戻す
                 indicator.style.transform = `translateY(-100%)`;
             }
             touchStartY = 0;
@@ -158,4 +156,4 @@
     </script>
 
 </body>
-</html>
+</html></html>
