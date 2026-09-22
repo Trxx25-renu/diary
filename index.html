@@ -14,7 +14,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     
-    <style>
+<style>
         body {
             touch-action: pan-x pinch-zoom;
             height: 100vh;
@@ -24,6 +24,10 @@
             -webkit-touch-callout: none;
             -webkit-user-select: none;
             user-select: none;
+        }
+        /* 🔗 タップしたときの黒いハイライトを無効化 */
+        a {
+            -webkit-tap-highlight-color: transparent;
         }
         img {
             pointer-events: none;
@@ -50,6 +54,7 @@
             border-radius: 4px;
         }
     </style>
+    
 </head>
 <body class="bg-stone-100 text-stone-800 flex flex-col justify-between font-sans selection:bg-stone-300 relative overflow-hidden">
 
