@@ -239,7 +239,7 @@
             if (e.target.tagName === 'IMG') { e.preventDefault(); }
         });
 
-        // キャラクター一覧等で使っているFirebase設定に書き換えてください
+        // ⚠️ キャラクター一覧等で使っているFirebase設定に書き換えてください
         const firebaseConfig = {
             apiKey: "YOUR_API_KEY",
             authDomain: "YOUR_AUTH_DOMAIN",
@@ -264,12 +264,12 @@
             customLinks: []
         };
 
-        // Firestoreから設定を読み込む
+        // Firestoreから設定を確実に読み込む
         async function loadSettings() {
             try {
                 const docRef = db.collection("portalSettings").doc("config");
                 const doc = await docRef.get();
-                if (doc.exists) {
+                if (doc.exists && doc.data()) {
                     currentConfig = { ...currentConfig, ...doc.data() };
                 }
             } catch (e) {
@@ -281,7 +281,7 @@
         // Firestoreに設定を保存する
         async function saveSettingsToFirestore() {
             try {
-                await db.collection("portalSettings").doc("config").set(currentConfig);
+                await db.collection("portalSettings").doc("config").set(currentConfig, { merge: true });
                 alert('設定をクラウドに保存しました！');
             } catch (e) {
                 console.error("設定の保存に失敗しました:", e);
@@ -290,9 +290,9 @@
         }
 
         function applySettings() {
-            document.getElementById('pageTitleText').textContent = currentConfig.portalTitle + " - Session Portal";
-            document.getElementById('headerTitle').innerHTML = `<i class="fa-solid fa-compass text-stone-500"></i> ${currentConfig.portalTitle}`;
-            document.getElementById('mainHeading').textContent = currentConfig.portalTitle;
+            document.getElementById('pageTitleText').textContent = (currentConfig.portalTitle || "卓ポータル") + " - Session Portal";
+            document.getElementById('headerTitle').innerHTML = `<i class="fa-solid fa-compass text-stone-500"></i> ${currentConfig.portalTitle || "卓ポータル"}`;
+            document.getElementById('mainHeading').textContent = currentConfig.portalTitle || "卓ポータル";
 
             const mainImg = document.getElementById('mainIconImg');
             const mainDefault = document.getElementById('mainDefaultIcon');
@@ -404,10 +404,10 @@
         }
 
         function openEditModal() {
-            document.getElementById('inputPortalTitle').value = currentConfig.portalTitle;
+            document.getElementById('inputPortalTitle').value = currentConfig.portalTitle || "卓ポータル";
             document.getElementById('inputAdminPass').value = currentConfig.adminPasscode || '1234';
-            document.getElementById('inputNameChar').value = currentConfig.nameChar;
-            document.getElementById('inputNameDiary').value = currentConfig.nameDiary;
+            document.getElementById('inputNameChar').value = currentConfig.nameChar || "キャラクター一覧";
+            document.getElementById('inputNameDiary').value = currentConfig.nameDiary || "月別アルバム・日記";
             document.getElementById('inputMainIconFile').value = '';
             document.getElementById('inputBgImageFile').value = '';
 
@@ -517,8 +517,8 @@
                 try { currentConfig.bgImageData = await fileToBase64(bgImageFile); } catch(e) {}
             }
 
-            applySettings();
             closeEditModal();
+            applySettings();
             await saveSettingsToFirestore();
         }
 
@@ -539,7 +539,6 @@
 
         window.addEventListener('touchmove', (e) => {
             if (!isPulling) return;
-            // 修正箇所：コンマをドットに修正
             const diff = e.touches[0].clientY - touchStartY;
             if (diff > 0 && mainContainer.scrollTop <= 0) {
                 const pullDist = Math.min(diff * 0.4, 80);
@@ -569,7 +568,7 @@
 
         window.addEventListener('DOMContentLoaded', () => {
             updateAdminUI();
-            loadSettings();
+            loadSettings(); // 起動時に確実にクラウドから設定をロード
         });
     </script>
 </body>
