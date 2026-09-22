@@ -228,7 +228,7 @@
         </div>
     </div>
 
-    <!-- スクリプト制御（固定リンクのアイコン自動同期対応） -->
+    <!-- スクリプト制御 -->
     <script>
         const metaNoImageIndex = document.createElement('meta');
         metaNoImageIndex.name = 'googlebot';
@@ -324,14 +324,17 @@
             document.getElementById('labelChar').textContent = currentConfig.nameChar || "キャラクター一覧";
             document.getElementById('labelDiary').textContent = currentConfig.nameDiary || "月別アルバム・日記";
 
-            // --- 🔗 固定リンクのアイコンを各リンク先のキャッシュ（localStorage等）から自動同期 ---
+            // --- 🔗 固定リンクのアイコンを各リンク先のキャッシュから自動同期 ---
             const charImg = document.getElementById('charIconImg');
             const charDefault = document.getElementById('charDefaultIcon');
+            const diaryImg = document.getElementById('diaryIconImg');
+            const diaryDefault = document.getElementById('diaryDefaultIcon');
+
             let diaryLogo = "";
             let charLogo = "";
 
             try {
-                // 日記ページのキャッシュからアイコン画像を取得を試みる
+                // 日記ページのキャッシュから取得
                 const diaryCached = localStorage.getItem('cachedSiteConfig');
                 if (diaryCached) {
                     const parsed = JSON.parse(diaryCached);
@@ -340,16 +343,12 @@
             } catch(e) {}
 
             try {
-                // キャラ一覧ページのキャッシュや個別の保存データがあれば取得を試みる
-                const charCached = localStorage.getItem('cachedCharSiteConfig') || localStorage.getItem('cachedSiteConfig');
-                if (charCached) {
-                    const parsed = JSON.parse(charCached);
-                    if (parsed.logoImageUrl) charLogo = parsed.logoImageUrl;
-                }
+                // キャラクター一覧ページのキャッシュ（characterFavicon）から取得
+                charLogo = localStorage.getItem('characterFavicon') || "";
             } catch(e) {}
 
             // キャラクター一覧のアイコン反映
-            if (charLogo) {
+            if (charLogo && charLogo.trim() !== "") {
                 charImg.src = charLogo;
                 charImg.style.display = 'block';
                 charDefault.style.display = 'none';
@@ -359,9 +358,7 @@
             }
 
             // 月別アルバム・日記のアイコン反映
-            const diaryImg = document.getElementById('diaryIconImg');
-            const diaryDefault = document.getElementById('diaryDefaultIcon');
-            if (diaryLogo) {
+            if (diaryLogo && diaryLogo.trim() !== "") {
                 diaryImg.src = diaryLogo;
                 diaryImg.style.display = 'block';
                 diaryDefault.style.display = 'none';
@@ -667,4 +664,4 @@
         });
     </script>
 </body>
-</html></html>
+</html>
