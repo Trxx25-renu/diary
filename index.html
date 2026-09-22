@@ -7,6 +7,8 @@
     <title id="pageTitleText">卓ポータル - Session Portal</title>
     
     <link id="dynamicFavicon" rel="icon" href="">
+    <link rel="apple-touch-icon" id="dynamicAppleIcon" href="">
+        
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
@@ -316,16 +318,19 @@ const firebaseConfig = {
             const mainImg = document.getElementById('mainIconImg');
             const mainDefault = document.getElementById('mainDefaultIcon');
             const favicon = document.getElementById('dynamicFavicon');
+            const appleIcon = document.getElementById('dynamicAppleIcon'); // 👈 追加
 
             if (currentConfig.mainIconData && currentConfig.mainIconData.trim() !== "") {
                 mainImg.src = currentConfig.mainIconData;
                 mainImg.style.display = 'block';
                 mainDefault.style.display = 'none';
                 favicon.href = currentConfig.mainIconData;
+                if (appleIcon) appleIcon.href = currentConfig.mainIconData; // 👈 追加
             } else {
                 mainImg.style.display = 'none';
                 mainDefault.style.display = 'flex';
                 favicon.href = '';
+                if (appleIcon) appleIcon.href = ''; // 👈 追加
             }
 
             const bgLayer = document.getElementById('bgImageLayer');
