@@ -3223,12 +3223,17 @@ async function saveRosterSettings(event) {
         galleryCategories 
     };
 
-    try {
+try {
         if (typeof showToast === 'function') showToast("設定を保存中...", "info");
 
         // 🌟 window.doc と window.setDoc を使用してエラーを回避
         const rosterConfigRef = window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'config', 'characterRosterSettings');
         await window.setDoc(rosterConfigRef, newSettings);
+        
+        // 🌟 index.html（卓ポータル）から即座に読み込めるようにlocalStorageにも保存する
+        if (favicon) {
+            localStorage.setItem('characterFavicon', favicon);
+        }
         
         window.rosterSettings = newSettings;
         if (typeof applyRosterSettings === 'function') applyRosterSettings(newSettings);
