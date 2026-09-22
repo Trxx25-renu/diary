@@ -247,7 +247,7 @@
         });
 
         // ⚠️ 必要に応じてFirebase設定を記述
-        const firebaseConfig = {
+const firebaseConfig = {
             apiKey: "AIzaSyA2ctX9sUpJmLSVJomU9cbMzrUX_AXNjuE",
             authDomain: "diary-36d77.firebaseapp.com",
             projectId: "diary-36d77",
@@ -286,7 +286,7 @@
             applySettings();
         }
 
-        // Firestoreに設定を保存する
+        // Firestoreに設定を保存する（背景変更時にも自動で呼び出されます）
         async function saveSettingsToFirestore() {
             try {
                 await db.collection("portalSettings").doc("config").set(currentConfig, { merge: true });
@@ -295,6 +295,13 @@
                 console.error("設定の保存に失敗しました:", e);
                 alert('保存に失敗しました。');
             }
+        }
+
+        // 🌟 背景画像や各種設定を変更して直接クラウドに保存・反映する関数
+        async function updateAndSaveConfig(newValues) {
+            currentConfig = { ...currentConfig, ...newValues };
+            await saveSettingsToFirestore();
+            applySettings();
         }
 
         function applySettings() {
@@ -375,7 +382,7 @@
             }
             // --------------------------------------------------------------------------
 
-            // カスタム追加リンクの描画
+            // カスタム追加リンクの描画（背景を bg-white に固定し、黒浮きを防止）
             const grid = document.getElementById('customLinksGrid');
             grid.innerHTML = '';
             if (currentConfig.customLinks && currentConfig.customLinks.length > 0) {
@@ -386,9 +393,9 @@
                     
                     let iconHtml = '';
                     if (link.iconData && link.iconData.trim() !== "") {
-                        iconHtml = `<div class="w-8 h-8 rounded-lg bg-stone-100 border border-stone-200 flex items-center justify-center text-stone-600 group-hover:bg-stone-800 group-hover:text-white transition-colors flex-shrink-0 overflow-hidden"><img src="${link.iconData}" class="w-full h-full object-cover"></div>`;
+                        iconHtml = `<div class="w-8 h-8 rounded-lg bg-white border border-stone-200 flex items-center justify-center text-stone-600 transition-colors flex-shrink-0 overflow-hidden"><img src="${link.iconData}" class="w-full h-full object-cover"></div>`;
                     } else {
-                        iconHtml = `<div class="w-8 h-8 rounded-lg bg-stone-100 border border-stone-200 flex items-center justify-center text-stone-600 group-hover:bg-stone-800 group-hover:text-white transition-colors flex-shrink-0 overflow-hidden"><i class="fa-solid fa-link text-xs"></i></div>`;
+                        iconHtml = `<div class="w-8 h-8 rounded-lg bg-white border border-stone-200 flex items-center justify-center text-stone-600 transition-colors flex-shrink-0 overflow-hidden"><i class="fa-solid fa-link text-xs"></i></div>`;
                     }
                     
                     a.innerHTML = `
@@ -402,6 +409,26 @@
                     `;
                     grid.appendChild(a);
                 });
+            }
+        }
+
+        let isAdminLoggedIn = sessionStorage.getItem('adminLoggedIn') === 'true';
+        
+        function updateAdminUI() {
+            const authButton = document.getElementById('authButton');
+            const authIcon = document.getElementById('authIcon');
+            const adminContainer = document.getElementById('adminEditContainer');
+
+            if (isAdminLoggedIn) {
+                authButton.classList.remove('bg-stone-100', 'text-stone-500');
+                authButton.classList.add('bg-stone-800', 'text-white');
+                authIcon.className = 'fa-solid fa-lock-open';
+                adminContainer.style.display = 'block';
+            } else {
+                authButton.classList.remove('bg-stone-800', 'text-white');
+                authButton.classList.add('bg-stone-100', 'text-stone-500');
+                authIcon.className = 'fa-solid fa-lock';
+                adminContainer.style.display = 'none';
             }
         }
 
