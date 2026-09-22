@@ -29,8 +29,18 @@
             pointer-events: none;
             -webkit-user-drag: none;
         }
+        /* 🌟 プルリフレッシュ用インジケーターの初期位置とスタイル調整 */
         #pullRefreshIndicator {
-            transform: translateY(-100%);
+            position: absolute;
+            top: -50px;
+            left: 0;
+            right: 0;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+            pointer-events: none;
             transition: transform 0.2s cubic-bezier(0, 0, 0.2, 1);
         }
         .custom-scroll::-webkit-scrollbar {
@@ -49,8 +59,8 @@
     <div id="bgOverlay" class="absolute inset-0 z-0 bg-white/75 pointer-events-none transition-all duration-300" style="display: none;"></div>
 
     <!-- 引き下げたら更新用インジケーター -->
-    <div id="pullRefreshIndicator" class="absolute top-4 left-0 right-0 flex items-center justify-center z-50 pointer-events-none">
-        <div class="bg-white/90 backdrop-blur-md px-4 py-2 rounded-full shadow-md border border-stone-200 text-stone-600 text-xs font-bold flex items-center gap-2">
+    <div id="pullRefreshIndicator">
+        <div class="bg-white/90 backdrop-blur-md px-4 py-1.5 rounded-full shadow-md border border-stone-200 text-stone-600 text-xs font-bold flex items-center gap-2">
             <i id="refreshIcon" class="fa-solid fa-rotate-right transition-transform duration-200"></i>
             <span id="refreshText">下に引っ張って更新</span>
         </div>
@@ -73,7 +83,7 @@
     </header>
 
     <!-- メインコンテンツ -->
-    <main class="max-w-sm w-full mx-auto px-4 flex flex-col items-center justify-center gap-4 my-auto relative z-10 overflow-y-auto max-h-[calc(100vh-7rem)] py-2">
+    <main id="mainContainer" class="max-w-sm w-full mx-auto px-4 flex flex-col items-center justify-center gap-4 my-auto relative z-10 overflow-y-auto max-h-[calc(100vh-7rem)] py-2">
         
         <!-- 中央メインアイコン＆タイトル -->
         <div class="text-center flex flex-col items-center gap-1.5 flex-shrink-0">
@@ -175,7 +185,6 @@
                         <input type="text" id="inputPortalTitle" class="w-full px-3 py-2 border border-stone-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-stone-500" placeholder="卓ポータル">
                     </div>
 
-                    <!-- 🌟 ファイルアップロード式：中央メインアイコン -->
                     <div>
                         <label class="block font-semibold text-stone-600 mb-1">中央メインアイコン画像</label>
                         <div class="flex items-center gap-2">
@@ -184,7 +193,6 @@
                         </div>
                     </div>
 
-                    <!-- 🌟 ファイルアップロード式：最背面背景画像 -->
                     <div>
                         <label class="block font-semibold text-stone-600 mb-1">最背面 背景画像</label>
                         <div class="flex items-center gap-2">
@@ -246,7 +254,6 @@
             }
         });
 
-        // 🗄️ IndexedDB（ブラウザ内ファイルデータベース）の管理システム
         const DB_NAME = 'PortalFileStorageDB';
         const DB_VERSION = 1;
         const STORE_NAME = 'files';
@@ -323,7 +330,6 @@
             document.getElementById('headerTitle').innerHTML = `<i class="fa-solid fa-compass text-stone-500"></i> ${config.portalTitle}`;
             document.getElementById('mainHeading').textContent = config.portalTitle;
 
-            // メインアイコンの読み込み
             if (config.hasMainIcon) {
                 const blob = await getFileFromDB('portal_mainIcon');
                 if (blob) {
@@ -339,7 +345,6 @@
                 document.getElementById('mainDefaultIcon').style.display = 'flex';
             }
 
-            // 背景画像の読み込み
             const bgLayer = document.getElementById('bgImageLayer');
             const bgOverlay = document.getElementById('bgOverlay');
             if (config.hasBgImage) {
@@ -428,7 +433,6 @@
             document.getElementById('inputNameChar').value = config.nameChar;
             document.getElementById('inputNameDiary').value = config.nameDiary;
 
-            // ファイル入力欄はクリアしておく
             document.getElementById('inputMainIconFile').value = '';
             document.getElementById('inputBgImageFile').value = '';
 
@@ -516,14 +520,12 @@
             config.nameDiary = document.getElementById('inputNameDiary').value || "月別アルバム・日記";
             config.customLinks = getCustomLinksFromModal();
 
-            // 新しくメインアイコンファイルが選択されていればDBに保存
             const mainIconFile = document.getElementById('inputMainIconFile').files[0];
             if (mainIconFile) {
                 await saveFileToDB('portal_mainIcon', mainIconFile);
                 config.hasMainIcon = true;
             }
 
-            // 新しく背景画像ファイルが選択されていればDBに保存
             const bgImageFile = document.getElementById('inputBgImageFile').files[0];
             if (bgImageFile) {
                 await saveFileToDB('portal_bgImage', bgImageFile);
@@ -536,17 +538,21 @@
             alert('ポータル設定を保存しました！');
         }
 
+        // 🌟 プルリフレッシュ（引っ張って更新）の完全修正ロジック
         let touchStartY = 0;
         let isPulling = false;
         const pullThreshold = 70;
         const indicator = document.getElementById('pullRefreshIndicator');
         const refreshIcon = document.getElementById('refreshIcon');
         const refreshText = document.getElementById('refreshText');
+        const mainContainer = document.getElementById('mainContainer');
 
         window.addEventListener('touchstart', (e) => {
-            if (window.scrollY <= 0) {
+            if (mainContainer.scrollTop <= 0) {
                 touchStartY = e.touches[0].clientY;
                 isPulling = true;
+            } else {
+                isPulling = false;
             }
         }, { passive: true });
 
@@ -555,8 +561,8 @@
             const currentY = e.touches[0].clientY;
             const diff = currentY - touchStartY;
 
-            if (diff > 0) {
-                const pullDist = Math.min(diff * 0.4, 90);
+            if (diff > 0 && mainContainer.scrollTop <= 0) {
+                const pullDist = Math.min(diff * 0.4, 80);
                 indicator.style.transform = `translateY(${pullDist}px)`;
                 if (diff > pullThreshold) {
                     refreshText.textContent = '指を離して更新';
@@ -565,6 +571,8 @@
                     refreshText.textContent = '下に引っ張って更新';
                     refreshIcon.style.transform = 'rotate(0deg)';
                 }
+            } else {
+                indicator.style.transform = `translateY(0px)`;
             }
         }, { passive: true });
 
@@ -574,14 +582,15 @@
             const currentY = e.changedTouches[0].clientY;
             const diff = currentY - touchStartY;
 
-            if (diff > pullThreshold) {
+            if (diff > pullThreshold && mainContainer.scrollTop <= 0) {
                 refreshText.textContent = '更新中...';
                 refreshIcon.classList.add('animate-spin');
+                indicator.style.transform = `translateY(60px)`;
                 setTimeout(() => {
                     window.location.reload();
                 }, 300);
             } else {
-                indicator.style.transform = `translateY(-100%)`;
+                indicator.style.transform = `translateY(0px)`;
             }
             touchStartY = 0;
         });
@@ -590,5 +599,7 @@
             applySettings();
         });
     </script>
+    
 </body>
-</html></html>
+
+</html>
