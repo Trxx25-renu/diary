@@ -84,7 +84,7 @@
         </div>
     </header>
 
-    <!-- メインコンテンツ -->
+<!-- メインコンテンツ -->
     <main id="mainContainer" class="max-w-sm w-full mx-auto px-4 flex flex-col items-center justify-center gap-4 my-auto relative z-10 overflow-y-auto max-h-[calc(100vh-7rem)] py-2">
         
         <div class="text-center flex flex-col items-center gap-1.5 flex-shrink-0">
@@ -99,7 +99,8 @@
             <!-- 固定リンク1: キャラクター一覧 -->
             <a href="characters.html" class="group flex items-center justify-between px-4 py-3.5 bg-white/90 hover:bg-white border border-stone-200 rounded-2xl shadow-sm transition-all backdrop-blur-sm">
                 <div class="flex items-center gap-4 min-w-0">
-                    <div class="w-14 h-14 rounded-2xl bg-stone-100 border border-stone-200 flex items-center justify-center text-stone-700 group-hover:bg-stone-800 group-hover:text-white transition-colors flex-shrink-0 overflow-hidden relative shadow-inner">
+                    <!-- 🖼️ 背景を bg-white に固定し、ホバー時の黒反転（group-hover:bg-stone-800）を削除 -->
+                    <div class="w-14 h-14 rounded-2xl bg-white border border-stone-200 flex items-center justify-center text-stone-600 transition-colors flex-shrink-0 overflow-hidden relative shadow-inner">
                         <img id="charIconImg" src="" alt="" class="w-full h-full object-cover" style="display:none;" onerror="this.style.display='none'; document.getElementById('charDefaultIcon').style.display='flex';">
                         <i id="charDefaultIcon" class="fa-solid fa-users text-xl"></i>
                     </div>
@@ -113,7 +114,8 @@
             <!-- 固定リンク2: 月別アルバム・日記 -->
             <a href="diary.html" class="group flex items-center justify-between px-4 py-3.5 bg-white/90 hover:bg-white border border-stone-200 rounded-2xl shadow-sm transition-all backdrop-blur-sm">
                 <div class="flex items-center gap-4 min-w-0">
-                    <div class="w-14 h-14 rounded-2xl bg-stone-100 border border-stone-200 flex items-center justify-center text-stone-700 group-hover:bg-stone-800 group-hover:text-white transition-colors flex-shrink-0 overflow-hidden relative shadow-inner">
+                    <!-- 🖼️ こちらも同様に bg-white に固定し、黒反転を削除 -->
+                    <div class="w-14 h-14 rounded-2xl bg-white border border-stone-200 flex items-center justify-center text-stone-600 transition-colors flex-shrink-0 overflow-hidden relative shadow-inner">
                         <img id="diaryIconImg" src="" alt="" class="w-full h-full object-cover" style="display:none;" onerror="this.style.display='none'; document.getElementById('diaryDefaultIcon').style.display='flex';">
                         <i id="diaryDefaultIcon" class="fa-solid fa-book-open text-xl"></i>
                     </div>
