@@ -63,11 +63,11 @@
             
             <!-- キャラクター一覧へ -->
             <a href="characters.html" class="group flex items-center justify-between px-4 py-3.5 bg-white hover:bg-stone-50 border border-stone-200 rounded-2xl shadow-sm transition-all">
-                <div class="flex items-center gap-3 min-w-0">
-                    <!-- 🌟 アイコン枠（p-1.5 でほどよい余白、localStorageの画像があれば表示、無ければフォールバック） -->
-                    <div class="w-9 h-9 rounded-xl bg-stone-100 border border-stone-200 flex items-center justify-center text-stone-700 group-hover:bg-stone-800 group-hover:text-white transition-colors flex-shrink-0 overflow-hidden relative p-1.5">
-                        <img id="charIconImg" src="" alt="" class="w-full h-full object-contain" style="display:none;" onerror="this.style.display='none'; document.getElementById('charDefaultIcon').style.display='flex';">
-                        <i id="charDefaultIcon" class="fa-solid fa-users text-sm"></i>
+                <div class="flex items-center gap-3.5 min-w-0">
+                    <!-- 🌟 枠サイズを拡大（w-11 h-11）＆ パディングを無くして画像を大きく表示 -->
+                    <div class="w-11 h-11 rounded-xl bg-stone-100 border border-stone-200 flex items-center justify-center text-stone-700 group-hover:bg-stone-800 group-hover:text-white transition-colors flex-shrink-0 overflow-hidden relative">
+                        <img id="charIconImg" src="" alt="" class="w-full h-full object-cover" style="display:none;" onerror="this.style.display='none'; document.getElementById('charDefaultIcon').style.display='flex';">
+                        <i id="charDefaultIcon" class="fa-solid fa-users text-base"></i>
                     </div>
                     <span class="text-xs font-bold text-stone-800 truncate">キャラクター一覧</span>
                 </div>
@@ -78,11 +78,11 @@
 
             <!-- 日記・アルバムへ -->
             <a href="diary.html" class="group flex items-center justify-between px-4 py-3.5 bg-white hover:bg-stone-50 border border-stone-200 rounded-2xl shadow-sm transition-all">
-                <div class="flex items-center gap-3 min-w-0">
-                    <!-- 🌟 アイコン枠（p-1.5 でほどよい余白、localStorageの画像があれば表示、無ければフォールバック） -->
-                    <div class="w-9 h-9 rounded-xl bg-stone-100 border border-stone-200 flex items-center justify-center text-stone-700 group-hover:bg-stone-800 group-hover:text-white transition-colors flex-shrink-0 overflow-hidden relative p-1.5">
-                        <img id="diaryIconImg" src="" alt="" class="w-full h-full object-contain" style="display:none;" onerror="this.style.display='none'; document.getElementById('diaryDefaultIcon').style.display='flex';">
-                        <i id="diaryDefaultIcon" class="fa-solid fa-book-open text-sm"></i>
+                <div class="flex items-center gap-3.5 min-w-0">
+                    <!-- 🌟 枠サイズを拡大（w-11 h-11）＆ パディングを無くして画像を大きく表示 -->
+                    <div class="w-11 h-11 rounded-xl bg-stone-100 border border-stone-200 flex items-center justify-center text-stone-700 group-hover:bg-stone-800 group-hover:text-white transition-colors flex-shrink-0 overflow-hidden relative">
+                        <img id="diaryIconImg" src="" alt="" class="w-full h-full object-cover" style="display:none;" onerror="this.style.display='none'; document.getElementById('diaryDefaultIcon').style.display='flex';">
+                        <i id="diaryDefaultIcon" class="fa-solid fa-book-open text-base"></i>
                     </div>
                     <span class="text-xs font-bold text-stone-800 truncate">月別アルバム・日記</span>
                 </div>
@@ -100,9 +100,8 @@
         <p class="text-[10px] text-stone-400 font-medium">Session & Character Management System</p>
     </footer>
 
-    <!-- 🌟 アイコン動的読み込み ＆ プルリフレッシュ制御スクリプト -->
+    <!-- アイコン動的読み込み ＆ プルリフレッシュ制御スクリプト -->
     <script>
-        // ページ読み込み時にlocalStorageから各ページのカスタムアイコンを反映
         window.addEventListener('DOMContentLoaded', () => {
             // 1. キャラクター一覧のアイコン反映
             const charFavicon = localStorage.getItem('characterFavicon');
