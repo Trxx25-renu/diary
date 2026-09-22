@@ -91,11 +91,11 @@
         </div>
 
         <div class="w-full flex flex-col gap-2.5">
-            <!-- 固定リンク1 -->
+            <!-- 固定リンク1: キャラクター一覧 -->
             <a href="characters.html" class="group flex items-center justify-between px-4 py-3.5 bg-white/90 hover:bg-white border border-stone-200 rounded-2xl shadow-sm transition-all backdrop-blur-sm">
                 <div class="flex items-center gap-4 min-w-0">
                     <div class="w-14 h-14 rounded-2xl bg-stone-100 border border-stone-200 flex items-center justify-center text-stone-700 group-hover:bg-stone-800 group-hover:text-white transition-colors flex-shrink-0 overflow-hidden relative shadow-inner">
-                        <img id="charIconImg" src="" alt="" class="w-full h-full object-cover" style="display:none;">
+                        <img id="charIconImg" src="" alt="" class="w-full h-full object-cover" style="display:none;" onerror="this.style.display='none'; document.getElementById('charDefaultIcon').style.display='flex';">
                         <i id="charDefaultIcon" class="fa-solid fa-users text-xl"></i>
                     </div>
                     <span id="labelChar" class="text-sm font-bold text-stone-800 truncate">キャラクター一覧</span>
@@ -105,11 +105,11 @@
                 </div>
             </a>
 
-            <!-- 固定リンク2 -->
+            <!-- 固定リンク2: 月別アルバム・日記 -->
             <a href="diary.html" class="group flex items-center justify-between px-4 py-3.5 bg-white/90 hover:bg-white border border-stone-200 rounded-2xl shadow-sm transition-all backdrop-blur-sm">
                 <div class="flex items-center gap-4 min-w-0">
                     <div class="w-14 h-14 rounded-2xl bg-stone-100 border border-stone-200 flex items-center justify-center text-stone-700 group-hover:bg-stone-800 group-hover:text-white transition-colors flex-shrink-0 overflow-hidden relative shadow-inner">
-                        <img id="diaryIconImg" src="" alt="" class="w-full h-full object-cover" style="display:none;">
+                        <img id="diaryIconImg" src="" alt="" class="w-full h-full object-cover" style="display:none;" onerror="this.style.display='none'; document.getElementById('diaryDefaultIcon').style.display='flex';">
                         <i id="diaryDefaultIcon" class="fa-solid fa-book-open text-xl"></i>
                     </div>
                     <span id="labelDiary" class="text-sm font-bold text-stone-800 truncate">月別アルバム・日記</span>
@@ -175,7 +175,7 @@
                         <input type="text" id="inputPortalTitle" class="w-full px-3 py-2 border border-stone-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-stone-500" placeholder="卓ポータル">
                     </div>
                     <div>
-                        <label class="block font-semibold text-stone-600 mb-1">中央メインアイコン画像（透過維持対応）</label>
+                        <label class="block font-semibold text-stone-600 mb-1">中央メインアイコン画像</label>
                         <div class="flex items-center gap-2">
                             <input type="file" id="inputMainIconFile" accept="image/*" class="w-full text-xs text-stone-500 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-stone-800 file:text-white hover:file:bg-stone-700 cursor-pointer">
                             <button type="button" onclick="clearMainIcon()" class="px-3 py-2 bg-stone-200 hover:bg-stone-300 text-stone-700 rounded-xl font-bold">削除</button>
@@ -228,7 +228,7 @@
         </div>
     </div>
 
-    <!-- スクリプト制御（カスタムリンク個別アイコン画像対応・透過PNG対応） -->
+    <!-- スクリプト制御（固定リンクのアイコン自動同期対応） -->
     <script>
         const metaNoImageIndex = document.createElement('meta');
         metaNoImageIndex.name = 'googlebot';
@@ -239,7 +239,7 @@
             if (e.target.tagName === 'IMG') { e.preventDefault(); }
         });
 
-        // ⚠️ キャラクター一覧等で使っているFirebase設定に書き換えてください
+        // ⚠️ 必要に応じてFirebase設定を記述
         const firebaseConfig = {
             apiKey: "AIzaSyA2ctX9sUpJmLSVJomU9cbMzrUX_AXNjuE",
             authDomain: "diary-36d77.firebaseapp.com",
@@ -286,7 +286,7 @@
                 alert('設定をクラウドに保存しました！');
             } catch (e) {
                 console.error("設定の保存に失敗しました:", e);
-                alert('保存に失敗しました。画像サイズが大きすぎる可能性があります。');
+                alert('保存に失敗しました。');
             }
         }
 
@@ -324,6 +324,54 @@
             document.getElementById('labelChar').textContent = currentConfig.nameChar || "キャラクター一覧";
             document.getElementById('labelDiary').textContent = currentConfig.nameDiary || "月別アルバム・日記";
 
+            // --- 🔗 固定リンクのアイコンを各リンク先のキャッシュ（localStorage等）から自動同期 ---
+            const charImg = document.getElementById('charIconImg');
+            const charDefault = document.getElementById('charDefaultIcon');
+            let diaryLogo = "";
+            let charLogo = "";
+
+            try {
+                // 日記ページのキャッシュからアイコン画像を取得を試みる
+                const diaryCached = localStorage.getItem('cachedSiteConfig');
+                if (diaryCached) {
+                    const parsed = JSON.parse(diaryCached);
+                    if (parsed.logoImageUrl) diaryLogo = parsed.logoImageUrl;
+                }
+            } catch(e) {}
+
+            try {
+                // キャラ一覧ページのキャッシュや個別の保存データがあれば取得を試みる
+                const charCached = localStorage.getItem('cachedCharSiteConfig') || localStorage.getItem('cachedSiteConfig');
+                if (charCached) {
+                    const parsed = JSON.parse(charCached);
+                    if (parsed.logoImageUrl) charLogo = parsed.logoImageUrl;
+                }
+            } catch(e) {}
+
+            // キャラクター一覧のアイコン反映
+            if (charLogo) {
+                charImg.src = charLogo;
+                charImg.style.display = 'block';
+                charDefault.style.display = 'none';
+            } else {
+                charImg.style.display = 'none';
+                charDefault.style.display = 'flex';
+            }
+
+            // 月別アルバム・日記のアイコン反映
+            const diaryImg = document.getElementById('diaryIconImg');
+            const diaryDefault = document.getElementById('diaryDefaultIcon');
+            if (diaryLogo) {
+                diaryImg.src = diaryLogo;
+                diaryImg.style.display = 'block';
+                diaryDefault.style.display = 'none';
+            } else {
+                diaryImg.style.display = 'none';
+                diaryDefault.style.display = 'flex';
+            }
+            // --------------------------------------------------------------------------
+
+            // カスタム追加リンクの描画
             const grid = document.getElementById('customLinksGrid');
             grid.innerHTML = '';
             if (currentConfig.customLinks && currentConfig.customLinks.length > 0) {
@@ -470,12 +518,12 @@
         async function previewCustomIcon(input, index) {
             if (input.files && input.files[0]) {
                 try {
-                    const base64 = await compressImage(input.files[0], 200); // アイコン用は最大200pxに縮小
+                    const base64 = await compressImage(input.files[0], 200);
                     const itemDiv = input.closest('div.flex.flex-col.gap-2\\.5.relative');
                     itemDiv.querySelector('.cl-icon-data').value = base64;
                     itemDiv.querySelector('.cl-icon-preview').innerHTML = `<img src="${base64}" class="w-7 h-7 object-cover rounded-md border border-stone-200">`;
                 } catch(e) {
-                    console.error("アイコン画像のプレビューに失敗しました:", e);
+                    console.error("プレビュー失敗:", e);
                 }
             }
         }
@@ -515,7 +563,6 @@
             return links;
         }
 
-        // 画像透過維持・自動縮小圧縮関数
         function compressImage(file, maxWidth = 800) {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
@@ -540,12 +587,11 @@
                         ctx.clearRect(0, 0, width, height);
                         ctx.drawImage(img, 0, 0, width, height);
 
-                        const dataUrl = canvas.toDataURL('image/png');
-                        resolve(dataUrl);
+                        resolve(canvas.toDataURL('image/png'));
                     };
-                    img.onerror = (error) => reject(error);
+                    img.onerror = reject;
                 };
-                reader.onerror = (error) => reject(error);
+                reader.onerror = reject;
             });
         }
 
@@ -554,28 +600,16 @@
             currentConfig.adminPasscode = document.getElementById('inputAdminPass').value || "1234";
             currentConfig.nameChar = document.getElementById('inputNameChar').value || "キャラクター一覧";
             currentConfig.nameDiary = document.getElementById('inputNameDiary').value || "月別アルバム・日記";
-            
-            // 各カスタムリンクの設定（手動アップロードしたアイコン画像も含めて取得）
             currentConfig.customLinks = getCustomLinksFromModal();
 
-            // メインアイコンの処理
             const mainIconFile = document.getElementById('inputMainIconFile').files[0];
             if (mainIconFile) {
-                try {
-                    currentConfig.mainIconData = await compressImage(mainIconFile, 600);
-                } catch(e) {
-                    console.error("メインアイコンの処理に失敗しました:", e);
-                }
+                try { currentConfig.mainIconData = await compressImage(mainIconFile, 600); } catch(e) {}
             }
 
-            // 背景画像の処理
             const bgImageFile = document.getElementById('inputBgImageFile').files[0];
             if (bgImageFile) {
-                try {
-                    currentConfig.bgImageData = await compressImage(bgImageFile, 1000);
-                } catch(e) {
-                    console.error("背景画像の処理に失敗しました:", e);
-                }
+                try { currentConfig.bgImageData = await compressImage(bgImageFile, 1000); } catch(e) {}
             }
 
             closeEditModal();
@@ -633,4 +667,4 @@
         });
     </script>
 </body>
-</html>
+</html></html>
