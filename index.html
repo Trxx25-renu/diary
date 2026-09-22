@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="robots" content="noindex, nofollow">
+    <meta name="robots" content="noindex, nonofollow">
     <title id="pageTitleText">卓ポータル - Session Portal</title>
     
     <!-- ファビコン動的変更用 -->
@@ -253,68 +253,28 @@
             }
         });
 
-        const DB_NAME = 'PortalFileStorageDB';
-        const DB_VERSION = 1;
-        const STORE_NAME = 'files';
-
-        function openDB() {
-            return new Promise((resolve, reject) => {
-                const request = indexedDB.open(DB_NAME, DB_VERSION);
-                request.onerror = () => reject(request.error);
-                request.onsuccess = () => resolve(request.result);
-                request.onupgradeneeded = (e) => {
-                    const db = e.target.result;
-                    if (!db.objectStoreNames.contains(STORE_NAME)) {
-                        db.createObjectStore(STORE_NAME);
-                    }
-                };
-            });
-        }
-
-        async function saveFileToDB(key, fileBlob) {
-            const db = await openDB();
-            return new Promise((resolve, reject) => {
-                const transaction = db.transaction(STORE_NAME, 'readwrite');
-                const store = transaction.objectStore(STORE_NAME);
-                const request = store.put(fileBlob, key);
-                request.onsuccess = () => resolve(true);
-                request.onerror = () => reject(request.error);
-            });
-        }
-
-        async function getFileFromDB(key) {
-            const db = await openDB();
-            return new Promise((resolve, reject) => {
-                const transaction = db.transaction(STORE_NAME, 'readonly');
-                const store = transaction.objectStore(STORE_NAME);
-                const request = store.get(key);
-                request.onsuccess = () => resolve(request.result);
-                request.onerror = () => reject(request.error);
-            });
-        }
-
-        async function removeFileFromDB(key) {
-            const db = await openDB();
-            return new Promise((resolve, reject) => {
-                const transaction = db.transaction(STORE_NAME, 'readwrite');
-                const store = transaction.objectStore(STORE_NAME);
-                const request = store.delete(key);
-                request.onsuccess = () => resolve(true);
-                request.onerror = () => reject(request.error);
-            });
-        }
-
-        const STORAGE_KEY = 'customPortalSettings_v2';
+        const STORAGE_KEY = 'customPortalSettings_v4';
 
         function loadSettings() {
             const saved = localStorage.getItem(STORAGE_KEY);
             if (saved) {
-                try { return JSON.parse(saved); } catch(e) {}
+                try {
+                    const parsed = JSON.parse(saved);
+                    return {
+                        portalTitle: parsed.portalTitle !== undefined ? parsed.portalTitle : "卓ポータル",
+                        mainIconData: parsed.mainIconData !== undefined ? parsed.mainIconData : "",
+                        bgImageData: parsed.bgImageData !== undefined ? parsed.bgImageData : "",
+                        adminPasscode: parsed.adminPasscode !== undefined ? parsed.adminPasscode : "1234",
+                        nameChar: parsed.nameChar !== undefined ? parsed.nameChar : "キャラクター一覧",
+                        nameDiary: parsed.nameDiary !== undefined ? parsed.nameDiary : "月別アルバム・日記",
+                        customLinks: Array.isArray(parsed.customLinks) ? parsed.customLinks : []
+                    };
+                } catch(e) {}
             }
             return {
                 portalTitle: "卓ポータル",
-                hasMainIcon: false,
-                hasBgImage: false,
+                mainIconData: "",
+                bgImageData: "",
                 adminPasscode: "1234",
                 nameChar: "キャラクター一覧",
                 nameDiary: "月別アルバム・日記",
@@ -322,54 +282,34 @@
             };
         }
 
-        async function applySettings() {
+        function applySettings() {
             const config = loadSettings();
 
             document.getElementById('pageTitleText').textContent = config.portalTitle + " - Session Portal";
             document.getElementById('headerTitle').innerHTML = `<i class="fa-solid fa-compass text-stone-500"></i> ${config.portalTitle}`;
             document.getElementById('mainHeading').textContent = config.portalTitle;
 
-            if (config.hasMainIcon) {
-                try {
-                    const blob = await getFileFromDB('portal_mainIcon');
-                    if (blob) {
-                        const objectUrl = URL.createObjectURL(blob);
-                        const img = document.getElementById('mainIconImg');
-                        img.src = objectUrl;
-                        img.style.display = 'block';
-                        document.getElementById('mainDefaultIcon').style.display = 'none';
-                        document.getElementById('dynamicFavicon').href = objectUrl;
-                    } else {
-                        document.getElementById('mainIconImg').style.display = 'none';
-                        document.getElementById('mainDefaultIcon').style.display = 'flex';
-                    }
-                } catch(e) {
-                    document.getElementById('mainIconImg').style.display = 'none';
-                    document.getElementById('mainDefaultIcon').style.display = 'flex';
-                }
+            const mainImg = document.getElementById('mainIconImg');
+            const mainDefault = document.getElementById('mainDefaultIcon');
+            const favicon = document.getElementById('dynamicFavicon');
+
+            if (config.mainIconData && config.mainIconData.trim() !== "") {
+                mainImg.src = config.mainIconData;
+                mainImg.style.display = 'block';
+                mainDefault.style.display = 'none';
+                favicon.href = config.mainIconData;
             } else {
-                document.getElementById('mainIconImg').style.display = 'none';
-                document.getElementById('mainDefaultIcon').style.display = 'flex';
+                mainImg.style.display = 'none';
+                mainDefault.style.display = 'flex';
+                favicon.href = '';
             }
 
             const bgLayer = document.getElementById('bgImageLayer');
             const bgOverlay = document.getElementById('bgOverlay');
-            if (config.hasBgImage) {
-                try {
-                    const blob = await getFileFromDB('portal_bgImage');
-                    if (blob) {
-                        const objectUrl = URL.createObjectURL(blob);
-                        bgLayer.style.backgroundImage = `url('${objectUrl}')`;
-                        bgLayer.style.display = 'block';
-                        bgOverlay.style.display = 'block';
-                    } else {
-                        bgLayer.style.display = 'none';
-                        bgOverlay.style.display = 'none';
-                    }
-                } catch(e) {
-                    bgLayer.style.display = 'none';
-                    bgOverlay.style.display = 'none';
-                }
+            if (config.bgImageData && config.bgImageData.trim() !== "") {
+                bgLayer.style.backgroundImage = `url('${config.bgImageData}')`;
+                bgLayer.style.display = 'block';
+                bgOverlay.style.display = 'block';
             } else {
                 bgLayer.style.display = 'none';
                 bgOverlay.style.display = 'none';
@@ -402,7 +342,6 @@
             }
         }
 
-        // 🌟 ログイン状態の保持（sessionStorageでタブが開いている間は維持）
         let isAdminLoggedIn = sessionStorage.getItem('adminLoggedIn') === 'true';
         
         function updateAdminUI() {
@@ -477,19 +416,19 @@
 
         function clearMainIcon() {
             const config = loadSettings();
-            config.hasMainIcon = false;
+            config.mainIconData = "";
             localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
-            removeFileFromDB('portal_mainIcon');
             document.getElementById('inputMainIconFile').value = '';
+            applySettings();
             alert('メインアイコンを削除しました。');
         }
 
         function clearBgImage() {
             const config = loadSettings();
-            config.hasBgImage = false;
+            config.bgImageData = "";
             localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
-            removeFileFromDB('portal_bgImage');
             document.getElementById('inputBgImageFile').value = '';
+            applySettings();
             alert('背景画像を削除しました。');
         }
 
@@ -542,6 +481,15 @@
             return links;
         }
 
+        function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = error => reject(error);
+                reader.readAsDataURL(file);
+            });
+        }
+
         async function savePortalSettings() {
             const config = loadSettings();
             
@@ -553,18 +501,20 @@
 
             const mainIconFile = document.getElementById('inputMainIconFile').files[0];
             if (mainIconFile) {
-                await saveFileToDB('portal_mainIcon', mainIconFile);
-                config.hasMainIcon = true;
+                try {
+                    config.mainIconData = await fileToBase64(mainIconFile);
+                } catch(e) {}
             }
 
             const bgImageFile = document.getElementById('inputBgImageFile').files[0];
             if (bgImageFile) {
-                await saveFileToDB('portal_bgImage', bgImageFile);
-                config.hasBgImage = true;
+                try {
+                    config.bgImageData = await fileToBase64(bgImageFile);
+                } catch(e) {}
             }
 
             localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
-            await applySettings();
+            applySettings();
             closeEditModal();
             alert('ポータル設定を保存しました！');
         }
@@ -609,7 +559,7 @@
         window.addEventListener('touchend', (e) => {
             if (!isPulling) return;
             isPulling = false;
-            const currentY = e.changedTouches[0].clientY;
+            const currentY = e.changedTouches[0].bytes ? e.changedTouches[0].clientY : e.changedTouches[0].clientY;
             const diff = currentY - touchStartY;
 
             if (diff > pullThreshold && mainContainer.scrollTop <= 0) {
