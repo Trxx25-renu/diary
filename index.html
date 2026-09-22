@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="robots" content="noindex, nofollow">
+    <meta name="robots" content="noimageindex, nofollow">
     <title id="pageTitleText">卓ポータル - Session Portal</title>
     
     <link id="dynamicFavicon" rel="icon" href="">
@@ -68,7 +68,7 @@
         <div class="max-w-md mx-auto px-4 h-12 flex items-center justify-between">
             <h1 id="headerTitle" class="text-xs font-bold tracking-wider text-stone-700 flex items-center gap-2">
                 <i class="fa-solid fa-compass text-stone-500"></i>
-                れんぬ家
+                Session Portal
             </h1>
             <div class="flex items-center gap-2">
                 <span class="text-[10px] text-stone-400 font-medium">卓管理・アーカイブ</span>
@@ -228,7 +228,7 @@
         </div>
     </div>
 
-    <!-- スクリプト制御（透過PNG対応・自動リサイズ機能） -->
+    <!-- スクリプト制御（カスタムリンク個別アイコン画像対応・透過PNG対応） -->
     <script>
         const metaNoImageIndex = document.createElement('meta');
         metaNoImageIndex.name = 'googlebot';
@@ -334,7 +334,7 @@
                     
                     let iconHtml = '';
                     if (link.iconData && link.iconData.trim() !== "") {
-                        iconHtml = `<div class="w-8 h-8 rounded-lg bg-stone-100 border border-stone-200 flex items-center justify-center text-stone-600 group-hover:bg-stone-800 group-hover:text-white transition-colors flex-shrink-0 overflow-hidden"><img src="${link.iconData}" class="w-full h-full object-cover" onerror="this.parentElement.innerHTML='<i class=\'fa-solid fa-link text-xs\'></i>';"></div>`;
+                        iconHtml = `<div class="w-8 h-8 rounded-lg bg-stone-100 border border-stone-200 flex items-center justify-center text-stone-600 group-hover:bg-stone-800 group-hover:text-white transition-colors flex-shrink-0 overflow-hidden"><img src="${link.iconData}" class="w-full h-full object-cover"></div>`;
                     } else {
                         iconHtml = `<div class="w-8 h-8 rounded-lg bg-stone-100 border border-stone-200 flex items-center justify-center text-stone-600 group-hover:bg-stone-800 group-hover:text-white transition-colors flex-shrink-0 overflow-hidden"><i class="fa-solid fa-link text-xs"></i></div>`;
                     }
@@ -438,20 +438,56 @@
 
             links.forEach((link, idx) => {
                 const item = document.createElement('div');
-                item.className = "p-2.5 bg-stone-50 border border-stone-200 rounded-xl flex flex-col gap-2 relative";
+                item.className = "p-3 bg-stone-50 border border-stone-200 rounded-xl flex flex-col gap-2.5 relative";
+                
+                let currentIconPreview = link.iconData ? `<img src="${link.iconData}" class="w-7 h-7 object-cover rounded-md border border-stone-200">` : `<span class="text-[10px] text-stone-400">未設定</span>`;
+
                 item.innerHTML = `
                     <div class="flex items-center justify-between">
                         <span class="font-bold text-stone-600 text-[10px]">リンク #${idx + 1}</span>
-                        <button onclick="removeCustomLinkRow(${idx})" class="text-red-500 hover:text-red-700 text-xs px-1"><i class="fa-solid fa-trash-can"></i> 削除</button>
+                        <button type="button" onclick="removeCustomLinkRow(${idx})" class="text-red-500 hover:text-red-700 text-xs px-1"><i class="fa-solid fa-trash-can"></i> 削除</button>
                     </div>
                     <div class="grid grid-cols-2 gap-2">
                         <input type="text" placeholder="リンク名" value="${link.name || ''}" class="cl-name px-2.5 py-1.5 border border-stone-300 rounded-lg bg-white">
                         <input type="text" placeholder="URL (https://...)" value="${link.url || ''}" class="cl-url px-2.5 py-1.5 border border-stone-300 rounded-lg bg-white">
                     </div>
-                    <input type="hidden" class="cl-icon-existing" value="${link.iconData || ''}">
+                    <div class="flex items-center justify-between pt-1 border-t border-stone-200/60">
+                        <div class="flex items-center gap-2">
+                            <span class="text-[10px] font-semibold text-stone-500">アイコン:</span>
+                            <div class="cl-icon-preview flex items-center">${currentIconPreview}</div>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <input type="file" accept="image/*" class="cl-icon-file text-[10px] text-stone-500 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-[10px] file:font-bold file:bg-stone-700 file:text-white hover:file:bg-stone-600 cursor-pointer" onchange="previewCustomIcon(this, ${idx})">
+                            <input type="hidden" class="cl-icon-data" value="${link.iconData || ''}">
+                            <button type="button" onclick="clearCustomIcon(${idx})" class="px-2 py-1 bg-stone-200 hover:bg-stone-300 text-stone-700 rounded-lg text-[10px] font-bold">クリア</button>
+                        </div>
+                    </div>
                 `;
                 container.appendChild(item);
             });
+        }
+
+        async function previewCustomIcon(input, index) {
+            if (input.files && input.files[0]) {
+                try {
+                    const base64 = await compressImage(input.files[0], 200); // アイコン用は最大200pxに縮小
+                    const itemDiv = input.closest('div.flex.flex-col.gap-2\\.5.relative');
+                    itemDiv.querySelector('.cl-icon-data').value = base64;
+                    itemDiv.querySelector('.cl-icon-preview').innerHTML = `<img src="${base64}" class="w-7 h-7 object-cover rounded-md border border-stone-200">`;
+                } catch(e) {
+                    console.error("アイコン画像のプレビューに失敗しました:", e);
+                }
+            }
+        }
+
+        function clearCustomIcon(index) {
+            const container = document.getElementById('customLinksEditContainer');
+            const items = container.querySelectorAll('div.flex.flex-col.gap-2\\.5.relative');
+            if (items[index]) {
+                items[index].querySelector('.cl-icon-data').value = '';
+                items[index].querySelector('.cl-icon-preview').innerHTML = `<span class="text-[10px] text-stone-400">未設定</span>`;
+                items[index].querySelector('.cl-icon-file').value = '';
+            }
         }
 
         function addCustomLinkRow() {
@@ -468,18 +504,18 @@
 
         function getCustomLinksFromModal() {
             const container = document.getElementById('customLinksEditContainer');
-            const items = container.querySelectorAll('div.flex.flex-col.gap-2.relative');
+            const items = container.querySelectorAll('div.flex.flex-col.gap-2\\.5.relative');
             const links = [];
             items.forEach(item => {
                 const name = item.querySelector('.cl-name').value;
                 const url = item.querySelector('.cl-url').value;
-                const iconData = item.querySelector('.cl-icon-existing').value;
+                const iconData = item.querySelector('.cl-icon-data').value;
                 links.push({ name, url, iconData });
             });
             return links;
         }
 
-        // 背景透過（PNG等）を維持しつつ、サイズを縮小して1MB未満に収める関数
+        // 画像透過維持・自動縮小圧縮関数
         function compressImage(file, maxWidth = 800) {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
@@ -492,7 +528,6 @@
                         let width = img.width;
                         let height = img.height;
 
-                        // 大きすぎる場合は最大幅に合わせる（比率維持）
                         if (width > maxWidth) {
                             height = Math.round((height * maxWidth) / width);
                             width = maxWidth;
@@ -502,11 +537,9 @@
                         canvas.height = height;
 
                         const ctx = canvas.getContext('2d');
-                        // 既存の背景をクリアして透明度を完全維持
                         ctx.clearRect(0, 0, width, height);
                         ctx.drawImage(img, 0, 0, width, height);
 
-                        // PNG形式（image/png）で出力することで背景の透過を維持します
                         const dataUrl = canvas.toDataURL('image/png');
                         resolve(dataUrl);
                     };
@@ -516,37 +549,26 @@
             });
         }
 
-        function getFaviconUrl(url) {
-            try {
-                const parsedUrl = new URL(url);
-                return `https://www.google.com/s2/favicons?domain=${parsedUrl.hostname}&sz=128`;
-            } catch(e) { return ''; }
-        }
-
         async function savePortalSettings() {
             currentConfig.portalTitle = document.getElementById('inputPortalTitle').value || "卓ポータル";
             currentConfig.adminPasscode = document.getElementById('inputAdminPass').value || "1234";
             currentConfig.nameChar = document.getElementById('inputNameChar').value || "キャラクター一覧";
             currentConfig.nameDiary = document.getElementById('inputNameDiary').value || "月別アルバム・日記";
             
-            const rawLinks = getCustomLinksFromModal();
-            currentConfig.customLinks = rawLinks.map(link => ({
-                name: link.name,
-                url: link.url,
-                iconData: link.url ? getFaviconUrl(link.url) : link.iconData
-            }));
+            // 各カスタムリンクの設定（手動アップロードしたアイコン画像も含めて取得）
+            currentConfig.customLinks = getCustomLinksFromModal();
 
-            // メインアイコンの処理（透過を維持しつつ、最大幅600pxに自動縮小して容量オーバーを防止）
+            // メインアイコンの処理
             const mainIconFile = document.getElementById('inputMainIconFile').files[0];
             if (mainIconFile) {
                 try {
                     currentConfig.mainIconData = await compressImage(mainIconFile, 600);
                 } catch(e) {
-                    console.error("アイコンの処理に失敗しました:", e);
+                    console.error("メインアイコンの処理に失敗しました:", e);
                 }
             }
 
-            // 背景画像の処理（最大幅1000pxに自動縮小）
+            // 背景画像の処理
             const bgImageFile = document.getElementById('inputBgImageFile').files[0];
             if (bgImageFile) {
                 try {
