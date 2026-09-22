@@ -134,7 +134,7 @@
         <p class="text-[10px] text-stone-400 font-medium">Session & Character Management System</p>
     </footer>
 
-    <!-- パスコード入力モーダル（テンキー対応） -->
+    <!-- パスコード入力モーダル -->
     <div id="passcodeModal" class="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4" style="display: none;">
         <div class="bg-white rounded-3xl max-w-xs w-full p-6 flex flex-col shadow-2xl border border-stone-200 text-center gap-4">
             <div class="w-12 h-12 rounded-full bg-stone-100 text-stone-600 mx-auto flex items-center justify-center text-lg">
@@ -174,14 +174,25 @@
                         <label class="block font-semibold text-stone-600 mb-1">サイト名・タイトル</label>
                         <input type="text" id="inputPortalTitle" class="w-full px-3 py-2 border border-stone-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-stone-500" placeholder="卓ポータル">
                     </div>
+
+                    <!-- 🌟 ファイルアップロード式：中央メインアイコン -->
                     <div>
-                        <label class="block font-semibold text-stone-600 mb-1">中央メインアイコン画像URL</label>
-                        <input type="text" id="inputMainIcon" class="w-full px-3 py-2 border border-stone-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-stone-500" placeholder="https://...">
+                        <label class="block font-semibold text-stone-600 mb-1">中央メインアイコン画像</label>
+                        <div class="flex items-center gap-2">
+                            <input type="file" id="inputMainIconFile" accept="image/*" class="w-full text-xs text-stone-500 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-stone-800 file:text-white hover:file:bg-stone-700 cursor-pointer">
+                            <button type="button" onclick="clearMainIcon()" class="px-3 py-2 bg-stone-200 hover:bg-stone-300 text-stone-700 rounded-xl font-bold">削除</button>
+                        </div>
                     </div>
+
+                    <!-- 🌟 ファイルアップロード式：最背面背景画像 -->
                     <div>
-                        <label class="block font-semibold text-stone-600 mb-1">最背面 背景画像URL</label>
-                        <input type="text" id="inputBgImage" class="w-full px-3 py-2 border border-stone-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-stone-500" placeholder="https://...">
+                        <label class="block font-semibold text-stone-600 mb-1">最背面 背景画像</label>
+                        <div class="flex items-center gap-2">
+                            <input type="file" id="inputBgImageFile" accept="image/*" class="w-full text-xs text-stone-500 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-stone-800 file:text-white hover:file:bg-stone-700 cursor-pointer">
+                            <button type="button" onclick="clearBgImage()" class="px-3 py-2 bg-stone-200 hover:bg-stone-300 text-stone-700 rounded-xl font-bold">削除</button>
+                        </div>
                     </div>
+
                     <div>
                         <label class="block font-semibold text-stone-600 mb-1">管理者パスコード（数字のみ）</label>
                         <input type="password" id="inputAdminPass" inputmode="numeric" pattern="[0-9]*" class="w-full px-3 py-2 border border-stone-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-stone-500" placeholder="例: 1234">
@@ -235,7 +246,59 @@
             }
         });
 
-        const STORAGE_KEY = 'customPortalSettings_v1';
+        // 🗄️ IndexedDB（ブラウザ内ファイルデータベース）の管理システム
+        const DB_NAME = 'PortalFileStorageDB';
+        const DB_VERSION = 1;
+        const STORE_NAME = 'files';
+
+        function openDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(DB_NAME, DB_VERSION);
+                request.onerror = () => reject(request.error);
+                request.onsuccess = () => resolve(request.result);
+                request.onupgradeneeded = (e) => {
+                    const db = e.target.result;
+                    if (!db.objectStoreNames.contains(STORE_NAME)) {
+                        db.createObjectStore(STORE_NAME);
+                    }
+                };
+            });
+        }
+
+        async function saveFileToDB(key, fileBlob) {
+            const db = await openDB();
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction(STORE_NAME, 'readwrite');
+                const store = transaction.objectStore(STORE_NAME);
+                const request = store.put(fileBlob, key);
+                request.onsuccess = () => resolve(true);
+                request.onerror = () => reject(request.error);
+            });
+        }
+
+        async function getFileFromDB(key) {
+            const db = await openDB();
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction(STORE_NAME, 'readonly');
+                const store = transaction.objectStore(STORE_NAME);
+                const request = store.get(key);
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error);
+            });
+        }
+
+        async function removeFileFromDB(key) {
+            const db = await openDB();
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction(STORE_NAME, 'readwrite');
+                const store = transaction.objectStore(STORE_NAME);
+                const request = store.delete(key);
+                request.onsuccess = () => resolve(true);
+                request.onerror = () => reject(request.error);
+            });
+        }
+
+        const STORAGE_KEY = 'customPortalSettings_v2';
 
         function loadSettings() {
             const saved = localStorage.getItem(STORAGE_KEY);
@@ -244,8 +307,8 @@
             }
             return {
                 portalTitle: "卓ポータル",
-                mainIconUrl: "",
-                bgImageUrl: "",
+                hasMainIcon: false,
+                hasBgImage: false,
                 adminPasscode: "1234",
                 nameChar: "キャラクター一覧",
                 nameDiary: "月別アルバム・日記",
@@ -253,30 +316,40 @@
             };
         }
 
-        function applySettings() {
+        async function applySettings() {
             const config = loadSettings();
 
             document.getElementById('pageTitleText').textContent = config.portalTitle + " - Session Portal";
             document.getElementById('headerTitle').innerHTML = `<i class="fa-solid fa-compass text-stone-500"></i> ${config.portalTitle}`;
             document.getElementById('mainHeading').textContent = config.portalTitle;
 
-            if (config.mainIconUrl) {
-                const img = document.getElementById('mainIconImg');
-                img.src = config.mainIconUrl;
-                img.style.display = 'block';
-                document.getElementById('mainDefaultIcon').style.display = 'none';
-                document.getElementById('dynamicFavicon').href = config.mainIconUrl;
+            // メインアイコンの読み込み
+            if (config.hasMainIcon) {
+                const blob = await getFileFromDB('portal_mainIcon');
+                if (blob) {
+                    const objectUrl = URL.createObjectURL(blob);
+                    const img = document.getElementById('mainIconImg');
+                    img.src = objectUrl;
+                    img.style.display = 'block';
+                    document.getElementById('mainDefaultIcon').style.display = 'none';
+                    document.getElementById('dynamicFavicon').href = objectUrl;
+                }
             } else {
                 document.getElementById('mainIconImg').style.display = 'none';
                 document.getElementById('mainDefaultIcon').style.display = 'flex';
             }
 
+            // 背景画像の読み込み
             const bgLayer = document.getElementById('bgImageLayer');
             const bgOverlay = document.getElementById('bgOverlay');
-            if (config.bgImageUrl) {
-                bgLayer.style.backgroundImage = `url('${config.bgImageUrl}')`;
-                bgLayer.style.display = 'block';
-                bgOverlay.style.display = 'block';
+            if (config.hasBgImage) {
+                const blob = await getFileFromDB('portal_bgImage');
+                if (blob) {
+                    const objectUrl = URL.createObjectURL(blob);
+                    bgLayer.style.backgroundImage = `url('${objectUrl}')`;
+                    bgLayer.style.display = 'block';
+                    bgOverlay.style.display = 'block';
+                }
             } else {
                 bgLayer.style.display = 'none';
                 bgOverlay.style.display = 'none';
@@ -284,27 +357,6 @@
 
             document.getElementById('labelChar').textContent = config.nameChar || "キャラクター一覧";
             document.getElementById('labelDiary').textContent = config.nameDiary || "月別アルバム・日記";
-
-            const charFavicon = localStorage.getItem('characterFavicon');
-            if (charFavicon) {
-                const img = document.getElementById('charIconImg');
-                img.src = charFavicon;
-                img.style.display = 'block';
-                document.getElementById('charDefaultIcon').style.display = 'none';
-            }
-
-            const cachedConfigStr = localStorage.getItem('cachedSiteConfig');
-            if (cachedConfigStr) {
-                try {
-                    const diaryConfig = JSON.parse(cachedConfigStr);
-                    if (diaryConfig && diaryConfig.logoImageUrl) {
-                        const img = document.getElementById('diaryIconImg');
-                        img.src = diaryConfig.logoImageUrl;
-                        img.style.display = 'block';
-                        document.getElementById('diaryDefaultIcon').style.display = 'none';
-                    }
-                } catch(e) {}
-            }
 
             const grid = document.getElementById('customLinksGrid');
             grid.innerHTML = '';
@@ -315,10 +367,7 @@
                     a.className = "group flex items-center justify-between p-3 bg-white/90 hover:bg-white border border-stone-200 rounded-xl shadow-xs transition-all backdrop-blur-sm";
                     
                     let iconHtml = `<div class="w-8 h-8 rounded-lg bg-stone-100 border border-stone-200 flex items-center justify-center text-stone-600 group-hover:bg-stone-800 group-hover:text-white transition-colors flex-shrink-0 overflow-hidden"><i class="fa-solid fa-link text-xs"></i></div>`;
-                    if (link.icon) {
-                        iconHtml = `<div class="w-8 h-8 rounded-lg bg-stone-100 border border-stone-200 flex items-center justify-center text-stone-600 group-hover:bg-stone-800 group-hover:text-white transition-colors flex-shrink-0 overflow-hidden"><img src="${link.icon}" class="w-full h-full object-cover"></div>`;
-                    }
-
+                    
                     a.innerHTML = `
                         <div class="flex items-center gap-2.5 min-w-0">
                             ${iconHtml}
@@ -375,11 +424,13 @@
         function openEditModal() {
             const config = loadSettings();
             document.getElementById('inputPortalTitle').value = config.portalTitle;
-            document.getElementById('inputMainIcon').value = config.mainIconUrl;
-            document.getElementById('inputBgImage').value = config.bgImageUrl;
             document.getElementById('inputAdminPass').value = config.adminPasscode || '1234';
             document.getElementById('inputNameChar').value = config.nameChar;
             document.getElementById('inputNameDiary').value = config.nameDiary;
+
+            // ファイル入力欄はクリアしておく
+            document.getElementById('inputMainIconFile').value = '';
+            document.getElementById('inputBgImageFile').value = '';
 
             renderCustomLinksEdit(config.customLinks);
             document.getElementById('editModal').style.display = 'flex';
@@ -387,6 +438,24 @@
 
         function closeEditModal() {
             document.getElementById('editModal').style.display = 'none';
+        }
+
+        function clearMainIcon() {
+            const config = loadSettings();
+            config.hasMainIcon = false;
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
+            removeFileFromDB('portal_mainIcon');
+            document.getElementById('inputMainIconFile').value = '';
+            alert('メインアイコンを削除しました。');
+        }
+
+        function clearBgImage() {
+            const config = loadSettings();
+            config.hasBgImage = false;
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
+            removeFileFromDB('portal_bgImage');
+            document.getElementById('inputBgImageFile').value = '';
+            alert('背景画像を削除しました。');
         }
 
         function renderCustomLinksEdit(links) {
@@ -409,7 +478,6 @@
                         <input type="text" placeholder="リンク名" value="${link.name || ''}" class="cl-name px-2.5 py-1.5 border border-stone-300 rounded-lg bg-white">
                         <input type="text" placeholder="URL (https://...)" value="${link.url || ''}" class="cl-url px-2.5 py-1.5 border border-stone-300 rounded-lg bg-white">
                     </div>
-                    <input type="text" placeholder="アイコン画像URL (任意)" value="${link.icon || ''}" class="cl-icon px-2.5 py-1.5 border border-stone-300 rounded-lg bg-white">
                 `;
                 container.appendChild(item);
             });
@@ -417,7 +485,7 @@
 
         function addCustomLinkRow() {
             const rows = getCustomLinksFromModal();
-            rows.push({ name: '', url: '', icon: '' });
+            rows.push({ name: '', url: '' });
             renderCustomLinksEdit(rows);
         }
 
@@ -434,31 +502,40 @@
             items.forEach(item => {
                 const name = item.querySelector('.cl-name').value;
                 const url = item.querySelector('.cl-url').value;
-                const icon = item.querySelector('.cl-icon').value;
-                links.push({ name, url, icon });
+                links.push({ name, url });
             });
             return links;
         }
 
-        function savePortalSettings() {
-            const customLinks = getCustomLinksFromModal();
-            const newConfig = {
-                portalTitle: document.getElementById('inputPortalTitle').value || "卓ポータル",
-                mainIconUrl: document.getElementById('inputMainIcon').value,
-                bgImageUrl: document.getElementById('inputBgImage').value,
-                adminPasscode: document.getElementById('inputAdminPass').value || "1234",
-                nameChar: document.getElementById('inputNameChar').value || "キャラクター一覧",
-                nameDiary: document.getElementById('inputNameDiary').value || "月別アルバム・日記",
-                customLinks: customLinks
-            };
+        async function savePortalSettings() {
+            const config = loadSettings();
+            
+            config.portalTitle = document.getElementById('inputPortalTitle').value || "卓ポータル";
+            config.adminPasscode = document.getElementById('inputAdminPass').value || "1234";
+            config.nameChar = document.getElementById('inputNameChar').value || "キャラクター一覧";
+            config.nameDiary = document.getElementById('inputNameDiary').value || "月別アルバム・日記";
+            config.customLinks = getCustomLinksFromModal();
 
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(newConfig));
-            applySettings();
+            // 新しくメインアイコンファイルが選択されていればDBに保存
+            const mainIconFile = document.getElementById('inputMainIconFile').files[0];
+            if (mainIconFile) {
+                await saveFileToDB('portal_mainIcon', mainIconFile);
+                config.hasMainIcon = true;
+            }
+
+            // 新しく背景画像ファイルが選択されていればDBに保存
+            const bgImageFile = document.getElementById('inputBgImageFile').files[0];
+            if (bgImageFile) {
+                await saveFileToDB('portal_bgImage', bgImageFile);
+                config.hasBgImage = true;
+            }
+
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
+            await applySettings();
             closeEditModal();
             alert('ポータル設定を保存しました！');
         }
 
-        // 🌟 プルリフレッシュ（引っ張って更新）の復旧制御
         let touchStartY = 0;
         let isPulling = false;
         const pullThreshold = 70;
@@ -514,4 +591,4 @@
         });
     </script>
 </body>
-</html>
+</html></html>
