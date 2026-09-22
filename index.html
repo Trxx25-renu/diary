@@ -416,27 +416,7 @@ const firebaseConfig = {
             }
         }
 
-        let isAdminLoggedIn = sessionStorage.getItem('adminLoggedIn') === 'true';
-        
-        function updateAdminUI() {
-            const authButton = document.getElementById('authButton');
-            const authIcon = document.getElementById('authIcon');
-            const adminContainer = document.getElementById('adminEditContainer');
-
-            if (isAdminLoggedIn) {
-                authButton.classList.remove('bg-stone-100', 'text-stone-500');
-                authButton.classList.add('bg-stone-800', 'text-white');
-                authIcon.className = 'fa-solid fa-lock-open';
-                adminContainer.style.display = 'block';
-            } else {
-                authButton.classList.remove('bg-stone-800', 'text-white');
-                authButton.classList.add('bg-stone-100', 'text-stone-500');
-                authIcon.className = 'fa-solid fa-lock';
-                adminContainer.style.display = 'none';
-            }
-        }
-
-        let isAdminLoggedIn = sessionStorage.getItem('adminLoggedIn') === 'true';
+let isAdminLoggedIn = sessionStorage.getItem('adminLoggedIn') === 'true';
         
         function updateAdminUI() {
             const authButton = document.getElementById('authButton');
