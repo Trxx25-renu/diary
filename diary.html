@@ -2950,13 +2950,8 @@ document.addEventListener('DOMContentLoaded', () => {
           <form id="postForm" onsubmit="handleSaveEntry(event)" class="flex flex-col gap-4">
                 <div>
                     <label class="block text-xs font-medium text-stone-700 mb-1">写真 (必須・最大3枚まで)</label>
-                    <!-- 🌟 枠全体をクリックしたときにファイル選択が開くように onclick を追加 -->
                     <div class="relative w-full bg-stone-50 border-2 border-dashed border-stone-200 rounded-2xl p-3 hover:border-stone-500/50 transition-colors cursor-pointer" onclick="document.getElementById('imageInput').click()">
-                        
-                        <!-- 🌟 id="imageInput" を追加 -->
                         <input type="file" id="imageInput" accept="image/*" multiple onchange="handleImageSelect(event)" class="hidden">
-                        
-                        <!-- 🌟 複数枚のサムネイルが横に並ぶコンテナ -->
                         <div id="imagePreviewContainer" class="flex gap-2 overflow-x-auto min-h-[90px] items-center justify-center py-2">
                             <div id="uploadPlaceholder" class="flex flex-col items-center gap-2 text-stone-400">
                                 <i class="fa-regular fa-image text-2xl"></i>
@@ -2966,16 +2961,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                 </div>
                <div>
-                   
                     <label class="block text-xs font-medium text-stone-700 mb-1">シナリオタイトル <span class="text-[10px] text-stone-400 font-normal">(任意)</span></label>
                     <input type="text" id="inputScenarioTitle" placeholder="例：〇〇の怪" class="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs focus:outline-none focus:border-stone-500 font-bold">
                 </div>
 
-                <!-- 🌟 日付・時間帯・タグのレイアウトを調整（スマホでは日付をフル幅、下段に時間帯とタグを並べる） -->
+                <!-- 🌟 日付の文字サイズや余白を調整して枠内にすっきり収まるように修正 -->
                 <div class="grid grid-cols-2 gap-2">
                     <div class="col-span-2">
                         <label class="block text-xs font-medium text-stone-700 mb-1">日付</label>
-                        <input type="date" id="inputDate" required class="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs focus:outline-none focus:border-stone-500">
+                        <input type="date" id="inputDate" required class="w-full px-2 py-2 bg-stone-50 border border-stone-200 rounded-xl text-[11px] focus:outline-none focus:border-stone-500 text-center">
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-stone-700 mb-1">時間帯</label>
