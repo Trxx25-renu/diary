@@ -6,12 +6,8 @@
     <meta name="robots" content="noindex, nofollow">
     <title id="pageTitleText">卓ポータル - Session Portal</title>
     
-    <!-- ファビコン動的変更用 -->
     <link id="dynamicFavicon" rel="icon" href="">
-
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
@@ -53,11 +49,9 @@
 </head>
 <body class="bg-stone-100 text-stone-800 flex flex-col justify-between font-sans selection:bg-stone-300 relative overflow-hidden">
 
-    <!-- 最背面背景画像レイヤー -->
     <div id="bgImageLayer" class="absolute inset-0 z-0 bg-cover bg-center pointer-events-none transition-all duration-300" style="display: none;"></div>
     <div id="bgOverlay" class="absolute inset-0 z-0 bg-white/75 pointer-events-none transition-all duration-300" style="display: none;"></div>
 
-    <!-- 引き下げたら更新用インジケーター -->
     <div id="pullRefreshIndicator">
         <div class="bg-white/90 backdrop-blur-md px-4 py-1.5 rounded-full shadow-md border border-stone-200 text-stone-600 text-xs font-bold flex items-center gap-2">
             <i id="refreshIcon" class="fa-solid fa-rotate-right transition-transform duration-200"></i>
@@ -84,7 +78,6 @@
     <!-- メインコンテンツ -->
     <main id="mainContainer" class="max-w-sm w-full mx-auto px-4 flex flex-col items-center justify-center gap-4 my-auto relative z-10 overflow-y-auto max-h-[calc(100vh-7rem)] py-2">
         
-        <!-- 中央メインアイコン＆タイトル -->
         <div class="text-center flex flex-col items-center gap-1.5 flex-shrink-0">
             <div class="w-14 h-14 rounded-full bg-white/90 border border-stone-200 shadow-sm flex items-center justify-center text-stone-700 overflow-hidden relative">
                 <img id="mainIconImg" src="" alt="" class="w-full h-full object-cover" style="display:none;" onerror="this.style.display='none'; document.getElementById('mainDefaultIcon').style.display='flex';">
@@ -93,10 +86,8 @@
             <h2 id="mainHeading" class="text-sm font-bold text-stone-800 tracking-tight">卓ポータル</h2>
         </div>
 
-        <!-- リンクカード群エリア -->
         <div class="w-full flex flex-col gap-2.5">
-            
-            <!-- 固定リンク1: キャラクター一覧 -->
+            <!-- 固定リンク1 -->
             <a href="characters.html" class="group flex items-center justify-between px-4 py-3.5 bg-white/90 hover:bg-white border border-stone-200 rounded-2xl shadow-sm transition-all backdrop-blur-sm">
                 <div class="flex items-center gap-4 min-w-0">
                     <div class="w-14 h-14 rounded-2xl bg-stone-100 border border-stone-200 flex items-center justify-center text-stone-700 group-hover:bg-stone-800 group-hover:text-white transition-colors flex-shrink-0 overflow-hidden relative shadow-inner">
@@ -110,7 +101,7 @@
                 </div>
             </a>
 
-            <!-- 固定リンク2: 月別アルバム・日記 -->
+            <!-- 固定リンク2 -->
             <a href="diary.html" class="group flex items-center justify-between px-4 py-3.5 bg-white/90 hover:bg-white border border-stone-200 rounded-2xl shadow-sm transition-all backdrop-blur-sm">
                 <div class="flex items-center gap-4 min-w-0">
                     <div class="w-14 h-14 rounded-2xl bg-stone-100 border border-stone-200 flex items-center justify-center text-stone-700 group-hover:bg-stone-800 group-hover:text-white transition-colors flex-shrink-0 overflow-hidden relative shadow-inner">
@@ -124,21 +115,17 @@
                 </div>
             </a>
 
-            <!-- カスタム追加リンク（横2列グリッド） -->
+            <!-- カスタム追加リンク群 -->
             <div id="customLinksGrid" class="grid grid-cols-2 gap-2.5 w-full"></div>
-
         </div>
 
-        <!-- 管理者用 編集ボタン -->
         <div id="adminEditContainer" class="w-full pt-1" style="display: none;">
             <button onclick="openEditModal()" class="w-full py-2.5 bg-stone-800 hover:bg-stone-700 text-white rounded-xl text-xs font-bold shadow-md transition-all flex items-center justify-center gap-2">
                 <i class="fa-solid fa-pen-to-square"></i> ポータル設定・リンク編集
             </button>
         </div>
-
     </main>
 
-    <!-- フッター -->
     <footer class="w-full py-3 text-center border-t border-stone-200/60 bg-white/80 backdrop-blur-md flex-shrink-0 relative z-10">
         <p class="text-[10px] text-stone-400 font-medium">Session & Character Management System</p>
     </footer>
@@ -177,13 +164,23 @@
 
             <div class="p-5 overflow-y-auto custom-scroll flex flex-col gap-5 text-xs">
                 
+                <!-- JSONエクスポート用（GitHubへの反映手順案内） -->
+                <div class="p-3 bg-stone-100 rounded-2xl border border-stone-200 flex flex-col gap-2">
+                    <h4 class="font-bold text-stone-700 flex items-center gap-1.5">
+                        <i class="fa-solid fa-cloud-arrow-down text-stone-500"></i> GitHub連携データのエクスポート
+                    </h4>
+                    <p class="text-[10px] text-stone-500 leading-relaxed">設定を変更したあと、このボタンで最新の <code class="bg-white px-1 py-0.5 rounded border border-stone-300">settings.json</code> をダウンロードし、GitHubへアップロード（上書き）してください。</p>
+                    <button onclick="exportSettingsJson()" class="py-2 bg-white hover:bg-stone-50 border border-stone-300 text-stone-700 rounded-xl font-bold text-[11px] shadow-xs transition-all flex items-center justify-center gap-1.5">
+                        <i class="fa-solid fa-download text-stone-500"></i> settings.json をダウンロード
+                    </button>
+                </div>
+
                 <div class="flex flex-col gap-3">
                     <h4 class="font-bold text-stone-700 border-b pb-1">基本情報・外観</h4>
                     <div>
                         <label class="block font-semibold text-stone-600 mb-1">サイト名・タイトル</label>
                         <input type="text" id="inputPortalTitle" class="w-full px-3 py-2 border border-stone-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-stone-500" placeholder="卓ポータル">
                     </div>
-
                     <div>
                         <label class="block font-semibold text-stone-600 mb-1">中央メインアイコン画像</label>
                         <div class="flex items-center gap-2">
@@ -191,7 +188,6 @@
                             <button type="button" onclick="clearMainIcon()" class="px-3 py-2 bg-stone-200 hover:bg-stone-300 text-stone-700 rounded-xl font-bold">削除</button>
                         </div>
                     </div>
-
                     <div>
                         <label class="block font-semibold text-stone-600 mb-1">最背面 背景画像</label>
                         <div class="flex items-center gap-2">
@@ -199,7 +195,6 @@
                             <button type="button" onclick="clearBgImage()" class="px-3 py-2 bg-stone-200 hover:bg-stone-300 text-stone-700 rounded-xl font-bold">削除</button>
                         </div>
                     </div>
-
                     <div>
                         <label class="block font-semibold text-stone-600 mb-1">管理者パスコード（数字のみ）</label>
                         <input type="password" id="inputAdminPass" inputmode="numeric" pattern="[0-9]*" class="w-full px-3 py-2 border border-stone-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-stone-500" placeholder="例: 1234">
@@ -207,7 +202,7 @@
                 </div>
 
                 <div class="flex flex-col gap-3">
-                    <h4 class="font-bold text-stone-700 border-b pb-1">固定リンクの名称変更（削除不可）</h4>
+                    <h4 class="font-bold text-stone-700 border-b pb-1">固定リンクの名称変更</h4>
                     <div class="grid grid-cols-2 gap-2">
                         <div>
                             <label class="block font-semibold text-stone-600 mb-1">キャラ一覧の名称</label>
@@ -227,7 +222,6 @@
                             <i class="fa-solid fa-plus mr-1"></i> リンクを追加
                         </button>
                     </div>
-                    <p class="text-[10px] text-stone-400">※URLを入力して保存すると、リンク先のファビコン（ブックマークアイコン）が自動で取得され、永久保存されます。</p>
                     <div id="customLinksEditContainer" class="flex flex-col gap-2.5"></div>
                 </div>
 
@@ -235,7 +229,7 @@
 
             <div class="px-5 py-3 border-t border-stone-200 bg-stone-50 flex items-center justify-end gap-2">
                 <button onclick="closeEditModal()" class="px-4 py-2 bg-stone-200 hover:bg-stone-300 text-stone-700 rounded-xl font-bold transition-colors">キャンセル</button>
-                <button onclick="savePortalSettings()" class="px-5 py-2 bg-stone-800 hover:bg-stone-700 text-white rounded-xl font-bold transition-colors">保存する</button>
+                <button onclick="savePortalSettings()" class="px-5 py-2 bg-stone-800 hover:bg-stone-700 text-white rounded-xl font-bold transition-colors">設定を適用する</button>
             </div>
 
         </div>
@@ -249,56 +243,47 @@
         document.head.appendChild(metaNoImageIndex);
 
         document.addEventListener('contextmenu', (e) => {
-            if (e.target.tagName === 'IMG') {
-                e.preventDefault();
-            }
+            if (e.target.tagName === 'IMG') { e.preventDefault(); }
         });
 
-        const STORAGE_KEY = 'customPortalSettings_v6';
+        let currentConfig = {
+            portalTitle: "卓ポータル",
+            mainIconData: "",
+            bgImageData: "",
+            adminPasscode: "1234",
+            nameChar: "キャラクター一覧",
+            nameDiary: "月別アルバム・日記",
+            customLinks: []
+        };
 
-        function loadSettings() {
-            const saved = localStorage.getItem(STORAGE_KEY);
-            if (saved) {
-                try {
-                    const parsed = JSON.parse(saved);
-                    return {
-                        portalTitle: parsed.portalTitle !== undefined ? parsed.portalTitle : "卓ポータル",
-                        mainIconData: parsed.mainIconData !== undefined ? parsed.mainIconData : "",
-                        bgImageData: parsed.bgImageData !== undefined ? parsed.bgImageData : "",
-                        adminPasscode: parsed.adminPasscode !== undefined ? parsed.adminPasscode : "1234",
-                        nameChar: parsed.nameChar !== undefined ? parsed.nameChar : "キャラクター一覧",
-                        nameDiary: parsed.nameDiary !== undefined ? parsed.nameDiary : "月別アルバム・日記",
-                        customLinks: Array.isArray(parsed.customLinks) ? parsed.customLinks : []
-                    };
-                } catch(e) {}
+        // 外部の settings.json からデータを読み込む
+        async function loadSettings() {
+            try {
+                const response = await fetch('settings.json?t=' + new Date().getTime());
+                if (response.ok) {
+                    const data = await response.json();
+                    currentConfig = { ...currentConfig, ...data };
+                }
+            } catch (e) {
+                console.log('settings.jsonの読み込みに失敗しました。デフォルト設定を使用します。');
             }
-            return {
-                portalTitle: "卓ポータル",
-                mainIconData: "",
-                bgImageData: "",
-                adminPasscode: "1234",
-                nameChar: "キャラクター一覧",
-                nameDiary: "月別アルバム・日記",
-                customLinks: []
-            };
+            applySettings();
         }
 
         function applySettings() {
-            const config = loadSettings();
-
-            document.getElementById('pageTitleText').textContent = config.portalTitle + " - Session Portal";
-            document.getElementById('headerTitle').innerHTML = `<i class="fa-solid fa-compass text-stone-500"></i> ${config.portalTitle}`;
-            document.getElementById('mainHeading').textContent = config.portalTitle;
+            document.getElementById('pageTitleText').textContent = currentConfig.portalTitle + " - Session Portal";
+            document.getElementById('headerTitle').innerHTML = `<i class="fa-solid fa-compass text-stone-500"></i> ${currentConfig.portalTitle}`;
+            document.getElementById('mainHeading').textContent = currentConfig.portalTitle;
 
             const mainImg = document.getElementById('mainIconImg');
             const mainDefault = document.getElementById('mainDefaultIcon');
             const favicon = document.getElementById('dynamicFavicon');
 
-            if (config.mainIconData && config.mainIconData.trim() !== "") {
-                mainImg.src = config.mainIconData;
+            if (currentConfig.mainIconData && currentConfig.mainIconData.trim() !== "") {
+                mainImg.src = currentConfig.mainIconData;
                 mainImg.style.display = 'block';
                 mainDefault.style.display = 'none';
-                favicon.href = config.mainIconData;
+                favicon.href = currentConfig.mainIconData;
             } else {
                 mainImg.style.display = 'none';
                 mainDefault.style.display = 'flex';
@@ -307,8 +292,8 @@
 
             const bgLayer = document.getElementById('bgImageLayer');
             const bgOverlay = document.getElementById('bgOverlay');
-            if (config.bgImageData && config.bgImageData.trim() !== "") {
-                bgLayer.style.backgroundImage = `url('${config.bgImageData}')`;
+            if (currentConfig.bgImageData && currentConfig.bgImageData.trim() !== "") {
+                bgLayer.style.backgroundImage = `url('${currentConfig.bgImageData}')`;
                 bgLayer.style.display = 'block';
                 bgOverlay.style.display = 'block';
             } else {
@@ -316,13 +301,13 @@
                 bgOverlay.style.display = 'none';
             }
 
-            document.getElementById('labelChar').textContent = config.nameChar || "キャラクター一覧";
-            document.getElementById('labelDiary').textContent = config.nameDiary || "月別アルバム・日記";
+            document.getElementById('labelChar').textContent = currentConfig.nameChar || "キャラクター一覧";
+            document.getElementById('labelDiary').textContent = currentConfig.nameDiary || "月別アルバム・日記";
 
             const grid = document.getElementById('customLinksGrid');
             grid.innerHTML = '';
-            if (config.customLinks && config.customLinks.length > 0) {
-                config.customLinks.forEach(link => {
+            if (currentConfig.customLinks && currentConfig.customLinks.length > 0) {
+                currentConfig.customLinks.forEach(link => {
                     const a = document.createElement('a');
                     a.href = link.url || '#';
                     a.className = "group flex items-center justify-between p-3 bg-white/90 hover:bg-white border border-stone-200 rounded-xl shadow-xs transition-all backdrop-blur-sm";
@@ -381,14 +366,11 @@
             }
         }
 
-        function closePasscodeModal() {
-            document.getElementById('passcodeModal').style.display = 'none';
-        }
+        function closePasscodeModal() { document.getElementById('passcodeModal').style.display = 'none'; }
 
         function submitPasscode() {
             const inputVal = document.getElementById('passcodeInput').value;
-            const config = loadSettings();
-            const correctPass = config.adminPasscode || '1234';
+            const correctPass = currentConfig.adminPasscode || '1234';
 
             if (inputVal === correctPass) {
                 isAdminLoggedIn = true;
@@ -403,39 +385,29 @@
         }
 
         function openEditModal() {
-            const config = loadSettings();
-            document.getElementById('inputPortalTitle').value = config.portalTitle;
-            document.getElementById('inputAdminPass').value = config.adminPasscode || '1234';
-            document.getElementById('inputNameChar').value = config.nameChar;
-            document.getElementById('inputNameDiary').value = config.nameDiary;
-
+            document.getElementById('inputPortalTitle').value = currentConfig.portalTitle;
+            document.getElementById('inputAdminPass').value = currentConfig.adminPasscode || '1234';
+            document.getElementById('inputNameChar').value = currentConfig.nameChar;
+            document.getElementById('inputNameDiary').value = currentConfig.nameDiary;
             document.getElementById('inputMainIconFile').value = '';
             document.getElementById('inputBgImageFile').value = '';
 
-            renderCustomLinksEdit(config.customLinks);
+            renderCustomLinksEdit(currentConfig.customLinks);
             document.getElementById('editModal').style.display = 'flex';
         }
 
-        function closeEditModal() {
-            document.getElementById('editModal').style.display = 'none';
-        }
+        function closeEditModal() { document.getElementById('editModal').style.display = 'none'; }
 
         function clearMainIcon() {
-            const config = loadSettings();
-            config.mainIconData = "";
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
-            document.getElementById('inputMainIconFile').value = '';
+            currentConfig.mainIconData = "";
             applySettings();
-            alert('メインアイコンを削除しました。');
+            alert('メインアイコンを削除しました。下の「ダウンロード」からsettings.jsonを更新してください。');
         }
 
         function clearBgImage() {
-            const config = loadSettings();
-            config.bgImageData = "";
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
-            document.getElementById('inputBgImageFile').value = '';
+            currentConfig.bgImageData = "";
             applySettings();
-            alert('背景画像を削除しました。');
+            alert('背景画像を削除しました。下の「ダウンロード」からsettings.jsonを更新してください。');
         }
 
         function renderCustomLinksEdit(links) {
@@ -498,59 +470,51 @@
             });
         }
 
-        // URLからファビコンのURLを生成するヘルパー
         function getFaviconUrl(url) {
             try {
                 const parsedUrl = new URL(url);
-                // Googleの公式ファビコン取得サービスを利用（安定して各サイトのアイコンを取得できます）
                 return `https://www.google.com/s2/favicons?domain=${parsedUrl.hostname}&sz=128`;
-            } catch(e) {
-                return '';
-            }
+            } catch(e) { return ''; }
         }
 
+        // 設定を反映し、ダウンロード用JSONを出力する
         async function savePortalSettings() {
-            const config = loadSettings();
-            
-            config.portalTitle = document.getElementById('inputPortalTitle').value || "卓ポータル";
-            config.adminPasscode = document.getElementById('inputAdminPass').value || "1234";
-            config.nameChar = document.getElementById('inputNameChar').value || "キャラクター一覧";
-            config.nameDiary = document.getElementById('inputNameDiary').value || "月別アルバム・日記";
+            currentConfig.portalTitle = document.getElementById('inputPortalTitle').value || "卓ポータル";
+            currentConfig.adminPasscode = document.getElementById('inputAdminPass').value || "1234";
+            currentConfig.nameChar = document.getElementById('inputNameChar').value || "キャラクター一覧";
+            currentConfig.nameDiary = document.getElementById('inputNameDiary').value || "月別アルバム・日記";
             
             const rawLinks = getCustomLinksFromModal();
-            // 各リンクについて、URLが入力されていればファビコンURLを自動生成して保存
-            const processedLinks = rawLinks.map(link => {
-                let iconData = link.iconData;
-                if (link.url && link.url.trim() !== '') {
-                    // 新規またはURLが変わった場合、自動でファビコンを取得・設定
-                    iconData = getFaviconUrl(link.url);
-                }
-                return {
-                    name: link.name,
-                    url: link.url,
-                    iconData: iconData
-                };
-            });
-            config.customLinks = processedLinks;
+            currentConfig.customLinks = rawLinks.map(link => ({
+                name: link.name,
+                url: link.url,
+                iconData: link.url ? getFaviconUrl(link.url) : link.iconData
+            }));
 
             const mainIconFile = document.getElementById('inputMainIconFile').files[0];
             if (mainIconFile) {
-                try {
-                    config.mainIconData = await fileToBase64(mainIconFile);
-                } catch(e) {}
+                try { currentConfig.mainIconData = await fileToBase64(mainIconFile); } catch(e) {}
             }
 
             const bgImageFile = document.getElementById('inputBgImageFile').files[0];
             if (bgImageFile) {
-                try {
-                    config.bgImageData = await fileToBase64(bgImageFile);
-                } catch(e) {}
+                try { currentConfig.bgImageData = await fileToBase64(bgImageFile); } catch(e) {}
             }
 
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
             applySettings();
             closeEditModal();
-            alert('ポータル設定を保存しました！');
+            exportSettingsJson();
+            alert('設定が更新されました！自動ダウンロードされた「settings.json」をGitHubにアップロードしてください。');
+        }
+
+        function exportSettingsJson() {
+            const blob = new Blob([JSON.stringify(currentConfig, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'settings.json';
+            a.click();
+            URL.revokeObjectURL(url);
         }
 
         let touchStartY = 0;
@@ -565,16 +529,12 @@
             if (mainContainer.scrollTop <= 0) {
                 touchStartY = e.touches[0].clientY;
                 isPulling = true;
-            } else {
-                isPulling = false;
-            }
+            } else { isPulling = false; }
         }, { passive: true });
 
         window.addEventListener('touchmove', (e) => {
             if (!isPulling) return;
-            const currentY = e.touches[0].clientY;
-            const diff = currentY - touchStartY;
-
+            const diff = e.touches[0].clientY - touchStartY;
             if (diff > 0 && mainContainer.scrollTop <= 0) {
                 const pullDist = Math.min(diff * 0.4, 80);
                 indicator.style.transform = `translateY(${pullDist}px)`;
@@ -585,33 +545,25 @@
                     refreshText.textContent = '下に引っ張って更新';
                     refreshIcon.style.transform = 'rotate(0deg)';
                 }
-            } else {
-                indicator.style.transform = `translateY(0px)`;
-            }
+            } else { indicator.style.transform = `translateY(0px)`; }
         }, { passive: true });
 
         window.addEventListener('touchend', (e) => {
             if (!isPulling) return;
             isPulling = false;
-            const currentY = e.changedTouches[0].clientY;
-            const diff = currentY - touchStartY;
-
+            const diff = e.changedTouches[0].clientY - touchStartY;
             if (diff > pullThreshold && mainContainer.scrollTop <= 0) {
                 refreshText.textContent = '更新中...';
                 refreshIcon.classList.add('animate-spin');
                 indicator.style.transform = `translateY(60px)`;
-                setTimeout(() => {
-                    window.location.reload();
-                }, 300);
-            } else {
-                indicator.style.transform = `translateY(0px)`;
-            }
+                setTimeout(() => { window.location.reload(); }, 300);
+            } else { indicator.style.transform = `translateY(0px)`; }
             touchStartY = 0;
         });
 
         window.addEventListener('DOMContentLoaded', () => {
             updateAdminUI();
-            applySettings();
+            loadSettings();
         });
     </script>
 </body>
