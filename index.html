@@ -62,32 +62,32 @@
         <div class="w-full flex flex-col gap-3">
             
             <!-- キャラクター一覧へ -->
-            <a href="characters.html" class="group flex items-center justify-between px-4 py-3.5 bg-white hover:bg-stone-50 border border-stone-200 rounded-2xl shadow-sm transition-all">
-                <div class="flex items-center gap-3.5 min-w-0">
-                    <!-- 🌟 枠サイズを拡大（w-11 h-11）＆ パディングを無くして画像を大きく表示 -->
-                    <div class="w-11 h-11 rounded-xl bg-stone-100 border border-stone-200 flex items-center justify-center text-stone-700 group-hover:bg-stone-800 group-hover:text-white transition-colors flex-shrink-0 overflow-hidden relative">
+            <a href="characters.html" class="group flex items-center justify-between px-4 py-4.5 bg-white hover:bg-stone-50 border border-stone-200 rounded-2xl shadow-sm transition-all">
+                <div class="flex items-center gap-4 min-w-0">
+                    <!-- 🌟 枠を大きく拡大（w-14 h-14）＆ 角丸を調整 -->
+                    <div class="w-14 h-14 rounded-2xl bg-stone-100 border border-stone-200 flex items-center justify-center text-stone-700 group-hover:bg-stone-800 group-hover:text-white transition-colors flex-shrink-0 overflow-hidden relative shadow-inner">
                         <img id="charIconImg" src="" alt="" class="w-full h-full object-cover" style="display:none;" onerror="this.style.display='none'; document.getElementById('charDefaultIcon').style.display='flex';">
-                        <i id="charDefaultIcon" class="fa-solid fa-users text-base"></i>
+                        <i id="charDefaultIcon" class="fa-solid fa-users text-xl"></i>
                     </div>
-                    <span class="text-xs font-bold text-stone-800 truncate">キャラクター一覧</span>
+                    <span class="text-sm font-bold text-stone-800 truncate">キャラクター一覧</span>
                 </div>
                 <div class="text-stone-400 group-hover:text-stone-600 transition-colors pr-1 flex-shrink-0">
-                    <i class="fa-solid fa-chevron-right text-xs"></i>
+                    <i class="fa-solid fa-chevron-right text-sm"></i>
                 </div>
             </a>
 
             <!-- 日記・アルバムへ -->
-            <a href="diary.html" class="group flex items-center justify-between px-4 py-3.5 bg-white hover:bg-stone-50 border border-stone-200 rounded-2xl shadow-sm transition-all">
-                <div class="flex items-center gap-3.5 min-w-0">
-                    <!-- 🌟 枠サイズを拡大（w-11 h-11）＆ パディングを無くして画像を大きく表示 -->
-                    <div class="w-11 h-11 rounded-xl bg-stone-100 border border-stone-200 flex items-center justify-center text-stone-700 group-hover:bg-stone-800 group-hover:text-white transition-colors flex-shrink-0 overflow-hidden relative">
+            <a href="diary.html" class="group flex items-center justify-between px-4 py-4.5 bg-white hover:bg-stone-50 border border-stone-200 rounded-2xl shadow-sm transition-all">
+                <div class="flex items-center gap-4 min-w-0">
+                    <!-- 🌟 枠を大きく拡大（w-14 h-14）＆ 角丸を調整 -->
+                    <div class="w-14 h-14 rounded-2xl bg-stone-100 border border-stone-200 flex items-center justify-center text-stone-700 group-hover:bg-stone-800 group-hover:text-white transition-colors flex-shrink-0 overflow-hidden relative shadow-inner">
                         <img id="diaryIconImg" src="" alt="" class="w-full h-full object-cover" style="display:none;" onerror="this.style.display='none'; document.getElementById('diaryDefaultIcon').style.display='flex';">
-                        <i id="diaryDefaultIcon" class="fa-solid fa-book-open text-base"></i>
+                        <i id="diaryDefaultIcon" class="fa-solid fa-book-open text-xl"></i>
                     </div>
-                    <span class="text-xs font-bold text-stone-800 truncate">月別アルバム・日記</span>
+                    <span class="text-sm font-bold text-stone-800 truncate">月別アルバム・日記</span>
                 </div>
                 <div class="text-stone-400 group-hover:text-stone-600 transition-colors pr-1 flex-shrink-0">
-                    <i class="fa-solid fa-chevron-right text-xs"></i>
+                    <i class="fa-solid fa-chevron-right text-sm"></i>
                 </div>
             </a>
 
