@@ -935,7 +935,7 @@ function getGrowthColor(hexColor) {
 window.getGrowthColor = getGrowthColor;
        
 // ==========================================
-// 💡 キャラクター保存関数（完全版：Base64完全ブロック ＆ サニタイズ処理済み）
+// 💡 キャラクター保存関数（完全版：Base64自動クリーンアップ ＆ サニタイズ処理済み）
 // ==========================================
 async function saveCharacter(event) {
     if (event) event.preventDefault();
@@ -1059,11 +1059,25 @@ async function saveCharacter(event) {
             window.characters.push(charData);
         }
 
-        // 🌟 【超重要ガード】FirestoreやJSONの破壊を防ぐため、オブジェクト内にBase64が残っていないか強制検査！
-        const tempCheckString = JSON.stringify(window.characters);
-        if (tempCheckString.includes('data:image/')) {
-            throw new Error("🚨 データのどこかにBase64形式の画像が残っているため、データ破損を防ぐために保存を中止しました。");
+        // 🌟 【自動クリーンアップ】データ内に古いBase64が残っていても、エラーで止めず自動で消去して安全に保存を進める
+        function removeBase64Recursive(obj) {
+            if (obj === null || typeof obj !== 'object') {
+                if (typeof obj === 'string' && obj.startsWith('data:image/')) {
+                    return '';
+                }
+                return obj;
+            }
+            if (Array.isArray(obj)) {
+                return obj.map(item => removeBase64Recursive(item));
+            }
+            const cleaned = {};
+            for (const key of Object.keys(obj)) {
+                cleaned[key] = removeBase64Recursive(obj[key]);
+            }
+            return cleaned;
         }
+
+        window.characters = removeBase64Recursive(window.characters);
 
         // 🌟 Firestoreが拒絶する undefined を自動で null に一掃するサニタイズ関数
         function sanitizeForFirestore(obj) {
