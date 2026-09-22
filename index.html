@@ -239,15 +239,14 @@
             if (e.target.tagName === 'IMG') { e.preventDefault(); }
         });
 
-        // ⚠️ キャラクター一覧等で使っているFirebase初期化設定に書き換えてください
+        // キャラクター一覧等で使っているFirebase設定に書き換えてください
         const firebaseConfig = {
-            apiKey: "AIzaSyA2ctX9sUpJmLSVJomU9cbMzrUX_AXNjuE",
-            authDomain: "diary-36d77.firebaseapp.com",
-            projectId: "diary-36d77",
-            storageBucket: "diary-36d77.firebasestorage.app",
-            messagingSenderId: "1060563209082",
-            appId: "1:1060563209082:web:1c6cfc21a496548309e4c3",
-            measurementId: "G-RBK7ZN6NF1"
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_AUTH_DOMAIN",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_STORAGE_BUCKET",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
         };
 
         if (!firebase.apps.length) {
@@ -540,7 +539,8 @@
 
         window.addEventListener('touchmove', (e) => {
             if (!isPulling) return;
-            const diff = e.touches[0],clientY - touchStartY;
+            // 修正箇所：コンマをドットに修正
+            const diff = e.touches[0].clientY - touchStartY;
             if (diff > 0 && mainContainer.scrollTop <= 0) {
                 const pullDist = Math.min(diff * 0.4, 80);
                 indicator.style.transform = `translateY(${pullDist}px)`;
