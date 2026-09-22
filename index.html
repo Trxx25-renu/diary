@@ -6,7 +6,7 @@
     <meta name="robots" content="noindex, nofollow">
     <title id="pageTitleText">卓ポータル - Session Portal</title>
     
-    <!-- ファビコン動적変更用 -->
+    <!-- ファビコン動的変更用 -->
     <link id="dynamicFavicon" rel="icon" href="">
 
     <!-- Tailwind CSS -->
@@ -16,7 +16,7 @@
     
     <style>
         body {
-            touch-action: manipulation;
+            touch-action: pan-x pinch-zoom;
             height: 100vh;
             height: 100dvh;
             overflow: hidden;
@@ -134,7 +134,7 @@
         <p class="text-[10px] text-stone-400 font-medium">Session & Character Management System</p>
     </footer>
 
-    <!-- 🌟 パスコード入力モーダル（テンキー対応） -->
+    <!-- パスコード入力モーダル（テンキー対応） -->
     <div id="passcodeModal" class="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4" style="display: none;">
         <div class="bg-white rounded-3xl max-w-xs w-full p-6 flex flex-col shadow-2xl border border-stone-200 text-center gap-4">
             <div class="w-12 h-12 rounded-full bg-stone-100 text-stone-600 mx-auto flex items-center justify-center text-lg">
@@ -144,7 +144,6 @@
                 <h3 class="text-sm font-bold text-stone-800">管理者パスコード入力</h3>
                 <p class="text-[10px] text-stone-400 mt-0.5">数字のパスコードを入力してください</p>
             </div>
-            <!-- 🌟 テンキーが確実に開くよう inputmode="numeric" を指定 -->
             <input type="password" id="passcodeInput" inputmode="numeric" pattern="[0-9]*" class="w-full px-3 py-2.5 text-center text-lg tracking-widest border border-stone-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-stone-500 bg-stone-50" placeholder="••••">
             
             <div class="grid grid-cols-2 gap-2">
@@ -169,7 +168,6 @@
 
             <div class="p-5 overflow-y-auto custom-scroll flex flex-col gap-5 text-xs">
                 
-                <!-- 基本設定 -->
                 <div class="flex flex-col gap-3">
                     <h4 class="font-bold text-stone-700 border-b pb-1">基本情報・外観</h4>
                     <div>
@@ -190,7 +188,6 @@
                     </div>
                 </div>
 
-                <!-- 固定リンクの名称変更 -->
                 <div class="flex flex-col gap-3">
                     <h4 class="font-bold text-stone-700 border-b pb-1">固定リンクの名称変更（削除不可）</h4>
                     <div class="grid grid-cols-2 gap-2">
@@ -205,7 +202,6 @@
                     </div>
                 </div>
 
-                <!-- カスタム追加リンクの管理 -->
                 <div class="flex flex-col gap-3">
                     <div class="flex items-center justify-between border-b pb-1">
                         <h4 class="font-bold text-stone-700">カスタム追加リンク（小サイズ・横2列）</h4>
@@ -250,7 +246,7 @@
                 portalTitle: "卓ポータル",
                 mainIconUrl: "",
                 bgImageUrl: "",
-                adminPasscode: "1234", // 🌟 初期パスコード（数字）
+                adminPasscode: "1234",
                 nameChar: "キャラクター一覧",
                 nameDiary: "月別アルバム・日記",
                 customLinks: []
@@ -337,7 +333,6 @@
             }
         }
 
-        // 🔐 管理者認証ロジック（テンキー対応の専用モーダルを表示）
         let isAdminLoggedIn = false;
         function handleAuthAction() {
             if (isAdminLoggedIn) {
@@ -462,6 +457,57 @@
             closeEditModal();
             alert('ポータル設定を保存しました！');
         }
+
+        // 🌟 プルリフレッシュ（引っ張って更新）の復旧制御
+        let touchStartY = 0;
+        let isPulling = false;
+        const pullThreshold = 70;
+        const indicator = document.getElementById('pullRefreshIndicator');
+        const refreshIcon = document.getElementById('refreshIcon');
+        const refreshText = document.getElementById('refreshText');
+
+        window.addEventListener('touchstart', (e) => {
+            if (window.scrollY <= 0) {
+                touchStartY = e.touches[0].clientY;
+                isPulling = true;
+            }
+        }, { passive: true });
+
+        window.addEventListener('touchmove', (e) => {
+            if (!isPulling) return;
+            const currentY = e.touches[0].clientY;
+            const diff = currentY - touchStartY;
+
+            if (diff > 0) {
+                const pullDist = Math.min(diff * 0.4, 90);
+                indicator.style.transform = `translateY(${pullDist}px)`;
+                if (diff > pullThreshold) {
+                    refreshText.textContent = '指を離して更新';
+                    refreshIcon.style.transform = 'rotate(180deg)';
+                } else {
+                    refreshText.textContent = '下に引っ張って更新';
+                    refreshIcon.style.transform = 'rotate(0deg)';
+                }
+            }
+        }, { passive: true });
+
+        window.addEventListener('touchend', (e) => {
+            if (!isPulling) return;
+            isPulling = false;
+            const currentY = e.changedTouches[0].clientY;
+            const diff = currentY - touchStartY;
+
+            if (diff > pullThreshold) {
+                refreshText.textContent = '更新中...';
+                refreshIcon.classList.add('animate-spin');
+                setTimeout(() => {
+                    window.location.reload();
+                }, 300);
+            } else {
+                indicator.style.transform = `translateY(-100%)`;
+            }
+            touchStartY = 0;
+        });
 
         window.addEventListener('DOMContentLoaded', () => {
             applySettings();
