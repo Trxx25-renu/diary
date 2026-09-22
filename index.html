@@ -175,14 +175,14 @@
                         <input type="text" id="inputPortalTitle" class="w-full px-3 py-2 border border-stone-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-stone-500" placeholder="卓ポータル">
                     </div>
                     <div>
-                        <label class="block font-semibold text-stone-600 mb-1">中央メインアイコン画像（自動圧縮されます）</label>
+                        <label class="block font-semibold text-stone-600 mb-1">中央メインアイコン画像（透過維持対応）</label>
                         <div class="flex items-center gap-2">
                             <input type="file" id="inputMainIconFile" accept="image/*" class="w-full text-xs text-stone-500 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-stone-800 file:text-white hover:file:bg-stone-700 cursor-pointer">
                             <button type="button" onclick="clearMainIcon()" class="px-3 py-2 bg-stone-200 hover:bg-stone-300 text-stone-700 rounded-xl font-bold">削除</button>
                         </div>
                     </div>
                     <div>
-                        <label class="block font-semibold text-stone-600 mb-1">最背面 背景画像（自動圧縮されます）</label>
+                        <label class="block font-semibold text-stone-600 mb-1">最背面 背景画像</label>
                         <div class="flex items-center gap-2">
                             <input type="file" id="inputBgImageFile" accept="image/*" class="w-full text-xs text-stone-500 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-stone-800 file:text-white hover:file:bg-stone-700 cursor-pointer">
                             <button type="button" onclick="clearBgImage()" class="px-3 py-2 bg-stone-200 hover:bg-stone-300 text-stone-700 rounded-xl font-bold">削除</button>
@@ -228,7 +228,7 @@
         </div>
     </div>
 
-    <!-- スクリプト制御（Firestore連携＆画像自動圧縮機能付き） -->
+    <!-- スクリプト制御（透過PNG対応・自動リサイズ機能） -->
     <script>
         const metaNoImageIndex = document.createElement('meta');
         metaNoImageIndex.name = 'googlebot';
@@ -241,13 +241,12 @@
 
         // ⚠️ キャラクター一覧等で使っているFirebase設定に書き換えてください
         const firebaseConfig = {
-            apiKey: "AIzaSyA2ctX9sUpJmLSVJomU9cbMzrUX_AXNjuE",
-            authDomain: "diary-36d77.firebaseapp.com",
-            projectId: "diary-36d77",
-            storageBucket: "diary-36d77.firebasestorage.app",
-            messagingSenderId: "1060563209082",
-            appId: "1:1060563209082:web:1c6cfc21a496548309e4c3",
-            measurementId: "G-RBK7ZN6NF1"
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_AUTH_DOMAIN",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_STORAGE_BUCKET",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
         };
 
         if (!firebase.apps.length) {
@@ -479,8 +478,8 @@
             return links;
         }
 
-        // 画像ファイルを自動で縮小・圧縮して容量を1MB未満にする関数
-        function compressImage(file, maxWidth = 1024, quality = 0.7) {
+        // 背景透過（PNG等）を維持しつつ、サイズを縮小して1MB未満に収める関数
+        function compressImage(file, maxWidth = 800) {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
                 reader.readAsDataURL(file);
@@ -502,10 +501,12 @@
                         canvas.height = height;
 
                         const ctx = canvas.getContext('2d');
+                        // 既存の背景をクリアして透明度を完全維持
+                        ctx.clearRect(0, 0, width, height);
                         ctx.drawImage(img, 0, 0, width, height);
 
-                        // JPEG形式に変換して品質を落として圧縮（容量を確実に下げる）
-                        const dataUrl = canvas.toDataURL('image/jpeg', quality);
+                        // PNG形式（image/png）で出力することで背景の透過を維持します
+                        const dataUrl = canvas.toDataURL('image/png');
                         resolve(dataUrl);
                     };
                     img.onerror = (error) => reject(error);
@@ -534,23 +535,23 @@
                 iconData: link.url ? getFaviconUrl(link.url) : link.iconData
             }));
 
-            // メインアイコンの自動圧縮（3MBなどの大きな画像でも約700KB以下に収まります）
+            // メインアイコンの処理（透過を維持しつつ、最大幅600pxに自動縮小して容量オーバーを防止）
             const mainIconFile = document.getElementById('inputMainIconFile').files[0];
             if (mainIconFile) {
                 try {
-                    currentConfig.mainIconData = await compressImage(mainIconFile, 600, 0.7);
+                    currentConfig.mainIconData = await compressImage(mainIconFile, 600);
                 } catch(e) {
-                    console.error("アイコンの圧縮に失敗しました:", e);
+                    console.error("アイコンの処理に失敗しました:", e);
                 }
             }
 
-            // 背景画像の自動圧縮（最大幅1024px、画質70%に圧縮）
+            // 背景画像の処理（最大幅1000pxに自動縮小）
             const bgImageFile = document.getElementById('inputBgImageFile').files[0];
             if (bgImageFile) {
                 try {
-                    currentConfig.bgImageData = await compressImage(bgImageFile, 1024, 0.7);
+                    currentConfig.bgImageData = await compressImage(bgImageFile, 1000);
                 } catch(e) {
-                    console.error("背景画像の圧縮に失敗しました:", e);
+                    console.error("背景画像の処理に失敗しました:", e);
                 }
             }
 
