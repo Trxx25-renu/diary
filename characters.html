@@ -4593,5 +4593,41 @@ window.importCharactersJSON = importCharactersJSON;
         </div>
     </div>
    
+   <!-- ========================================== -->
+<!-- 🔑 パスコード認証モーダル（完全版） -->
+<!-- ========================================== -->
+<div id="authModal" class="fixed inset-0 z-[99999] flex items-start justify-center bg-stone-900/50 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-300">
+    <div class="bg-white rounded-2xl shadow-xl border border-stone-200 w-full max-w-sm mx-4 mt-20 p-6 transform scale-95 transition-transform duration-300">
+        
+        <!-- ヘッダー -->
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-base font-bold text-stone-800 flex items-center gap-2">
+                <i class="fa-solid fa-lock text-rose-600"></i> 管理者認証
+            </h3>
+            <button type="button" onclick="closeAuthModal()" class="text-stone-400 hover:text-stone-600 p-1 rounded-lg transition-colors">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+        </div>
+
+        <!-- 本文・入力フォーム -->
+        <form onsubmit="handleAuthSubmit(event)" class="space-y-4">
+            <div>
+                <label class="block text-xs font-medium text-stone-600 mb-1">パスコードを入力してください</label>
+                <input type="password" id="inputPasscode" class="w-full px-3 py-2 border border-stone-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-transparent" placeholder="••••••••" required>
+            </div>
+
+            <!-- ボタン群 -->
+            <div class="flex items-center justify-end gap-2 pt-2">
+                <button type="button" onclick="closeAuthModal()" class="px-4 py-2 bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-bold rounded-xl transition-all">
+                    キャンセル
+                </button>
+                <button type="submit" class="px-5 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl shadow-sm transition-all">
+                    認証する
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+   
 </body>
 </html>
