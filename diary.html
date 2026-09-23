@@ -248,13 +248,29 @@ const favicon = document.getElementById('faviconIcon');
             updateAdminUI();
         }
 
-       // 2. 記事の読み込み
+// 2. 記事の読み込み（Firestore）
         const entriesRef = collection(db, 'artifacts', appId, 'public', 'data', 'entries');
         const querySnap = await getDocs(entriesRef);
         const loaded = [];
         querySnap.forEach(d => {
             loaded.push({ id: d.id, ...d.data() });
         });
+
+        // 🌟 Firestoreが空の場合、localStorageもチェックする安全ガード
+        if (loaded.length === 0) {
+            try {
+                const localData = localStorage.getItem('local_entries') || localStorage.getItem('entries');
+                if (localData) {
+                    const parsed = JSON.parse(localData);
+                    if (Array.isArray(parsed) && parsed.length > 0) {
+                        loaded.push(...parsed);
+                        console.log("📦 localStorageから記事を復元しました:", loaded.length);
+                    }
+                }
+            } catch (err) {
+                console.warn("localStorageからの記事読み込みに失敗しました:", err);
+            }
+        }
 
         // 🌟 データの格納とソート部分
         console.log("📖 読み込んだ記事の数:", loaded.length);
