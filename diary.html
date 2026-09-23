@@ -2482,6 +2482,14 @@ async function handleSaveEntry(event) {
     });
     
     try {
+        // 🔍 デバッグ用：何が原因で弾かれているかコンソールで詳細に出力
+        console.log("📤 送信直前の entryData:", entryData);
+        Object.keys(entryData).forEach(key => {
+            if (entryData[key] === undefined) {
+                console.error(`⚠️ 警告: プロパティ "${key}" が undefined です！`);
+            }
+        });
+
         if (window.db && window.appId) {
             const { doc, setDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
             const docRef = doc(window.db, 'artifacts', window.appId, 'public', 'data', 'entries', targetId);
@@ -2501,7 +2509,7 @@ async function handleSaveEntry(event) {
 
         window.editingEntryId = null;
     } catch (error) {
-        console.error("❌ 保存エラー:", error);
+        console.error("❌ 保存エラーの詳細:", error);
         showToast('保存に失敗しました。', 'error');
     } finally {
         if (saveBtn) {
