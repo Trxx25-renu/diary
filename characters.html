@@ -1627,8 +1627,9 @@ function switchViewMode(mode) {
 }
 window.switchViewMode = switchViewMode;
     
+
 // ==========================================
-// 💡 3. キャラクター詳細描画関数（ギャラリー・秘匿メモ・成長値対応版）
+// 💡 3. キャラクター詳細描画関数（完全統合・通過シナリオ＆文字サイズ調整版）
 // ==========================================
 window._currentGalleryState = window._currentGalleryState || { characterId: null, category: 'base', index: 0 };
 
@@ -1639,13 +1640,13 @@ function renderCharacterDetail(characterId) {
     // 💡 まだキャラクターデータが読み込まれていない場合のガード
     if (!window.characters || window.characters.length === 0) {
         console.warn("⏳ キャラクターデータがまだ読み込まれていないため、詳細表示を待機します...");
-        detailContainer.innerHTML = `<p class="text-xs text-stone-400 py-12 text-center">データを読み込んでいます...</p>`;
+        detailContainer.innerHTML = `<p class="text-sm text-stone-400 py-12 text-center">データを読み込んでいます...</p>`;
         return;
     }
 
     const ch = window.characters.find(c => String(c.id) === String(characterId));
     if (!ch) {
-        detailContainer.innerHTML = `<p class="text-xs text-stone-400 py-12 text-center">キャラクターが見つかりませんでした。</p>`;
+        detailContainer.innerHTML = `<p class="text-sm text-stone-400 py-12 text-center">キャラクターが見つかりませんでした。</p>`;
         return;
     }
 
@@ -1656,7 +1657,7 @@ function renderCharacterDetail(characterId) {
     }
     const themeColor = getAdjustedColor(rawThemeColor);
     const badgeTextColor = getAdaptiveTextColor(themeColor);
-    const growthColor = typeof getGrowthColor === 'function' ? getGrowthColor(themeColor) : '#78716c'; // 💡 成長値用の同系色カラー
+    const growthColor = typeof getGrowthColor === 'function' ? getGrowthColor(themeColor) : '#78716c';
 
     // 💡 画像リストの抽出
     let avatars = [];
@@ -1760,12 +1761,12 @@ function renderCharacterDetail(characterId) {
             if (currentImg && currentImg.url) {
                 imgContainer.innerHTML = `<img src="${currentImg.url}" class="max-w-full h-auto max-h-[600px] object-contain rounded-xl transition-all duration-300">`;
             } else {
-                imgContainer.innerHTML = `<div class="text-stone-400 text-xs py-20"><i class="fa-solid fa-image text-3xl mb-1 block"></i>画像がありません</div>`;
+                imgContainer.innerHTML = `<div class="text-stone-400 text-sm py-20"><i class="fa-solid fa-image text-3xl mb-1 block"></i>画像がありません</div>`;
             }
         }
         if (labelContainer) {
             if (currentImg && currentImg.label) {
-                labelContainer.innerHTML = `<i class="fa-solid fa-tag text-[9px] mr-1"></i>${currentImg.label} (${state.index + 1}/${currentImgs.length})`;
+                labelContainer.innerHTML = `<i class="fa-solid fa-tag text-[10px] mr-1"></i>${currentImg.label} (${state.index + 1}/${currentImgs.length})`;
                 labelContainer.style.display = 'block';
                 labelContainer.style.backgroundColor = themeColor;
                 labelContainer.style.color = badgeTextColor;
@@ -1783,11 +1784,11 @@ function renderCharacterDetail(characterId) {
             const tabBtn = document.getElementById(`gal-tab-${cat.key}`);
             if (tabBtn) {
                 if (cat.key === state.category) {
-                    tabBtn.className = "gallery-tab px-3 py-1.5 text-xs font-bold rounded-lg transition-all shadow-xs";
+                    tabBtn.className = "gallery-tab px-3.5 py-2 text-xs md:text-sm font-bold rounded-lg transition-all shadow-xs";
                     tabBtn.style.backgroundColor = themeColor;
                     tabBtn.style.color = badgeTextColor;
                 } else {
-                    tabBtn.className = "gallery-tab px-3 py-1.5 text-xs font-bold rounded-lg transition-all bg-stone-200/60 text-stone-600 hover:bg-stone-200";
+                    tabBtn.className = "gallery-tab px-3.5 py-2 text-xs md:text-sm font-bold rounded-lg transition-all bg-stone-200/60 text-stone-600 hover:bg-stone-200";
                     tabBtn.style.backgroundColor = "";
                     tabBtn.style.color = "";
                 }
@@ -1826,7 +1827,7 @@ function renderCharacterDetail(characterId) {
                         return `
                             <button onclick="switchGalleryCategory('${cat.key}')" 
                                     id="gal-tab-${cat.key}" 
-                                    class="gallery-tab px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${isActive ? 'shadow-xs' : 'bg-stone-200/60 text-stone-600 hover:bg-stone-200'}"
+                                    class="gallery-tab px-3.5 py-2 text-xs md:text-sm font-bold rounded-lg transition-all ${isActive ? 'shadow-xs' : 'bg-stone-200/60 text-stone-600 hover:bg-stone-200'}"
                                     style="${isActive ? `background-color: ${themeColor}; color: ${badgeTextColor};` : ''}">
                                 ${cat.name} (${count})
                             </button>
@@ -1837,7 +1838,7 @@ function renderCharacterDetail(characterId) {
                 <div class="relative flex items-center justify-center rounded-2xl overflow-hidden border border-stone-200/60 shadow-inner bg-stone-50/50 p-2 min-h-[400px] sm:min-h-[500px]">
                     <div id="galleryImageContainer" class="w-full h-full flex items-center justify-center">
                         <img src="${safeCurrentImg ? safeCurrentImg.url : ''}" class="max-w-full h-auto max-h-[600px] object-contain rounded-xl transition-all duration-300">
-</div>
+                    </div>
 
                     ${safeCatImages.length > 1 ? `
                         <button onclick="slideGalleryImage(-1)" class="absolute left-3 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/80 text-white w-9 h-9 rounded-full flex items-center justify-center transition-all shadow-md">
@@ -1848,13 +1849,13 @@ function renderCharacterDetail(characterId) {
                         </button>
                     ` : ''}
                     
-                    <div id="galleryImageLabel" class="absolute bottom-3 left-3 backdrop-blur-xs text-[10px] px-2.5 py-1 rounded-md shadow" style="background-color: ${themeColor}; color: ${badgeTextColor}; ${safeCurrentImg && safeCurrentImg.label ? 'display:block;' : (safeCatImages.length > 1 ? 'display:block;' : 'display:none;')}">
-                        ${safeCurrentImg && safeCurrentImg.label ? `<i class="fa-solid fa-tag text-[9px] mr-1"></i>${safeCurrentImg.label} (${window._currentGalleryState.index + 1}/${safeCatImages.length})` : `(${window._currentGalleryState.index + 1}/${safeCatImages.length})`}
+                    <div id="galleryImageLabel" class="absolute bottom-3 left-3 backdrop-blur-xs text-xs px-2.5 py-1 rounded-md shadow" style="background-color: ${themeColor}; color: ${badgeTextColor}; ${safeCurrentImg && safeCurrentImg.label ? 'display:block;' : (safeCatImages.length > 1 ? 'display:block;' : 'display:none;')}">
+                        ${safeCurrentImg && safeCurrentImg.label ? `<i class="fa-solid fa-tag text-[10px] mr-1"></i>${safeCurrentImg.label} (${window._currentGalleryState.index + 1}/${safeCatImages.length})` : `(${window._currentGalleryState.index + 1}/${safeCatImages.length})`}
                     </div>
                 </div>
 
                 <div id="galleryThumbnailsWrapper" class="bg-stone-50/70 p-3 rounded-2xl border border-stone-200/80 shadow-xs" style="${safeCatImages.length > 1 ? 'display:block;' : 'display:none;'}">
-                    <div class="text-[11px] font-bold text-stone-500 mb-2 flex items-center gap-1.5">
+                    <div class="text-xs font-bold text-stone-500 mb-2 flex items-center gap-1.5">
                         <i class="fa-solid fa-images text-stone-400"></i> 差分一覧
                     </div>
                     <div id="galleryThumbnailsContainer" class="flex gap-2 overflow-x-auto pb-1 pt-1 scrollbar-thin">
@@ -1871,11 +1872,11 @@ function renderCharacterDetail(characterId) {
 
     let epithetHtml = '';
     if (ch.epithet && ch.epithet.trim() !== '') {
-        const kana = ch.epithetKana ? `<span class="text-[10px] font-medium text-stone-400 block mb-0.5">${ch.epithetKana}</span>` : '';
+        const kana = ch.epithetKana ? `<span class="text-xs font-medium text-stone-400 block mb-0.5">${ch.epithetKana}</span>` : '';
         epithetHtml = `
             <div class="mb-1">
                 ${kana}
-                <span class="text-lg md:text-xl font-bold tracking-wider block leading-tight" style="color: color-mix(in srgb, ${themeColor} 75%, #1c1917);">${ch.epithet}</span>
+                <span class="text-xl md:text-2xl font-bold tracking-wider block leading-tight" style="color: color-mix(in srgb, ${themeColor} 75%, #1c1917);">${ch.epithet}</span>
             </div>
         `;
     }
@@ -1884,7 +1885,7 @@ function renderCharacterDetail(characterId) {
     const nameRuby = `
         <div>
             ${nameKanaHtml}
-            <h2 class="text-2xl md:text-3xl font-extrabold text-stone-900 tracking-wide leading-tight">${ch.name || ''}</h2>
+            <h2 class="text-3xl md:text-4xl font-extrabold text-stone-900 tracking-wide leading-tight">${ch.name || ''}</h2>
         </div>
     `;
 
@@ -1902,9 +1903,9 @@ function renderCharacterDetail(characterId) {
                 <div class="flex items-center gap-2 flex-wrap">
                     ${linksList.map(link => `
                         <a href="${link.url}" target="_blank" rel="noopener noreferrer" 
-                           class="inline-flex items-center gap-2 text-xs font-bold px-3.5 py-2 rounded-xl shadow-sm hover:opacity-95 transition-all" 
+                           class="inline-flex items-center gap-2 text-xs md:text-sm font-bold px-4 py-2.5 rounded-xl shadow-sm hover:opacity-95 transition-all" 
                            style="background-color: ${themeColor}; color:${badgeTextColor};">
-                            <i class="fa-solid fa-external-link-alt text-[10px]"></i>
+                            <i class="fa-solid fa-external-link-alt text-xs"></i>
                             <span>${link.label || 'キャラクターシート'}</span>
                         </a>
                     `).join('')}
@@ -1918,12 +1919,12 @@ function renderCharacterDetail(characterId) {
 
     const textFields = sysFields.text || [];
     if (textFields.length > 0) {
-        customFieldsHtml += `<div class="space-y-2.5 mt-4 pt-4 border-t border-stone-100"><h4 class="text-xs font-bold text-stone-500">カスタム情報（ネタバレはクリックで表示）</h4>`;
+        customFieldsHtml += `<div class="space-y-3 mt-4 pt-4 border-t border-stone-100"><h4 class="text-xs md:text-sm font-bold text-stone-500">カスタム情報（ネタバレはクリックで表示）</h4>`;
         textFields.forEach(f => {
             const rawVal = ch.customValues && ch.customValues[f.id] !== undefined ? String(ch.customValues[f.id]) : '-';
             const parsedVal = typeof parseSpoilers === 'function' ? parseSpoilers(rawVal) : rawVal;
             customFieldsHtml += `
-                <div class="flex flex-col sm:flex-row sm:justify-between text-xs gap-1">
+                <div class="flex flex-col sm:flex-row sm:justify-between text-xs md:text-sm gap-1">
                     <span class="font-medium text-stone-400 w-32 shrink-0">${f.label}:</span>
                     <span class="text-stone-800 font-bold break-all">${parsedVal}</span>
                 </div>
@@ -1932,14 +1933,13 @@ function renderCharacterDetail(characterId) {
         customFieldsHtml += `</div>`;
     }
 
-    // 📊 ステータス / ゲージ描画（基本値 ＋ 成長値対応 ＆ 上限突破色変化・2色積み上げグラフ）
+    // 📊 ステータス / ゲージ描画
     const statusFields = sysFields.status || [];
     if (statusFields.length > 0) {
-        customFieldsHtml += `<div class="space-y-3 mt-4 pt-4 border-t border-stone-100"><h4 class="text-xs font-bold text-stone-500">ステータス / ゲージ</h4>`;
+        customFieldsHtml += `<div class="space-y-3.5 mt-4 pt-4 border-t border-stone-100"><h4 class="text-xs md:text-sm font-bold text-stone-500">ステータス / ゲージ</h4>`;
         
         statusFields.forEach(f => {
             const valObj = ch.customValues ? ch.customValues[f.id] : null;
-            
             let baseVal = 0;
             let growthVal = 0;
             
@@ -1953,20 +1953,15 @@ function renderCharacterDetail(characterId) {
             const totalVal = baseVal + growthVal;
             const maxVal = Number(f.max) || 100;
             
-            // バーの幅割合計算
             const baseWidthPct = Math.min(100, Math.max(0, (baseVal / maxVal) * 100));
             const remainingPct = Math.max(0, 100 - baseWidthPct);
             const growthWidthPct = Math.min(remainingPct, Math.max(0, (growthVal / maxVal) * 100));
 
             const isExceeded = totalVal > maxVal;
-            
-            // 💡 上限突破時のカラー切り替え（突破時はパープル系の警告・特別カラーに変化）
             const currentThemeColor = isExceeded ? '#9333ea' : themeColor;
             const currentGrowthColor = isExceeded ? '#c084fc' : growthColor;
-
             const badgeText = isExceeded ? `<span class="text-[10px] text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded font-bold ml-1">上限突破!</span>` : '';
 
-            // 💡 数値表示形式：基本値 + 成長値 (合計)
             let displayText = `${baseVal}`;
             if (growthVal > 0) {
                 displayText = `${baseVal} <span style="color: ${currentGrowthColor}; font-weight: bold;">+ ${growthVal}</span> <span class="text-stone-400 font-normal">(${totalVal})</span>`;
@@ -1974,12 +1969,11 @@ function renderCharacterDetail(characterId) {
 
             customFieldsHtml += `
                 <div>
-                    <div class="flex justify-between text-xs mb-1">
+                    <div class="flex justify-between text-xs md:text-sm mb-1">
                         <span class="font-medium text-stone-600">${f.label}</span>
                         <span><strong class="text-stone-800 font-mono">${displayText}</strong> ${badgeText}</span>
                     </div>
-                    <!-- 📊 2色積み上げバーグラフ（上限突破時は自動でカラー変化） -->
-                    <div class="w-full h-2.5 bg-stone-100 rounded-full overflow-hidden flex border border-stone-200/50 shadow-inner">
+                    <div class="w-full h-3 bg-stone-100 rounded-full overflow-hidden flex border border-stone-200/50 shadow-inner">
                         <div class="h-full transition-all duration-500" style="width: ${baseWidthPct}%; background-color: ${currentThemeColor};" title="基本値: ${baseVal}"></div>
                         <div class="h-full transition-all duration-500" style="width: ${growthWidthPct}%; background-color: ${currentGrowthColor};" title="成長値: ${growthVal}"></div>
                     </div>
@@ -1993,93 +1987,160 @@ function renderCharacterDetail(characterId) {
     const secret = ch.secret || '';
     let settingsMemoHtml = '';
 
-// ==========================================
-// 💡 秘匿メモ部分（最終完全版）
-// ==========================================
-if (memo || secret) {
-    settingsMemoHtml = `
-        <div class="mt-6 pt-6 border-t border-stone-100 space-y-4">
-            ${memo ? `
-                <div>
-                    <h4 class="text-xs font-bold text-stone-500 mb-1.5 flex items-center gap-1.5">
-                        <i class="fa-solid fa-note-sticky text-stone-400"></i> 設定 / メモ
+    if (memo || secret) {
+        settingsMemoHtml = `
+            <div class="mt-6 pt-6 border-t border-stone-100 space-y-4">
+                ${memo ? `
+                    <div>
+                        <h4 class="text-xs md:text-sm font-bold text-stone-500 mb-2 flex items-center gap-1.5">
+                            <i class="fa-solid fa-note-sticky text-stone-400"></i> 設定 / メモ
+                        </h4>
+                        <div class="bg-stone-50 rounded-2xl p-4 text-xs md:text-sm text-stone-700 whitespace-pre-wrap border border-stone-100 leading-relaxed">${memo}</div>
+                    </div>
+                ` : ''}
+                
+                ${secret ? `
+                <div class="mb-4">
+                    <h4 class="text-xs md:text-sm font-bold text-rose-600 mb-2 flex items-center gap-1.5">
+                        <i class="fa-solid fa-user-secret text-rose-500"></i> 秘匿メモ（ネタバレ）
                     </h4>
-                    <div class="bg-stone-50 rounded-2xl p-4 text-xs text-stone-700 whitespace-pre-wrap border border-stone-100 leading-relaxed">${memo}</div>
-                </div>
-            ` : ''}
-            
-            ${secret ? `
-            <div class="mb-4">
-                <h4 class="text-xs font-bold text-rose-600 mb-1.5 flex items-center gap-1.5">
-                    <i class="fa-solid fa-user-secret text-rose-500"></i> 秘匿メモ（ネタバレ）
-                </h4>
-                <div class="relative bg-rose-50/40 text-stone-800 rounded-2xl p-4 border border-rose-200/70 cursor-pointer overflow-hidden transition-all shadow-xs group" onclick="
-                    const container = this;
-                    const overlay = container.querySelector('.js-secret-overlay');
-                    const isHidden = overlay.style.display !== 'none';
-                    overlay.style.display = isHidden ? 'none' : 'flex';
-                ">
-                    <div class="flex items-center justify-between mb-2 pb-1.5 border-b border-rose-200/60 text-xs text-rose-800 font-bold select-none">
-                        <span class="flex items-center gap-1.5">
-                            <i class="fa-solid fa-triangle-exclamation text-rose-500"></i> ネタバレ防止用本文
-                        </span>
-                        <span class="text-[10px] text-rose-400 font-normal">タップで切替</span>
-                    </div>
-                    
-                    <!-- 🌟 本文（下敷き）：w-full と text-left で完全に左上から開始 -->
-                    <div class="w-full text-left text-xs text-stone-800 font-medium leading-relaxed whitespace-pre-wrap py-1">
-                        ${secret}
-                    </div>
-                    
-                    <!-- 🌟 カバー（オーバーレイ）：完全不透明（bg-rose-50）＆ 中央寄せ -->
-                    <div class="js-secret-overlay absolute inset-0 bg-rose-50 flex flex-col items-center justify-center gap-1.5 text-stone-800 transition-all select-none z-10">
-                        <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center text-rose-600 text-sm shadow-xs group-hover:scale-110 transition-transform">
-                            <i class="fa-solid fa-eye-slash"></i>
+                    <div class="relative bg-rose-50/40 text-stone-800 rounded-2xl p-4 border border-rose-200/70 cursor-pointer overflow-hidden transition-all shadow-xs group" onclick="
+                        const container = this;
+                        const overlay = container.querySelector('.js-secret-overlay');
+                        const isHidden = overlay.style.display !== 'none';
+                        overlay.style.display = isHidden ? 'none' : 'flex';
+                    ">
+                        <div class="flex items-center justify-between mb-2 pb-1.5 border-b border-rose-200/60 text-xs md:text-sm text-rose-800 font-bold select-none">
+                            <span class="flex items-center gap-1.5">
+                                <i class="fa-solid fa-triangle-exclamation text-rose-500"></i> ネタバレ防止用本文
+                            </span>
+                            <span class="text-[10px] text-rose-400 font-normal">タップで切替</span>
                         </div>
-                        <span class="text-xs font-bold text-rose-900">タップしてネタバレを表示</span>
+                        
+                        <div class="w-full text-left text-xs md:text-sm text-stone-800 font-medium leading-relaxed whitespace-pre-wrap py-1">
+                            ${secret}
+                        </div>
+                        
+                        <div class="js-secret-overlay absolute inset-0 bg-rose-50 flex flex-col items-center justify-center gap-1.5 text-stone-800 transition-all select-none z-10">
+                            <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center text-rose-600 text-sm shadow-xs group-hover:scale-110 transition-transform">
+                                <i class="fa-solid fa-eye-slash"></i>
+                            </div>
+                            <span class="text-xs md:text-sm font-bold text-rose-900">タップしてネタバレを表示</span>
+                        </div>
                     </div>
                 </div>
+                ` : ''}
             </div>
-        ` : ''}
-        </div>
-    `;
-}
+        `;
+    }
+
+    // ==========================================
+    // 📜 通過シナリオ一覧 & 件数カウント処理（グループ化対応）
+    // ==========================================
+    const allEntries = JSON.parse(localStorage.getItem('local_entries') || '[]');
+    const passedEntries = allEntries.filter(entry => 
+        entry.participantIds && entry.participantIds.map(String).includes(String(characterId))
+    );
+
+    // シナリオタイトル単位でグループ化（数日分の日記を1つのシナリオにまとめる）
+    const scenarioMap = {};
+    passedEntries.forEach(entry => {
+        const title = entry.title || (entry.content ? entry.content.substring(0, 15) + '...' : '無題の日記');
+        if (!scenarioMap[title]) {
+            scenarioMap[title] = [];
+        }
+        scenarioMap[title].push(entry);
+    });
+
+    const scenarioGroups = Object.keys(scenarioMap).map(title => ({
+        title: title,
+        entries: scenarioMap[title].sort((a, b) => (a.date || '').localeCompare(b.date || ''))
+    }));
+
+    let scenariosContentHtml = '';
+    if (scenarioGroups.length === 0) {
+        scenariosContentHtml = `
+            <div class="bg-stone-50 rounded-2xl p-4 text-center text-xs md:text-sm text-stone-400 border border-stone-100">
+                <p>まだ通過シナリオが登録されていません。</p>
+            </div>
+        `;
+    } else {
+        scenariosContentHtml = `
+            <div class="space-y-3">
+                ${scenarioGroups.map((group, groupIdx) => {
+                    // おしゃれな通し番号バッジ（テーマカラーを薄く反映）
+                    const badgeHtml = `
+                        <span class="inline-flex items-center justify-center px-2 py-0.5 rounded-lg text-xs font-mono font-bold shrink-0 shadow-2xs" style="background-color: ${themeColor}15; color: ${themeColor}; border: 1px solid${themeColor}30;">
+                            No.0${groupIdx + 1}
+                        </span>
+                    `;
+
+                    // 日記ごとの行リスト（同じシナリオ内の複数日分をコンパクトに表示）
+                    const entriesRowsHtml = group.entries.map(entry => {
+                        const dateStr = entry.date ? entry.date.replace(/-/g, '.') : '';
+                        return `
+                            <div class="flex items-center justify-between py-1.5 px-2.5 hover:bg-white/80 rounded-xl transition-colors text-xs md:text-sm">
+                                <div class="flex items-center gap-3 overflow-hidden">
+                                    <span class="text-stone-500 font-mono shrink-0">${dateStr}</span>
+                                    <span class="text-stone-800 font-medium truncate">${group.title}</span>
+                                </div>
+                                <a href="diary.html#detail=${entry.id}" class="inline-flex items-center gap-1 text-[11px] md:text-xs font-bold px-2.5 py-1 rounded-lg transition-all shrink-0 hover:opacity-80 shadow-2xs" style="background-color: ${themeColor}12; color: ${themeColor}; border: 1px solid${themeColor}25;">
+                                    <span>日記へ</span>
+                                    <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                                </a>
+                            </div>
+                        `;
+                    }).join('');
+
+                    return `
+                        <div class="bg-stone-50/70 rounded-2xl p-3 border border-stone-200/60 shadow-xs space-y-1">
+                            <div class="flex items-center gap-2 mb-1 pb-1.5 border-b border-stone-200/50">
+                                ${badgeHtml}
+                                <span class="text-xs md:text-sm font-bold text-stone-800 truncate">${group.title}</span>
+                            </div>
+                            <div class="space-y-0.5 pl-1">
+                                ${entriesRowsHtml}
+                            </div>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+        `;
+    }
 
     const scenariosHtml = `
         <div class="mt-6 pt-6 border-t border-stone-100">
             <div class="flex items-center justify-between mb-3">
-                <h4 class="text-xs font-bold text-stone-500 flex items-center gap-1.5">
+                <h4 class="text-xs md:text-sm font-bold text-stone-500 flex items-center gap-1.5">
                     <i class="fa-solid fa-book-bookmark text-stone-400"></i> 通過シナリオ一覧
                 </h4>
-                <span class="text-[10px] text-stone-400 bg-stone-100 px-2 py-0.5 rounded-full">0件</span>
+                <span class="text-xs font-bold px-2.5 py-0.5 rounded-full shadow-2xs" style="background-color: ${themeColor}15; color: ${themeColor};">${scenarioGroups.length}件</span>
             </div>
-            <div class="bg-stone-50 rounded-2xl p-4 text-center text-xs text-stone-400 border border-stone-100">
-                <p>まだ通過シナリオが登録されていません。</p>
-            </div>
+            ${scenariosContentHtml}
         </div>
     `;
 
     detailContainer.innerHTML = `
-        <div class="bg-white rounded-3xl p-6 border border-stone-200/80 shadow-sm space-y-6 relative overflow-hidden">
-            <div class="flex flex-col md:flex-row gap-6">
+        <div class="bg-white rounded-3xl p-6 md:p-8 border border-stone-200/85 shadow-sm space-y-6 relative overflow-hidden">
+            <div class="flex flex-col md:flex-row gap-6 md:gap-8">
                 <div class="w-full md:w-1/2">
                     ${avatarHtml}
                 </div>
                 <div class="w-full md:w-1/2 flex flex-col justify-between">
                     <div>
                         <div class="flex items-center justify-between mb-2">
-                            <span class="text-[10px] font-bold px-2.5 py-1 rounded-lg shadow-xs inline-block" style="background-color: ${themeColor}; color: ${badgeTextColor};">
+                            <span class="text-xs font-bold px-3 py-1 rounded-lg shadow-xs inline-block" style="background-color: ${themeColor}; color: ${badgeTextColor};">
                                 ${window.systems.find(s => s.id === ch.systemId)?.name || 'システム'}
                             </span>
                         </div>
                         ${epithetHtml}
                         ${nameRuby}
                         
-                        <div class="grid grid-cols-2 gap-x-4 gap-y-2 text-xs text-stone-600 border-t border-stone-100 pt-3">
+                        <div class="grid grid-cols-2 gap-x-4 gap-y-2.5 text-xs md:text-sm text-stone-600 border-t border-stone-100 pt-3.5 mt-2">
                             <p><strong class="text-stone-400 inline-block mr-1">年齢:</strong> ${ch.age ? ch.age + '歳' : '未設定'}</p>
                             <p><strong class="text-stone-400 inline-block mr-1">性別:</strong> ${ch.gender || '未設定'}</p>
                             <p><strong class="text-stone-400 inline-block mr-1">誕生日:</strong> ${ch.birthdate || '未設定'}</p>
-                            <p class="flex items-center gap-1.5"><strong class="text-stone-400 inline-block mr-1">カラー:</strong> <span class="w-3 h-3 rounded-full inline-block border border-stone-200" style="background-color: ${themeColor}"></span><span class="font-mono">${rawThemeColor}</span></p>
+                            <p class="flex items-center gap-1.5"><strong class="text-stone-400 inline-block mr-1">カラー:</strong> <span class="w-3.5 h-3.5 rounded-full inline-block border border-stone-200" style="background-color: ${themeColor}"></span><span class="font-mono">${rawThemeColor}</span></p>
                         </div>
 
                         ${sheetLinkHtml}
@@ -2095,21 +2156,21 @@ if (memo || secret) {
                 <div></div>
                 <div class="flex items-center gap-2.5 ml-auto">
                     ${window.isAdmin ? `
-                        <button onclick="openEditCharacterModal('${characterId}')" class="flex items-center gap-1.5 text-xs font-bold text-stone-700 bg-white hover:bg-stone-50 border border-stone-300 px-4 py-2 rounded-xl shadow-xs hover:shadow transition-all">
-                            <i class="fa-solid fa-pen text-stone-500 text-[11px]"></i>
+                        <button onclick="openEditCharacterModal('${characterId}')" class="flex items-center gap-1.5 text-xs md:text-sm font-bold text-stone-700 bg-white hover:bg-stone-50 border border-stone-300 px-4 py-2.5 rounded-xl shadow-xs hover:shadow transition-all">
+                            <i class="fa-solid fa-pen text-stone-500 text-xs"></i>
                             <span>編集</span>
                         </button>
-                        <button onclick="exportCharacterJson('${characterId}')" class="flex items-center gap-1.5 text-xs font-bold text-stone-700 bg-white hover:bg-stone-50 border border-stone-300 px-3 py-2 rounded-xl shadow-xs hover:shadow transition-all" title="このキャラのJSONを書き出し">
-                            <i class="fa-solid fa-file-code text-stone-500 text-[11px]"></i>
+                        <button onclick="exportCharacterJson('${characterId}')" class="flex items-center gap-1.5 text-xs md:text-sm font-bold text-stone-700 bg-white hover:bg-stone-50 border border-stone-300 px-3.5 py-2.5 rounded-xl shadow-xs hover:shadow transition-all" title="このキャラのJSONを書き出し">
+                            <i class="fa-solid fa-file-code text-stone-500 text-xs"></i>
                             <span>JSON出力</span>
                         </button>
-                        <button onclick="deleteCharacter('${characterId}')" class="flex items-center gap-1.5 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 px-4 py-2 rounded-xl shadow-xs hover:shadow transition-all">
-                            <i class="fa-solid fa-trash text-[11px]"></i>
+                        <button onclick="deleteCharacter('${characterId}')" class="flex items-center gap-1.5 text-xs md:text-sm font-bold text-white bg-rose-600 hover:bg-rose-700 px-4 py-2.5 rounded-xl shadow-xs hover:shadow transition-all">
+                            <i class="fa-solid fa-trash text-xs"></i>
                             <span>削除</span>
                         </button>
                     ` : ''}
-                    <button onclick="navigateTo('characterList', '${ch.systemId}')" class="flex items-center gap-1.5 text-xs font-bold text-stone-700 bg-stone-100 hover:bg-stone-200 px-4 py-2 rounded-xl transition-all">
-                        <i class="fa-solid fa-arrow-left text-stone-500 text-[11px]"></i>
+                    <button onclick="navigateTo('characterList', '${ch.systemId}')" class="flex items-center gap-1.5 text-xs md:text-sm font-bold text-stone-700 bg-stone-100 hover:bg-stone-200 px-4 py-2.5 rounded-xl transition-all">
+                        <i class="fa-solid fa-arrow-left text-stone-500 text-xs"></i>
                         <span>一覧に戻る</span>
                     </button>
                 </div>
