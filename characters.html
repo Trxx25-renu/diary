@@ -1012,14 +1012,8 @@ async function saveCharacter(event) {
     // 🌟 ターゲットとなるキャラクターIDを事前に確定
     let targetCharacterId = window.editingCharacterId || ('char_' + Math.random().toString(36).substring(2, 11));
 
-    // 🌟 【修正】上書きされる前に、確実に「編集前の生データ」をディープコピーして保持しておく
-    let oldCharacter = null;
-    if (window.characters && Array.isArray(window.characters)) {
-        const found = window.characters.find(c => String(c.id) === String(targetCharacterId));
-        if (found) {
-            oldCharacter = JSON.parse(JSON.stringify(found));
-        }
-    }
+    // 🌟 【スッキリ整理】モーダルを開いた時に保持したスナップショットを比較元（oldCharacter）としてそのまま直結！
+    let oldCharacter = window.originalCharacterState || null;
 
     // 🌟 画像データの処理（未アップロードのファイルがあればFirebase Storageへ自動アップロードして永続URLに変換）
     const rawImages = window.editingCharacterImages || { 
@@ -1155,7 +1149,7 @@ async function saveCharacter(event) {
 
     try {
         // 🌟 削除処理の動作確認用デバッグログ
-        console.log("🔍 [DEBUG 削除チェック] oldCharacter:", !!oldCharacter);
+        console.log("🔍 [DEBUG 削除チェック] oldCharacter (スナップショット):", !!oldCharacter);
         console.log("🔍 [DEBUG 削除チェック] window.storage:", !!window.storage);
         console.log("🔍 [DEBUG 削除チェック] window.ref:", !!window.ref);
         console.log("🔍 [DEBUG 削除チェック] window.deleteObject:", !!window.deleteObject);
@@ -3301,6 +3295,9 @@ function openEditCharacterModal(characterId, retryCount = 0) {
             return; 
         }
 
+        // 🌟 【追加・重要】編集開始時点の生データをディープコピーして比較用の基準値として保持
+        window.originalCharacterState = JSON.parse(JSON.stringify(ch));
+
         // 🌟 グローバルにも保持しておく（デバッグや外部参照用）
         window.currentEditingCharacter = ch;
 
@@ -3758,7 +3755,9 @@ function openCharacterModal() {
 }
 window.openCharacterModal = openCharacterModal;
 
-// 💡 キャラクター作成・編集モーダルを閉じる関数
+// ==========================================
+// 💡 キャラクター作成・編集モーダルを閉じる関数（キャッシュクリア対応版）
+// ==========================================
 function closeCharacterModal() {
     const modal = document.getElementById('characterModal');
     if (modal) modal.classList.add('hidden');
@@ -3770,6 +3769,14 @@ function closeCharacterModal() {
     }
 
     window.editingCharacterId = null;
+
+    // 🌟 【追加】モーダルを閉じるときに編集前のスナップショットや一時データを完全に破棄
+    window.originalCharacterState = null;
+    window.editingCharacterImages = null;
+    window.editingCharacterLinks = null;
+    window.currentEditingCharacter = null;
+
+    console.log("ℹ️ モーダルが閉じられたため、編集キャッシュを破棄しました。");
 }
 window.closeCharacterModal = closeCharacterModal;
 
