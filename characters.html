@@ -122,11 +122,12 @@ window.addDoc = addDoc;
 window.updateDoc = updateDoc;
 window.deleteDoc = deleteDoc;
 
-// 🌟 Firebase Storageの関数・インスタンスをグローバルへ正しく登録
-window.getStorage = () => storage;
+// 🌟 Firebase Storageの関数・インスタンスをグローバルへ正しく登録（修正！）
+window.storage = storage;                   // 👈 関数ではなく storage インスタンスを直接入れる
 window.ref = ref;
 window.uploadBytes = uploadBytes;
 window.getDownloadURL = getDownloadURL;
+window.deleteObject = deleteObject;         // 👈 【追加】これが抜けていたため false になっていました！
 
 // HTMLエスケープ処理
 function escapeHtml(str) {
