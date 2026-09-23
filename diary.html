@@ -2101,7 +2101,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 epithetNorm.includes(keyword) || 
                 epithetKanaNorm.includes(keyword);
             
-            const notAlreadySelected = !window.tempSelectedParticipants.includes(char.id);
+            // 🌟 選択済みかどうかの判定（文字列型に統一して確実に除外）
+            const notAlreadySelected = !window.tempSelectedParticipants.some(id => String(id) === String(char.id));
 
             return matchesSystem && matchesName && notAlreadySelected;
         });
