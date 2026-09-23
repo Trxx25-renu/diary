@@ -997,7 +997,7 @@ async function saveCharacter(event) {
 
     const images = {};
 
-// 💡 Firebase Storageへファイルをアップロードし、永続URLを取得するヘルパー関数
+// 💡 Firebase Storageへファイルをアップロードし、永続URLを取得するヘルパー関数（タイムアウトガード付き）
     async function uploadImageIfNeeded(item, charId, category) {
         let url = item.url || '';
         
@@ -1026,21 +1026,33 @@ async function saveCharacter(event) {
 
                 if (!storageInstance || !storageRefFn || !uploadBytesFn || !getDownloadUrlFn) {
                     console.warn("⚠️ Firebase Storageの関数が見つからないため、画像アップロードをスキップします。");
-                    return url.startsWith('blob:') ? '' : url;
+                    return (url && !url.startsWith('blob:')) ? url : '';
                 }
 
                 // 保存先パス: artifacts/{appId}/characters/{charId}/{category}_{timestamp}_{filename}
                 const filePath = `artifacts/${window.appId}/characters/${charId}/${category}_${Date.now()}_${item.file.name}`;
                 const fileRef = storageRefFn(storageInstance, filePath);
 
-                // アップロード実行
-                const snapshot = await uploadBytesFn(fileRef, item.file);
-                // 永続的な公開URLを取得
-                const downloadUrl = await getDownloadUrlFn(snapshot.ref);
+                // 🌟 アップロード処理の本体
+                const uploadTask = async () => {
+                    const snapshot = await uploadBytesFn(fileRef, item.file);
+                    return await getDownloadUrlFn(snapshot.ref);
+                };
+
+                // 🌟 【超重要】万が一通信が固まったとき用：8秒でタイムアウトさせるタイマー
+                const timeoutTask = new Promise((_, reject) => {
+                    setTimeout(() => reject(new Error("Storage upload timeout")), 8000);
+                });
+
+                // アップロードとタイムアウトの早い方を通す
+                const downloadUrl = await Promise.race([uploadTask(), timeoutTask()]);
                 return downloadUrl;
 
             } catch (uploadErr) {
-                console.error("画像のFirebase Storageアップロードに失敗しました:", uploadErr);
+                console.error("画像のFirebase Storageアップロードに失敗（またはタイムアウト）しました:", uploadErr);
+                if (typeof showToast === 'function') {
+                    showToast("画像のアップロードに時間がかかったため、スキップしました", "error");
+                }
                 // 失敗時は、もし元に有効なURLがあればそれを維持、なければ空
                 return (url && !url.startsWith('blob:')) ? url : '';
             }
