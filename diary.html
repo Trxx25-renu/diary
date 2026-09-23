@@ -2443,7 +2443,7 @@ async function handleSaveEntry(event) {
                 secretContent: secretContent.trim(),
                 imageUrls: window.tempImageUrls,
                 imageUrl: window.tempImageUrls[0],
-                participantIds: window.tempSelectedParticipants, // 🌟 更新時も参加キャラID配列を保存
+                participantIds: window.tempSelectedParticipants || [], // 🌟 更新時
                 updatedAt: new Date().toISOString()
             };
             entryData = window.entries[index];
@@ -2462,7 +2462,7 @@ async function handleSaveEntry(event) {
             secretContent: secretContent.trim(),
             imageUrls: window.tempImageUrls,
             imageUrl: window.tempImageUrls[0],
-            participantIds: window.tempSelectedParticipants, // 🌟 新規作成時も参加キャラID配列を保存
+            participantIds: window.tempSelectedParticipants || [], // 🌟 新規作成時も確実に配列を設定
             updatedAt: new Date().toISOString()
         };
         if (!window.entries) window.entries = [];
