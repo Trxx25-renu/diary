@@ -1251,11 +1251,6 @@ async function saveCharacter(event) {
 
         window.characters = removeBase64Recursive(window.characters);
 
-    } catch (e) {
-        console.error("❌ 保存・削除処理のエラー:", e);
-    }
-}
-
         // 🌟 Firestoreが拒絶する undefined を null に一掃するサニタイズ
         function sanitizeForFirestore(obj) {
             if (obj === null || typeof obj !== 'object') {
