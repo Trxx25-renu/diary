@@ -1986,7 +1986,21 @@ window.closeConfirmModal = closeConfirmModal;
 window.handleSaveConfig = handleSaveConfig;
 
 // ==========================================
-// 💡 キャラクター検索＆絞り込みのイベント設定（完全一致版）
+// 💡 文字列の正規化関数（全角半角・ひらがなカタカナのゆらぎを無くす）
+// ==========================================
+function normalizeText(str) {
+    if (!str) return '';
+    return str
+        .toLowerCase()
+        // 全角英数・記号を半角に
+        .replace(/[Ａ-Ｚａ-ｚ０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0))
+        // カタカナをひらがなに変換
+        .replace(/[\u30a1-\u30f6]/g, match => String.fromCharCode(match.charCodeAt(0) - 0x60))
+        .trim();
+}
+
+// ==========================================
+// 💡 キャラクター検索＆絞り込みのイベント設定
 // ==========================================
 document.addEventListener('DOMContentLoaded', () => {
     const searchInput = document.getElementById('charSearchInput');
