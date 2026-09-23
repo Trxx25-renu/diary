@@ -290,8 +290,8 @@
         } catch (e) {
             console.error("❌ 初期化処理でエラーが発生しました:", e);
         }
-
-// 6. 読み込み完了フラグ
+        
+        // 6. 読み込み完了フラグ
         window.isDataLoaded = true;
 
         // 7. 月別アルバムのカードを生成
@@ -299,20 +299,17 @@
             renderMonthFolders();
         }
 
-        // 🌟 修正：URLにハッシュ（#〜）があればそれを優先し、なければデフォルトで月別にする
-        const currentHash = window.location.hash.replace('#', '');
-        if (currentHash && typeof window.navigateTo === 'function') {
-            // すでに特定のページを指定して開いている場合は、その場所へ行く
-            window.navigateTo(currentHash);
+        // 🌟 ここで正しいルーティング関数を呼び出す
+        if (typeof handleInitialRouting === 'function') {
+            handleInitialRouting();
         } else if (typeof window.navigateTo === 'function') {
-            // 初回アクセスやハッシュがない場合のみ、月別をデフォルト表示
             window.navigateTo('months');
         }
 
         if (typeof window.applyCurrentThemeToUI === 'function') {
             window.applyCurrentThemeToUI();
         }
-    }); // DOMContentLoaded の終わり
+    });
 
 // ==========================================
 // ☁️ Firebase Storageへ画像をアップロードする関数
