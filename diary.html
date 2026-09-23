@@ -1998,6 +1998,20 @@ window.handleSaveConfig = handleSaveConfig;
 // ==========================================
 window.tempSelectedParticipants = window.tempSelectedParticipants || [];
 
+// 🌟 ストレージからキャラクターを安全に取得するヘルパー
+function _getAllCharactersForDiary() {
+    try {
+        //複数のキー候補からデータを探す（取りこぼし防止）
+        const data = localStorage.getItem('local_characters') || 
+                     localStorage.getItem('characters_backup') || 
+                     localStorage.getItem('characters');
+        return data ? JSON.parse(data) : [];
+    } catch (e) {
+        console.error("キャラクターデータの取得に失敗しました:", e);
+        return [];
+    }
+}
+
 // ==========================================
 // 💡 選択された参加キャラクターのチップを描画する関数
 // ==========================================
@@ -2012,7 +2026,7 @@ function renderSelectedParticipantChips() {
         return;
     }
 
-    const allChars = JSON.parse(localStorage.getItem('local_characters') || '[]');
+    const allChars = _getAllCharactersForDiary();
 
     window.tempSelectedParticipants.forEach(id => {
         const char = allChars.find(c => String(c.id) === String(id));
@@ -2032,11 +2046,11 @@ function renderSelectedParticipantChips() {
     });
 }
 
-// 💡 選択を個別に解除（×ボタン用）
-function removeTempParticipant(charId) {
+// 💡 選択を個別に解除（×ボタン用：確実にグローバル登録）
+window.removeTempParticipant = function(charId) {
     window.tempSelectedParticipants = (window.tempSelectedParticipants || []).filter(id => String(id) !== String(charId));
     renderSelectedParticipantChips();
-}
+};
 
 // ==========================================
 // 💡 文字列の正規化関数（ひらがな・カタカナ・大文字小文字のゆらぎに対応）
@@ -2051,7 +2065,7 @@ function normalizeText(str) {
 }
 
 // ==========================================
-// 💡 キャラクター検索＆絞り込み（システム略称・大文字小文字ゆらぎ対応版）
+// 💡 キャラクター検索＆絞り込み（安定版）
 // ==========================================
 document.addEventListener('DOMContentLoaded', () => {
     const searchInput = document.getElementById('charSearchInput');
@@ -2061,7 +2075,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     searchInput.addEventListener('input', (e) => {
         const keyword = normalizeText(e.target.value);
-        const currentSystemTag = document.getElementById('inputWeather')?.value || ''; // 日記側で選ばれているタグ
+        const currentSystemTag = document.getElementById('inputWeather')?.value || ''; 
 
         if (!keyword) {
             resultsContainer.classList.add('hidden');
@@ -2069,33 +2083,9 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        const allChars = JSON.parse(localStorage.getItem('local_characters') || '[]');
+        const allChars = _getAllCharactersForDiary();
 
         const matches = allChars.filter(char => {
-            // キャラクター側が持っているシステム情報（id または システム名など）
-            const charSystemValue = char.systemId || char.system || '';
-            
-            // window.systems から、そのキャラクターのシステム定義を特定する
-            const matchedSys = (window.systems || []).find(s => 
-                s.id === charSystemValue || s.name === charSystemValue || s.desc === charSystemValue
-            );
-
-            // 🌟 日記側のタグとキャラクターのシステムを「大文字小文字のゆらぎを無視して」比較
-            const curTag = currentSystemTag.toLowerCase();
-            let matchesSystem = true;
-
-            if (currentSystemTag) {
-                if (matchedSys) {
-                    matchesSystem = (
-                        curTag === (matchedSys.id || '').toLowerCase() || 
-                        curTag === (matchedSys.name || '').toLowerCase() || 
-                        curTag === (matchedSys.desc || '').toLowerCase()
-                    );
-                } else {
-                    matchesSystem = (charSystemValue.toLowerCase() === curTag);
-                }
-            }
-            
             // 検索対象の各フィールドを正規化
             const nameNorm = normalizeText(char.name || '');
             const nameKanaNorm = normalizeText(char.nameKana || char.kana || char.ruby || '');
@@ -2109,10 +2099,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 epithetNorm.includes(keyword) || 
                 epithetKanaNorm.includes(keyword);
             
-            // 🌟 選択済みかどうかの判定（文字列型に統一して確実に除外）
+            // 🌟 選択済みかどうかの判定
             const notAlreadySelected = !window.tempSelectedParticipants.some(id => String(id) === String(char.id));
 
-            return matchesSystem && matchesName && notAlreadySelected;
+            // ※ システムによる強制絞り込みでヒットしなくなる現象を防ぐため、まずは名前一致＆未選択を優先します
+            return matchesName && notAlreadySelected;
         });
 
         if (matches.length === 0) {
@@ -2126,7 +2117,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const div = document.createElement('div');
             div.className = 'p-2.5 text-xs text-stone-700 hover:bg-stone-50 cursor-pointer flex items-center justify-between transition-colors';
             
-            // 表示用のシステム名（可能な限り `desc` や `name` を優先して表示）
             const matchedSys = (window.systems || []).find(s => s.id === (char.systemId || char.system));
             const displaySystem = matchedSys ? (matchedSys.desc || matchedSys.name) : (char.systemId || char.system || '未分類');
             
@@ -3580,12 +3570,19 @@ function renderEntryDetail(targetId) {
 
 window.renderEntryDetail = renderEntryDetail;
     
-    // 👤 キャラクター詳細ページ（characters.html）へジャンプする関数（閲覧位置の記憶付き）
+// 👤 キャラクター詳細ページ（characters.html）へジャンプする関数（閲覧位置の記憶付き）
 function openCharacterDetail(charId) {
     if (!charId) {
         showToast('キャラクターIDが見つかりません', 'warning');
         return;
     }
+
+    // 🌟 #detail/キャラID の形式でジャンプするように修正
+    const targetUrl = `characters.html#detail/${charId}`;
+    
+    // もし閲覧位置の記憶やセッション保存などの処理があればここに挟みつつ移動
+    window.location.href = targetUrl;
+}
 
     // 1. いま自分がいる現在の画面状態（表示中のビューや月、スクロール位置など）を sessionStorage に記録
     const currentViewState = {
