@@ -1188,8 +1188,14 @@ try {
             if (thumbnail.startsWith('https://firebasestorage.googleapis.com')) newUrls.add(thumbnail);
             if (avatar.startsWith('https://firebasestorage.googleapis.com')) newUrls.add(avatar);
 
-            // 3. 「昔はあったが、今回消された（新リストに含まれない）」URLを割り出す
+// 3. 「昔はあったが、今回消された（新リストに含まれない）」URLを割り出す
             const urlsToDelete = [...oldUrls].filter(url => !newUrls.has(url));
+
+            // 🌟 【追加】ここで比較結果をコンソールにしっかり吐き出させる
+            console.log("🔍 [DEBUG] 編集前の画像URLs (oldUrls):", [...oldUrls]);
+            console.log.log?.("🔍 [DEBUG] 今回の画像URLs (newUrls):", [...newUrls]); // (※ .log.log になっていたら console.log に直してください)
+            console.log("🔍 [DEBUG] 削除判定されたURLs (urlsToDelete):", urlsToDelete);
+            console.log("🔍 [DEBUG] 削除対象の数:", urlsToDelete.length);
 
             // 4. ストレージから該当のファイルを非同期で一括削除
             if (urlsToDelete.length > 0) {
@@ -1199,8 +1205,12 @@ try {
                         await window.deleteObject(imageRef);
                         console.log("🔥 編集により不要になった画像をストレージから削除しました:", url);
                     } catch (delErr) {
-                        console.warn("⚠️ ストレージ上の不要画像削除スキップ（既に不存在など）:", delErr);
+                        console.error("❌ 削除失敗の詳細 -> code:", delErr.code, "message:", delErr.message, delErr);
                     }
+                }));
+            } else {
+                console.log("ℹ️ 削除対象の画像が0件のため、ストレージ削除はスキップしました。");
+            }
                 }));
             }
         } else {
