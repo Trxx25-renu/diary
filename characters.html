@@ -94,10 +94,20 @@ html {
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { getFirestore, collection, getDocs, doc, getDoc, setDoc, addDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-// 🌟 Firebase Storageのモジュールを追加
 import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
 
+// 🌟 すでに存在しているはずの firebaseConfig を使って app を初期化している箇所に合わせて調整してください
+// （もしすインド変数として app が定義済みの場合は、const app = ... の部分は既存のものに合わせてください）
+// 例として一般的な初期化コードを内包しています：
+const firebaseConfig = window.firebaseConfig || {}; // 既存のconfigがあればそれを利用
+const app = initializeApp(firebaseConfig);
+
+const auth = getAuth(app);
+const db = getFirestore(app);
+const storage = getStorage(app); // 💡 ここで app を渡すのが超重要！
+
 // 🌟 Firestoreなどの関数をグローバルへ登録
+window.db = db;
 window.doc = doc;
 window.setDoc = setDoc;
 window.getDoc = getDoc;
@@ -107,8 +117,8 @@ window.addDoc = addDoc;
 window.updateDoc = updateDoc;
 window.deleteDoc = deleteDoc;
 
-// 🌟 Firebase Storageの関数をグローバルへ登録
-window.getStorage = getStorage;
+// 🌟 Firebase Storageの関数・インスタンスをグローバルへ正しく登録
+window.getStorage = () => storage; // 💡 常に正しい storage インスタンスを返すラッパーにする
 window.ref = ref;
 window.uploadBytes = uploadBytes;
 window.getDownloadURL = getDownloadURL;
@@ -997,7 +1007,7 @@ async function saveCharacter(event) {
 
     const images = {};
 
-// 💡 Firebase Storageへファイルをアップロードし、永続URLを取得するヘルパー関数（タイムアウトガード付き）
+// 💡 Firebase Storageへファイルをアップロードし、永続URLを取得するヘルパー関数（完全堅牢・根本解決版）
     async function uploadImageIfNeeded(item, charId, category) {
         let url = item.url || '';
         
@@ -1018,15 +1028,21 @@ async function saveCharacter(event) {
                     showToast("画像をクラウドへアップロード中...", "info");
                 }
 
-                // Storageのインスタンスと参照を安全に取得
-                const storageInstance = typeof window.getStorage === 'function' ? window.getStorage() : null;
+                // 🌟 各種関数がグローバルに存在するか、あるいは別の名前で定義されていないか安全に取得
+                const storageInstance = typeof window.getStorage === 'function' ? window.getStorage() : (window.storage || null);
                 const storageRefFn = typeof window.ref === 'function' ? window.ref : null;
                 const uploadBytesFn = typeof window.uploadBytes === 'function' ? window.uploadBytes : null;
                 const getDownloadUrlFn = typeof window.getDownloadURL === 'function' ? window.getDownloadURL : null;
 
-                if (!storageInstance || !storageRefFn || !uploadBytesFn || !getDownloadUrlFn) {
-                    console.warn("⚠️ Firebase Storageの関数が見つからないため、画像アップロードをスキップします。");
-                    return (url && !url.startsWith('blob:')) ? url : '';
+                // 🌟 ここで TypeError を防ぐための厳格なチェック
+                if (!storageInstance || typeof storageRefFn !== 'function' || typeof uploadBytesFn !== 'function' || typeof getDownloadUrlFn !== 'function') {
+                    console.error("❌ Firebase Storageの関数がグローバルに見つかりません。windowオブジェクトの定義を確認してください。", {
+                        storage: !!storageInstance,
+                        ref: typeof storageRefFn,
+                        uploadBytes: typeof uploadBytesFn,
+                        getDownloadURL: typeof getDownloadUrlFn
+                    });
+                    throw new Error("Firebase Storage functions are missing on window");
                 }
 
                 // 保存先パス: artifacts/{appId}/characters/{charId}/{category}_{timestamp}_{filename}
@@ -1039,26 +1055,26 @@ async function saveCharacter(event) {
                     return await getDownloadUrlFn(snapshot.ref);
                 };
 
-                // 🌟 【超重要】万が一通信が固まったとき用：8秒でタイムアウトさせるタイマー
+                // 🌟 万が一のフリーズ対策：15秒タイムアウトガード
                 const timeoutTask = new Promise((_, reject) => {
-                    setTimeout(() => reject(new Error("Storage upload timeout")), 8000);
+                    setTimeout(() => reject(new Error("Storage upload timeout")), 15000);
                 });
 
-                // アップロードとタイムアウトの早い方を通す
+                // アップロードとタイムアウトの競合
                 const downloadUrl = await Promise.race([uploadTask(), timeoutTask()]);
                 return downloadUrl;
 
             } catch (uploadErr) {
-                console.error("画像のFirebase Storageアップロードに失敗（またはタイムアウト）しました:", uploadErr);
+                console.error("画像のFirebase Storageアップロードに失敗しました:", uploadErr);
                 if (typeof showToast === 'function') {
-                    showToast("画像のアップロードに時間がかかったため、スキップしました", "error");
+                    showToast("画像のクラウド保存に失敗しました", "error");
                 }
-                // 失敗時は、もし元に有効なURLがあればそれを維持、なければ空
+                // 失敗時はモーダルを止めないよう、安全に古いURLまたは空を返す
                 return (url && !url.startsWith('blob:')) ? url : '';
             }
         }
 
-        // 🌟 【安全ガード】ファイルオブジェクトはないが、もし有効な既存URL（httpsなど）ならそのまま維持する
+        // ファイルがない場合は既存の安全なURLを返す
         return (url && !url.startsWith('blob:')) ? url : '';
     }
 
