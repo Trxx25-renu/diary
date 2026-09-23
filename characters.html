@@ -93,7 +93,7 @@ html {
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { getFirestore, collection, getDocs, doc, getDoc, setDoc, addDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
+import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js"; // 🌟 deleteObject を追加・全角文字を修正
 
 // 🌟 正しいFirebaseプロジェクト設定を直接指定し、invalid-api-key を完全に防止
 const firebaseConfig = {
@@ -122,12 +122,12 @@ window.addDoc = addDoc;
 window.updateDoc = updateDoc;
 window.deleteDoc = deleteDoc;
 
-// 🌟 Firebase Storageの関数・インスタンスをグローバルへ正しく登録（修正！）
-window.storage = storage;                   // 👈 関数ではなく storage インスタンスを直接入れる
+// 🌟 Firebase Storageの関数・インスタンスをグローバルへ正しく登録
+window.storage = storage;                 // 👈 storage インスタンス
 window.ref = ref;
 window.uploadBytes = uploadBytes;
 window.getDownloadURL = getDownloadURL;
-window.deleteObject = deleteObject;         // 👈 【追加】これが抜けていたため false になっていました！
+window.deleteObject = deleteObject;         // 👈 これで true になり、削除が動きます！
 
 // HTMLエスケープ処理
 function escapeHtml(str) {
