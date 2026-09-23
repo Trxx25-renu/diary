@@ -484,8 +484,14 @@ function handleInitialRouting() {
     }
 }
 
-// ページ読み込み時に実行
-window.addEventListener('DOMContentLoaded', () => {
+// 🚀 ページ読み込み時に実行（データを先に読み込んでからルーティング）
+window.addEventListener('DOMContentLoaded', async () => {
+    // 1. まず日記データをストレージから確実に読み込む
+    if (typeof loadEntries === 'function') {
+        await loadEntries();
+    }
+    
+    // 2. データの準備ができてから、ハッシュに応じた画面を表示する
     handleInitialRouting();
 });
 
