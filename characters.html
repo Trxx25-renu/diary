@@ -29,7 +29,6 @@ html {
     touch-action: manipulation;
 }
 
-/* キャラクター詳細の画像 */
 .character-detail-img, 
 .modal-character-img {
     max-width: 100%;
@@ -37,8 +36,8 @@ html {
     width: auto;
     height: auto;
     object-fit: contain;
-    /* 写真やイラスト本来の滑らかさを維持する */
-    image-rendering: auto; 
+    /* 🌟 ここを変更：滑らかなアンチエイリアスを有効にする */
+    image-rendering: crisp-edges; 
 }
 
 
@@ -1259,7 +1258,7 @@ window.saveCharacter = saveCharacter;
 
 /**
  * 💡 画像ファイルを読み込み、大きすぎる場合は比率を維持してリサイズ・圧縮する関数
- * ※背景透過（PNG）をしっかり守りながらデータ量をスリム化します
+ * ※背景透過（PNG）をしっかり守りながら、縦長絵の線画もくっきり綺麗に保ちます
  */
 async function compressImage(file, maxDimension = 1200) {
     // 画像ファイル以外（PDFやテキスト等）ならそのまま返す
@@ -1275,14 +1274,20 @@ async function compressImage(file, maxDimension = 1200) {
                 let width = img.width;
                 let height = img.height;
 
-                // 指定した最大サイズ（デフォルト1200px）より大きい場合のみ、比率を維持して縮小
-                if (width > maxDimension || height > maxDimension) {
+                // 🌟 【改良】縦長の全身イラストなどの場合、線画がつぶれないよう最大サイズを 1600px に自動拡張
+                let currentMaxDimension = maxDimension;
+                if (height > width * 1.4 && currentMaxDimension < 1600) {
+                    currentMaxDimension = 1600;
+                }
+
+                // 指定した最大サイズより大きい場合のみ、比率を維持して縮小
+                if (width > currentMaxDimension || height > currentMaxDimension) {
                     if (width > height) {
-                        height = Math.round((height * maxDimension) / width);
-                        width = maxDimension;
+                        height = Math.round((height * currentMaxDimension) / width);
+                        width = currentMaxDimension;
                     } else {
-                        width = Math.round((width * maxDimension) / height);
-                        height = maxDimension;
+                        width = Math.round((width * currentMaxDimension) / height);
+                        height = currentMaxDimension;
                     }
                 }
 
@@ -1291,6 +1296,10 @@ async function compressImage(file, maxDimension = 1200) {
                 canvas.width = width;
                 canvas.height = height;
                 const ctx = canvas.getContext('2d');
+
+                // 🌟 【追加】キャンバス縮小時の画質を最高精度（アンチエイリアス有効）にする設定
+                ctx.imageSmoothingEnabled = true;
+                ctx.imageSmoothingQuality = 'high';
 
                 // PNGの背景透過をクリアに保つため、一度綺麗にクリアしてから描画
                 ctx.clearRect(0, 0, width, height);
@@ -1308,7 +1317,7 @@ async function compressImage(file, maxDimension = 1200) {
                         lastModified: Date.now()
                     });
                     resolve(compressedFile);
-                }, file.type, 0.85); // 0.85は品質維持パラメータ
+                }, file.type, 0.90); // 🌟 線画の滲みや潰れを防ぐため、品質を 0.90 に少し贅沢に設定
             };
             img.onerror = (error) => reject(error);
         };
@@ -1680,7 +1689,7 @@ function renderCharacterDetail(characterId) {
         const labelContainer = document.getElementById('galleryImageLabel');
         if (imgContainer) {
             if (currentImg && currentImg.url) {
-                imgContainer.innerHTML = `<img src="${currentImg.url}" class="w-full h-auto max-h-[600px] object-contain rounded-xl transition-all duration-300 [image-rendering:-webkit-optimize-contrast]">`;
+                imgContainer.innerHTML = `<img src="${currentImg.url}" class="max-w-full h-auto max-h-[600px] object-contain rounded-xl transition-all duration-300">`;
             } else {
                 imgContainer.innerHTML = `<div class="text-stone-400 text-xs py-20"><i class="fa-solid fa-image text-3xl mb-1 block"></i>画像がありません</div>`;
             }
@@ -1758,8 +1767,8 @@ function renderCharacterDetail(characterId) {
 
                 <div class="relative flex items-center justify-center rounded-2xl overflow-hidden border border-stone-200/60 shadow-inner bg-stone-50/50 p-2 min-h-[400px] sm:min-h-[500px]">
                     <div id="galleryImageContainer" class="w-full h-full flex items-center justify-center">
-                        <img src="${safeCurrentImg ? safeCurrentImg.url : ''}" class="w-full h-auto max-h-[600px] object-contain rounded-xl transition-all duration-300 [image-rendering:-webkit-optimize-contrast]">
-                    </div>
+                        <img src="${safeCurrentImg ? safeCurrentImg.url : ''}" class="max-w-full h-auto max-h-[600px] object-contain rounded-xl transition-all duration-300">
+</div>
 
                     ${safeCatImages.length > 1 ? `
                         <button onclick="slideGalleryImage(-1)" class="absolute left-3 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/80 text-white w-9 h-9 rounded-full flex items-center justify-center transition-all shadow-md">
