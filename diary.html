@@ -1986,60 +1986,8 @@ window.closeConfirmModal = closeConfirmModal;
 window.handleSaveConfig = handleSaveConfig;
 
 // ==========================================
-// 💡 参加キャラクター管理用の変数とロジック
+// 💡 キャラクター検索＆絞り込みのイベント設定（修正版）
 // ==========================================
-window.tempSelectedParticipants = [];
-
-// 参加キャラのチップ表示を更新する関数
-function renderSelectedParticipantChips() {
-    const container = document.getElementById('selectedParticipantsContainer');
-    if (!container) return;
-
-    container.innerHTML = '';
-
-    if (!window.tempSelectedParticipants || window.tempSelectedParticipants.length === 0) {
-        container.innerHTML = '<span class="text-[11px] text-stone-400">まだ選択されていません</span>';
-        return;
-    }
-
-    const allChars = JSON.parse(localStorage.getItem('local_characters') || '[]');
-
-    window.tempSelectedParticipants.forEach(charId => {
-        const char = allChars.find(c => c.id === charId);
-        if (!char) return;
-
-        const chip = document.createElement('div');
-        chip.className = 'inline-flex items-center gap-1 bg-stone-800 text-white text-[11px] px-2.5 py-1 rounded-lg shadow-sm';
-        chip.innerHTML = `
-            <span>${char.name}</span>
-            <button type="button" onclick="removeParticipant('${char.id}')" class="text-stone-300 hover:text-white ml-1">
-                <i class="fa-solid fa-xmark text-[10px]"></i>
-            </button>
-        `;
-        container.appendChild(chip);
-    });
-}
-
-// 参加キャラを外す関数
-function removeParticipant(charId) {
-    window.tempSelectedParticipants = window.tempSelectedParticipants.filter(id => id !== charId);
-    renderSelectedParticipantChips();
-}
-window.removeParticipant = removeParticipant;
-
-// カタカナをひらがなに変換し、全角半角や大文字小文字の揺れを無くす正規化関数
-function normalizeText(str) {
-    if (!str) return '';
-    return str
-        .toLowerCase()
-        // 全角英数・記号を半角に
-        .replace(/[Ａ-Ｚａ-ｚ０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0))
-        // カタカナをひらがなに変換
-        .replace(/[\u30a1-\u30f6]/g, match => String.fromCharCode(match.charCodeAt(0) - 0x60))
-        .trim();
-}
-
-// キャラクター検索＆絞り込みのイベント設定
 document.addEventListener('DOMContentLoaded', () => {
     const searchInput = document.getElementById('charSearchInput');
     const resultsContainer = document.getElementById('charSearchResults');
@@ -2049,7 +1997,7 @@ document.addEventListener('DOMContentLoaded', () => {
     searchInput.addEventListener('input', (e) => {
         // 入力されたキーワードを正規化（ひらがな・小文字に統一）
         const keyword = normalizeText(e.target.value);
-        const currentSystemTag = document.getElementById('inputWeather')?.value || ''; // タグをシステムとして利用
+        const currentSystemTag = document.getElementById('inputWeather')?.value || ''; // タグ（システム）
 
         if (!keyword) {
             resultsContainer.classList.add('hidden');
@@ -2060,16 +2008,22 @@ document.addEventListener('DOMContentLoaded', () => {
         const allChars = JSON.parse(localStorage.getItem('local_characters') || '[]');
 
         const matches = allChars.filter(char => {
-            const matchesSystem = !currentSystemTag || char.system === currentSystemTag;
+            // 🌟 修正1: キャラクター側のシステムプロパティ名（systemId または system）に合わせる
+            const charSystem = char.systemId || char.system || '';
+            const matchesSystem = !currentSystemTag || charSystem === currentSystemTag;
             
-            // キャラクター名と、もし登録されていればよみがな（kana / ruby）も対象にする
+            // 🌟 修正2: キャラクター名のよみがなプロパティ名（nameKana / kana / ruby）に合わせる
             const charNameNormalized = normalizeText(char.name || '');
-            const charKanaNormalized = normalizeText(char.kana || char.ruby || '');
+            const charKanaNormalized = normalizeText(char.nameKana || char.kana || char.ruby || '');
             
             // どちらかにキーワードが含まれていればヒット
             const matchesName = charNameNormalized.includes(keyword) || charKanaNormalized.includes(keyword);
             
             const notAlreadySelected = !window.tempSelectedParticipants.includes(char.id);
+
+            // 💡 デバッグ用（なぜ弾かれたか確認したい場合はコメントアウトを外してください）
+            // console.log(`[検索チェック] キャラ: ${char.name} | システム一致(${charSystem}==${currentSystemTag}): ${matchesSystem} | 名前一致: ${matchesName}`);
+
             return matchesSystem && matchesName && notAlreadySelected;
         });
 
@@ -2083,9 +2037,13 @@ document.addEventListener('DOMContentLoaded', () => {
         matches.forEach(char => {
             const div = document.createElement('div');
             div.className = 'p-2.5 text-xs text-stone-700 hover:bg-stone-50 cursor-pointer flex items-center justify-between transition-colors';
+            
+            // 表示用のシステム名ラベル
+            const displaySystem = char.systemId || char.system || '未分類';
+
             div.innerHTML = `
                 <span class="font-medium">${char.name}</span>
-                <span class="text-[10px] text-stone-400 bg-stone-100 px-2 py-0.5 rounded">${char.system || '未分類'}</span>
+                <span class="text-[10px] text-stone-400 bg-stone-100 px-2 py-0.5 rounded">${displaySystem}</span>
             `;
             div.onclick = () => {
                 window.tempSelectedParticipants.push(char.id);
