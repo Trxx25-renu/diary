@@ -1986,7 +1986,7 @@ window.closeConfirmModal = closeConfirmModal;
 window.handleSaveConfig = handleSaveConfig;
 
 // ==========================================
-// 💡 文字列の正規化関数
+// 💡 文字列の正規化関数（ひらがな・カタカナ・大文字小文字のゆらぎに対応）
 // ==========================================
 function normalizeText(str) {
     if (!str) return '';
@@ -1998,7 +1998,7 @@ function normalizeText(str) {
 }
 
 // ==========================================
-// 💡 キャラクター検索＆絞り込み（全フィールド対応版）
+// 💡 キャラクター検索＆絞り込み（システム略称・大文字小文字ゆらぎ対応版）
 // ==========================================
 document.addEventListener('DOMContentLoaded', () => {
     const searchInput = document.getElementById('charSearchInput');
@@ -2008,7 +2008,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     searchInput.addEventListener('input', (e) => {
         const keyword = normalizeText(e.target.value);
-        const currentSystemTag = document.getElementById('inputWeather')?.value || ''; // 日記側のタグ（選択中のシステム値）
+        const currentSystemTag = document.getElementById('inputWeather')?.value || ''; // 日記側で選ばれているタグ
 
         if (!keyword) {
             resultsContainer.classList.add('hidden');
@@ -2019,17 +2019,37 @@ document.addEventListener('DOMContentLoaded', () => {
         const allChars = JSON.parse(localStorage.getItem('local_characters') || '[]');
 
         const matches = allChars.filter(char => {
-            // システムの一致判定
-            const charSystem = char.systemId || char.system || '';
-            const matchesSystem = !currentSystemTag || (charSystem === currentSystemTag);
+            // キャラクター側が持っているシステム情報（id または システム名など）
+            const charSystemValue = char.systemId || char.system || '';
             
-            // 🌟 検索対象の各フィールドを正規化して網羅
+            // window.systems から、そのキャラクターのシステム定義を特定する
+            const matchedSys = (window.systems || []).find(s => 
+                s.id === charSystemValue || s.name === charSystemValue || s.desc === charSystemValue
+            );
+
+            // 🌟 日記側のタグとキャラクターのシステムを「大文字小文字のゆらぎを無視して」比較
+            const curTag = currentSystemTag.toLowerCase();
+            let matchesSystem = true;
+
+            if (currentSystemTag) {
+                if (matchedSys) {
+                    matchesSystem = (
+                        curTag === (matchedSys.id || '').toLowerCase() || 
+                        curTag === (matchedSys.name || '').toLowerCase() || 
+                        curTag === (matchedSys.desc || '').toLowerCase()
+                    );
+                } else {
+                    matchesSystem = (charSystemValue.toLowerCase() === curTag);
+                }
+            }
+            
+            // 検索対象の各フィールドを正規化
             const nameNorm = normalizeText(char.name || '');
             const nameKanaNorm = normalizeText(char.nameKana || char.kana || char.ruby || '');
             const epithetNorm = normalizeText(char.epithet || '');
             const epithetKanaNorm = normalizeText(char.epithetKana || '');
             
-            // 🌟 「名前」「名前ヨミガナ」「二つ名」「二つ名読み仮名」のいずれかにキーワードが含まれていればヒット
+            // 「名前」「名前ヨミガナ」「二つ名」「二つ名読み仮名」のいずれかにキーワードが含まれているか
             const matchesName = 
                 nameNorm.includes(keyword) || 
                 nameKanaNorm.includes(keyword) || 
@@ -2052,8 +2072,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const div = document.createElement('div');
             div.className = 'p-2.5 text-xs text-stone-700 hover:bg-stone-50 cursor-pointer flex items-center justify-between transition-colors';
             
-            const displaySystem = char.systemId || char.system || '未分類';
-            // リストに二つ名があれば一緒に表示すると分かりやすくなります
+            // 表示用のシステム名（可能な限り `desc` や `name` を優先して表示）
+            const matchedSys = (window.systems || []).find(s => s.id === (char.systemId || char.system));
+            const displaySystem = matchedSys ? (matchedSys.desc || matchedSys.name) : (char.systemId || char.system || '未分類');
+            
             const displayName = char.epithet ? `<span class="text-stone-400 text-[11px] mr-1">${char.epithet}</span>${char.name}` : char.name;
 
             div.innerHTML = `
