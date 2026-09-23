@@ -105,7 +105,7 @@
     }
 </style>
     
-    <script type="module">
+<script type="module">
     document.addEventListener("DOMContentLoaded", async () => {
         console.log("🚀 初期化処理を開始します...");
 
@@ -113,7 +113,6 @@
         if (typeof showToast !== 'function') {
             window.showToast = function(message, type = 'success') {
                 console.log(`[Toast ${type}]: ${message}`);
-                // 画面上に簡易的な通知を出す要素があればここで処理
                 const toastEl = document.getElementById('toastMessage');
                 if (toastEl) {
                     toastEl.textContent = message;
@@ -122,11 +121,11 @@
                     setTimeout(() => { toastEl.style.display = 'none'; }, 3000);
                 }
             };
-        }             
-        // 3. 確認ダイアログを表示する関数（削除エラー防止用）
+        }            
+
+        // 2. 確認ダイアログを表示する関数（削除エラー防止用）
         if (typeof showConfirm !== 'function') {
             window.showConfirm = function(message, onConfirm) {
-                // ブラウザ標準の確認ダイアログを安全にフォールバックとして使用
                 if (window.confirm(message)) {
                     if (typeof onConfirm === 'function') {
                         onConfirm();
@@ -135,36 +134,35 @@
             };
         }
         
-// 🚀 【ここに追加】通信を待たずに即座にキャッシュを適用してチラつきを防ぐ
-try {
-    const cachedConfig = localStorage.getItem('cachedSiteConfig');
-    if (cachedConfig) {
-        const config = JSON.parse(cachedConfig);
-        if (config.title) document.title = config.title;
-        if (config.logoImageUrl) {
-            const appleIcon = document.getElementById('appleTouchIcon');
-            if (appleIcon) appleIcon.href = config.logoImageUrl;
+        // 3. 通信を待たずに即座にキャッシュを適用してチラつきを防ぐ
+        try {
+            const cachedConfig = localStorage.getItem('cachedSiteConfig');
+            if (cachedConfig) {
+                const config = JSON.parse(cachedConfig);
+                if (config.title) document.title = config.title;
+                if (config.logoImageUrl) {
+                    const appleIcon = document.getElementById('appleTouchIcon');
+                    if (appleIcon) appleIcon.href = config.logoImageUrl;
 
-            const favicon = document.getElementById('faviconIcon');
-            if (favicon) favicon.href = config.logoImageUrl;
+                    const favicon = document.getElementById('faviconIcon');
+                    if (favicon) favicon.href = config.logoImageUrl;
 
-            // 🌟 ここを追加：画面内のヘッダーロゴも一瞬で画像に差し替えてPを隠す
-            const headerImg = document.getElementById('siteHeaderLogoImg');
-            const headerLogoText = document.getElementById('siteHeaderLogo');
-            const headerBox = document.getElementById('siteHeaderLogoBox');
-            if (headerImg && headerLogoText && headerBox) {
-                headerImg.src = config.logoImageUrl;
-                headerImg.classList.remove('hidden');
-                headerLogoText.classList.add('hidden');
-                headerBox.classList.remove('opacity-0'); // 透明度を解除して一瞬で表示
+                    const headerImg = document.getElementById('siteHeaderLogoImg');
+                    const headerLogoText = document.getElementById('siteHeaderLogo');
+                    const headerBox = document.getElementById('siteHeaderLogoBox');
+                    if (headerImg && headerLogoText && headerBox) {
+                        headerImg.src = config.logoImageUrl;
+                        headerImg.classList.remove('hidden');
+                        headerLogoText.classList.add('hidden');
+                        headerBox.classList.remove('opacity-0');
+                    }
+                }
             }
+        } catch (e) {
+            console.error("Instant cache load error:", e);
         }
-    }
-} catch (e) {
-    console.error("Instant cache load error:", e);
-}
 
-        // 🌟 【ここに管理者状態の復元を追加】
+        // 4. 管理者状態の復元
         try {
             if (sessionStorage.getItem('isAdminSession') === 'true') {
                 window.isAdmin = true;
@@ -174,148 +172,141 @@ try {
             console.error("Session restore error:", e);
         }
 
+        // 5. Firebase & データ読み込みのメイン処理
         try {
-        if (typeof window.appId === 'undefined' || !window.appId) {
-            window.appId = "default-app-id"; 
-        }
-        const appId = window.appId;
-        console.log("📂 使用する appId:", appId);
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyA2ctX9sUpJmLSVJomU9cbMzrUX_AXNjuE",
-            authDomain: "diary-36d77.firebaseapp.com",
-            projectId: "diary-36d77",
-            storageBucket: "diary-36d77.firebasestorage.app",
-            messagingSenderId: "1060563209082",
-            appId: "1:1060563209082:web:1c6cfc21a496548309e4c3",
-            measurementId: "G-RBK7ZN6NF1"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-        window.db = db;
-
-        await signInAnonymously(auth);
-        console.log("🔑 匿名認証に成功しました");
-
-      // 1. 設定の読み込み
-        const configRef = doc(db, 'artifacts', appId, 'public', 'data', 'config', 'settings');
-        const configSnap = await getDoc(configRef);
-        
-        if (configSnap.exists()) {
-            const loadedConfig = configSnap.data();
-            console.log("⚙️ Firestoreから設定を取得しました:", loadedConfig);
-            
-            if (loadedConfig.passcode) window.storedPasscode = loadedConfig.passcode;
-
-            window.siteConfig = {
-                title: loadedConfig.title || '卓日記',
-                subtitle: loadedConfig.subtitle || 'Session Log',
-                logoChar: loadedConfig.logoChar || 'P',
-                logoImageUrl: loadedConfig.logoImageUrl || '',
-                themeColor: loadedConfig.themeColor || 'rose',
-                weatherOptions: loadedConfig.weatherOptions || ['晴れ ☀️', '快晴 🌤️', 'くもり ☁️', '雨 ☔', '雪 ❄️']
-            };
-        } else {
-            console.warn("⚠️ Firestoreに設定が見つかりませんでした。デフォルトを適用します。");
-            window.siteConfig = {
-                title: '卓日記',
-                subtitle: 'Session Log',
-                logoChar: 'P',
-                logoImageUrl: '',
-                themeColor: 'rose',
-                weatherOptions: ['晴れ ☀️', '快晴 🌤️', 'くもり ☁️', '雨 ☔', '雪 ❄️']
-            };
-        }
-
-        // 🎨 ここで世界に一回だけ実行！
-        if (typeof window.applySiteConfig === 'function') {
-            window.applySiteConfig();
-        }
-
-        // 🌟 アイコン画像をHTMLのヘッダーに動的に反映する処理
-        if (window.siteConfig && window.siteConfig.logoImageUrl) {
-            const appleIcon = document.getElementById('appleTouchIcon');
-            if (appleIcon) appleIcon.href = window.siteConfig.logoImageUrl;
-
-const favicon = document.getElementById('faviconIcon');
-            if (favicon) favicon.href = window.siteConfig.logoImageUrl;
-        }
-
-        // 🌟 起動時にも管理者UIの状態を反映する
-        if (typeof updateAdminUI === 'function') {
-            updateAdminUI();
-        }
-
-// 2. 記事の読み込み（Firestore）
-        const entriesRef = collection(db, 'artifacts', appId, 'public', 'data', 'entries');
-        const querySnap = await getDocs(entriesRef);
-        const loaded = [];
-        querySnap.forEach(d => {
-            loaded.push({ id: d.id, ...d.data() });
-        });
-
-        // 🌟 Firestoreが空の場合、localStorageもチェックする安全ガード
-        if (loaded.length === 0) {
-            try {
-                const localData = localStorage.getItem('local_entries') || localStorage.getItem('entries');
-                if (localData) {
-                    const parsed = JSON.parse(localData);
-                    if (Array.isArray(parsed) && parsed.length > 0) {
-                        loaded.push(...parsed);
-                        console.log("📦 localStorageから記事を復元しました:", loaded.length);
-                    }
-                }
-            } catch (err) {
-                console.warn("localStorageからの記事読み込みに失敗しました:", err);
+            if (typeof window.appId === 'undefined' || !window.appId) {
+                window.appId = "default-app-id"; 
             }
-        }
+            const appId = window.appId;
+            console.log("📂 使用する appId:", appId);
 
-        // 🌟 データの格納とソート部分
-        console.log("📖 読み込んだ記事の数:", loaded.length);
-        if (loaded.length > 0) {
-            const timeSlotOrder = { 'morning': 1, 'afternoon': 2, 'night': 3 };
-            loaded.sort((a, b) => {
-                const dateCompare = b.date.localeCompare(a.date);
-                if (dateCompare !== 0) {
-                    return dateCompare;
-                }
+            const firebaseConfig = {
+                apiKey: "AIzaSyA2ctX9sUpJmLSVJomU9cbMzrUX_AXNjuE",
+                authDomain: "diary-36d77.firebaseapp.com",
+                projectId: "diary-36d77",
+                storageBucket: "diary-36d77.firebasestorage.app",
+                messagingSenderId: "1060563209082",
+                appId: "1:1060563209082:web:1c6cfc21a496548309e4c3",
+                measurementId: "G-RBK7ZN6NF1"
+            };
+
+            const app = initializeApp(firebaseConfig);
+            const auth = getAuth(app);
+            const db = getFirestore(app);
+            window.db = db;
+
+            await signInAnonymously(auth);
+            console.log("🔑 匿名認証に成功しました");
+
+            // 設定の読み込み
+            const configRef = doc(db, 'artifacts', appId, 'public', 'data', 'config', 'settings');
+            const configSnap = await getDoc(configRef);
+            
+            if (configSnap.exists()) {
+                const loadedConfig = configSnap.data();
+                console.log("⚙️ Firestoreから設定を取得しました:", loadedConfig);
                 
-                const slotA = timeSlotOrder[a.timeSlot || 'afternoon'] || 2;
-                const slotB = timeSlotOrder[b.timeSlot || 'afternoon'] || 2;
-                if (slotA !== slotB) {
-                    return slotA - slotB;
-                }
+                if (loadedConfig.passcode) window.storedPasscode = loadedConfig.passcode;
 
-                return (a.id || '').localeCompare(b.id || '');
+                window.siteConfig = {
+                    title: loadedConfig.title || '卓日記',
+                    subtitle: loadedConfig.subtitle || 'Session Log',
+                    logoChar: loadedConfig.logoChar || 'P',
+                    logoImageUrl: loadedConfig.logoImageUrl || '',
+                    themeColor: loadedConfig.themeColor || 'rose',
+                    weatherOptions: loadedConfig.weatherOptions || ['晴れ ☀️', '快晴 🌤️', 'くもり ☁️', '雨 ☔', '雪 ❄️']
+                };
+            } else {
+                console.warn("⚠️ Firestoreに設定が見つかりませんでした。デフォルトを適用します。");
+                window.siteConfig = {
+                    title: '卓日記',
+                    subtitle: 'Session Log',
+                    logoChar: 'P',
+                    logoImageUrl: '',
+                    themeColor: 'rose',
+                    weatherOptions: ['晴れ ☀️', '快晴 🌤️', 'くもり ☁️', '雨 ☔', '雪 ❄️']
+                };
+            }
+
+            if (typeof window.applySiteConfig === 'function') {
+                window.applySiteConfig();
+            }
+
+            if (window.siteConfig && window.siteConfig.logoImageUrl) {
+                const appleIcon = document.getElementById('appleTouchIcon');
+                if (appleIcon) appleIcon.href = window.siteConfig.logoImageUrl;
+                const favicon = document.getElementById('faviconIcon');
+                if (favicon) favicon.href = window.siteConfig.logoImageUrl;
+            }
+
+            if (typeof updateAdminUI === 'function') {
+                updateAdminUI();
+            }
+
+            // 記事の読み込み（Firestore）
+            const entriesRef = collection(db, 'artifacts', appId, 'public', 'data', 'entries');
+            const querySnap = await getDocs(entriesRef);
+            const loaded = [];
+            querySnap.forEach(d => {
+                loaded.push({ id: d.id, ...d.data() });
             });
-            window.entries = loaded;
-        } else {
-            window.entries = [];
+
+            // Firestoreが空の場合、localStorageもチェックする安全ガード
+            if (loaded.length === 0) {
+                try {
+                    const localData = localStorage.getItem('local_entries') || localStorage.getItem('entries');
+                    if (localData) {
+                        const parsed = JSON.parse(localData);
+                        if (Array.isArray(parsed) && parsed.length > 0) {
+                            loaded.push(...parsed);
+                            console.log("📦 localStorageから記事を復元しました:", loaded.length);
+                        }
+                    }
+                } catch (err) {
+                    console.warn("localStorageからの記事読み込みに失敗しました:", err);
+                }
+            }
+
+            console.log("📖 読み込んだ記事の数:", loaded.length);
+            if (loaded.length > 0) {
+                const timeSlotOrder = { 'morning': 1, 'afternoon': 2, 'night': 3 };
+                loaded.sort((a, b) => {
+                    const dateCompare = b.date.localeCompare(a.date);
+                    if (dateCompare !== 0) {
+                        return dateCompare;
+                    }
+                    const slotA = timeSlotOrder[a.timeSlot || 'afternoon'] || 2;
+                    const slotB = timeSlotOrder[b.timeSlot || 'afternoon'] || 2;
+                    if (slotA !== slotB) {
+                        return slotA - slotB;
+                    }
+                    return (a.id || '').localeCompare(b.id || '');
+                });
+                window.entries = loaded;
+            } else {
+                window.entries = [];
+            }
+
+        } catch (e) {
+            console.error("❌ 初期化処理でエラーが発生しました:", e);
         }
 
-    } catch (e) {
-        console.error("❌ 初期化処理でエラーが発生しました:", e);
-    }
+        // 6. 読み込み完了フラグ
+        window.isDataLoaded = true;
 
-    // 🚀 読み込み完了のフラグをここで立てる
-    window.isDataLoaded = true;
+        // 7. 画面表示のセットアップ（データが揃った状態で実行）
+        if (typeof renderMonthFolders === 'function') {
+            renderMonthFolders();
+        }
 
-    // 🌟 画面を表示する前に必ず月別アルバムのカードを生成する
-    if (typeof renderMonthFolders === 'function') {
-        renderMonthFolders();
-    }
+        if (typeof window.navigateTo === 'function') {
+            window.navigateTo('months');
+        }
 
-    // 🌟 最初の画面を「月別アルバム」に指定して表示
-    if (typeof window.navigateTo === 'function') {
-        window.navigateTo('months');
-    }
-
-    if (typeof window.applyCurrentThemeToUI === 'function') {
-        window.applyCurrentThemeToUI();
-    }
-});
+        if (typeof window.applyCurrentThemeToUI === 'function') {
+            window.applyCurrentThemeToUI();
+        }
+    });
 
 // ==========================================
 // ☁️ Firebase Storageへ画像をアップロードする関数
