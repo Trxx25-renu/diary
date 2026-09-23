@@ -435,7 +435,7 @@ function navigateTo(view, param = null, updateHash = true) {
             renderGalleryView();
         }
     } 
-    // 3. 詳細画面（🛡️ 安全ガード付き）
+    // 3. 詳細画面（🛡️ 勝手に戻らない安全ガード付き）
     else if (view === 'detail') {
         if (param) {
             window.selectedEntryId = param;
@@ -469,11 +469,15 @@ function navigateTo(view, param = null, updateHash = true) {
             `;
         }
 
-        if (typeof renderEntryDetail === 'function' && targetId) {
-            renderEntryDetail(targetId);
+        // 🌟 修正：関数が見つからなくても勝手に月一覧に戻さず、エラーログのみに留める
+        if (targetId) {
+            if (typeof renderEntryDetail === 'function') {
+                renderEntryDetail(targetId);
+            } else {
+                console.warn("⚠️ renderEntryDetail 関数が見つかりませんが、詳細画面エリアを表示します。");
+            }
         } else {
             console.error("詳細を表示するためのIDが指定されていません");
-            navigateTo('months'); // 万が一失敗した時は安全に月一覧へ
         }
     }
 }
