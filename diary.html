@@ -2330,7 +2330,7 @@ document.addEventListener('click', (e) => {
     }
 });
 
-// 💾 日記の保存・更新関数（Storage直行・Base64自動排除＆安全キャッシュ版）
+// 💾 日記の保存・更新関数（Base64自動Storage移行・安全キャッシュ版）
 async function handleSaveEntry(event) {
     event.preventDefault();
 
@@ -2358,14 +2358,35 @@ async function handleSaveEntry(event) {
         const existingEntry = window.editingEntryId ? (window.entries || []).find(e => e.id === window.editingEntryId) : null;
         let previousImageUrls = existingEntry ? (existingEntry.imageUrls || (existingEntry.imageUrl ? [existingEntry.imageUrl] : [])) : [];
 
-        // 🧹 【自動排除】もし過去のデータに "data:image/" (Base64) が混ざっていたらここで綺麗に排除
-        previousImageUrls = previousImageUrls.map(url => {
-            if (url && url.startsWith('data:image/')) {
-                console.warn("⚠️ 過去のBase64形式の画像を検知しました。容量圧迫を防ぐため自動排除します。");
+        // 🌟 【超便利機能】Base64データを自動で検知して、その場でStorageにアップロードし直す関数
+        const convertBase64ToFileAndUpload = async (base64String) => {
+            try {
+                const res = await fetch(base64String);
+                const blob = await res.blob();
+                const file = new File([blob], `migrated_${Date.now()}.jpg`, { type: blob.type || 'image/jpeg' });
+                // 既存の圧縮・アップロード関数をそのまま利用
+                return await uploadImageToFirebase(file);
+            } catch (convErr) {
+                console.error("⚠️ Base64の自動移行に失敗しました:", convErr);
                 return null;
             }
-            return url;
-        }).filter(Boolean);
+        };
+
+        // 🧹 既存のURLリストにBase64が混ざっていたら、自動的にStorage行きに変換して移行する
+        let migratedPreviousUrls = [];
+        for (const url of previousImageUrls) {
+            if (url && url.startsWith('data:image/')) {
+                console.log("🔄 過去のBase64画像を検知しました。Firebase Storageへの自動移行を開始します...");
+                const newStorageUrl = await convertBase64ToFileAndUpload(url);
+                if (newStorageUrl) {
+                    migratedPreviousUrls.push(newStorageUrl);
+                    console.log("✨ Base64のStorage移行が完了しました:", newStorageUrl);
+                }
+            } else if (url) {
+                migratedPreviousUrls.push(url);
+            }
+        }
+        previousImageUrls = migratedPreviousUrls;
 
         // 🌟 1. 新しく選択された圧縮済みFileオブジェクトがあれば、Firebase Storageへ順次アップロード
         if (window.tempImageFiles && window.tempImageFiles.length > 0) {
@@ -2387,7 +2408,7 @@ async function handleSaveEntry(event) {
                 }
                 return;
             }
-            // 編集時で、画像が新しく選ばれていない場合は安全な既存のものを維持
+            // 編集時で、画像が新しく選ばれていない場合は（自動移行済みの）既存URLを維持
             finalImageUrls = previousImageUrls;
         }
 
@@ -2474,14 +2495,6 @@ async function handleSaveEntry(event) {
             return (a.id || '').localeCompare(b.id || '');
         });
 
-        // 🔍 デバッグ用：送信データに undefined がないか確認
-        console.log("📤 StorageURL化完了・送信直前の entryData:", entryData);
-        Object.keys(entryData).forEach(key => {
-            if (entryData[key] === undefined) {
-                console.error(`⚠️ 警告: プロパティ "${key}" が undefined です！`);
-            }
-        });
-
         // Firestoreへ軽量なテキスト＆URLデータのみを保存
         if (window.db && window.appId) {
             const { doc, setDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
@@ -2490,7 +2503,7 @@ async function handleSaveEntry(event) {
             console.log("🔥 Firestoreへの軽量データ保存に成功:", targetId);
         }
 
-        // 🛡️ ローカルストレージにもキャッシュを安全に保存（万が一Base64が混ざっていても確実に遮断）
+        // 🛡️ ローカルストレージにもキャッシュを安全に保存
         const safeEntriesForCache = window.entries.map(e => ({
             ...e,
             imageUrl: e.imageUrl && e.imageUrl.startsWith('data:') ? '' : e.imageUrl,
