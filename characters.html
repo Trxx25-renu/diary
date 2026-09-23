@@ -1000,7 +1000,7 @@ async function saveCharacter(event) {
     linkRows.forEach(row => {
         const inputs = row.querySelectorAll('input');
         const labelInput = inputs[0]; 
-        const urlInput = inputs[1];    
+        const urlInput = inputs[1];     
         if (urlInput && urlInput.value.trim() !== '') {
             links.push({
                 label: labelInput ? labelInput.value.trim() : '',
@@ -1037,7 +1037,13 @@ async function saveCharacter(event) {
         if (item.file && item.file instanceof File) {
             try {
                 if (typeof showToast === 'function') {
-                    showToast("画像をクラウドへアップロード中...", "info");
+                    showToast("画像を最適化・アップロード中...", "info");
+                }
+
+                // 🌟 【自動圧縮の適用】アップロード直前に、比率を維持したまま長辺1200px以内に軽量化
+                let fileToUpload = item.file;
+                if (typeof compressImage === 'function') {
+                    fileToUpload = await compressImage(item.file, 1200);
                 }
 
                 // 🌟 各種関数がグローバルに存在するか、あるいは別の名前で定義されていないか安全に取得
@@ -1058,14 +1064,14 @@ async function saveCharacter(event) {
                 }
 
                 // 保存先パス: artifacts/{appId}/characters/{charId}/{category}_{timestamp}_{filename}
-                const filePath = `artifacts/${window.appId}/characters/${charId}/${category}_${Date.now()}_${item.file.name}`;
+                const filePath = `artifacts/${window.appId}/characters/${charId}/${category}_${Date.now()}_${fileToUpload.name}`;
                 const fileRef = storageRefFn(storageInstance, filePath);
 
-                console.log("📤 ストレージアップロード実行中...", filePath);
+                console.log("📤 ストレージアップロード実行中（圧縮済み）...", filePath);
 
-                // 🌟 アップロード処理の本体
+                // 🌟 アップロード処理の本体（圧縮済みの fileToUpload を送信）
                 const uploadTask = async () => {
-                    const snapshot = await uploadBytesFn(fileRef, item.file);
+                    const snapshot = await uploadBytesFn(fileRef, fileToUpload);
                     return await getDownloadUrlFn(snapshot.ref);
                 };
 
@@ -1074,7 +1080,7 @@ async function saveCharacter(event) {
                     setTimeout(() => reject(new Error("Storage upload timeout")), 15000);
                 });
 
-                // アップロードとタイムアウトの競合（※ timeoutTask は関数ではなくPromiseオブジェクトをそのまま渡す）
+                // アップロードとタイムアウトの競合
                 const downloadUrl = await Promise.race([uploadTask(), timeoutTask]);
                 console.log("✅ ストレージアップロード成功:", downloadUrl);
                 return downloadUrl;
@@ -1250,6 +1256,66 @@ async function saveCharacter(event) {
     }
 }
 window.saveCharacter = saveCharacter;
+
+/**
+ * 💡 画像ファイルを読み込み、大きすぎる場合は比率を維持してリサイズ・圧縮する関数
+ * ※背景透過（PNG）をしっかり守りながらデータ量をスリム化します
+ */
+async function compressImage(file, maxDimension = 1200) {
+    // 画像ファイル以外（PDFやテキスト等）ならそのまま返す
+    if (!file || !file.type || !file.type.startsWith('image/')) return file;
+
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = (event) => {
+            const img = new Image();
+            img.src = event.target.result;
+            img.onload = () => {
+                let width = img.width;
+                let height = img.height;
+
+                // 指定した最大サイズ（デフォルト1200px）より大きい場合のみ、比率を維持して縮小
+                if (width > maxDimension || height > maxDimension) {
+                    if (width > height) {
+                        height = Math.round((height * maxDimension) / width);
+                        width = maxDimension;
+                    } else {
+                        width = Math.round((width * maxDimension) / height);
+                        height = maxDimension;
+                    }
+                }
+
+                // Canvasを使って描画・リサイズ
+                const canvas = document.createElement('canvas');
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+
+                // PNGの背景透過をクリアに保つため、一度綺麗にクリアしてから描画
+                ctx.clearRect(0, 0, width, height);
+                ctx.drawImage(img, 0, 0, width, height);
+
+                // Canvasから軽量化されたBlob（ファイルデータ）を生成
+                canvas.toBlob((blob) => {
+                    if (!blob) {
+                        reject(new Error('画像の圧縮に失敗しました。'));
+                        return;
+                    }
+                    // 元のファイル名を引き継いだ新しい圧縮済みFileオブジェクトを作成
+                    const compressedFile = new File([blob], file.name, {
+                        type: file.type,
+                        lastModified: Date.now()
+                    });
+                    resolve(compressedFile);
+                }, file.type, 0.85); // 0.85は品質維持パラメータ
+            };
+            img.onerror = (error) => reject(error);
+        };
+        reader.onerror = (error) => reject(error);
+    });
+}
+window.compressImage = compressImage;
 
     // ==========================================
 // 💡 画面やビューを切り替えるルーター関数（ハッシュ連動・完全対応版）
