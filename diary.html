@@ -345,7 +345,7 @@ function navigateTo(view, param = null, updateHash = true) {
     // 日記アプリ用のHTMLのIDを取得
     const viewMonths = document.getElementById('view-months');    // 第1階層：月別アルバム
     const viewGallery = document.getElementById('view-gallery');  // 第2階層：カレンダー・ギャラリー
-    const viewDetail = document.getElementById('view-detail');    // 詳細画面（もしあれば）
+    const viewDetail = document.getElementById('view-detail');    // 詳細画面
     const searchResultsArea = document.getElementById('searchResultsArea'); // 🔍 検索結果エリア
     const breadcrumbs = document.getElementById('breadcrumbs');
     const breadcrumbAction = document.getElementById('breadcrumbAction');
@@ -359,7 +359,7 @@ function navigateTo(view, param = null, updateHash = true) {
     // 1. 第1階層：月別アルバム一覧画面
     if (view === 'months') {
         if (viewMonths) viewMonths.classList.remove('hidden');
-        if (searchResultsArea) searchResultsArea.classList.add('hidden'); // 🚀 月一覧に戻った時も検索結果を確実に隠す
+        if (searchResultsArea) searchResultsArea.classList.add('hidden');
         
         // パンくずの更新
         if (breadcrumbs) {
@@ -370,7 +370,7 @@ function navigateTo(view, param = null, updateHash = true) {
             `;
         }
         
-        // 右上のアクションボタン（キャラクター管理側と完全統一）
+        // 右上のアクションボタン
         if (breadcrumbAction) {
             breadcrumbAction.innerHTML = `
                 <a href="characters.html" class="px-3 py-1 rounded-xl bg-white hover:bg-stone-50 border border-stone-200 text-stone-700 text-xs font-medium flex items-center gap-1.5 transition-colors shadow-sm">
@@ -425,13 +425,21 @@ function navigateTo(view, param = null, updateHash = true) {
             renderGalleryView();
         }
     } 
-    // 3. 詳細画面
+    // 3. 詳細画面（🛡️ 安全ガード付き）
     else if (view === 'detail') {
-        if (viewDetail) viewDetail.classList.remove('hidden');
-
         if (param) {
             window.selectedEntryId = param;
         }
+        const targetId = param || window.selectedEntryId;
+
+        // 🛡️ まだ日記データ（window.entries）が読み込まれていない場合は、少し待ってから再トライさせる
+        if ((!window.entries || window.entries.length === 0) && targetId) {
+            console.warn("⏳ データ読み込み中のため、詳細の表示を少し待機します...");
+            setTimeout(() => navigateTo('detail', targetId, false), 200);
+            return;
+        }
+
+        if (viewDetail) viewDetail.classList.remove('hidden');
 
         if (breadcrumbs) {
             breadcrumbs.innerHTML = `
@@ -451,11 +459,11 @@ function navigateTo(view, param = null, updateHash = true) {
             `;
         }
 
-        const targetId = param || window.selectedEntryId;
         if (typeof renderEntryDetail === 'function' && targetId) {
             renderEntryDetail(targetId);
         } else {
             console.error("詳細を表示するためのIDが指定されていません");
+            navigateTo('months'); // 万が一失敗した時は安全に月一覧へ
         }
     }
 }
