@@ -96,17 +96,23 @@ import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/1
 import { getFirestore, collection, getDocs, doc, getDoc, setDoc, addDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
 
-// 🌟 すでに存在しているはずの firebaseConfig を使って app を初期化している箇所に合わせて調整してください
-// （もしすインド変数として app が定義済みの場合は、const app = ... の部分は既存のものに合わせてください）
-// 例として一般的な初期化コードを内包しています：
-const firebaseConfig = window.firebaseConfig || {}; // 既存のconfigがあればそれを利用
-const app = initializeApp(firebaseConfig);
+// 🌟 正しいFirebaseプロジェクト設定を直接指定し、invalid-api-key を完全に防止
+const firebaseConfig = {
+    apiKey: "AIzaSyA2ctX9sUpJmLSVJomU9cbMzrUX_AXNjuE",
+    authDomain: "diary-36d77.firebaseapp.com",
+    projectId: "diary-36d77",
+    storageBucket: "diary-36d77.firebasestorage.app",
+    messagingSenderId: "1060563209082",
+    appId: "1:1060563209082:web:1c6cfc21a496548309e4c3",
+    measurementId: "G-RBK7ZN6NF1"
+};
 
+const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
-const storage = getStorage(app); // 💡 ここで app を渡すのが超重要！
+const storage = getStorage(app); // 💡 app インスタンスを渡して確実に Storage を初期化
 
-// 🌟 Firestoreなどの関数をグローバルへ登録
+// 🌟 Firestoreの関数をグローバルへ登録
 window.db = db;
 window.doc = doc;
 window.setDoc = setDoc;
@@ -118,7 +124,7 @@ window.updateDoc = updateDoc;
 window.deleteDoc = deleteDoc;
 
 // 🌟 Firebase Storageの関数・インスタンスをグローバルへ正しく登録
-window.getStorage = () => storage; // 💡 常に正しい storage インスタンスを返すラッパーにする
+window.getStorage = () => storage;
 window.ref = ref;
 window.uploadBytes = uploadBytes;
 window.getDownloadURL = getDownloadURL;
@@ -149,7 +155,7 @@ function parseSpoilers(text) {
 }
 window.parseSpoilers = parseSpoilers;
 
-// 🚀　初期化
+// 🚀 初期化
 document.addEventListener("DOMContentLoaded", async () => {
     console.log("🚀 キャラクター管理ページ初期化開始...");
 
@@ -209,6 +215,13 @@ document.addEventListener("DOMContentLoaded", async () => {
         const db = getFirestore(app);
         window.db = db;
 
+        // 🌟 【追加】Firebase Storageの初期化とグローバル登録
+        const storage = getStorage(app);
+        window.getStorage = () => storage;
+        window.ref = ref;
+        window.uploadBytes = uploadBytes;
+        window.getDownloadURL = getDownloadURL;
+
         const timeoutPromise = new Promise((_, reject) => 
             setTimeout(() => reject(new Error("Firebase接続タイムアウト")), 3000)
         );
@@ -240,7 +253,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         window.rosterSettings = window.rosterSettings || { title: "", favicon: "" };
     }
 
-    // 💡【ここを追加】設定データ読み込み完了後に、ファビコン＆スマホ用アイコンを動的に反映する関数
+    // 💡 設定データ読み込み完了後に、ファビコン＆スマホ用アイコンを動的に反映する関数
     if (window.rosterSettings && window.rosterSettings.favicon) {
         const faviconUrl = window.rosterSettings.favicon;
         
@@ -285,7 +298,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     console.log("🎉 キャラクター管理ページの初期化がすべて完了しました！");
 });
-
 
     
 // ==========================================
