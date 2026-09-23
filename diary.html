@@ -1986,7 +1986,7 @@ window.closeConfirmModal = closeConfirmModal;
 window.handleSaveConfig = handleSaveConfig;
 
 // ==========================================
-// 💡 キャラクター検索＆絞り込みのイベント設定（修正版）
+// 💡 キャラクター検索＆絞り込みのイベント設定（完全一致版）
 // ==========================================
 document.addEventListener('DOMContentLoaded', () => {
     const searchInput = document.getElementById('charSearchInput');
@@ -1997,7 +1997,7 @@ document.addEventListener('DOMContentLoaded', () => {
     searchInput.addEventListener('input', (e) => {
         // 入力されたキーワードを正規化（ひらがな・小文字に統一）
         const keyword = normalizeText(e.target.value);
-        const currentSystemTag = document.getElementById('inputWeather')?.value || ''; // タグ（システム）
+        const currentSystemTag = document.getElementById('inputWeather')?.value || ''; // 日記側のタグ（選択中のシステム値）
 
         if (!keyword) {
             resultsContainer.classList.add('hidden');
@@ -2008,21 +2008,20 @@ document.addEventListener('DOMContentLoaded', () => {
         const allChars = JSON.parse(localStorage.getItem('local_characters') || '[]');
 
         const matches = allChars.filter(char => {
-            // 🌟 修正1: キャラクター側のシステムプロパティ名（systemId または system）に合わせる
+            // キャラクター側のシステムプロパティ
             const charSystem = char.systemId || char.system || '';
-            const matchesSystem = !currentSystemTag || charSystem === currentSystemTag;
             
-            // 🌟 修正2: キャラクター名のよみがなプロパティ名（nameKana / kana / ruby）に合わせる
+            // 🌟 日記側の選択タグとキャラクター側のシステムが完全に一致するものだけを許可
+            const matchesSystem = !currentSystemTag || (charSystem === currentSystemTag);
+            
+            // キャラクター名のよみがな対応
             const charNameNormalized = normalizeText(char.name || '');
             const charKanaNormalized = normalizeText(char.nameKana || char.kana || char.ruby || '');
             
-            // どちらかにキーワードが含まれていればヒット
+            // キーワードが含まれているか
             const matchesName = charNameNormalized.includes(keyword) || charKanaNormalized.includes(keyword);
             
             const notAlreadySelected = !window.tempSelectedParticipants.includes(char.id);
-
-            // 💡 デバッグ用（なぜ弾かれたか確認したい場合はコメントアウトを外してください）
-            // console.log(`[検索チェック] キャラ: ${char.name} | システム一致(${charSystem}==${currentSystemTag}): ${matchesSystem} | 名前一致: ${matchesName}`);
 
             return matchesSystem && matchesName && notAlreadySelected;
         });
