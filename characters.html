@@ -296,19 +296,17 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (headerAddBtn) headerAddBtn.classList.remove('hidden');
     }
 
-    // 🔍 【追加】日記から `?id=〇〇` 付きで飛んできた場合に、該当キャラの詳細を自動で開く
+// 🔍 【修正完了版】日記から `?id=〇〇` 付きで飛んできた場合に、該当キャラの詳細画面を描画する
     const urlParams = new URLSearchParams(window.location.search);
     const targetCharId = urlParams.get('id');
 
     if (targetCharId) {
         console.log("👤 日記から指定されたキャラクターIDを検出:", targetCharId);
         setTimeout(() => {
-            if (typeof openCharacterModal === 'function') {
-                openCharacterModal(targetCharId);
-            } else if (typeof showCharacterDetail === 'function') {
-                showCharacterDetail(targetCharId);
+            if (typeof renderCharacterDetail === 'function') {
+                renderCharacterDetail(targetCharId);
             } else {
-                console.warn("⚠️ キャラ詳細を開く関数が見つかりませんでした");
+                console.warn("⚠️ renderCharacterDetail関数が見つかりませんでした");
             }
         }, 300);
     }
