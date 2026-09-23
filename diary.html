@@ -1986,21 +1986,19 @@ window.closeConfirmModal = closeConfirmModal;
 window.handleSaveConfig = handleSaveConfig;
 
 // ==========================================
-// 💡 文字列の正規化関数（全角半角・ひらがなカタカナのゆらぎを無くす）
+// 💡 文字列の正規化関数
 // ==========================================
 function normalizeText(str) {
     if (!str) return '';
     return str
         .toLowerCase()
-        // 全角英数・記号を半角に
         .replace(/[Ａ-Ｚａ-ｚ０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0))
-        // カタカナをひらがなに変換
         .replace(/[\u30a1-\u30f6]/g, match => String.fromCharCode(match.charCodeAt(0) - 0x60))
         .trim();
 }
 
 // ==========================================
-// 💡 キャラクター検索＆絞り込みのイベント設定
+// 💡 キャラクター検索＆絞り込み（全フィールド対応版）
 // ==========================================
 document.addEventListener('DOMContentLoaded', () => {
     const searchInput = document.getElementById('charSearchInput');
@@ -2009,7 +2007,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!searchInput || !resultsContainer) return;
 
     searchInput.addEventListener('input', (e) => {
-        // 入力されたキーワードを正規化（ひらがな・小文字に統一）
         const keyword = normalizeText(e.target.value);
         const currentSystemTag = document.getElementById('inputWeather')?.value || ''; // 日記側のタグ（選択中のシステム値）
 
@@ -2022,18 +2019,22 @@ document.addEventListener('DOMContentLoaded', () => {
         const allChars = JSON.parse(localStorage.getItem('local_characters') || '[]');
 
         const matches = allChars.filter(char => {
-            // キャラクター側のシステムプロパティ
+            // システムの一致判定
             const charSystem = char.systemId || char.system || '';
-            
-            // 🌟 日記側の選択タグとキャラクター側のシステムが完全に一致するものだけを許可
             const matchesSystem = !currentSystemTag || (charSystem === currentSystemTag);
             
-            // キャラクター名のよみがな対応
-            const charNameNormalized = normalizeText(char.name || '');
-            const charKanaNormalized = normalizeText(char.nameKana || char.kana || char.ruby || '');
+            // 🌟 検索対象の各フィールドを正規化して網羅
+            const nameNorm = normalizeText(char.name || '');
+            const nameKanaNorm = normalizeText(char.nameKana || char.kana || char.ruby || '');
+            const epithetNorm = normalizeText(char.epithet || '');
+            const epithetKanaNorm = normalizeText(char.epithetKana || '');
             
-            // キーワードが含まれているか
-            const matchesName = charNameNormalized.includes(keyword) || charKanaNormalized.includes(keyword);
+            // 🌟 「名前」「名前ヨミガナ」「二つ名」「二つ名読み仮名」のいずれかにキーワードが含まれていればヒット
+            const matchesName = 
+                nameNorm.includes(keyword) || 
+                nameKanaNorm.includes(keyword) || 
+                epithetNorm.includes(keyword) || 
+                epithetKanaNorm.includes(keyword);
             
             const notAlreadySelected = !window.tempSelectedParticipants.includes(char.id);
 
@@ -2051,11 +2052,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const div = document.createElement('div');
             div.className = 'p-2.5 text-xs text-stone-700 hover:bg-stone-50 cursor-pointer flex items-center justify-between transition-colors';
             
-            // 表示用のシステム名ラベル
             const displaySystem = char.systemId || char.system || '未分類';
+            // リストに二つ名があれば一緒に表示すると分かりやすくなります
+            const displayName = char.epithet ? `<span class="text-stone-400 text-[11px] mr-1">${char.epithet}</span>${char.name}` : char.name;
 
             div.innerHTML = `
-                <span class="font-medium">${char.name}</span>
+                <span class="font-medium">${displayName}</span>
                 <span class="text-[10px] text-stone-400 bg-stone-100 px-2 py-0.5 rounded">${displaySystem}</span>
             `;
             div.onclick = () => {
