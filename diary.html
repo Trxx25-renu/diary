@@ -1986,6 +1986,51 @@ window.closeConfirmModal = closeConfirmModal;
 window.handleSaveConfig = handleSaveConfig;
 
 // ==========================================
+// 💡 選択中の参加者リストを管理する一時変数
+// ==========================================
+window.tempSelectedParticipants = window.tempSelectedParticipants || [];
+
+// ==========================================
+// 💡 選択された参加キャラクターのチップを描画する関数
+// ==========================================
+function renderSelectedParticipantChips() {
+    const container = document.getElementById('selectedParticipantsContainer');
+    if (!container) return;
+
+    container.innerHTML = '';
+    
+    if (!window.tempSelectedParticipants || window.tempSelectedParticipants.length === 0) {
+        container.innerHTML = '<span class="text-[11px] text-stone-400">まだ選択されていません</span>';
+        return;
+    }
+
+    const allChars = JSON.parse(localStorage.getItem('local_characters') || '[]');
+
+    window.tempSelectedParticipants.forEach(id => {
+        const char = allChars.find(c => String(c.id) === String(id));
+        if (!char) return;
+
+        const chip = document.createElement('div');
+        chip.className = 'inline-flex items-center gap-1.5 bg-stone-100 border border-stone-200 px-2.5 py-1 rounded-xl text-xs text-stone-700';
+        
+        const displayName = char.epithet ? `${char.epithet} ${char.name}` : char.name;
+        chip.innerHTML = `
+            <span>${typeof escapeHtml === 'function' ? escapeHtml(displayName) : displayName}</span>
+            <button type="button" onclick="removeTempParticipant('${char.id}')" class="text-stone-400 hover:text-stone-600 ml-1">
+                <i class="fa-solid fa-xmark text-[10px]"></i>
+            </button>
+        `;
+        container.appendChild(chip);
+    });
+}
+
+// 💡 選択を個別に解除（×ボタン用）
+function removeTempParticipant(charId) {
+    window.tempSelectedParticipants = (window.tempSelectedParticipants || []).filter(id => String(id) !== String(charId));
+    renderSelectedParticipantChips();
+}
+
+// ==========================================
 // 💡 文字列の正規化関数（ひらがな・カタカナ・大文字小文字のゆらぎに対応）
 // ==========================================
 function normalizeText(str) {
@@ -3347,7 +3392,7 @@ function renderEntryDetail(targetId) {
         dateEl.textContent = entry.date.replace(/-/g, '.');
     }
 
-    // 3. 天気・タグの反映
+    // 3. タグの反映
     if (weatherEl) {
         if (entry.weather) {
             weatherEl.textContent = entry.weather;
