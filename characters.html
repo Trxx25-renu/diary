@@ -1061,6 +1061,8 @@ async function saveCharacter(event) {
                 const filePath = `artifacts/${window.appId}/characters/${charId}/${category}_${Date.now()}_${item.file.name}`;
                 const fileRef = storageRefFn(storageInstance, filePath);
 
+                console.log("📤 ストレージアップロード実行中...", filePath);
+
                 // 🌟 アップロード処理の本体
                 const uploadTask = async () => {
                     const snapshot = await uploadBytesFn(fileRef, item.file);
@@ -1072,12 +1074,16 @@ async function saveCharacter(event) {
                     setTimeout(() => reject(new Error("Storage upload timeout")), 15000);
                 });
 
-                // アップロードとタイムアウトの競合
-                const downloadUrl = await Promise.race([uploadTask(), timeoutTask()]);
+                // アップロードとタイムアウトの競合（※ timeoutTask は関数ではなくPromiseオブジェクトをそのまま渡す）
+                const downloadUrl = await Promise.race([uploadTask(), timeoutTask]);
+                console.log("✅ ストレージアップロード成功:", downloadUrl);
                 return downloadUrl;
 
             } catch (uploadErr) {
-                console.error("画像のFirebase Storageアップロードに失敗しました:", uploadErr);
+                console.error("❌ 画像のFirebase Storageアップロードに失敗しました (詳細):", uploadErr);
+                console.error("エラーメッセージ:", uploadErr.message);
+                console.error("スタックトレース:", uploadErr.stack);
+
                 if (typeof showToast === 'function') {
                     showToast("画像のクラウド保存に失敗しました", "error");
                 }
