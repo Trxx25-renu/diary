@@ -2156,44 +2156,88 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-// 📝 新規投稿ボタンを押したときに呼ばれる関数
-function openPostModal() {
-    // 新規作成なので編集IDはクリア
-    window.editingEntryId = null;
+// 📝 投稿・編集モーダルを開く関数（新規作成 ＆ 編集の両方に対応）
+function openPostModal(entryId = null) {
+    // 🧹 【最重要】モーダルを開いた瞬間、まず変数を完全にクリアする
+    window.tempSelectedParticipants = [];
+    window.tempImageFiles = [];
+    window.tempImageUrls = [];
 
-    // モーダルのタイトルを「新規投稿」等に変更（あれば）
+    // 編集用IDのセット（引数があれば編集、なければ新規）
+    window.editingEntryId = entryId || null;
+
+    // モーダルのタイトル要素
     const modalTitleEl = document.getElementById('postModalTitle');
-    if (modalTitleEl) modalTitleEl.textContent = '日記を書く';
-
-    // 入力欄をクリア
+    
+    // 入力欄の要素を取得
     const dateEl = document.getElementById('inputDate');
     const titleEl = document.getElementById('inputScenarioTitle');
     const contentEl = document.getElementById('inputContent');
     const secretEl = document.getElementById('inputSecretContent');
-
-    if (dateEl) dateEl.value = new Date().toISOString().split('T')[0]; // 今日付を入れると便利
-    if (titleEl) titleEl.value = '';
-    if (contentEl) contentEl.value = '';
-    if (secretEl) secretEl.value = '';
-
-    // 🌟 新規作成時は参加キャラクター選択をクリア
-    window.tempSelectedParticipants = [];
-    renderSelectedParticipantChips();
-
-    // 🌟 画像ファイル配列・プレビュー用URL配列を完全にクリア
-    window.tempImageFiles = [];
-    window.tempImageUrls = [];
-
     const previewContainer = document.getElementById('imagePreviewContainer');
     const placeholder = document.getElementById('uploadPlaceholder');
 
-    // 💡 複数画像コンテナの中身を綺麗に消去
-    if (previewContainer) {
-        previewContainer.innerHTML = '';
-    }
-    if (placeholder) placeholder.classList.remove('hidden');
+    // プレビューコンテナの初期化
+    if (previewContainer) previewContainer.innerHTML = '';
 
-    // 編集時と同じ演出でモーダルを表示する
+    // ✏️ 【編集モードの場合】既存データをフォームと変数に流し込む
+    if (entryId && window.entries) {
+        const targetEntry = window.entries.find(e => String(e.id) === String(entryId));
+        if (targetEntry) {
+            if (modalTitleEl) modalTitleEl.textContent = '日記を編集';
+            
+            // 各フォームに既存データをセット
+            if (dateEl) dateEl.value = targetEntry.date || '';
+            if (titleEl) titleEl.value = targetEntry.scenarioTitle || '';
+            if (contentEl) contentEl.value = targetEntry.content || '';
+            if (secretEl) secretEl.value = targetEntry.secretContent || '';
+
+            // 🌟 この記事に登録されていた参加キャラクターのIDだけを正確に復元！
+            if (targetEntry.participantIds && Array.isArray(targetEntry.participantIds)) {
+                window.tempSelectedParticipants = [...targetEntry.participantIds];
+            }
+
+            // 画像のプレビュー処理（既存の画像URLがある場合）
+            if (targetEntry.imageUrls && targetEntry.imageUrls.length > 0) {
+                targetEntry.imageUrls.forEach((url, i) => {
+                    window.tempImageUrls.push(url);
+                    // プレビュー表示の構築
+                    if (previewContainer) {
+                        const thumbWrapper = document.createElement('div');
+                        thumbWrapper.className = 'relative w-20 h-20 rounded-xl overflow-hidden border border-stone-200 shrink-0 bg-white shadow-sm';
+                        
+                        const thumbImg = document.createElement('img');
+                        thumbImg.src = url;
+                        thumbImg.className = 'w-full h-full object-cover';
+                        
+                        const badge = document.createElement('span');
+                        badge.className = 'absolute bottom-1 right-1 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded-md font-bold';
+                        badge.textContent = `${i + 1}`;
+                        
+                        thumbWrapper.appendChild(thumbImg);
+                        thumbWrapper.appendChild(badge);
+                        previewContainer.appendChild(thumbWrapper);
+                    }
+                });
+                if (placeholder) placeholder.classList.add('hidden');
+            }
+        }
+    } else {
+        // ➕ 【新規作成モードの場合】今日の日付を入れて綺麗に初期化
+        if (modalTitleEl) modalTitleEl.textContent = '日記を書く';
+        if (dateEl) dateEl.value = new Date().toISOString().split('T')[0];
+        if (titleEl) titleEl.value = '';
+        if (contentEl) contentEl.value = '';
+        if (secretEl) secretEl.value = '';
+        if (placeholder) placeholder.classList.remove('hidden');
+    }
+
+    // 🌟 選択されたキャラクターのチップ表示UIを更新する関数を呼ぶ
+    if (typeof renderSelectedParticipantChips === 'function') {
+        renderSelectedParticipantChips();
+    }
+
+    // モーダルをふわっと表示する演出
     const modal = document.getElementById('postModal');
     if (modal) {
         modal.classList.remove('opacity-0', 'pointer-events-none');
@@ -2205,7 +2249,8 @@ function openPostModal() {
     }
 }
 window.openPostModal = openPostModal;
-        
+
+
 // 🌟 複数画像（最大3枚）の選択と軽量圧縮を行う関数（Storage直行・File保持版）
 function handleImageSelect(event) {
     const files = event.target.files;
