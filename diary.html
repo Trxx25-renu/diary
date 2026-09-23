@@ -3592,18 +3592,16 @@ window.applyCurrentThemeToUI = applyCurrentThemeToUI;
 
 
     
-// 👤 キャラクター詳細ページ（characters.html）へジャンプする関数（閲覧位置の記憶付き）
+// 👤 キャラクター詳細ページへ飛ぶ正しい関数
 function openCharacterDetail(charId) {
     if (!charId) {
         if (typeof showToast === 'function') {
             showToast('キャラクターIDが見つかりません', 'warning');
-        } else {
-            console.error('キャラクターIDが見つかりません');
         }
         return;
     }
 
-    // 1. いま自分がいる現在の画面状態（表示中のビューや月、スクロール位置など）を sessionStorage に記録
+    // 閲覧位置の記憶
     const currentViewState = {
         view: window.currentView || 'months', 
         param: window.selectedYearMonth || '',
@@ -3611,8 +3609,8 @@ function openCharacterDetail(charId) {
     };
     sessionStorage.setItem('diary_return_state', JSON.stringify(currentViewState));
 
-    // 2. characters.html へ #detail=キャラID の形式でジャンプする
-    const targetUrl = `characters.html#detail=${charId}`;
+    // 🌟 スラッシュ形式で characters.html へジャンプ
+    const targetUrl = `characters.html#detail/${charId}`;
     window.location.href = targetUrl;
 }
 
