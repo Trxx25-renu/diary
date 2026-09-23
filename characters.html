@@ -94,8 +94,10 @@ html {
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { getFirestore, collection, getDocs, doc, getDoc, setDoc, addDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+// 🌟 Firebase Storageのモジュールを追加
+import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
 
-// 🌟 他のスクリプト（通常タグなど）から呼び出せるようにグローバルへ登録
+// 🌟 Firestoreなどの関数をグローバルへ登録
 window.doc = doc;
 window.setDoc = setDoc;
 window.getDoc = getDoc;
@@ -104,6 +106,12 @@ window.getDocs = getDocs;
 window.addDoc = addDoc;
 window.updateDoc = updateDoc;
 window.deleteDoc = deleteDoc;
+
+// 🌟 Firebase Storageの関数をグローバルへ登録
+window.getStorage = getStorage;
+window.ref = ref;
+window.uploadBytes = uploadBytes;
+window.getDownloadURL = getDownloadURL;
 
 // HTMLエスケープ処理
 function escapeHtml(str) {
