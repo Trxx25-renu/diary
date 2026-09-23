@@ -1146,9 +1146,17 @@ const linkRows = document.querySelectorAll('#characterLinksEditorContainer > div
         updatedAt: new Date().toISOString()
     };
 
-    try {
+try {
+        // 🌟 削除処理の動作確認用デバッグログ
+        console.log("🔍 [DEBUG 削除チェック] oldCharacter:", !!oldCharacter);
+        console.log("🔍 [DEBUG 削除チェック] window.storage:", !!window.storage);
+        console.log("🔍 [DEBUG 削除チェック] window.ref:", !!window.ref);
+        console.log("🔍 [DEBUG 削除チェック] window.deleteObject:", !!window.deleteObject);
+
         // 🌟 【追加・重要】編集によって「削除された画像」を検出し、ストレージからも完全に消去する
         if (oldCharacter && window.storage && window.ref && window.deleteObject) {
+            console.log("✨ 削除処理の条件を満たしました。処理を開始します。");
+
             // 1. 編集前のキャラクターが持っていたすべての画像URLを抽出
             const oldUrls = new Set();
             if (oldCharacter.images && typeof oldCharacter.images === 'object') {
@@ -1194,6 +1202,8 @@ const linkRows = document.querySelectorAll('#characterLinksEditorContainer > div
                     }
                 }));
             }
+        } else {
+            console.warn("⚠️ 削除処理の条件（oldCharacter または Firebase関数）が満たされていないためスキップされました。");
         }
 
         if (!window.characters) window.characters = [];
