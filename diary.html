@@ -175,19 +175,19 @@
         // 5. Firebase & データ読み込みのメイン処理
         try {
             if (typeof window.appId === 'undefined' || !window.appId) {
-                window.appId = "default-app-id"; 
+                window.appId = "photo-journal-app";
             }
             const appId = window.appId;
             console.log("📂 使用する appId:", appId);
 
             const firebaseConfig = {
-                apiKey: "AIzaSyA2ctX9sUpJmLSVJomU9cbMzrUX_AXNjuE",
-                authDomain: "diary-36d77.firebaseapp.com",
-                projectId: "diary-36d77",
-                storageBucket: "diary-36d77.firebasestorage.app",
-                messagingSenderId: "1060563209082",
-                appId: "1:1060563209082:web:1c6cfc21a496548309e4c3",
-                measurementId: "G-RBK7ZN6NF1"
+                            apiKey: "AIzaSyA2ctX9sUpJmLSVJomU9cbMzrUX_AXNjuE",
+            authDomain: "diary-36d77.firebaseapp.com",
+            projectId: "diary-36d77",
+            storageBucket: "diary-36d77.firebasestorage.app",
+            messagingSenderId: "1060563209082",
+            appId: "1:1060563209082:web:1c6cfc21a496548309e4c3",
+            measurementId: "G-RBK7ZN6NF1"
             };
 
             const app = initializeApp(firebaseConfig);
