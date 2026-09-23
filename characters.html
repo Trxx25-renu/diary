@@ -994,8 +994,8 @@ async function saveCharacter(event) {
     const memo = document.getElementById('charMemo')?.value || '';
     const secret = document.getElementById('charSecret')?.value || '';
     
-    const links = [];
-    const linkRows = document.querySelectorAll('#charLinksContainer > div');
+const links = [];
+const linkRows = document.querySelectorAll('#characterLinksEditorContainer > div');
     linkRows.forEach(row => {
         const inputs = row.querySelectorAll('input');
         const labelInput = inputs[0]; 
@@ -3640,6 +3640,34 @@ function handleThemeColorInput(colorCode) {
 }
 window.handleThemeColorInput = handleThemeColorInput;
 
+// カラーピッカーとテキストボックス、プレビューの相互連動
+document.addEventListener('DOMContentLoaded', () => {
+    const colorPicker = document.getElementById('charThemeColor');
+    const colorText = document.getElementById('charThemeColorText');
+
+    if (colorPicker && colorText) {
+        // 1. カラーピッカーを動かしたとき
+        colorPicker.addEventListener('input', (e) => {
+            const val = e.target.value;
+            colorText.value = val;
+            if (typeof handleThemeColorInput === 'function') {
+                handleThemeColorInput(val);
+            }
+        });
+
+        // 2. テキストボックスに直接カラーコードを入力したとき
+        colorText.addEventListener('input', (e) => {
+            const val = e.target.value;
+            if (/^#[0-9A-Fa-f]{6}$/.test(val)) {
+                colorPicker.value = val;
+                if (typeof handleThemeColorInput === 'function') {
+                    handleThemeColorInput(val);
+                }
+            }
+        });
+    }
+});
+
 // ==========================================
 // 💡 4. 新規キャラクター登録モーダルを開く関数（自動リサイズ対応版）
 // ==========================================
@@ -4676,9 +4704,14 @@ window.importCharactersJSON = importCharactersJSON;
                         <input type="text" id="charAge" placeholder="例: 26" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-800 focus:outline-none focus:border-stone-400">
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-stone-700 mb-1">性別</label>
-                        <input type="text" id="charGender" placeholder="例: 女性" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-800 focus:outline-none focus:border-stone-400">
-                    </div>
+    <label class="block text-xs font-bold text-stone-700 mb-1">性別</label>
+    <select id="charGender" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-800 focus:outline-none focus:border-stone-400">
+        <option value="">選択してください</option>
+        <option value="女性">女性</option>
+        <option value="男性">男性</option>
+        <option value="不明">不明</option>
+    </select>
+</div>
                     <div>
                         <label class="block text-xs font-bold text-stone-700 mb-1">誕生日</label>
                         <input type="text" id="charBirthdate" placeholder="例: 11月1日" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-800 focus:outline-none focus:border-stone-400">
