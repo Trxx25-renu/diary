@@ -2330,7 +2330,7 @@ document.addEventListener('click', (e) => {
     }
 });
 
-// 💾 日記の保存・更新関数（Storage直行・編集時古画像自動削除版）
+// 💾 日記の保存・更新関数（Storage直行・Base64自動排除＆安全キャッシュ版）
 async function handleSaveEntry(event) {
     event.preventDefault();
 
@@ -2356,7 +2356,16 @@ async function handleSaveEntry(event) {
         
         // 編集前の既存エントリーと、そこに含まれていた画像URL一覧を取得しておく
         const existingEntry = window.editingEntryId ? (window.entries || []).find(e => e.id === window.editingEntryId) : null;
-        const previousImageUrls = existingEntry ? (existingEntry.imageUrls || (existingEntry.imageUrl ? [existingEntry.imageUrl] : [])) : [];
+        let previousImageUrls = existingEntry ? (existingEntry.imageUrls || (existingEntry.imageUrl ? [existingEntry.imageUrl] : [])) : [];
+
+        // 🧹 【自動排除】もし過去のデータに "data:image/" (Base64) が混ざっていたらここで綺麗に排除
+        previousImageUrls = previousImageUrls.map(url => {
+            if (url && url.startsWith('data:image/')) {
+                console.warn("⚠️ 過去のBase64形式の画像を検知しました。容量圧迫を防ぐため自動排除します。");
+                return null;
+            }
+            return url;
+        }).filter(Boolean);
 
         // 🌟 1. 新しく選択された圧縮済みFileオブジェクトがあれば、Firebase Storageへ順次アップロード
         if (window.tempImageFiles && window.tempImageFiles.length > 0) {
@@ -2378,7 +2387,7 @@ async function handleSaveEntry(event) {
                 }
                 return;
             }
-            // 編集時で、画像が新しく選ばれていない場合は既存のものを維持
+            // 編集時で、画像が新しく選ばれていない場合は安全な既存のものを維持
             finalImageUrls = previousImageUrls;
         }
 
@@ -2481,8 +2490,13 @@ async function handleSaveEntry(event) {
             console.log("🔥 Firestoreへの軽量データ保存に成功:", targetId);
         }
 
-        // ローカルストレージにもキャッシュを同期保存
-        localStorage.setItem('cachedDiaryEntries', JSON.stringify(window.entries));
+        // 🛡️ ローカルストレージにもキャッシュを安全に保存（万が一Base64が混ざっていても確実に遮断）
+        const safeEntriesForCache = window.entries.map(e => ({
+            ...e,
+            imageUrl: e.imageUrl && e.imageUrl.startsWith('data:') ? '' : e.imageUrl,
+            imageUrls: e.imageUrls ? e.imageUrls.map(u => u && u.startsWith('data:') ? '' : u).filter(Boolean) : []
+        }));
+        localStorage.setItem('cachedDiaryEntries', JSON.stringify(safeEntriesForCache));
 
         closePostModal();
         const ym = date.substring(0, 7);
