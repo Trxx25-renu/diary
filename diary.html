@@ -3527,6 +3527,27 @@ function renderEntryDetail(targetId) {
 
 window.renderEntryDetail = renderEntryDetail;
     
+    // 👤 キャラクター詳細ページ（characters.html）へジャンプする関数（閲覧位置の記憶付き）
+function openCharacterDetail(charId) {
+    if (!charId) {
+        showToast('キャラクターIDが見つかりません', 'warning');
+        return;
+    }
+
+    // 1. いま自分がいる現在の画面状態（表示中のビューや月、スクロール位置など）を sessionStorage に記録
+    const currentViewState = {
+        // 現在のビュー情報（もしグローバル変数等があればそれを使うか、アクティブなタブを判定）
+        view: window.currentView || 'gallery', 
+        param: window.currentViewParam || (document.getElementById('galleryMonth')?.value) || '',
+        scrollPos: window.scrollY || 0
+    };
+    sessionStorage.setItem('diary_return_state', JSON.stringify(currentViewState));
+
+    // 2. characters.html に ID と「日記から来たよ」という目印を渡してページ遷移する
+    window.location.href = `characters.html?id=${charId}&from=diary`;
+}
+window.openCharacterDetail = openCharacterDetail;
+    
     // 1. ここでJavaScriptのscriptタグをしっかりと閉じます
     </script>
 
