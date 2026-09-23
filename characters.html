@@ -995,8 +995,8 @@ async function saveCharacter(event) {
     const memo = document.getElementById('charMemo')?.value || '';
     const secret = document.getElementById('charSecret')?.value || '';
     
-const links = [];
-const linkRows = document.querySelectorAll('#characterLinksEditorContainer > div');
+    const links = [];
+    const linkRows = document.querySelectorAll('#characterLinksEditorContainer > div');
     linkRows.forEach(row => {
         const inputs = row.querySelectorAll('input');
         const labelInput = inputs[0]; 
@@ -1012,8 +1012,14 @@ const linkRows = document.querySelectorAll('#characterLinksEditorContainer > div
     // 🌟 ターゲットとなるキャラクターIDを事前に確定
     let targetCharacterId = window.editingCharacterId || ('char_' + Math.random().toString(36).substring(2, 11));
 
-    // 🌟 【追加】編集前（現在保存されている）のキャラクターデータを特定しておく（削除された画像を検出するため）
-    const oldCharacter = window.characters ? window.characters.find(c => String(c.id) === String(targetCharacterId)) : null;
+    // 🌟 【修正】上書きされる前に、確実に「編集前の生データ」をディープコピーして保持しておく
+    let oldCharacter = null;
+    if (window.characters && Array.isArray(window.characters)) {
+        const found = window.characters.find(c => String(c.id) === String(targetCharacterId));
+        if (found) {
+            oldCharacter = JSON.parse(JSON.stringify(found));
+        }
+    }
 
     // 🌟 画像データの処理（未アップロードのファイルがあればFirebase Storageへ自動アップロードして永続URLに変換）
     const rawImages = window.editingCharacterImages || { 
@@ -1147,7 +1153,7 @@ const linkRows = document.querySelectorAll('#characterLinksEditorContainer > div
         updatedAt: new Date().toISOString()
     };
 
-try {
+    try {
         // 🌟 削除処理の動作確認用デバッグログ
         console.log("🔍 [DEBUG 削除チェック] oldCharacter:", !!oldCharacter);
         console.log("🔍 [DEBUG 削除チェック] window.storage:", !!window.storage);
@@ -1188,12 +1194,12 @@ try {
             if (thumbnail.startsWith('https://firebasestorage.googleapis.com')) newUrls.add(thumbnail);
             if (avatar.startsWith('https://firebasestorage.googleapis.com')) newUrls.add(avatar);
 
-// 3. 「昔はあったが、今回消された（新リストに含まれない）」URLを割り出す
+            // 3. 「昔はあったが、今回消された（新リストに含まれない）」URLを割り出す
             const urlsToDelete = [...oldUrls].filter(url => !newUrls.has(url));
 
-            // 🌟 【追加】ここで比較結果をコンソールにしっかり吐き出させる
+            // 🌟 比較結果をコンソールにしっかり吐き出させる
             console.log("🔍 [DEBUG] 編集前の画像URLs (oldUrls):", [...oldUrls]);
-            console.log("🔍 [DEBUG] 今回の画像URLs (newUrls):", [...newUrls]); // (※ .log.log になっていたら console.log に直してください)
+            console.log("🔍 [DEBUG] 今回の画像URLs (newUrls):", [...newUrls]);
             console.log("🔍 [DEBUG] 削除判定されたURLs (urlsToDelete):", urlsToDelete);
             console.log("🔍 [DEBUG] 削除対象の数:", urlsToDelete.length);
 
@@ -1244,6 +1250,11 @@ try {
         }
 
         window.characters = removeBase64Recursive(window.characters);
+
+    } catch (e) {
+        console.error("❌ 保存・削除処理のエラー:", e);
+    }
+}
 
         // 🌟 Firestoreが拒絶する undefined を null に一掃するサニタイズ
         function sanitizeForFirestore(obj) {
