@@ -997,7 +997,7 @@ async function saveCharacter(event) {
 
     const images = {};
 
-    // 💡 Firebase Storageへファイルをアップロードし、永続URLを取得するヘルパー関数
+// 💡 Firebase Storageへファイルをアップロードし、永続URLを取得するヘルパー関数
     async function uploadImageIfNeeded(item, charId, category) {
         let url = item.url || '';
         
@@ -1026,7 +1026,7 @@ async function saveCharacter(event) {
 
                 if (!storageInstance || !storageRefFn || !uploadBytesFn || !getDownloadUrlFn) {
                     console.warn("⚠️ Firebase Storageの関数が見つからないため、画像アップロードをスキップします。");
-                    return url;
+                    return url.startsWith('blob:') ? '' : url;
                 }
 
                 // 保存先パス: artifacts/{appId}/characters/{charId}/{category}_{timestamp}_{filename}
@@ -1041,11 +1041,13 @@ async function saveCharacter(event) {
 
             } catch (uploadErr) {
                 console.error("画像のFirebase Storageアップロードに失敗しました:", uploadErr);
-                return ''; // 失敗時は安全のため空
+                // 失敗時は、もし元に有効なURLがあればそれを維持、なければ空
+                return (url && !url.startsWith('blob:')) ? url : '';
             }
         }
 
-        return url.startsWith('blob:') ? '' : url;
+        // 🌟 【安全ガード】ファイルオブジェクトはないが、もし有効な既存URL（httpsなど）ならそのまま維持する
+        return (url && !url.startsWith('blob:')) ? url : '';
     }
 
     // 各カテゴリの画像をループ処理してURLを完全なものに確定
