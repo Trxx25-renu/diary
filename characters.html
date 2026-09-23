@@ -964,7 +964,7 @@ function getGrowthColor(hexColor) {
 window.getGrowthColor = getGrowthColor;
        
 // ==========================================
-// 💡 キャラクター保存関数（Firebase Storage自動アップロード ＆ 完全永続化版）
+// 💡 キャラクター保存関数（Firebase Storage自動アップロード・削除画像のクリーンアップ完全版）
 // ==========================================
 async function saveCharacter(event) {
     if (event) event.preventDefault();
@@ -999,7 +999,7 @@ async function saveCharacter(event) {
     linkRows.forEach(row => {
         const inputs = row.querySelectorAll('input');
         const labelInput = inputs[0]; 
-        const urlInput = inputs[1];     
+        const urlInput = inputs[1];    
         if (urlInput && urlInput.value.trim() !== '') {
             links.push({
                 label: labelInput ? labelInput.value.trim() : '',
@@ -1008,8 +1008,11 @@ async function saveCharacter(event) {
         }
     });
     
-    // 🌟 ターゲットとなるキャラクターIDを事前に確定（ストレージの保存先パスに利用）
+    // 🌟 ターゲットとなるキャラクターIDを事前に確定
     let targetCharacterId = window.editingCharacterId || ('char_' + Math.random().toString(36).substring(2, 11));
+
+    // 🌟 【追加】編集前（現在保存されている）のキャラクターデータを特定しておく（削除された画像を検出するため）
+    const oldCharacter = window.characters ? window.characters.find(c => String(c.id) === String(targetCharacterId)) : null;
 
     // 🌟 画像データの処理（未アップロードのファイルがあればFirebase Storageへ自動アップロードして永続URLに変換）
     const rawImages = window.editingCharacterImages || { 
@@ -1018,7 +1021,7 @@ async function saveCharacter(event) {
 
     const images = {};
 
-// 💡 Firebase Storageへファイルをアップロードし、永続URLを取得するヘルパー関数（完全堅牢・根本解決版）
+    // 💡 Firebase Storageへファイルをアップロードし、永続URLを取得するヘルパー関数
     async function uploadImageIfNeeded(item, charId, category) {
         let url = item.url || '';
         
@@ -1039,65 +1042,45 @@ async function saveCharacter(event) {
                     showToast("画像を最適化・アップロード中...", "info");
                 }
 
-                // 🌟 【自動圧縮の適用】アップロード直前に、比率を維持したまま長辺1200px以内に軽量化
+                // 🌟 【自動圧縮の適用】長辺1200px以内に軽量化
                 let fileToUpload = item.file;
                 if (typeof compressImage === 'function') {
                     fileToUpload = await compressImage(item.file, 1200);
                 }
 
-                // 🌟 各種関数がグローバルに存在するか、あるいは別の名前で定義されていないか安全に取得
                 const storageInstance = typeof window.getStorage === 'function' ? window.getStorage() : (window.storage || null);
                 const storageRefFn = typeof window.ref === 'function' ? window.ref : null;
                 const uploadBytesFn = typeof window.uploadBytes === 'function' ? window.uploadBytes : null;
                 const getDownloadUrlFn = typeof window.getDownloadURL === 'function' ? window.getDownloadURL : null;
 
-                // 🌟 ここで TypeError を防ぐための厳格なチェック
                 if (!storageInstance || typeof storageRefFn !== 'function' || typeof uploadBytesFn !== 'function' || typeof getDownloadUrlFn !== 'function') {
-                    console.error("❌ Firebase Storageの関数がグローバルに見つかりません。windowオブジェクトの定義を確認してください。", {
-                        storage: !!storageInstance,
-                        ref: typeof storageRefFn,
-                        uploadBytes: typeof uploadBytesFn,
-                        getDownloadURL: typeof getDownloadUrlFn
-                    });
                     throw new Error("Firebase Storage functions are missing on window");
                 }
 
-                // 保存先パス: artifacts/{appId}/characters/{charId}/{category}_{timestamp}_{filename}
                 const filePath = `artifacts/${window.appId}/characters/${charId}/${category}_${Date.now()}_${fileToUpload.name}`;
                 const fileRef = storageRefFn(storageInstance, filePath);
 
-                console.log("📤 ストレージアップロード実行中（圧縮済み）...", filePath);
-
-                // 🌟 アップロード処理の本体（圧縮済みの fileToUpload を送信）
                 const uploadTask = async () => {
                     const snapshot = await uploadBytesFn(fileRef, fileToUpload);
                     return await getDownloadUrlFn(snapshot.ref);
                 };
 
-                // 🌟 万が一のフリーズ対策：15秒タイムアウトガード
                 const timeoutTask = new Promise((_, reject) => {
                     setTimeout(() => reject(new Error("Storage upload timeout")), 15000);
                 });
 
-                // アップロードとタイムアウトの競合
                 const downloadUrl = await Promise.race([uploadTask(), timeoutTask]);
-                console.log("✅ ストレージアップロード成功:", downloadUrl);
                 return downloadUrl;
 
             } catch (uploadErr) {
-                console.error("❌ 画像のFirebase Storageアップロードに失敗しました (詳細):", uploadErr);
-                console.error("エラーメッセージ:", uploadErr.message);
-                console.error("スタックトレース:", uploadErr.stack);
-
+                console.error("❌ 画像のFirebase Storageアップロードに失敗しました:", uploadErr);
                 if (typeof showToast === 'function') {
                     showToast("画像のクラウド保存に失敗しました", "error");
                 }
-                // 失敗時はモーダルを止めないよう、安全に古いURLまたは空を返す
                 return (url && !url.startsWith('blob:')) ? url : '';
             }
         }
 
-        // ファイルがない場合は既存の安全なURLを返す
         return (url && !url.startsWith('blob:')) ? url : '';
     }
 
@@ -1164,6 +1147,55 @@ async function saveCharacter(event) {
     };
 
     try {
+        // 🌟 【追加・重要】編集によって「削除された画像」を検出し、ストレージからも完全に消去する
+        if (oldCharacter && window.storage && window.ref && window.deleteObject) {
+            // 1. 編集前のキャラクターが持っていたすべての画像URLを抽出
+            const oldUrls = new Set();
+            if (oldCharacter.images && typeof oldCharacter.images === 'object') {
+                Object.values(oldCharacter.images).forEach(catArray => {
+                    if (Array.isArray(catArray)) {
+                        catArray.forEach(img => {
+                            const u = typeof img === 'string' ? img : (img?.url || img?.src);
+                            if (u && u.startsWith('https://firebasestorage.googleapis.com')) oldUrls.add(u);
+                        });
+                    }
+                });
+            }
+            if (oldCharacter.thumbnail?.startsWith('https://firebasestorage.googleapis.com')) oldUrls.add(oldCharacter.thumbnail);
+            if (oldCharacter.avatar?.startsWith('https://firebasestorage.googleapis.com')) oldUrls.add(oldCharacter.avatar);
+
+            // 2. 今回保存する新しいデータに残っている画像URLを抽出
+            const newUrls = new Set();
+            if (images && typeof images === 'object') {
+                Object.values(images).forEach(catArray => {
+                    if (Array.isArray(catArray)) {
+                        catArray.forEach(img => {
+                            const u = typeof img === 'string' ? img : (img?.url || img?.src);
+                            if (u && u.startsWith('https://firebasestorage.googleapis.com')) newUrls.add(u);
+                        });
+                    }
+                });
+            }
+            if (thumbnail.startsWith('https://firebasestorage.googleapis.com')) newUrls.add(thumbnail);
+            if (avatar.startsWith('https://firebasestorage.googleapis.com')) newUrls.add(avatar);
+
+            // 3. 「昔はあったが、今回消された（新リストに含まれない）」URLを割り出す
+            const urlsToDelete = [...oldUrls].filter(url => !newUrls.has(url));
+
+            // 4. ストレージから該当のファイルを非同期で一括削除
+            if (urlsToDelete.length > 0) {
+                await Promise.all(urlsToDelete.map(async (url) => {
+                    try {
+                        const imageRef = window.ref(window.storage, url);
+                        await window.deleteObject(imageRef);
+                        console.log("🔥 編集により不要になった画像をストレージから削除しました:", url);
+                    } catch (delErr) {
+                        console.warn("⚠️ ストレージ上の不要画像削除スキップ（既に不存在など）:", delErr);
+                    }
+                }));
+            }
+        }
+
         if (!window.characters) window.characters = [];
         const index = window.characters.findIndex(c => String(c.id) === String(targetCharacterId));
         if (index !== -1) {
@@ -1174,7 +1206,7 @@ async function saveCharacter(event) {
             window.characters.push(charData);
         }
 
-        // 🌟 【自動クリーンアップ】データ内に古いBase64が残っていても、エラーで止めず自動で消去
+        // 🌟 Base64の自動クリーンアップ
         function removeBase64Recursive(obj) {
             if (obj === null || typeof obj !== 'object') {
                 if (typeof obj === 'string' && obj.startsWith('data:image/')) {
@@ -1194,7 +1226,7 @@ async function saveCharacter(event) {
 
         window.characters = removeBase64Recursive(window.characters);
 
-        // 🌟 Firestoreが拒絶する undefined を自動で null に一掃するサニタイズ関数
+        // 🌟 Firestoreが拒絶する undefined を null に一掃するサニタイズ
         function sanitizeForFirestore(obj) {
             if (obj === null || typeof obj !== 'object') {
                 return obj === undefined ? null : obj;
@@ -1229,7 +1261,7 @@ async function saveCharacter(event) {
             updatedAt: new Date().toISOString()
         });
 
-        // 💡 ③ 保存成功のトーストを確実に表示
+        // 💡 ③ 保存成功のトースト
         if (typeof showToast === 'function') {
             showToast("キャラクターを保存・同期しました！", "info");
         }
@@ -1238,7 +1270,7 @@ async function saveCharacter(event) {
         closeCharacterModal();
         if (typeof renderSystemFolders === 'function') renderSystemFolders();
 
-        // 💡 ④ 0.3秒のウェイトを挟み、安全に詳細画面へ遷移
+        // 💡 ④ 詳細画面へ遷移
         setTimeout(() => {
             if (targetCharacterId) {
                 if (typeof navigateTo === 'function') {
@@ -3751,7 +3783,7 @@ function handleAvatarFileSelect(event) {
 window.handleAvatarFileSelect = handleAvatarFileSelect;
 
 // ==========================================
-// 💡 キャラクター削除関数（Firestore完全同期・グローバル関数対応版）
+// 💡 キャラクター削除関数（Firestore完全同期・ストレージ画像クリーンアップ対応版）
 // ==========================================
 async function deleteCharacter(characterId) {
     if (!confirm('本当にこのキャラクターを削除しますか？')) {
@@ -3762,14 +3794,53 @@ async function deleteCharacter(characterId) {
     const systemId = targetChar ? targetChar.systemId : null;
 
     try {
+        // 🌟 1. 削除するキャラクターが持っていた画像をストレージから削除する処理
+        if (targetChar) {
+            let urlsToDelete = [];
+
+            // 画像データ（各カテゴリの配列など）からURLを収集
+            if (targetChar.images && typeof targetChar.images === 'object') {
+                Object.values(targetChar.images).forEach(catArray => {
+                    if (Array.isArray(catArray)) {
+                        catArray.forEach(img => {
+                            // オブジェクト形式または文字列形式のURLに対応
+                            const url = typeof img === 'string' ? img : (img?.url || img?.src);
+                            if (url) urlsToDelete.push(url);
+                        });
+                    }
+                });
+            }
+
+            // アバター画像などの単体プロパティがあれば追加（存在する場合）
+            if (targetChar.avatar) urlsToDelete.push(targetChar.avatar);
+            if (targetChar.icon) urlsToDelete.push(targetChar.icon);
+
+            // Firebase Storage等のURLからファイルを非同期で一括削除
+            if (urlsToDelete.length > 0 && window.storage && window.ref && window.deleteObject) {
+                await Promise.all(urlsToDelete.map(async (url) => {
+                    try {
+                        // Firebase StorageのURLである場合のみ削除を実行
+                        if (typeof url === 'string' && url.startsWith('https://firebasestorage.googleapis.com')) {
+                            const imageRef = window.ref(window.storage, url);
+                            await window.deleteObject(imageRef);
+                            console.log("🔥 ストレージから画像を削除しました:", url);
+                        }
+                    } catch (storageErr) {
+                        // すでにストレージ上に存在しない場合などのエラーは処理を止めずにスルー
+                        console.warn("⚠️ ストレージ上の画像削除スキップ（または既に不存在）:", storageErr);
+                    }
+                }));
+            }
+        }
+
         if (window.characters) {
             window.characters = window.characters.filter(c => String(c.id) !== String(characterId));
         }
 
-        // 💡 1. 手元のブラウザ（localStorage）を更新
+        // 💡 2. 手元のブラウザ（localStorage）を更新
         localStorage.setItem('local_characters', JSON.stringify(window.characters || []));
 
-        // 💡 2. Firestore（クラウド）側へも削除後のリストを即座に同期・保存（window.doc / window.setDoc を使用）
+        // 💡 3. Firestore（クラウド）側へも削除後のリストを即座に同期・保存
         if (typeof showToast === 'function') showToast("Firestoreへ同期中...", "info");
 
         const charDocRef = window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'characters', 'master');
