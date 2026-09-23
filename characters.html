@@ -296,6 +296,23 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (headerAddBtn) headerAddBtn.classList.remove('hidden');
     }
 
+    // 🔍 【追加】日記から `?id=〇〇` 付きで飛んできた場合に、該当キャラの詳細を自動で開く
+    const urlParams = new URLSearchParams(window.location.search);
+    const targetCharId = urlParams.get('id');
+
+    if (targetCharId) {
+        console.log("👤 日記から指定されたキャラクターIDを検出:", targetCharId);
+        setTimeout(() => {
+            if (typeof openCharacterModal === 'function') {
+                openCharacterModal(targetCharId);
+            } else if (typeof showCharacterDetail === 'function') {
+                showCharacterDetail(targetCharId);
+            } else {
+                console.warn("⚠️ キャラ詳細を開く関数が見つかりませんでした");
+            }
+        }, 300);
+    }
+
     console.log("🎉 キャラクター管理ページの初期化がすべて完了しました！");
 });
 
