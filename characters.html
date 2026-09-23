@@ -2034,10 +2034,13 @@ function renderCharacterDetail(characterId) {
         `;
     }
 
+    // // ==========================================
+    // 📜 通過シナリオ一覧 & 件数カウント処理（Firestore連携版）
     // ==========================================
-    // 📜 通過シナリオ一覧 & 件数カウント処理（グループ化対応）
-    // ==========================================
-    const allEntries = JSON.parse(localStorage.getItem('local_entries') || '[]');
+    
+    // window.entries（Firestoreから読み込んだ共有データ）を優先し、データがなければ空配列にする
+    const allEntries = window.entries || JSON.parse(localStorage.getItem('local_entries') || '[]');
+    
     const passedEntries = allEntries.filter(entry => 
         entry.participantIds && entry.participantIds.map(String).includes(String(characterId))
     );
