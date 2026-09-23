@@ -296,19 +296,22 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (headerAddBtn) headerAddBtn.classList.remove('hidden');
     }
 
-// 🔍 【修正完了版】日記から `?id=〇〇` 付きで飛んできた場合に、該当キャラの詳細画面を描画する
-    const urlParams = new URLSearchParams(window.location.search);
-    const targetCharId = urlParams.get('id');
-
-    if (targetCharId) {
-        console.log("👤 日記から指定されたキャラクターIDを検出:", targetCharId);
-        setTimeout(() => {
-            if (typeof renderCharacterDetail === 'function') {
-                renderCharacterDetail(targetCharId);
-            } else {
-                console.warn("⚠️ renderCharacterDetail関数が見つかりませんでした");
-            }
-        }, 300);
+// 🔍 日記から #detail/キャラID 付きで飛んできた場合に詳細を自動で開く
+    const hash = window.location.hash; // 例: "#detail/char_sqyrgqsqk"
+    
+    if (hash && hash.startsWith('#detail/')) {
+        const targetCharId = hash.replace('#detail/', '');
+        
+        if (targetCharId) {
+            console.log("👤 ハッシュからキャラクターIDを正常に検出:", targetCharId);
+            setTimeout(() => {
+                if (typeof renderCharacterDetail === 'function') {
+                    renderCharacterDetail(targetCharId);
+                } else {
+                    console.warn("⚠️ renderCharacterDetail関数が見つかりませんでした");
+                }
+            }, 300);
+        }
     }
 
     console.log("🎉 キャラクター管理ページの初期化がすべて完了しました！");
