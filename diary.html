@@ -311,6 +311,127 @@
         }
     });
 
+   // 🌟 // 記事の詳細データを確実に探し出して画面に反映する関数
+function renderEntryDetail(targetId) {
+    if (!window.entries || window.entries.length === 0) {
+        console.error("エラー: window.entries が空です。データが読み込まれていません。");
+        return;
+    }
+
+    // IDが一致するか、または日付(date)が一致するデータを柔軟に探す（型違い対策も含む）
+    const entry = window.entries.find(e => 
+        String(e.id) === String(targetId) || e.date === targetId
+    );
+
+    if (!entry) {
+        console.error("エラー: 該当する日記データが見つかりませんでした。探したID:", targetId);
+        return;
+    }
+
+    // 選択中のIDを保存
+    window.selectedEntryId = entry.id;
+
+    // 詳細画面の各HTML要素を取得
+    const imgEl = document.getElementById('detailImage');
+    const dateEl = document.getElementById('detailDate');
+    const weatherEl = document.getElementById('detailWeather');
+    const contentEl = document.getElementById('detailContent');
+    const secretContainer = document.getElementById('detailSecretContainer');
+    const secretContentEl = document.getElementById('detailSecretContent');
+    const secretOverlay = document.getElementById('secretOverlay');
+
+    // 1. 写真の反映
+    if (imgEl) {
+        imgEl.src = entry.imageUrl || '';
+    }
+
+    // 2. 日付の反映 (2026-03-27 → 2026.03.27)
+    if (dateEl && entry.date) {
+        dateEl.textContent = entry.date.replace(/-/g, '.');
+    }
+
+    // 3. タグの反映
+    if (weatherEl) {
+        if (entry.weather) {
+            weatherEl.textContent = entry.weather;
+            weatherEl.style.display = 'inline-block';
+        } else {
+            weatherEl.style.display = 'none';
+        }
+    }
+
+    // 🌟 4. 参加キャラクター（参加PC）の反映
+    const participantsWrapper = document.getElementById('detailParticipantsWrapper');
+    const participantsContainer = document.getElementById('detailParticipantsContainer');
+
+    if (participantsContainer && participantsWrapper) {
+        participantsContainer.innerHTML = '';
+        
+        // 登録されている参加キャラIDが存在するかチェック
+        if (entry.participantIds && entry.participantIds.length > 0) {
+            const allChars = JSON.parse(localStorage.getItem('local_characters') || '[]');
+            
+            entry.participantIds.forEach(id => {
+                const char = allChars.find(c => String(c.id) === String(id));
+                if (!char) return;
+
+                // チップ要素の作成
+                const chip = document.createElement('div');
+                chip.className = 'inline-flex items-center gap-1.5 bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs px-2.5 py-1 rounded-xl transition-colors border border-stone-200/80 cursor-pointer shadow-2xs';
+                chip.innerHTML = `
+                    <i class="fa-solid fa-user text-[10px] text-stone-400"></i>
+                    <span class="font-medium">${typeof escapeHtml === 'function' ? escapeHtml(char.name) : char.name}</span>
+                `;
+                
+                // クリックしたらキャラクターの詳細へ飛ぶ
+                chip.onclick = () => {
+                    if (typeof openCharacterDetail === 'function') {
+                        openCharacterDetail(char.id);
+                    }
+                };
+                
+                participantsContainer.appendChild(chip);
+            });
+
+            // 参加PCが1人以上いればラッパー（見出しごと）を表示する
+            participantsWrapper.classList.remove('hidden');
+        } else {
+            // いない場合は隠す
+            participantsWrapper.classList.add('hidden');
+        }
+    }
+
+    // 5. 本文の反映（ネタバレタグ対応）
+    if (contentEl) {
+        contentEl.innerHTML = typeof parseSpoilers === 'function' ? parseSpoilers(entry.content) : (entry.content || '');
+    }
+
+    // 6. ネタバレ防止メモの反映
+    window.isSecretRevealed = false; // 記事を開くたびに「閉じた状態」にリセット
+    if (secretContainer) {
+        if (entry.secretContent && entry.secretContent.trim() !== '') {
+            secretContainer.classList.remove('hidden');
+            
+            // ① parseSpoilers を通して HTML として反映する
+            if (secretContentEl) {
+                secretContentEl.innerHTML = typeof parseSpoilers === 'function' ? parseSpoilers(entry.secretContent) : (entry.secretContent || '');
+            }
+            
+            // ② 確実に「閉じた状態（オーバーレイ表示・ぼかし有効）」にする
+            if (secretOverlay) {
+                secretOverlay.classList.remove('hidden');
+            }
+            if (secretContentEl) {
+                secretContentEl.classList.add('secret-card-blur');
+            }
+        } else {
+            secretContainer.classList.add('hidden');
+        }
+    }
+}
+
+window.renderEntryDetail = renderEntryDetail;
+
 // ==========================================
 // ☁️ Firebase Storageへ画像をアップロードする関数
 // ==========================================
@@ -3469,126 +3590,7 @@ window.applyCurrentThemeToUI = applyCurrentThemeToUI;
             }
         };
 
-   // 🌟 // 記事の詳細データを確実に探し出して画面に反映する関数
-function renderEntryDetail(targetId) {
-    if (!window.entries || window.entries.length === 0) {
-        console.error("エラー: window.entries が空です。データが読み込まれていません。");
-        return;
-    }
 
-    // IDが一致するか、または日付(date)が一致するデータを柔軟に探す（型違い対策も含む）
-    const entry = window.entries.find(e => 
-        String(e.id) === String(targetId) || e.date === targetId
-    );
-
-    if (!entry) {
-        console.error("エラー: 該当する日記データが見つかりませんでした。探したID:", targetId);
-        return;
-    }
-
-    // 選択中のIDを保存
-    window.selectedEntryId = entry.id;
-
-    // 詳細画面の各HTML要素を取得
-    const imgEl = document.getElementById('detailImage');
-    const dateEl = document.getElementById('detailDate');
-    const weatherEl = document.getElementById('detailWeather');
-    const contentEl = document.getElementById('detailContent');
-    const secretContainer = document.getElementById('detailSecretContainer');
-    const secretContentEl = document.getElementById('detailSecretContent');
-    const secretOverlay = document.getElementById('secretOverlay');
-
-    // 1. 写真の反映
-    if (imgEl) {
-        imgEl.src = entry.imageUrl || '';
-    }
-
-    // 2. 日付の反映 (2026-03-27 → 2026.03.27)
-    if (dateEl && entry.date) {
-        dateEl.textContent = entry.date.replace(/-/g, '.');
-    }
-
-    // 3. タグの反映
-    if (weatherEl) {
-        if (entry.weather) {
-            weatherEl.textContent = entry.weather;
-            weatherEl.style.display = 'inline-block';
-        } else {
-            weatherEl.style.display = 'none';
-        }
-    }
-
-    // 🌟 4. 参加キャラクター（参加PC）の反映
-    const participantsWrapper = document.getElementById('detailParticipantsWrapper');
-    const participantsContainer = document.getElementById('detailParticipantsContainer');
-
-    if (participantsContainer && participantsWrapper) {
-        participantsContainer.innerHTML = '';
-        
-        // 登録されている参加キャラIDが存在するかチェック
-        if (entry.participantIds && entry.participantIds.length > 0) {
-            const allChars = JSON.parse(localStorage.getItem('local_characters') || '[]');
-            
-            entry.participantIds.forEach(id => {
-                const char = allChars.find(c => String(c.id) === String(id));
-                if (!char) return;
-
-                // チップ要素の作成
-                const chip = document.createElement('div');
-                chip.className = 'inline-flex items-center gap-1.5 bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs px-2.5 py-1 rounded-xl transition-colors border border-stone-200/80 cursor-pointer shadow-2xs';
-                chip.innerHTML = `
-                    <i class="fa-solid fa-user text-[10px] text-stone-400"></i>
-                    <span class="font-medium">${typeof escapeHtml === 'function' ? escapeHtml(char.name) : char.name}</span>
-                `;
-                
-                // クリックしたらキャラクターの詳細へ飛ぶ
-                chip.onclick = () => {
-                    if (typeof openCharacterDetail === 'function') {
-                        openCharacterDetail(char.id);
-                    }
-                };
-                
-                participantsContainer.appendChild(chip);
-            });
-
-            // 参加PCが1人以上いればラッパー（見出しごと）を表示する
-            participantsWrapper.classList.remove('hidden');
-        } else {
-            // いない場合は隠す
-            participantsWrapper.classList.add('hidden');
-        }
-    }
-
-    // 5. 本文の反映（ネタバレタグ対応）
-    if (contentEl) {
-        contentEl.innerHTML = typeof parseSpoilers === 'function' ? parseSpoilers(entry.content) : (entry.content || '');
-    }
-
-    // 6. ネタバレ防止メモの反映
-    window.isSecretRevealed = false; // 記事を開くたびに「閉じた状態」にリセット
-    if (secretContainer) {
-        if (entry.secretContent && entry.secretContent.trim() !== '') {
-            secretContainer.classList.remove('hidden');
-            
-            // ① parseSpoilers を通して HTML として反映する
-            if (secretContentEl) {
-                secretContentEl.innerHTML = typeof parseSpoilers === 'function' ? parseSpoilers(entry.secretContent) : (entry.secretContent || '');
-            }
-            
-            // ② 確実に「閉じた状態（オーバーレイ表示・ぼかし有効）」にする
-            if (secretOverlay) {
-                secretOverlay.classList.remove('hidden');
-            }
-            if (secretContentEl) {
-                secretContentEl.classList.add('secret-card-blur');
-            }
-        } else {
-            secretContainer.classList.add('hidden');
-        }
-    }
-}
-
-window.renderEntryDetail = renderEntryDetail;
     
 // 👤 キャラクター詳細ページ（characters.html）へジャンプする関数（閲覧位置の記憶付き）
 function openCharacterDetail(charId) {
