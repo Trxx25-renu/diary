@@ -3262,6 +3262,10 @@ function openEditCharacterModal(characterId, retryCount = 0) {
 
         window.editingCharacterId = characterId;
 
+        // 🌟 隠しフィールド（characterId）にも編集中のIDをセット
+        const idInput = document.getElementById('characterId');
+        if (idInput) idInput.value = characterId;
+
         const ch = window.characters?.find(c => String(c.id) === String(characterId));
         
         if (!ch && retryCount < 5) {
@@ -3685,6 +3689,10 @@ function openCharacterModal() {
     const modal = document.getElementById('characterModal');
     if (modal) {
         window.editingCharacterId = null;
+        
+        // 🌟 隠しフィールド（characterId）も空にクリア
+        const idInput = document.getElementById('characterId');
+        if (idInput) idInput.value = '';
         
         window.editingCharacterLinks = [];
         if (typeof renderCharacterLinksEditor === 'function') {
@@ -4671,14 +4679,17 @@ window.importCharactersJSON = importCharactersJSON;
             <button type="button" onclick="closeCharacterModal()" class="text-stone-400 hover:text-stone-600 text-xl font-bold px-2">&times;</button>
         </div>
 
-        <!-- フォーム本体（中身がスクロールするエリア） -->
+<!-- フォーム本体（中身がスクロールするエリア） -->
         <div class="overflow-y-auto px-6 py-4 flex-1">
             <form id="characterForm" class="space-y-4" onsubmit="event.preventDefault();">
                 
+                <!-- 🌟 【追加】現在編集中のキャラクターIDを保持する隠しフィールド -->
+                <input type="hidden" id="characterId">
+
                 <!-- システム選択 -->
                 <div>
                     <label class="block text-xs font-bold text-stone-700 mb-1">システム選択</label>
-                    <select id="charSystemSelect" onchange="handleSystemChangeInModal()" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-800 focus:outline-none focus:border-stone-400">
+                    <select id="charSystemSelect" ...
                         <!-- システムの選択肢が動的に入る -->
                     </select>
                 </div>
