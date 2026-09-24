@@ -181,7 +181,7 @@
             console.log("📂 使用する appId:", appId);
 
             const firebaseConfig = {
-                            apiKey: "AIzaSyA2ctX9sUpJmLSVJomU9cbMzrUX_AXNjuE",
+                        apiKey: "AIzaSyA2ctX9sUpJmLSVJomU9cbMzrUX_AXNjuE",
             authDomain: "diary-36d77.firebaseapp.com",
             projectId: "diary-36d77",
             storageBucket: "diary-36d77.firebasestorage.app",
@@ -251,7 +251,7 @@
                 loaded.push({ id: d.id, ...d.data() });
             });
 
-// Firestoreが空の場合、localStorageもチェックする安全ガード
+            // Firestoreが空の場合、localStorageもチェックする安全ガード
             if (loaded.length === 0) {
                 try {
                     const localData = localStorage.getItem('local_entries') || localStorage.getItem('entries');
@@ -316,7 +316,18 @@
                 renderCharacterDetail(window._currentGalleryState.characterId);
             }
         }
+
+        // 🌟 【追加】データのロードが完全に終わった直後、URLにハッシュ（#detail=...）があれば確実に詳細を開く！
+        const currentHash = window.location.hash;
+        if (currentHash && currentHash.startsWith('#detail=')) {
+            const targetId = currentHash.replace('#detail=', '');
+            if (typeof renderEntryDetail === 'function') {
+                console.log("🔗 URLハッシュから詳細データを展開します:", targetId);
+                renderEntryDetail(targetId);
+            }
+        }
     });
+</script>
 
 // ==========================================
 // 🌟 記事の詳細データを確実に探し出して画面に反映する関数（自動リトライ＆ガード付き完全版）
