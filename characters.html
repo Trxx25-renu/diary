@@ -215,7 +215,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         const db = getFirestore(app);
         window.db = db;
 
-        // 🌟 【追加】Firebase Storageの初期化とグローバル登録
+        // 🌟 Firebase Storageの初期化とグローバル登録
         const storage = getStorage(app);
         window.getStorage = () => storage;
         window.ref = ref;
@@ -243,6 +243,32 @@ document.addEventListener("DOMContentLoaded", async () => {
             } else {
                 window.rosterSettings = { title: "", favicon: "" };
             }
+
+            // 📖 【追加】キャラクターページ側でもFirestoreから全日記データを取得して格納する
+            const entriesRef = collection(db, 'artifacts', window.appId, 'public', 'data', 'entries');
+            const querySnap = await getDocs(entriesRef);
+            const loaded = [];
+            querySnap.forEach(d => {
+                loaded.push({ id: d.id, ...d.data() });
+            });
+
+            // Firestoreが空の場合のlocalStorageフォールバック
+            if (loaded.length === 0) {
+                try {
+                    const localData = localStorage.getItem('local_entries') || localStorage.getItem('entries');
+                    if (localData) {
+                        const parsed = JSON.parse(localData);
+                        if (Array.isArray(parsed) && parsed.length > 0) {
+                            loaded.push(...parsed);
+                        }
+                    }
+                } catch (err) {
+                    console.warn("localStorageからの記事読み込み失敗:", err);
+                }
+            }
+
+            window.entries = loaded;
+            console.log("📖 キャラクターページ側で日記データをロードしました. 記事数:", window.entries.length);
             console.log("✅ Firestore設定データの読み込み完了");
         };
 
@@ -251,22 +277,26 @@ document.addEventListener("DOMContentLoaded", async () => {
     } catch (e) {
         console.warn("⚠️ オフライン、または通信タイムアウトのため、ローカルモードで続行します:", e.message);
         window.rosterSettings = window.rosterSettings || { title: "", favicon: "" };
+        
+        // オフライン時のフォールバックとしてlocalStorageから読み込み
+        try {
+            const localData = localStorage.getItem('local_entries') || localStorage.getItem('entries');
+            window.entries = localData ? JSON.parse(localData) : [];
+        } catch (err) {
+            window.entries = [];
+        }
     }
 
-    // 💡 設定データ読み込み完了後に、ファビコン＆スマホ用アイコンを動的に反映する関数
+    // 💡 設定データ読み込み完了後に、ファビコン＆スマホ用アイコンを動的に反映
     if (window.rosterSettings && window.rosterSettings.favicon) {
         const faviconUrl = window.rosterSettings.favicon;
-        
-        // 1. PCやブラウザタブ用のファビコンを更新
         const faviconTag = document.getElementById('dynamicFavicon');
         if (faviconTag) faviconTag.href = faviconUrl;
-
-        // 2. iPhoneのホーム画面・ブックマーク用のアイコンを更新
         const appleIconTag = document.getElementById('dynamicAppleTouchIcon');
         if (appleIconTag) appleIconTag.href = faviconUrl;
     }
 
-    // 2. キャラクターデータの読み込み（安全にラップ）
+    // 2. キャラクターデータの読み込み
     try {
         if (typeof loadCharactersFromLocal === 'function') {
             await loadCharactersFromLocal();
@@ -279,7 +309,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         window.characters = [];
     }
 
-    // 3. 画面の初期描画（安全にラップ）
+    // 3. 画面の初期描画
     try {
         if (typeof renderRootHierarchy === 'function') {
             renderRootHierarchy();
@@ -296,8 +326,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (headerAddBtn) headerAddBtn.classList.remove('hidden');
     }
 
-// 🔍 日記から #detail/キャラID 付きで飛んできた場合に詳細を自動で開く
-    const hash = window.location.hash; // 例: "#detail/char_sqyrgqsqk"
+    // 🔍 日記から #detail/キャラID 付きで飛んできた場合に詳細を自動で開く
+    const hash = window.location.hash; 
     
     if (hash && hash.startsWith('#detail/')) {
         const targetCharId = hash.replace('#detail/', '');
