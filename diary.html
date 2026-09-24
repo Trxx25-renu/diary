@@ -322,11 +322,8 @@
 // 🌟 記事の詳細データを確実に探し出して画面に反映する関数（読み込み待機ガード付き完全版）
 // ==========================================
 function renderEntryDetail(targetId) {
-    // 💡 キャラクター側と同様に、詳細画面を包んでいるコンテナを取得
-    // ※もし日記詳細の親要素のIDが異なる場合はここを書き換えてください（例: 'entry-detail-view'など）
     const detailContainer = document.getElementById('view-detail');
 
-    // 💡 まだ日記データが読み込まれていない場合のガード（キャラ側と同じ仕組み）
     if (!window.entries || window.entries.length === 0) {
         console.warn("⏳ 日記データがまだ読み込まれていないため、詳細表示を待機します...");
         if (detailContainer) {
@@ -335,10 +332,8 @@ function renderEntryDetail(targetId) {
         return;
     }
 
-    // IDが一致するか、または日付(date)が一致するデータを柔軟に探す（型違い対策も含む）
-    const entry = window.entries.find(e => 
-        String(e.id) === String(targetId) || e.date === targetId
-    );
+    // 💡 修正：ID（および念のため文字列変換したもの）だけで確実に探す
+    const entry = window.entries.find(e => String(e.id) === String(targetId));
 
     if (!entry) {
         if (detailContainer) {
