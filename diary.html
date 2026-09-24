@@ -329,15 +329,16 @@
     });
 
 // ==========================================
-// 🌟 記事の詳細データを確実に探し出して画面に反映する関数（自動リトライ＆ガード付き完全版）
+// 🌟 記事の詳細データを確実に探し出して画面に反映する関数（自動リトライ＆データロード待機ガード付き完全版）
 // ==========================================
 function renderEntryDetail(targetId) {
     const detailContainer = document.getElementById('view-detail');
 
-    // 💡 window.entries が空の場合、まずローカルストレージからデータの読み込みを試みる
-    if (!window.entries || window.entries.length === 0) {
+    // 🛡️ 絶対ガード：データ読込がまだ完了していない（window.isDataLoaded が true でない）間は、
+    // エラーを出さず、ローカルストレージを確認しつつ静かに待機する
+    if (!window.isDataLoaded || !window.entries || window.entries.length === 0) {
         try {
-            const saved = localStorage.getItem('local_entries');
+            const saved = localStorage.getItem('local_entries') || localStorage.getItem('entries');
             if (saved) {
                 window.entries = JSON.parse(saved);
             }
@@ -346,9 +347,9 @@ function renderEntryDetail(targetId) {
         }
     }
 
-    // 💡 それでもまだデータがない場合は、「読み込み中」を表示して少し待ってから自動で再トライする
-    if (!window.entries || window.entries.length === 0) {
-        console.warn("⏳ 日記データの読み込みを待機中...", targetId);
+    // 💡 まだデータがない（初期化・認証中）場合は、エラーを出さずに少し待ってから自動で再トライする
+    if (!window.isDataLoaded || !window.entries || window.entries.length === 0) {
+        // 初回ロード完了前は余計なエラーログを出さないように warning を控えるか、デバッグ用として静かに待機
         if (detailContainer) {
             detailContainer.innerHTML = `<p class="text-sm text-stone-400 py-12 text-center">データを読み込んでいます...</p>`;
         }
