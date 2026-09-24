@@ -251,7 +251,7 @@
                 loaded.push({ id: d.id, ...d.data() });
             });
 
-            // Firestoreが空の場合、localStorageもチェックする安全ガード
+// Firestoreが空の場合、localStorageもチェックする安全ガード
             if (loaded.length === 0) {
                 try {
                     const localData = localStorage.getItem('local_entries') || localStorage.getItem('entries');
@@ -308,6 +308,13 @@
 
         if (typeof window.applyCurrentThemeToUI === 'function') {
             window.applyCurrentThemeToUI();
+        }
+
+        // 💡 データのロードと初期ルーティングがすべて終わった直後に、キャラクター詳細画面が開いていれば再描画する
+        if (typeof window._currentGalleryState !== 'undefined' && window._currentGalleryState.characterId) {
+            if (typeof renderCharacterDetail === 'function') {
+                renderCharacterDetail(window._currentGalleryState.characterId);
+            }
         }
     });
 
