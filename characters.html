@@ -2065,35 +2065,36 @@ function renderCharacterDetail(characterId) {
     }
 
 // ==========================================
-    // 📜 通過シナリオ一覧 & 件数カウント処理（デバッグ版）
+    // 📜 通過シナリオ一覧 & 件数カウント処理（スッキリ・タイトル修正版）
     // ==========================================
     const allEntries = window.entries || JSON.parse(localStorage.getItem('local_entries') || '[]');
     
-    // 🔍 ここで中身を確認！
-    console.log("📌 現在の characterId:", characterId);
-    console.log("📌 読み込まれた全日記(allEntries):", allEntries);
+    const passedEntries = allEntries.filter(entry => 
+        entry.participantIds && entry.participantIds.map(String).includes(String(characterId))
+    );
 
-    const passedEntries = allEntries.filter(entry => {
-        console.log("📝 チェック中の日記:", entry.title, "参加者IDs:", entry.participantIds);
-        return entry.participantIds && entry.participantIds.map(String).includes(String(characterId));
-    });
-
-    console.log("🎯 ヒットした通過シナリオ数:", passedEntries.length);
-
-    // シナリオタイトル単位でグループ化（数日分の日記を1つのシナリオにまとめる）
+    // シナリオタイトル単位でグループ化（entry.title または entry.scenarioTitle を優先）
     const scenarioMap = {};
     passedEntries.forEach(entry => {
-        const title = entry.title || (entry.content ? entry.content.substring(0, 15) + '...' : '無題の日記');
+        // 本文を使わず、明示的なタイトルがなければ「無題のシナリオ」にする
+        const title = entry.title || entry.scenarioTitle || '無題のシナリオ';
         if (!scenarioMap[title]) {
             scenarioMap[title] = [];
         }
         scenarioMap[title].push(entry);
     });
 
+    // 💡 日付の古い順（または新しい順）に並び替え。ここでは「古い日付が上（No.01が一番古く、下に行くにつれて新しい日付）」に統一します
     const scenarioGroups = Object.keys(scenarioMap).map(title => ({
         title: title,
+        // 各シナリオ内の日付を昇順（古い順）にソート
         entries: scenarioMap[title].sort((a, b) => (a.date || '').localeCompare(b.date || ''))
-    }));
+    })).sort((groupA, groupB) => {
+        // シナリオ全体のグループ自体も、最初の日付が古い順に並べる
+        const dateA = groupA.entries[0]?.date || '';
+        const dateB = groupB.entries[0]?.date || '';
+        return dateA.localeCompare(dateB);
+    });
 
     let scenariosContentHtml = '';
     if (scenarioGroups.length === 0) {
@@ -2103,38 +2104,38 @@ function renderCharacterDetail(characterId) {
             </div>
         `;
     } else {
+        // 💡 縦長になりすぎないよう、アコーディオン（折りたたみ）にするか、高さを抑えたコンパクトなリストにする
         scenariosContentHtml = `
-            <div class="space-y-3">
+            <div class="space-y-2 max-h-[350px] overflow-y-auto pr-1">
                 ${scenarioGroups.map((group, groupIdx) => {
-                    // おしゃれな通し番号バッジ（テーマカラーを薄く反映）
                     const badgeHtml = `
-                        <span class="inline-flex items-center justify-center px-2 py-0.5 rounded-lg text-xs font-mono font-bold shrink-0 shadow-2xs" style="background-color: ${themeColor}15; color: ${themeColor}; border: 1px solid${themeColor}30;">
-                            No.0${groupIdx + 1}
+                        <span class="inline-flex items-center justify-center px-2 py-0.5 rounded-md text-[10px] font-mono font-bold shrink-0 shadow-2xs" style="background-color: ${themeColor}15; color: ${themeColor}; border: 1px solid${themeColor}30;">
+                            No.${String(groupIdx + 1).padStart(2, '0')}
                         </span>
                     `;
 
-                    // 日記ごとの行リスト（同じシナリオ内の複数日分をコンパクトに表示）
+                    // 本文を出さず、日付と「日記へ」ボタンを1行にまとめてスッキリさせる
                     const entriesRowsHtml = group.entries.map(entry => {
                         const dateStr = entry.date ? entry.date.replace(/-/g, '.') : '';
                         return `
-                            <div class="flex items-center justify-between py-1.5 px-2.5 hover:bg-white/80 rounded-xl transition-colors text-xs md:text-sm">
-                                <div class="flex items-center gap-3 overflow-hidden">
-                                    <span class="text-stone-500 font-mono shrink-0">${dateStr}</span>
-                                    <span class="text-stone-800 font-medium truncate">${group.title}</span>
-                                </div>
-                                <a href="diary.html#detail=${entry.id}" class="inline-flex items-center gap-1 text-[11px] md:text-xs font-bold px-2.5 py-1 rounded-lg transition-all shrink-0 hover:opacity-80 shadow-2xs" style="background-color: ${themeColor}12; color: ${themeColor}; border: 1px solid${themeColor}25;">
+                            <div class="flex items-center justify-between py-1 px-2 hover:bg-white/90 rounded-lg transition-colors text-xs">
+                                <span class="text-stone-500 font-mono shrink-0">${dateStr}</span>
+                                <a href="diary.html#detail=${entry.id}" class="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md transition-all hover:opacity-80" style="background-color: ${themeColor}12; color:${themeColor};">
                                     <span>日記へ</span>
-                                    <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                                    <i class="fa-solid fa-arrow-right text-[9px]"></i>
                                 </a>
                             </div>
                         `;
                     }).join('');
 
                     return `
-                        <div class="bg-stone-50/70 rounded-2xl p-3 border border-stone-200/60 shadow-xs space-y-1">
-                            <div class="flex items-center gap-2 mb-1 pb-1.5 border-b border-stone-200/50">
-                                ${badgeHtml}
-                                <span class="text-xs md:text-sm font-bold text-stone-800 truncate">${group.title}</span>
+                        <div class="bg-stone-50/80 rounded-xl p-2.5 border border-stone-200/60 shadow-2xs space-y-1">
+                            <div class="flex items-center justify-between gap-2 pb-1 border-b border-stone-200/40">
+                                <div class="flex items-center gap-2 overflow-hidden">
+                                    ${badgeHtml}
+                                    <span class="text-xs md:text-sm font-bold text-stone-800 truncate">${group.title}</span>
+                                </div>
+                                <span class="text-[10px] text-stone-400 shrink-0">${group.entries.length}日分</span>
                             </div>
                             <div class="space-y-0.5 pl-1">
                                 ${entriesRowsHtml}
@@ -2147,16 +2148,17 @@ function renderCharacterDetail(characterId) {
     }
 
     const scenariosHtml = `
-        <div class="mt-6 pt-6 border-t border-stone-100">
-            <div class="flex items-center justify-between mb-3">
+        <div class="mt-4 pt-4 border-t border-stone-100">
+            <div class="flex items-center justify-between mb-2">
                 <h4 class="text-xs md:text-sm font-bold text-stone-500 flex items-center gap-1.5">
                     <i class="fa-solid fa-book-bookmark text-stone-400"></i> 通過シナリオ一覧
                 </h4>
-                <span class="text-xs font-bold px-2.5 py-0.5 rounded-full shadow-2xs" style="background-color: ${themeColor}15; color: ${themeColor};">${scenarioGroups.length}件</span>
+                <span class="text-xs font-bold px-2 py-0.5 rounded-full shadow-2xs" style="background-color: ${themeColor}15; color: ${themeColor};">${scenarioGroups.length}件</span>
             </div>
             ${scenariosContentHtml}
         </div>
     `;
+   
 
     detailContainer.innerHTML = `
         <div class="bg-white rounded-3xl p-6 md:p-8 border border-stone-200/85 shadow-sm space-y-6 relative overflow-hidden">
