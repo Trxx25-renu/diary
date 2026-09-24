@@ -646,12 +646,14 @@ function navigateTo(view, param = null, updateHash = true) {
             `;
         }
 
-        // 🌟 修正：関数が見つからなくても勝手に月一覧に戻さず、エラーログのみに留める
+// 🌟 修正：データがまだ読み込まれていない場合はフライングで呼ばず、エラーを出さずにスルーする
         if (targetId) {
-            if (typeof renderEntryDetail === 'function') {
-                renderEntryDetail(targetId);
+            if (typeof window.entries !== 'undefined' && window.entries.length > 0) {
+                if (typeof renderEntryDetail === 'function') {
+                    renderEntryDetail(targetId);
+                }
             } else {
-                console.warn("⚠️ renderEntryDetail 関数が見つかりませんが、詳細画面エリアを表示します。");
+                console.log("⏳ データ未読込のため、詳細の即時描画を初期化処理へ委譲します:", targetId);
             }
         } else {
             console.error("詳細を表示するためのIDが指定されていません");
