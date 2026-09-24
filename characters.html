@@ -2034,16 +2034,21 @@ function renderCharacterDetail(characterId) {
         `;
     }
 
-    // // ==========================================
-    // 📜 通過シナリオ一覧 & 件数カウント処理（Firestore連携版）
+// ==========================================
+    // 📜 通過シナリオ一覧 & 件数カウント処理（デバッグ版）
     // ==========================================
-    
-    // window.entries（Firestoreから読み込んだ共有データ）を優先し、データがなければ空配列にする
     const allEntries = window.entries || JSON.parse(localStorage.getItem('local_entries') || '[]');
     
-    const passedEntries = allEntries.filter(entry => 
-        entry.participantIds && entry.participantIds.map(String).includes(String(characterId))
-    );
+    // 🔍 ここで中身を確認！
+    console.log("📌 現在の characterId:", characterId);
+    console.log("📌 読み込まれた全日記(allEntries):", allEntries);
+
+    const passedEntries = allEntries.filter(entry => {
+        console.log("📝 チェック中の日記:", entry.title, "参加者IDs:", entry.participantIds);
+        return entry.participantIds && entry.participantIds.map(String).includes(String(characterId));
+    });
+
+    console.log("🎯 ヒットした通過シナリオ数:", passedEntries.length);
 
     // シナリオタイトル単位でグループ化（数日分の日記を1つのシナリオにまとめる）
     const scenarioMap = {};
