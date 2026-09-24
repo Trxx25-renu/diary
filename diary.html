@@ -318,10 +318,20 @@
         }
     });
 
-// 🌟 記事の詳細データを確実に探し出して画面に反映する関数
+// ==========================================
+// 🌟 記事の詳細データを確実に探し出して画面に反映する関数（読み込み待機ガード付き完全版）
+// ==========================================
 function renderEntryDetail(targetId) {
+    // 💡 キャラクター側と同様に、詳細画面を包んでいるコンテナを取得
+    // ※もし日記詳細の親要素のIDが異なる場合はここを書き換えてください（例: 'entry-detail-view'など）
+    const detailContainer = document.getElementById('view-detail');
+
+    // 💡 まだ日記データが読み込まれていない場合のガード（キャラ側と同じ仕組み）
     if (!window.entries || window.entries.length === 0) {
-        console.error("エラー: window.entries が空です。データが読み込まれていません。");
+        console.warn("⏳ 日記データがまだ読み込まれていないため、詳細表示を待機します...");
+        if (detailContainer) {
+            detailContainer.innerHTML = `<p class="text-sm text-stone-400 py-12 text-center">データを読み込んでいます...</p>`;
+        }
         return;
     }
 
@@ -331,6 +341,9 @@ function renderEntryDetail(targetId) {
     );
 
     if (!entry) {
+        if (detailContainer) {
+            detailContainer.innerHTML = `<p class="text-sm text-stone-400 py-12 text-center">日記データが見つかりませんでした。</p>`;
+        }
         console.error("エラー: 該当する日記データが見つかりませんでした。探したID:", targetId);
         return;
     }
