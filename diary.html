@@ -329,24 +329,33 @@
     });
 
 // ==========================================
-// 🌟 記事の詳細データを確実に探し出して画面に反映する関数（シンプル・確実版）
+// 🌟 記事の詳細データを確実に探し出して画面に反映する関数（データロード完了待ち完全ガード版）
 // ==========================================
 function renderEntryDetail(targetId) {
     const detailContainer = document.getElementById('view-detail');
 
-    // 1. window.entries が空なら、まず localStorage から復元を試みる
+    // 💡 まだ初期化の途中（データロードが完了していない）場合は、エラーを出さずに少し待ってから自動で再トライする
+    if (!window.isDataLoaded) {
+        if (detailContainer) {
+            detailContainer.innerHTML = `<p class="text-sm text-stone-400 py-12 text-center">データを読み込んでいます...</p>`;
+        }
+        setTimeout(() => {
+            renderEntryDetail(targetId);
+        }, 50);
+        return;
+    }
+
+    // 💡 データの二重チェック
     if (!window.entries || window.entries.length === 0) {
         try {
             const saved = localStorage.getItem('local_entries') || localStorage.getItem('entries');
             if (saved) {
                 window.entries = JSON.parse(saved);
             }
-        } catch (e) {
-            console.error("データのパースに失敗しました", e);
-        }
+        } catch (e) {}
     }
 
-    // 2. それでもデータがなければ、少し待ってから自動リトライ
+    // 💡 それでもまだデータがない場合
     if (!window.entries || window.entries.length === 0) {
         if (detailContainer) {
             detailContainer.innerHTML = `<p class="text-sm text-stone-400 py-12 text-center">データを読み込んでいます...</p>`;
@@ -357,9 +366,10 @@ function renderEntryDetail(targetId) {
         return;
     }
 
-    // 3. データを検索
+    // 💡 ID（文字列変換したもの）だけで確実に探す
     const entry = window.entries.find(e => String(e.id) === String(targetId));
 
+    // 🚨 データのロードが「完全に終わった後」なのに存在しない場合のみエラーにする
     if (!entry) {
         if (detailContainer) {
             detailContainer.innerHTML = `<p class="text-sm text-stone-400 py-12 text-center">日記データが見つかりませんでした。</p>`;
@@ -381,17 +391,17 @@ function renderEntryDetail(targetId) {
     const secretContentEl = document.getElementById('detailSecretContent');
     const secretOverlay = document.getElementById('secretOverlay');
 
-    // 写真の反映
+    // 1. 写真の反映
     if (imgEl) {
         imgEl.src = entry.imageUrl || '';
     }
 
-    // 日付の反映
+    // 2. 日付の反映
     if (dateEl && entry.date) {
         dateEl.textContent = entry.date.replace(/-/g, '.');
     }
 
-    // 天気・タグの反映
+    // 3. タグの反映
     if (weatherEl) {
         if (entry.weather) {
             weatherEl.textContent = entry.weather;
@@ -401,7 +411,7 @@ function renderEntryDetail(targetId) {
         }
     }
 
-    // シナリオタイトルの反映
+    // 4. シナリオタイトルの反映
     if (titleEl) {
         const scenarioTitle = entry.scenarioTitle || entry.title;
         if (scenarioTitle && scenarioTitle.trim() !== '') {
@@ -414,7 +424,7 @@ function renderEntryDetail(targetId) {
         }
     }
 
-    // 参加キャラクターの反映
+    // 5. 参加キャラクターの反映
     const participantsWrapper = document.getElementById('detailParticipantsWrapper');
     const participantsContainer = document.getElementById('detailParticipantsContainer');
 
@@ -446,12 +456,12 @@ function renderEntryDetail(targetId) {
         }
     }
 
-    // 本文の反映
+    // 6. 本文の反映
     if (contentEl) {
         contentEl.innerHTML = typeof parseSpoilers === 'function' ? parseSpoilers(entry.content) : (entry.content || '');
     }
 
-    // ネタバレ防止メモの反映
+    // 7. ネタバレ防止メモの反映
     window.isSecretRevealed = false;
     if (secretContainer) {
         if (entry.secretContent && entry.secretContent.trim() !== '') {
