@@ -318,7 +318,7 @@
         }
     });
 
-   // 🌟 // 記事の詳細データを確実に探し出して画面に反映する関数
+// 🌟 記事の詳細データを確実に探し出して画面に反映する関数
 function renderEntryDetail(targetId) {
     if (!window.entries || window.entries.length === 0) {
         console.error("エラー: window.entries が空です。データが読み込まれていません。");
@@ -339,6 +339,7 @@ function renderEntryDetail(targetId) {
     window.selectedEntryId = entry.id;
 
     // 詳細画面の各HTML要素を取得
+    const titleEl = document.getElementById('detailScenarioTitle'); // 💡 シナリオタイトル用要素
     const imgEl = document.getElementById('detailImage');
     const dateEl = document.getElementById('detailDate');
     const weatherEl = document.getElementById('detailWeather');
@@ -367,7 +368,20 @@ function renderEntryDetail(targetId) {
         }
     }
 
-    // 🌟 4. 参加キャラクター（参加PC）の反映
+    // 🌟 4. シナリオタイトルの反映（参加キャラクターの「上」に配置・未入力時は完全非表示）
+    if (titleEl) {
+        const scenarioTitle = entry.scenarioTitle || entry.title;
+        if (scenarioTitle && scenarioTitle.trim() !== '') {
+            titleEl.textContent = scenarioTitle;
+            titleEl.classList.remove('hidden'); // Tailwindの隠しクラスを解除して表示
+            titleEl.style.display = ''; // style.displayで消していた場合の対策
+        } else {
+            titleEl.textContent = '';
+            titleEl.classList.add('hidden');    // 未入力時は要素を隠してスペースを消す
+        }
+    }
+
+    // 🌟 5. 参加キャラクター（参加PC）の反映
     const participantsWrapper = document.getElementById('detailParticipantsWrapper');
     const participantsContainer = document.getElementById('detailParticipantsContainer');
 
@@ -408,12 +422,12 @@ function renderEntryDetail(targetId) {
         }
     }
 
-    // 5. 本文の反映（ネタバレタグ対応）
+    // 6. 本文の反映（ネタバレタグ対応）
     if (contentEl) {
         contentEl.innerHTML = typeof parseSpoilers === 'function' ? parseSpoilers(entry.content) : (entry.content || '');
     }
 
-    // 6. ネタバレ防止メモの反映
+    // 7. ネタバレ防止メモの反映
     window.isSecretRevealed = false; // 記事を開くたびに「閉じた状態」にリセット
     if (secretContainer) {
         if (entry.secretContent && entry.secretContent.trim() !== '') {
