@@ -102,11 +102,11 @@
         </div>
 
         <div class="w-full flex flex-col gap-2.5">
-            <!-- 固定リンク1: キャラクター一覧 -->
-            <a href="characters.html" class="group flex items-center justify-between px-4 py-3.5 bg-white/90 hover:bg-white border border-stone-200 rounded-2xl shadow-sm transition-all backdrop-blur-sm">
+<!-- 固定リンク1: キャラクター一覧 -->
+            <a href="characters.html" class="group flex items-center justify-between px-4 py-3.5 bg-white/75 hover:bg-white/85 border border-white/40 rounded-2xl shadow-sm transition-all backdrop-blur-md">
                 <div class="flex items-center gap-4 min-w-0">
                     <!-- 🖼️ 背景を bg-white に固定し、ホバー時の黒反転（group-hover:bg-stone-800）を削除 -->
-                    <div class="w-14 h-14 rounded-2xl bg-white border border-stone-200 flex items-center justify-center text-stone-600 transition-colors flex-shrink-0 overflow-hidden relative shadow-inner">
+                    <div class="w-14 h-14 rounded-2xl bg-white/90 border border-white/60 flex items-center justify-center text-stone-600 transition-colors flex-shrink-0 overflow-hidden relative shadow-inner backdrop-blur-sm">
                         <img id="charIconImg" src="" alt="" class="w-full h-full object-cover" style="display:none;" onerror="this.style.display='none'; document.getElementById('charDefaultIcon').style.display='flex';">
                         <i id="charDefaultIcon" class="fa-solid fa-users text-xl"></i>
                     </div>
@@ -118,10 +118,10 @@
             </a>
 
             <!-- 固定リンク2: 月別アルバム・日記 -->
-            <a href="diary.html" class="group flex items-center justify-between px-4 py-3.5 bg-white/90 hover:bg-white border border-stone-200 rounded-2xl shadow-sm transition-all backdrop-blur-sm">
+            <a href="diary.html" class="group flex items-center justify-between px-4 py-3.5 bg-white/75 hover:bg-white/85 border border-white/40 rounded-2xl shadow-sm transition-all backdrop-blur-md">
                 <div class="flex items-center gap-4 min-w-0">
                     <!-- 🖼️ こちらも同様に bg-white に固定し、黒反転を削除 -->
-                    <div class="w-14 h-14 rounded-2xl bg-white border border-stone-200 flex items-center justify-center text-stone-600 transition-colors flex-shrink-0 overflow-hidden relative shadow-inner">
+                    <div class="w-14 h-14 rounded-2xl bg-white/90 border border-white/60 flex items-center justify-center text-stone-600 transition-colors flex-shrink-0 overflow-hidden relative shadow-inner backdrop-blur-sm">
                         <img id="diaryIconImg" src="" alt="" class="w-full h-full object-cover" style="display:none;" onerror="this.style.display='none'; document.getElementById('diaryDefaultIcon').style.display='flex';">
                         <i id="diaryDefaultIcon" class="fa-solid fa-book-open text-xl"></i>
                     </div>
@@ -137,7 +137,7 @@
         </div>
 
         <div id="adminEditContainer" class="w-full pt-1" style="display: none;">
-            <button onclick="openEditModal()" class="w-full py-2.5 bg-stone-800 hover:bg-stone-700 text-white rounded-xl text-xs font-bold shadow-md transition-all flex items-center justify-center gap-2">
+            <button onclick="openEditModal()" class="w-full py-2.5 bg-stone-800/90 hover:bg-stone-800 text-white rounded-xl text-xs font-bold shadow-md transition-all backdrop-blur-sm flex items-center justify-center gap-2">
                 <i class="fa-solid fa-pen-to-square"></i> ポータル設定・リンク編集
             </button>
         </div>
