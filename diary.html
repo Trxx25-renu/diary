@@ -310,12 +310,15 @@
             }
         }
 
-        // 🌟 【修正】URLハッシュがある場合は詳細を優先表示し、ない場合のみ通常の一覧ルーティングを行う
+        // 🌟 【修正完了版】URLハッシュがある場合は navigateTo を使って安全に詳細を表示する
         const currentHash = window.location.hash;
         if (currentHash && currentHash.startsWith('#detail=')) {
             const targetId = currentHash.replace('#detail=', '');
-            if (typeof renderEntryDetail === 'function') {
-                console.log("🔗 URLハッシュから詳細データを展開します:", targetId);
+            console.log("🔗 URLハッシュから詳細データを展開します:", targetId);
+            
+            if (typeof window.navigateTo === 'function') {
+                window.navigateTo('detail', targetId, false);
+            } else if (typeof renderEntryDetail === 'function') {
                 renderEntryDetail(targetId);
             }
         } else {
