@@ -511,7 +511,9 @@ async function uploadImageToFirebase(fileObject) {
 }
 window.uploadImageToFirebase = uploadImageToFirebase;
 
+// ==========================================
 // 🌟 画面切り替え ＆ URLハッシュ（#）を同期するルーター関数
+// ==========================================
 function navigateTo(view, param = null, updateHash = true) {
     // 💡 現在のビューをここで確実に保存！
     window.currentView = view;
@@ -644,17 +646,9 @@ function navigateTo(view, param = null, updateHash = true) {
             `;
         }
 
-// 🌟 修正：データがまだ読み込まれていない場合はフライングで呼ばず、エラーを出さずにスルーする
-        if (targetId) {
-            if (typeof window.entries !== 'undefined' && window.entries.length > 0) {
-                if (typeof renderEntryDetail === 'function') {
-                    renderEntryDetail(targetId);
-                }
-            } else {
-                console.log("⏳ データ未読込のため、詳細の即時描画を初期化処理へ委譲します:", targetId);
-            }
-        } else {
-            console.error("詳細を表示するためのIDが指定されていません");
+        // 🌟 詳細データを描画（すでに安全ガード付きの renderEntryDetail が裏でしっかり処理してくれます）
+        if (targetId && typeof renderEntryDetail === 'function') {
+            renderEntryDetail(targetId);
         }
     }
 }
