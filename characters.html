@@ -2120,10 +2120,10 @@ function renderCharacterDetail(characterId) {
                         return `
                             <div class="flex items-center justify-between py-1 px-2 hover:bg-white/90 rounded-lg transition-colors text-xs">
                                 <span class="text-stone-500 font-mono shrink-0">${dateStr}</span>
-                                <a href="diary.html#detail=${entry.id}" class="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md transition-all hover:opacity-80" style="background-color: ${themeColor}12; color:${themeColor};">
-                                    <span>日記へ</span>
-                                    <i class="fa-solid fa-arrow-right text-[9px]"></i>
-                                </a>
+                                <button onclick="openDiaryEntry('${entry.id}')" class="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md transition-all hover:opacity-80 cursor-pointer" style="background-color: ${themeColor}12; color:${themeColor};">
+    <span>日記へ</span>
+    <i class="fa-solid fa-arrow-right text-[9px]"></i>
+</button>
                             </div>
                         `;
                     }).join('');
