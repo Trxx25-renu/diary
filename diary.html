@@ -181,13 +181,13 @@
             console.log("📂 使用する appId:", appId);
 
             const firebaseConfig = {
-                        apiKey: "AIzaSyA2ctX9sUpJmLSVJomU9cbMzrUX_AXNjuE",
-            authDomain: "diary-36d77.firebaseapp.com",
-            projectId: "diary-36d77",
-            storageBucket: "diary-36d77.firebasestorage.app",
-            messagingSenderId: "1060563209082",
-            appId: "1:1060563209082:web:1c6cfc21a496548309e4c3",
-            measurementId: "G-RBK7ZN6NF1"
+                apiKey: "AIzaSyA2ctX9sUpJmLSVJomU9cbMzrUX_AXNjuE",
+                authDomain: "diary-36d77.firebaseapp.com",
+                projectId: "diary-36d77",
+                storageBucket: "diary-36d77.firebasestorage.app",
+                messagingSenderId: "1060563209082",
+                appId: "1:1060563209082:web:1c6cfc21a496548309e4c3",
+                measurementId: "G-RBK7ZN6NF1"
             };
 
             const app = initializeApp(firebaseConfig);
@@ -299,31 +299,30 @@
             renderMonthFolders();
         }
 
-        // 🌟 ここで正しいルーティング関数を呼び出す
-        if (typeof handleInitialRouting === 'function') {
-            handleInitialRouting();
-        } else if (typeof window.navigateTo === 'function') {
-            window.navigateTo('months');
-        }
-
         if (typeof window.applyCurrentThemeToUI === 'function') {
             window.applyCurrentThemeToUI();
         }
 
-        // 💡 データのロードと初期ルーティングがすべて終わった直後に、キャラクター詳細画面が開いていれば再描画する
+        // キャラクター詳細が開いている場合の処理
         if (typeof window._currentGalleryState !== 'undefined' && window._currentGalleryState.characterId) {
             if (typeof renderCharacterDetail === 'function') {
                 renderCharacterDetail(window._currentGalleryState.characterId);
             }
         }
 
-        // 🌟 【追加】データのロードが完全に終わった直後、URLにハッシュ（#detail=...）があれば確実に詳細を開く！
+        // 🌟 【修正】URLハッシュがある場合は詳細を優先表示し、ない場合のみ通常の一覧ルーティングを行う
         const currentHash = window.location.hash;
         if (currentHash && currentHash.startsWith('#detail=')) {
             const targetId = currentHash.replace('#detail=', '');
             if (typeof renderEntryDetail === 'function') {
                 console.log("🔗 URLハッシュから詳細データを展開します:", targetId);
                 renderEntryDetail(targetId);
+            }
+        } else {
+            if (typeof handleInitialRouting === 'function') {
+                handleInitialRouting();
+            } else if (typeof window.navigateTo === 'function') {
+                window.navigateTo('months');
             }
         }
     });
