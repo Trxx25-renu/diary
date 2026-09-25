@@ -4687,6 +4687,68 @@ async function importCharactersJSON(event) {
 window.importCharactersJSON = importCharactersJSON;
                     
         </script>
+      
+              <script>
+   // キャラシテキスト読み込みボタンを押したときに呼ばれる関数
+function importCharacterSheetText() {
+    const rawText = document.getElementById('sheetImportText').value;
+    if (!rawText.trim()) {
+        alert('キャラクターシートのテキストを入力してください。');
+        return;
+    }
+
+    // 1. 先ほどのパーサー関数でデータを抽出
+    const data = parseCoCText(rawText);
+
+    // 2. 抽出したデータを各フォームの入力欄に流し込む
+    if (data.name) {
+        document.getElementById('charName').value = data.name;
+    }
+    
+    // カラーコードが取れていれば、テーマカラーのピッカーとテキストボックスの両方に反映
+    if (data.colorCode) {
+        document.getElementById('charThemeColor').value = data.colorCode;
+        document.getElementById('charThemeColorText').value = data.colorCode;
+        // もしカラー変更時の連動処理があれば呼び出す
+        if (typeof handleThemeColorInput === 'function') {
+            handleThemeColorInput(data.colorCode);
+        }
+    }
+
+    // 3. ステータスやその他の詳細データをメモ欄に綺麗にまとめたり、
+    //    カスタムフィールドに振り分ける場合はここで処理します
+    // 例：ステータス情報をメモ欄に綺麗にフォーマットして挿入する場合
+    let statusSummary = `【ステータス】\n` +
+        `STR:${data.str} / CON:${data.con} / POW:${data.pow} / DEX:${data.dex}\n` +
+        `APP:${data.app} / SIZ:${data.siz} / INT:${data.int} / EDU:${data.edu}\n` +
+        `HP:${data.hp} / SAN:${data.san} / 幸運:${data.luck}\n\n`;
+
+    const memoField = document.getElementById('charMemo');
+    if (memoField) {
+        memoField.value = statusSummary + memoField.value;
+        // テキストエリアの高さ自動調整関数があれば実行
+        if (typeof autoResizeTextarea === 'function') {
+            autoResizeTextarea(memoField);
+        }
+    }
+
+    // 4. 完了の軽いフィードバック（アラートを出さずに、ボタンの文字を一時的に変えるなどでもスマートです）
+    const btn = event.target;
+    const originalText = btn.textContent;
+    btn.textContent = '✔ 読み込み完了！';
+    btn.classList.add('bg-emerald-600', 'hover:bg-emerald-700');
+    btn.classList.remove('stone-800', 'hover:bg-stone-700');
+    
+    setTimeout(() => {
+        btn.textContent = originalText;
+        btn.classList.remove('bg-emerald-600', 'hover:bg-emerald-700');
+        btn.classList.add('stone-800', 'hover:bg-stone-700');
+    }, 1500);
+}
+// 関数をグローバル（window）に登録する
+window.importCharacterSheetText = importCharacterSheetText;
+            </script>
+      
         
 </head>
     
