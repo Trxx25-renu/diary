@@ -329,23 +329,12 @@
     });
 
 // ==========================================
-// 🌟 記事の詳細データを確実に探し出して画面に反映する関数（データロード完了待ち完全ガード版）
+// 🌟 記事の詳細データを確実に探し出して画面に反映・表示する関数（完全自立・ビュー切替対応版）
 // ==========================================
 function renderEntryDetail(targetId) {
     const detailContainer = document.getElementById('view-detail');
 
-    // 💡 まだ初期化の途中（データロードが完了していない）場合は、エラーを出さずに少し待ってから自動で再トライする
-    if (!window.isDataLoaded) {
-        if (detailContainer) {
-            detailContainer.innerHTML = `<p class="text-sm text-stone-400 py-12 text-center">データを読み込んでいます...</p>`;
-        }
-        setTimeout(() => {
-            renderEntryDetail(targetId);
-        }, 50);
-        return;
-    }
-
-    // 💡 データの二重チェック
+    // 💡 まず、ローカルストレージからデータの復元を試みる
     if (!window.entries || window.entries.length === 0) {
         try {
             const saved = localStorage.getItem('local_entries') || localStorage.getItem('entries');
@@ -355,10 +344,12 @@ function renderEntryDetail(targetId) {
         } catch (e) {}
     }
 
-    // 💡 それでもまだデータがない場合
+    // 💡 まだデータが読み込まれていない場合は、少し待ってから自動で再トライする
     if (!window.entries || window.entries.length === 0) {
         if (detailContainer) {
             detailContainer.innerHTML = `<p class="text-sm text-stone-400 py-12 text-center">データを読み込んでいます...</p>`;
+            // 🌟 読み込み中でも詳細ビュー自体は表示状態にする（「読み込んでいます」を表示するため）
+            detailContainer.classList.remove('hidden');
         }
         setTimeout(() => {
             renderEntryDetail(targetId);
@@ -369,14 +360,26 @@ function renderEntryDetail(targetId) {
     // 💡 ID（文字列変換したもの）だけで確実に探す
     const entry = window.entries.find(e => String(e.id) === String(targetId));
 
-    // 🚨 データのロードが「完全に終わった後」なのに存在しない場合のみエラーにする
     if (!entry) {
         if (detailContainer) {
             detailContainer.innerHTML = `<p class="text-sm text-stone-400 py-12 text-center">日記データが見つかりませんでした。</p>`;
+            detailContainer.classList.remove('hidden');
         }
         console.error("エラー: 該当する日記データが見つかりませんでした。探したID:", targetId);
         return;
     }
+
+    // ==========================================
+    // 🎨 画面の表示切り替え（一覧などを隠し、詳細ビューを表示する）
+    // ==========================================
+    if (detailContainer) {
+        detailContainer.classList.remove('hidden');
+    }
+    // 例として、一覧画面などの他の主要ビュー要素があればここで非同期に隠す
+    const otherViews = document.querySelectorAll('.view-section'); // ビュー共通のクラスがある場合
+    otherViews.forEach(v => {
+        if (v.id !== 'view-detail') v.classList.add('hidden');
+    });
 
     // 選択中のIDを保存
     window.selectedEntryId = entry.id;
@@ -470,7 +473,7 @@ function renderEntryDetail(targetId) {
                 secretContentEl.innerHTML = typeof parseSpoilers === 'function' ? parseSpoilers(entry.secretContent) : (entry.secretContent || '');
             }
             if (secretOverlay) {
-                secretOverlay.classList.remove('hidden');
+                secretOverlay.classList.add('hidden'); // ユーザー操作で開く仕様なら初期は表示等。お好みで調整
             }
             if (secretContentEl) {
                 secretContentEl.classList.add('secret-card-blur');
