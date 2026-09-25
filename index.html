@@ -7,7 +7,6 @@
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* スりガラス風パネル・ボタンの定義 */
         .glass-panel {
             background: rgba(255, 255, 255, 0.15);
             backdrop-filter: blur(12px);
@@ -26,20 +25,20 @@
             transform: scale(0.97);
             background: rgba(255, 255, 255, 0.35);
         }
-        /* スクロールバー非表示 */
         ::-webkit-scrollbar {
             display: none;
         }
         body {
             -webkit-tap-highlight-color: transparent;
+            background-color: #2a2a2a;
         }
     </style>
 </head>
 <body class="relative min-h-screen text-white overflow-hidden flex flex-col justify-between">
 
-    <!-- 背景画像レイヤー（暗めのオーバーレイで写真を目立ちにくく調整） -->
-    <div id="bgLayer" class="absolute inset-0 bg-cover bg-center z-0 transition-all duration-500" style="background-color: #1a1a1a;">
-        <div class="absolute inset-0 bg-black/50 backdrop-brightness-75"></div>
+    <!-- 背景画像レイヤー -->
+    <div id="bgLayer" class="absolute inset-0 bg-cover bg-center z-0 transition-all duration-500">
+        <div class="absolute inset-0 bg-black/40"></div>
     </div>
 
     <!-- 引っ張り更新インジケーター -->
@@ -53,13 +52,13 @@
         
         <!-- 上部：管理者設定ボタン -->
         <div class="w-full flex justify-between items-center pt-2">
-            <span id="portalTitleHeader" class="text-xs tracking-widest uppercase text-white/70 font-semibold drop-shadow">SESSION PORTAL</span>
+            <span id="portalTitleHeader" class="text-xs tracking-widest uppercase text-white/80 font-semibold drop-shadow">SESSION PORTAL</span>
             <button onclick="openEditModal()" class="glass-button p-2.5 rounded-full text-white shadow-lg flex items-center justify-center">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
             </button>
         </div>
 
-        <!-- 状態復帰バー（前回開いていたページがある場合に表示） -->
+        <!-- 状態復帰バー -->
         <div id="restoreContainer" class="w-full my-2 hidden">
             <div class="glass-panel rounded-xl p-3 flex items-center justify-between shadow-lg">
                 <span id="restoreText" class="text-xs text-white/90">前回のページを開きますか？</span>
@@ -70,19 +69,17 @@
         <!-- 中央：アイコン＆タイトル -->
         <div class="flex flex-col items-center my-auto py-8">
             <div class="w-32 h-32 rounded-full glass-panel flex items-center justify-center overflow-hidden mb-6 shadow-2xl p-1">
-                <img id="mainIconImg" src="" alt="Portal Icon" class="w-full h-full object-cover rounded-full" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'%23ffffff\'><path d=\'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z\'/></svg>'">
+                <img id="mainIconImg" src="" alt="Portal Icon" class="w-full h-full object-cover rounded-full">
             </div>
             <h1 id="portalTitleDisplay" class="text-2xl font-bold tracking-wider text-center drop-shadow-md">卓ポータル</h1>
         </div>
 
         <!-- 下部：ナビゲーションリンク群 -->
         <div class="w-full space-y-3 pb-8">
-            <!-- 固定リンク 1: キャラクター一覧 -->
             <a href="characters.html" onclick="recordPage('characters.html')" class="glass-button w-full py-4 px-6 rounded-2xl flex items-center justify-between shadow-lg font-semibold text-base">
                 <span id="nameCharDisplay">キャラクター一覧</span>
                 <svg class="w-5 h-5 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
             </a>
-            <!-- 固定リンク 2: 日記・アルバム -->
             <a href="diary.html" onclick="recordPage('diary.html')" class="glass-button w-full py-4 px-6 rounded-2xl flex items-center justify-between shadow-lg font-semibold text-base">
                 <span id="nameDiaryDisplay">月別アルバム・日記</span>
                 <svg class="w-5 h-5 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
@@ -103,14 +100,12 @@
                 </button>
             </div>
 
-            <!-- パスコード認証エリア -->
             <div id="authSection" class="space-y-3">
                 <p class="text-xs text-white/80">設定を変更するには管理パスコードを入力してください。</p>
                 <input type="password" id="inputAuthPass" placeholder="パスコード" class="w-full bg-black/30 border border-white/20 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-white">
                 <button onclick="verifyAdminPass()" class="w-full bg-white/20 hover:bg-white/30 py-3 rounded-xl font-semibold transition">認証する</button>
             </div>
 
-            <!-- 設定フォーム（認証後に表示） -->
             <div id="settingsFormSection" class="space-y-4 hidden">
                 <div>
                     <label class="text-xs text-white/80 block mb-1">ポータルタイトル</label>
@@ -139,7 +134,6 @@
                     <input type="file" id="inputBgImageFile" accept="image/*" class="w-full text-xs text-white/70 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-white/20 file:text-white hover:file:bg-white/30">
                 </div>
 
-                <!-- カスタムリンク管理 -->
                 <div class="space-y-2">
                     <div class="flex justify-between items-center">
                         <label class="text-xs text-white/80">カスタムリンク</label>
@@ -153,9 +147,7 @@
         </div>
     </div>
 
-    <!-- スクリプト定義 -->
     <script>
-        // 設定用オブジェクトの初期値
         let currentConfig = {
             portalTitle: "卓ポータル",
             adminPasscode: "1234",
@@ -166,7 +158,8 @@
             customLinks: []
         };
 
-        // --- 状態保持（SessionStorage）の仕組み ---
+        const defaultIconSvg = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23ffffff'><path d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z'/></svg>";
+
         function recordPage(pageName) {
             sessionStorage.setItem('lastActivePage', pageName);
             sessionStorage.setItem('lastActiveTime', Date.now().toString());
@@ -175,7 +168,6 @@
         function checkLastActivePage() {
             const lastPage = sessionStorage.getItem('lastActivePage');
             const lastTime = sessionStorage.getItem('lastActiveTime');
-            // 30分以内に開いていたページがあれば復元バーを表示
             if (lastPage && lastTime && (Date.now() - parseInt(lastTime) < 30 * 60 * 1000)) {
                 const restoreContainer = document.getElementById('restoreContainer');
                 const restoreText = document.getElementById('restoreText');
@@ -193,37 +185,38 @@
             }
         }
 
-        // --- Firestore 保存・読み込みのシミュレーション（必要に応じてFirestore SDKへ接続） ---
-        async function loadSettings() {
-            // ローカルストレージ等またはFirestoreからロード
+        function loadSettings() {
             const saved = localStorage.getItem('portalConfig');
             if (saved) {
-                try { currentConfig = JSON.parse(saved); } catch(e) {}
+                try {
+                    const parsed = JSON.parse(saved);
+                    currentConfig = { ...currentConfig, ...parsed };
+                } catch(e) {}
             }
             applySettings();
             checkLastActivePage();
         }
 
-        async function saveSettingsToFirestore() {
+        function saveSettingsToLocalStorage() {
             localStorage.setItem('portalConfig', JSON.stringify(currentConfig));
-            // ※本番のFirebase Firestore連携を行う場合はここにdb.collection(...).set(...)を記述
         }
 
         function applySettings() {
-            document.getElementById('portalTitleHeader').textContent = currentConfig.portalTitle;
-            document.getElementById('portalTitleDisplay').textContent = currentConfig.portalTitle;
-            document.getElementById('nameCharDisplay').textContent = currentConfig.nameChar;
-            document.getElementById('nameDiaryDisplay').textContent = currentConfig.nameDiary;
+            document.getElementById('portalTitleHeader').textContent = currentConfig.portalTitle || "卓ポータル";
+            document.getElementById('portalTitleDisplay').textContent = currentConfig.portalTitle || "卓ポータル";
+            document.getElementById('nameCharDisplay').textContent = currentConfig.nameChar || "キャラクター一覧";
+            document.getElementById('nameDiaryDisplay').textContent = currentConfig.nameDiary || "月別アルバム・日記";
 
             const iconImg = document.getElementById('mainIconImg');
-            if (currentConfig.mainIconData) iconImg.src = currentConfig.mainIconData;
+            iconImg.src = currentConfig.mainIconData || defaultIconSvg;
 
             const bgLayer = document.getElementById('bgLayer');
             if (currentConfig.bgImageData) {
                 bgLayer.style.backgroundImage = `url(${currentConfig.bgImageData})`;
+            } else {
+                bgLayer.style.backgroundImage = 'none';
             }
 
-            // カスタムリンクのレンダリング
             const container = document.getElementById('customLinksContainer');
             container.innerHTML = '';
             if (currentConfig.customLinks && Array.isArray(currentConfig.customLinks)) {
@@ -237,7 +230,6 @@
             }
         }
 
-        // --- モーダル・認証関連 ---
         function openEditModal() {
             document.getElementById('editModal').classList.remove('hidden');
             document.getElementById('authSection').classList.remove('hidden');
@@ -255,13 +247,11 @@
                 document.getElementById('authSection').classList.add('hidden');
                 document.getElementById('settingsFormSection').classList.remove('hidden');
                 
-                // フォームに現在の値をセット
                 document.getElementById('inputPortalTitle').value = currentConfig.portalTitle;
                 document.getElementById('inputAdminPass').value = currentConfig.adminPasscode;
                 document.getElementById('inputNameChar').value = currentConfig.nameChar;
                 document.getElementById('inputNameDiary').value = currentConfig.nameDiary;
                 
-                // カスタムリンク行生成
                 const list = document.getElementById('modalCustomLinksList');
                 list.innerHTML = '';
                 if (currentConfig.customLinks) {
@@ -277,8 +267,8 @@
             const div = document.createElement('div');
             div.className = 'flex space-x-2 items-center';
             div.innerHTML = `
-                <input type="text" placeholder="リンク名" value="${name}" class="link-name flex-1 bg-black/30 border border-white/20 rounded-xl px-3 py-1.5 text-xs">
-                <input type="text" placeholder="URL" value="${url}" class="link-url flex-1 bg-black/30 border border-white/20 rounded-xl px-3 py-1.5 text-xs">
+                <input type="text" placeholder="リンク名" value="${name}" class="link-name flex-1 bg-black/30 border border-white/20 rounded-xl px-3 py-1.5 text-xs text-white">
+                <input type="text" placeholder="URL" value="${url}" class="link-url flex-1 bg-black/30 border border-white/20 rounded-xl px-3 py-1.5 text-xs text-white">
                 <button onclick="this.parentElement.remove()" class="text-red-300 hover:text-red-100 px-2 py-1 text-xs">✕</button>
             `;
             list.appendChild(div);
@@ -295,7 +285,6 @@
             return links;
         }
 
-        // --- 画像圧縮処理 ---
         function compressImage(file, maxWidth) {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
@@ -315,9 +304,7 @@
                         canvas.height = height;
 
                         const ctx = canvas.getContext('2d');
-                        ctx.clearRect(0, 0, width, height);
                         ctx.drawImage(img, 0, 0, width, height);
-
                         resolve(canvas.toDataURL('image/png'));
                     };
                     img.onerror = reject;
@@ -347,10 +334,9 @@
 
             closeEditModal();
             applySettings();
-            await saveSettingsToFirestore();
+            saveSettingsToLocalStorage();
         }
 
-        // --- 引っ張り更新 (Pull-to-refresh) 処理 ---
         let touchStartY = 0;
         let isPulling = false;
         const pullThreshold = 70;
@@ -395,9 +381,12 @@
             touchStartY = 0;
         });
 
-        window.addEventListener('DOMContentLoaded', () => {
+        // 確実に読み込まれるようにする
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', loadSettings);
+        } else {
             loadSettings();
-        });
+        }
     </script>
 </body>
 </html>
