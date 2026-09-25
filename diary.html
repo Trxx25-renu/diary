@@ -11,25 +11,22 @@
 <script>eruda.init();</script>
 
     <!-- 🚀 【超重要】通信やJSファイルの読み込みを待たずに、一瞬でローカルのキャッシュを適用するスクリプト -->
-    <script>
+<script>
         try {
             const cached = localStorage.getItem('cachedSiteConfig');
             if (cached) {
                 const cfg = JSON.parse(cached);
                 if (cfg.title) {
-                    document.write(`<style>/* チラつき防止 */</style><title>${cfg.title}</title>`);
+                    document.title = cfg.title; // document.write を使わず安全にタイトル変更
                 }
             }
         } catch(e) {}
-        
     </script>
 
-<!-- Firebase App & SDK (CDN Module) -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        // ⬇️ Firebase Storage の機能をインポート
         import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js";
 
@@ -41,7 +38,6 @@
         window.getDoc = getDoc;
         window.collection = collection;
         window.getDocs = getDocs;
-        // ⬇️ Firebase Storage の機能もグローバル（window）に登録
         window.getStorage = getStorage;
         window.ref = ref;
         window.uploadBytes = uploadBytes;
@@ -49,7 +45,6 @@
         window.getAnalytics = getAnalytics;
     </script>
 
-   <!-- ホーム画面追加用アイコン & PWA設定タグ（初期値として透明なダミーを入れて404を防ぐ） -->
     <link rel="apple-touch-icon" id="appleTouchIcon" href="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7">
     <link rel="icon" type="image/png" id="faviconIcon" href="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7">
     <meta name="apple-mobile-web-app-title" id="appleAppTitle" content="卓日記">
@@ -57,18 +52,19 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="theme-color" content="#fcfbf9">
 
-    <!-- 🚀 アイコンもキャッシュがあれば一瞬で適用するスクリプト -->
     <script>
         try {
             const cached = localStorage.getItem('cachedSiteConfig');
             if (cached) {
                 const cfg = JSON.parse(cached);
                 if (cfg.logoImageUrl) {
-                    // タグのhrefをあらかじめキャッシュの画像にしておく
-                    document.write(`
-                        <link rel="apple-touch-icon" id="appleTouchIcon" href="${cfg.logoImageUrl}">
-                        <link rel="icon" type="image/png" id="faviconIcon" href="${cfg.logoImageUrl}">
-                    `);
+                    // DOMの読み込みを待たずに、DOM要素が見つかり次第安全に反映
+                    document.addEventListener('DOMContentLoaded', () => {
+                        const appleIcon = document.getElementById('appleTouchIcon');
+                        const favicon = document.getElementById('faviconIcon');
+                        if (appleIcon) appleIcon.href = cfg.logoImageUrl;
+                        if (favicon) favicon.href = cfg.logoImageUrl;
+                    });
                 }
             }
         } catch(e) {}
@@ -103,11 +99,7 @@
         user-select: text;
         border: 1px solid #e7e5e4;
     }
-</style>
-    
-<script type="module">
-    document.addEventListener("DOMContentLoaded", async () => {
-        console.log("🚀 初期化処理を開始します...");
+    </style>
 
         // 1. トースト通知を表示する関数（エラー防止用）
         if (typeof showToast !== 'function') {
