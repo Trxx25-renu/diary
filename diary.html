@@ -100,7 +100,26 @@
     }
     </style>
 
-    <script type="module">
+<script type="module">
+    // ==========================================
+    // 🔗 キャラクター側などから安全に日記詳細を開くための共通関数
+    // ==========================================
+    window.openDiaryEntry = function(entryId) {
+        if (!entryId) return;
+        
+        // すでに diary.html（同じページ）にいる場合
+        if (typeof window.navigateTo === 'function') {
+            window.location.hash = `#detail=${entryId}`;
+            window.navigateTo('detail', entryId, true);
+        } else if (typeof window.renderEntryDetail === 'function') {
+            window.location.hash = `#detail=${entryId}`;
+            window.renderEntryDetail(entryId);
+        } else {
+            // 万が一別ページにいる場合のフォールバック
+            window.location.href = `diary.html#detail=${entryId}`;
+        }
+    };
+
     document.addEventListener("DOMContentLoaded", async () => {
         console.log("🚀 初期化処理を開始します...");
 
