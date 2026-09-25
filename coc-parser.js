@@ -45,3 +45,4 @@ function parseCoCText(rawText) {
 
     return data;
 }
+window.parseCoCText = parseCoCText;
