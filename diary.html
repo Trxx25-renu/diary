@@ -1,4 +1,81 @@
-<style>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="robots" content="noindex, nofollow">
+    <title id="siteTitleTag">卓日記 - Session Log</title>
+    
+    <!-- スマホ用コンソール表示ツール（Eruda） -->
+    <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
+    <script>eruda.init();</script>
+
+    <!-- 🚀 【超重要】通信やJSファイルの読み込みを待たずに、一瞬でローカルのキャッシュを適用するスクリプト -->
+    <script>
+        try {
+            const cached = localStorage.getItem('cachedSiteConfig');
+            if (cached) {
+                const cfg = JSON.parse(cached);
+                if (cfg.title) {
+                    document.title = cfg.title;
+                }
+            }
+        } catch(e) {}
+    </script>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js";
+
+        window.initializeApp = initializeApp;
+        window.getAuth = getAuth;
+        window.signInAnonymously = signInAnonymously;
+        window.getFirestore = getFirestore;
+        window.doc = doc;
+        window.getDoc = getDoc;
+        window.collection = collection;
+        window.getDocs = getDocs;
+        window.getStorage = getStorage;
+        window.ref = ref;
+        window.uploadBytes = uploadBytes;
+        window.getDownloadURL = getDownloadURL;
+        window.getAnalytics = getAnalytics;
+    </script>
+
+    <link rel="apple-touch-icon" id="appleTouchIcon" href="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7">
+    <link rel="icon" type="image/png" id="faviconIcon" href="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7">
+    <meta name="apple-mobile-web-app-title" id="appleAppTitle" content="卓日記">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="theme-color" content="#fcfbf9">
+
+    <script>
+        try {
+            const cached = localStorage.getItem('cachedSiteConfig');
+            if (cached) {
+                const cfg = JSON.parse(cached);
+                if (cfg.logoImageUrl) {
+                    document.addEventListener('DOMContentLoaded', () => {
+                        const appleIcon = document.getElementById('appleTouchIcon');
+                        const favicon = document.getElementById('faviconIcon');
+                        if (appleIcon) appleIcon.href = cfg.logoImageUrl;
+                        if (favicon) favicon.href = cfg.logoImageUrl;
+                    });
+                }
+            }
+        } catch(e) {}
+    </script>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Playfair+Display:ital,wght@0,600;1,400&display=swap" rel="stylesheet">
+   
+    <style>
     /* ネタバレ隠し（伏せ字）スタイル */
     .spoiler-text {
         background-color: #292524 !important;
@@ -228,7 +305,7 @@
             }
         }
 
-        // 🌟 【修正完了版】URLハッシュがある場合は navigateTo を使って安全に詳細を表示する
+        // 🌟 URLハッシュがある場合は navigateTo を使って安全に詳細を表示する
         const currentHash = window.location.hash;
         if (currentHash && currentHash.startsWith('#detail=')) {
             const targetId = currentHash.replace('#detail=', '');
