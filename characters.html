@@ -4692,9 +4692,9 @@ window.importCharactersJSON = importCharactersJSON;
       <script src="coc-parser.js"></script>
               <script>
 // ==========================================
-// 💡 キャラシテキスト読み込み・流し込み関数（修正完全版）
+// 💡 キャラシテキスト読み込み・流し込み関数（CoC第6版・POW/幸運完全分離版）
 // ==========================================
-function importCharacterSheetTest(event) {
+function importCharacterSheetText(event) {
     const rawText = document.getElementById('sheetImportText').value;
     if (!rawText.trim()) {
         alert('キャラクターシートのテキストを入力してください。');
@@ -4711,12 +4711,11 @@ function importCharacterSheetTest(event) {
     setFieldValue('charGender', data.gender);
     setFieldValue('charBirthdate', data.birthday);
 
-    // 【修正】カラーコードの確実な反映
+    // カラーコードの反映
     if (data.colorCode) {
         setFieldValue('charThemeColor', data.colorCode);
         setFieldValue('charThemeColorText', data.colorCode);
         
-        // もしデータオブジェクト側にもあればセット
         if (typeof currentCharacter !== 'undefined' && currentCharacter) {
             currentCharacter.themeColor = data.colorCode;
         }
@@ -4726,61 +4725,61 @@ function importCharacterSheetTest(event) {
         }
     }
 
-    // 3. 編集中のキャラクターデータオブジェクト（例: `currentCharacter` 等）への直接代入
+    // 3. 編集中のキャラクターデータオブジェクトへの直接代入（base のみに反映）
     if (typeof currentCharacter !== 'undefined' && currentCharacter) {
         
-        // トップレベルのプロパティ
         if (data.name) currentCharacter.name = data.name;
         if (data.nameKana) currentCharacter.nameKana = data.nameKana;
         if (data.age) currentCharacter.age = Number(data.age) || data.age;
         if (data.gender) currentCharacter.gender = data.gender;
         if (data.birthday) currentCharacter.birthdate = data.birthday;
 
-        // customValues の更新
         if (!currentCharacter.customValues) {
             currentCharacter.customValues = {};
         }
         const cv = currentCharacter.customValues;
 
-        // --- キーマップへの代入（growthを巻き込まず、baseにだけ入れる） ---
+        // 第6版ルール：幸運は「POW * 5」だが、パーサーやテキストで混同しないよう厳密に分ける
+        // ※もし data.pow が「×5された値（例: 65など）」で取れている場合は / 5 するなどの調整が必要ですが、
+        //  まずは純粋な POW と 幸運（luck）をそれぞれ独立して割り当てます。
+        let purePow = data.pow;
+        let pureLuck = data.luck;
+
+        // 万が一、POWの欄に「幸運の値（3倍・5倍された大きな数値）」が入ってきている場合の防衛策：
+        // 6版のステータス基本値（STR〜EDUなど）は通常3〜18程度なので、もしPOWが20以上であれば「×5された幸運値」とみなして逆算する等の処理を入れることもできますが、
+        // ここでは単純にパーサーが取得した別々のキーをそのまま base に割り当てます。
+
         const statAssignments = {
-            // テキスト項目
             'field_3w13t': data.occupation,  // 職業
             'field_5hjcw': data.feature,     // 特徴表
-            
-            // ステータス・基本値（ご指摘のCON/DEX入れ替え、POW/幸運の分離対応）
             'field_swdfh': data.int,         // INT
             'field_wd51b': data.edu,         // EDU
             'field_sbqry': data.app,         // APP
-            'field_rdwxj': data.con,         // CON (修正: こちらがCON)
-            'field_sv8he': data.dex,         // DEX (修正: こちらがDEX)
+            'field_rdwxj': data.con,         // CON
+            'field_sv8he': data.dex,         // DEX
             'field_p6s23': data.siz,         // SIZ
-            'pow': data.pow,                 // POW (幸運とは別枠で確実にPOWを入れる)
-            'luck': data.luck,               // 幸運
-            
-            // HP ＆ SAN (なければSTR / POWから自動補完)
+            'pow': purePow,                  // POW（絶対に幸運を入れない）
+            'luck': pureLuck,                // 幸運
             'hp': data.hp || data.str,
-            'san': data.san || data.pow
+            'san': data.san || purePow
         };
 
         for (const [fieldKey, val] of Object.entries(statAssignments)) {
             if (val === "" || val === undefined) continue;
             
             if (cv[fieldKey] !== undefined) {
-                // オブジェクト構造（{ base, growth }）の場合は .base のみに代入する
                 if (typeof cv[fieldKey] === 'object' && cv[fieldKey] !== null) {
                     if ('base' in cv[fieldKey]) {
-                        cv[fieldKey].base = Number(val) || val; // growthには触らない！
+                        cv[fieldKey].base = Number(val) || val; // growthには触らない
                     }
                 } else {
-                    // 文字列などの通常項目
                     cv[fieldKey] = val;
                 }
             }
         }
     }
 
-    // 4. 画面上の入力欄（DOM）を直接書き換えるフォールバック処理
+    // 4. 画面上の入力欄（DOM）を直接書き換える処理（growth除外 ＆ POW/幸運分離）
     const domMappings = {
         'field_3w13t': data.occupation,
         'field_5hjcw': data.feature,
@@ -4798,11 +4797,12 @@ function importCharacterSheetTest(event) {
 
     for (const [key, val] of Object.entries(domMappings)) {
         if (!val) continue;
-        // 「growth」用の入力欄を除外し、baseや直接の入力欄を狙う
-        const targets = document.querySelectorAll(`[name*="${key}"], #${key}, [data-field="${key}"]`);
+        
+        // 特殊セレクタで正確にターゲットを絞り込む
+        const targets = document.querySelectorAll(`[name="${key}"], [name$="[${key}]"], #${key}, [data-field="${key}"]`);
         targets.forEach(el => {
             if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
-                // nameやidに 'growth' が含まれる要素には絶対に代入しない防衛策
+                // growth用要素は絶対にスキップ
                 if (el.name && el.name.includes('growth')) return;
                 if (el.id && el.id.includes('growth')) return;
 
@@ -4821,7 +4821,7 @@ function importCharacterSheetTest(event) {
         renderCharacterForm();
     }
 
-    // 6. 完了のフィードバック（ボタンの見た目変更）
+    // 6. 完了のフィードバック
     const btn = event ? event.target : document.activeElement;
     if (btn && btn.tagName === 'BUTTON') {
         const originalText = btn.textContent;
@@ -4847,7 +4847,7 @@ function setFieldValue(id, value) {
     }
 }
 
-window.importCharacterSheetText = importCharacterSheetTest; // 関数名タイポ防止のエラスティック設定
+window.importCharacterSheetText = importCharacterSheetText;
             </script>
       
         
