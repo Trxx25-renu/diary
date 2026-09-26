@@ -4691,7 +4691,9 @@ window.importCharactersJSON = importCharactersJSON;
       
       <script src="coc-parser.js"></script>
               <script>
-   // キャラシテキスト読み込みボタンを押したときに呼ばれる関数
+// ==========================================
+// 💡 キャラシテキスト読み込みボタンを押したときに呼ばれる関数
+// ==========================================
 function importCharacterSheetText() {
     const rawText = document.getElementById('sheetImportText').value;
     if (!rawText.trim()) {
@@ -4699,27 +4701,48 @@ function importCharacterSheetText() {
         return;
     }
 
-    // 1. 先ほどのパーサー関数でデータを抽出
+    // 1. パーサー関数でデータを抽出
     const data = parseCoCText(rawText);
 
     // 2. 抽出したデータを各フォームの入力欄に流し込む
-    if (data.name) {
+    // 名前・ヨミガナ
+    if (data.name && document.getElementById('charName')) {
         document.getElementById('charName').value = data.name;
     }
+    if (data.nameKana && document.getElementById('charNameKana')) {
+        document.getElementById('charNameKana').value = data.nameKana;
+    }
+
+    // 基本情報（年齢、性別、職業、特徴表など）
+    if (data.age && document.getElementById('charAge')) {
+        document.getElementById('charAge').value = data.age;
+    }
+    if (data.gender && document.getElementById('charGender')) {
+        document.getElementById('charGender').value = data.gender;
+    }
+    if (data.occupation && document.getElementById('charOccupation')) {
+        document.getElementById('charOccupation').value = data.occupation;
+    }
+    if (data.feature && document.getElementById('charFeature')) {
+        document.getElementById('charFeature').value = data.feature;
+    }
+    if (data.birthday && document.getElementById('charBirthdate')) {
+        document.getElementById('charBirthdate').value = data.birthday;
+    }
     
-    // カラーコードが取れていれば、テーマカラーのピッカーとテキストボックスの両方に反映
+    // カラーコードの反映
     if (data.colorCode) {
-        document.getElementById('charThemeColor').value = data.colorCode;
-        document.getElementById('charThemeColorText').value = data.colorCode;
-        // もしカラー変更時の連動処理があれば呼び出す
+        const colorInput = document.getElementById('charThemeColor');
+        const colorText = document.getElementById('charThemeColorText');
+        if (colorInput) colorInput.value = data.colorCode;
+        if (colorText) colorText.value = data.colorCode;
+        
         if (typeof handleThemeColorInput === 'function') {
             handleThemeColorInput(data.colorCode);
         }
     }
 
-    // 3. ステータスやその他の詳細データをメモ欄に綺麗にまとめたり、
-    //    カスタムフィールドに振り分ける場合はここで処理します
-    // 例：ステータス情報をメモ欄に綺麗にフォーマットして挿入する場合
+    // 3. ステータス情報をメモ欄にまとめる処理（既存のまま）
     let statusSummary = `【ステータス】\n` +
         `STR:${data.str} / CON:${data.con} / POW:${data.pow} / DEX:${data.dex}\n` +
         `APP:${data.app} / SIZ:${data.siz} / INT:${data.int} / EDU:${data.edu}\n` +
@@ -4728,13 +4751,18 @@ function importCharacterSheetText() {
     const memoField = document.getElementById('charMemo');
     if (memoField) {
         memoField.value = statusSummary + memoField.value;
-        // テキストエリアの高さ自動調整関数があれば実行
         if (typeof autoResizeTextarea === 'function') {
             autoResizeTextarea(memoField);
         }
     }
 
-    // 4. 完了の軽いフィードバック（アラートを出さずに、ボタンの文字を一時的に変えるなどでもスマートです）
+    // 4. 入力値が変わったことをフォーム全体に通知（プレビューやバリデーション連動のため）
+    // フォーム内の主要インプットに変更イベントを発火させると安全です
+    const formContainer = document.getElementById('characterForm') || document; 
+    // ※もしリアルタイムプレビュー等の関数があればここで呼ぶと確実です
+    // if (typeof updateCharacterPreview === 'function') updateCharacterPreview();
+
+    // 5. 完了のフィードバック（ボタンの見た目変更）
     const btn = event.target;
     const originalText = btn.textContent;
     btn.textContent = '✔ 読み込み完了！';
@@ -4747,7 +4775,6 @@ function importCharacterSheetText() {
         btn.classList.add('stone-800', 'hover:bg-stone-700');
     }, 1500);
 }
-// 関数をグローバル（window）に登録する
 window.importCharacterSheetText = importCharacterSheetText;
             </script>
       
