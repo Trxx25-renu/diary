@@ -4692,9 +4692,9 @@ window.importCharactersJSON = importCharactersJSON;
       <script src="coc-parser.js"></script>
               <script>
 // ==========================================
-// 💡 キャラシテキスト読み込み・流し込み関数（全カスタムキー・ステータス完全対応版）
+// 💡 キャラシテキスト読み込み・流し込み関数（修正完全版）
 // ==========================================
-function importCharacterSheetText(event) {
+function importCharacterSheetTest(event) {
     const rawText = document.getElementById('sheetImportText').value;
     if (!rawText.trim()) {
         alert('キャラクターシートのテキストを入力してください。');
@@ -4711,10 +4711,16 @@ function importCharacterSheetText(event) {
     setFieldValue('charGender', data.gender);
     setFieldValue('charBirthdate', data.birthday);
 
-    // カラーコードの反映
+    // 【修正】カラーコードの確実な反映
     if (data.colorCode) {
         setFieldValue('charThemeColor', data.colorCode);
         setFieldValue('charThemeColorText', data.colorCode);
+        
+        // もしデータオブジェクト側にもあればセット
+        if (typeof currentCharacter !== 'undefined' && currentCharacter) {
+            currentCharacter.themeColor = data.colorCode;
+        }
+
         if (typeof handleThemeColorInput === 'function') {
             handleThemeColorInput(data.colorCode);
         }
@@ -4729,7 +4735,6 @@ function importCharacterSheetText(event) {
         if (data.age) currentCharacter.age = Number(data.age) || data.age;
         if (data.gender) currentCharacter.gender = data.gender;
         if (data.birthday) currentCharacter.birthdate = data.birthday;
-        if (data.colorCode) currentCharacter.themeColor = data.colorCode;
 
         // customValues の更新
         if (!currentCharacter.customValues) {
@@ -4737,34 +4742,38 @@ function importCharacterSheetText(event) {
         }
         const cv = currentCharacter.customValues;
 
-        // --- すべてのキーマップへの代入 ---
+        // --- キーマップへの代入（growthを巻き込まず、baseにだけ入れる） ---
         const statAssignments = {
             // テキスト項目
             'field_3w13t': data.occupation,  // 職業
             'field_5hjcw': data.feature,     // 特徴表
             
-            // ステータス・基本値
+            // ステータス・基本値（ご指摘のCON/DEX入れ替え、POW/幸運の分離対応）
             'field_swdfh': data.int,         // INT
             'field_wd51b': data.edu,         // EDU
             'field_sbqry': data.app,         // APP
-            'field_sv8he': data.con,         // CON (推測)
-            'field_rdwxj': data.dex,         // DEX
+            'field_rdwxj': data.con,         // CON (修正: こちらがCON)
+            'field_sv8he': data.dex,         // DEX (修正: こちらがDEX)
             'field_p6s23': data.siz,         // SIZ
+            'pow': data.pow,                 // POW (幸運とは別枠で確実にPOWを入れる)
+            'luck': data.luck,               // 幸運
             
             // HP ＆ SAN (なければSTR / POWから自動補完)
             'hp': data.hp || data.str,
-            'san': data.san || data.pow,
-            
-            // もしお手元に STR や POW 単体の field キーがあればここに追加できます
+            'san': data.san || data.pow
         };
 
         for (const [fieldKey, val] of Object.entries(statAssignments)) {
             if (val === "" || val === undefined) continue;
             
             if (cv[fieldKey] !== undefined) {
-                if (typeof cv[fieldKey] === 'object' && cv[fieldKey] !== null && 'base' in cv[fieldKey]) {
-                    cv[fieldKey].base = Number(val) || val;
+                // オブジェクト構造（{ base, growth }）の場合は .base のみに代入する
+                if (typeof cv[fieldKey] === 'object' && cv[fieldKey] !== null) {
+                    if ('base' in cv[fieldKey]) {
+                        cv[fieldKey].base = Number(val) || val; // growthには触らない！
+                    }
                 } else {
+                    // 文字列などの通常項目
                     cv[fieldKey] = val;
                 }
             }
@@ -4778,18 +4787,25 @@ function importCharacterSheetText(event) {
         'field_swdfh': data.int,
         'field_wd51b': data.edu,
         'field_sbqry': data.app,
-        'field_sv8he': data.con,
-        'field_rdwxj': data.dex,
+        'field_rdwxj': data.con,
+        'field_sv8he': data.dex,
         'field_p6s23': data.siz,
+        'pow': data.pow,
+        'luck': data.luck,
         'hp': data.hp || data.str,
         'san': data.san || data.pow
     };
 
     for (const [key, val] of Object.entries(domMappings)) {
         if (!val) continue;
+        // 「growth」用の入力欄を除外し、baseや直接の入力欄を狙う
         const targets = document.querySelectorAll(`[name*="${key}"], #${key}, [data-field="${key}"]`);
         targets.forEach(el => {
             if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+                // nameやidに 'growth' が含まれる要素には絶対に代入しない防衛策
+                if (el.name && el.name.includes('growth')) return;
+                if (el.id && el.id.includes('growth')) return;
+
                 el.value = val;
                 el.dispatchEvent(new Event('input', { bubbles: true }));
                 el.dispatchEvent(new Event('change', { bubbles: true }));
@@ -4831,7 +4847,7 @@ function setFieldValue(id, value) {
     }
 }
 
-window.importCharacterSheetText = importCharacterSheetText;
+window.importCharacterSheetText = importCharacterSheetTest; // 関数名タイポ防止のエラスティック設定
             </script>
       
         
