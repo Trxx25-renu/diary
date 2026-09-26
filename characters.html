@@ -4692,7 +4692,7 @@ window.importCharactersJSON = importCharactersJSON;
       <script src="coc-parser.js"></script>
               <script>
 // ==========================================
-// 💡 キャラシテキスト読み込み・流し込み関数（最終・完全反映版）
+// 💡 キャラシテキスト読み込み・流し込み関数（アニメーション＆カラーコード修正版）
 // ==========================================
 function importCharacterSheetText(event) {
     const rawText = document.getElementById('sheetImportText').value;
@@ -4711,17 +4711,19 @@ function importCharacterSheetText(event) {
     setFieldValue('charGender', data.gender);
     setFieldValue('charBirthdate', data.birthday);
 
-    // 3. カラーコードの反映（DOM ＆ キャラクターデータ）
+    // 3. カラーコードの反映（確実な適用処理）
     if (data.colorCode) {
-        setFieldValue('charThemeColor', data.colorCode);
-        setFieldValue('charThemeColorText', data.colorCode);
+        const colorVal = data.colorCode.startsWith('#') ? data.colorCode : `#${data.colorCode}`;
+        
+        setFieldValue('charThemeColor', colorVal);
+        setFieldValue('charThemeColorText', colorVal);
         
         if (typeof currentCharacter !== 'undefined' && currentCharacter) {
-            currentCharacter.themeColor = data.colorCode;
+            currentCharacter.themeColor = colorVal;
         }
 
         if (typeof handleThemeColorInput === 'function') {
-            handleThemeColorInput(data.colorCode);
+            handleThemeColorInput(colorVal);
         }
     }
 
@@ -4761,19 +4763,18 @@ function importCharacterSheetText(event) {
             if (val === "" || val === undefined || val === null) continue;
 
             if (cv[key] !== undefined) {
-                // オブジェクト構造 ({ base, growth }) の場合は .base のみに代入（growthは絶対いじらない）
                 if (typeof cv[key] === 'object' && cv[key] !== null) {
                     if ('base' in cv[key]) {
                         cv[key].base = Number(val) || val;
                     }
                 } else {
-                    cv[key] = val; // 文字列や通常値
+                    cv[key] = val;
                 }
             }
         }
     }
 
-    // B. 画面上の入力欄（DOM）への直接反映（growthを除外し、baseや直接の入力欄を狙う）
+    // B. 画面上の入力欄（DOM）への直接反映
     for (const [key, val] of Object.entries(mappings)) {
         if (val === "" || val === undefined || val === null) continue;
 
@@ -4807,29 +4808,26 @@ function importCharacterSheetText(event) {
         renderCharacterForm();
     }
 
-    // 6. 完了のフィードバック（「読み込み中…」→「完了！」の段階的アニメーション付き）
-    const btn = event ? event.target : document.activeElement;
+    // 6. 完了のフィードバック（イベント有無に関わらずボタンを確実に見つけてアニメーション）
+    const btn = (event && event.target) || document.querySelector('button[onclick*="importCharacterSheetText"]') || document.activeElement;
     if (btn && btn.tagName === 'BUTTON') {
         const originalText = btn.textContent;
         
-        // 読み込み中の表示
         btn.textContent = '読み込み中…';
         btn.classList.add('bg-amber-600', 'hover:bg-amber-700');
         btn.classList.remove('stone-800', 'hover:bg-stone-700');
 
         setTimeout(() => {
-            // 完了の表示
             btn.textContent = '✔ 読み込み完了！';
             btn.classList.replace('bg-amber-600', 'bg-emerald-600');
             btn.classList.replace('hover:bg-amber-700', 'hover:bg-emerald-700');
             
             setTimeout(() => {
-                // 元に戻す
                 btn.textContent = originalText;
                 btn.classList.remove('bg-emerald-600', 'hover:bg-emerald-700');
                 btn.classList.add('stone-800', 'hover:bg-stone-700');
             }, 1500);
-        }, 400); // 0.4秒後に「完了！」に切り替わる
+        }, 400);
     }
 }
 
@@ -4843,7 +4841,6 @@ function setFieldValue(id, value) {
     }
 }
 
-// グローバルスコープへ確実に登録
 window.importCharacterSheetText = importCharacterSheetText;
             </script>
       
@@ -5003,7 +5000,7 @@ window.importCharacterSheetText = importCharacterSheetText;
                     </label>
                     <textarea id="sheetImportText" rows="3" placeholder="キャラクターシートのテキスト（テキスト出力やコピーした内容）をここに貼り付け..." class="w-full bg-white border border-stone-300 rounded-lg px-3 py-2 text-xs text-stone-800 focus:outline-none focus:border-stone-400 auto-resize"></textarea>
                     <div class="flex justify-end">
-                        <button type="button" onclick="importCharacterSheetText()" class="bg-stone-800 hover:bg-stone-700 text-white text-xs font-bold px-4 py-1.5 rounded-lg transition-all shadow-sm">
+                        <button type="button" onclick="importCharacterSheetText(event)" class="bg-stone-800 hover:bg-stone-700 text-white text-xs font-bold px-4 py-1.5 rounded-lg transition-all shadow-sm">
                             テキストから読み込む
                         </button>
                     </div>
