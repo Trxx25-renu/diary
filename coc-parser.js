@@ -84,4 +84,4 @@ function parseCoCText(rawText) {
 }
 
 // 🌐 グローバル登録
-window.parseCoCText = parseCoCText;window.parseCoCText = parseCoCText;window.parseCoCText = parseCoCText;
+window.parseCoCText = parseCoCText;
