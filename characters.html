@@ -4711,10 +4711,11 @@ function importCharacterSheetText(event) {
     setFieldValue('charGender', data.gender);
     setFieldValue('charBirthdate', data.birthday);
 
-    // 3. カラーコードの反映（確実な適用処理）
+    // 3. カラーコードの反映（#なし・大文字小文字対応、#を必ず付与して themeColor へ）
     if (data.colorCode) {
         const colorVal = data.colorCode.startsWith('#') ? data.colorCode : `#${data.colorCode}`;
         
+        setFieldValue('themeColor', colorVal);
         setFieldValue('charThemeColor', colorVal);
         setFieldValue('charThemeColorText', colorVal);
         
@@ -4874,8 +4875,18 @@ function parseCoCText(text) {
         result.age = ageMatch[1].replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0));
     }
 
+    // 性別の変換処理（「男」「女」→「男性」「女性」へ変換）
     const genderMatch = mainPart.match(/性別[：:]\s*([男女不明ほか]+)/);
-    if (genderMatch) result.gender = genderMatch[1].trim();
+    if (genderMatch) {
+        const gRaw = genderMatch[1].trim();
+        if (gRaw === '男' || gRaw === '男性') {
+            result.gender = '男性';
+        } else if (gRaw === '女' || gRaw === '女性') {
+            result.gender = '女性';
+        } else {
+            result.gender = gRaw || '不明';
+        }
+    }
 
     const jobMatch = mainPart.match(/職業[：:]\s*(.+)/);
     if (jobMatch) result.occupation = jobMatch[1].trim();
@@ -4886,14 +4897,25 @@ function parseCoCText(text) {
         result.feature = (featureMatch[1] || featureMatch[2]).trim();
     }
 
+    // 誕生日の取得と「〇月〇日」形式への変換（例: 7/11 → 7月11日）
     const bdayMatch = text.match(/誕生日[：:]\s*([^\s（）]+)/);
     if (bdayMatch) {
-        result.birthday = bdayMatch[1].trim();
+        let bdayStr = bdayMatch[1].trim();
+        const slashMatch = bdayStr.match(/^([0-9０-９]{1,2})[/／]([0-9０-９]{1,2})$/);
+        if (slashMatch) {
+            const m = slashMatch[1].replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0));
+            const d = slashMatch[2].replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0));
+            result.birthday = `${m}月${d}日`;
+        } else {
+            result.birthday = bdayStr;
+        }
     }
 
-    const colorMatch = text.match(/(?:カラー|color|色)[：:\s]*#?([0-9a-fA-F]{6}|[0-9a-fA-F]{3})/i) || text.match(/(#[0-9a-fA-F]{6})/);
+    // カラーコードの取得（#なし・大文字小文字に対応、様々なラベル名や単体配置もキャッチ）
+    const colorMatch = text.match(/(?:カラー|color|色|背景)[：:\s]*#?([0-9a-fA-F]{6}|[0-9a-fA-F]{3})/i) || text.match(/(?<![#0-9a-fA-F])([0-9a-fA-F]{6}|[0-9a-fA-F]{3})(?![0-9a-fA-F])/);
     if (colorMatch) {
-        result.colorCode = colorMatch[1];
+        let rawColor = colorMatch[1] || colorMatch[0];
+        result.colorCode = rawColor.startsWith('#') ? rawColor : `#${rawColor}`;
     }
 
     // 3. 能力値の抽出（保管庫の =合計= 行を最優先、なければ個別抽出。矢印付き履歴は除外）
