@@ -4692,89 +4692,99 @@ window.importCharactersJSON = importCharactersJSON;
       <script src="coc-parser.js"></script>
               <script>
 // ==========================================
-// 💡 キャラシテキスト読み込みボタンを押したときに呼ばれる関数
+// 💡 動的カスタム項目に対応したキャラシテキスト読み込み関数
 // ==========================================
-function importCharacterSheetText() {
+function importCharacterSheetText(event) {
     const rawText = document.getElementById('sheetImportText').value;
     if (!rawText.trim()) {
         alert('キャラクターシートのテキストを入力してください。');
         return;
     }
 
-    // 1. パーサー関数でデータを抽出
+    // 1. パーサーでデータを抽出（`coc-parser.js`）
     const data = parseCoCText(rawText);
 
-    // 2. 抽出したデータを各フォームの入力欄に流し込む
-    // 名前・ヨミガナ
-    if (data.name && document.getElementById('charName')) {
-        document.getElementById('charName').value = data.name;
-    }
-    if (data.nameKana && document.getElementById('charNameKana')) {
-        document.getElementById('charNameKana').value = data.nameKana;
-    }
+    // 2. 抽出されたデータを動的項目も含めて流し込む
+    // 固定の基本情報（もし存在すれば）
+    setFieldValueBySelector('#charName', data.name);
+    setFieldValueBySelector('#charNameKana', data.nameKana);
+    setFieldValueBySelector('#charAge', data.age);
+    setFieldValueBySelector('#charGender', data.gender);
 
-    // 基本情報（年齢、性別、職業、特徴表など）
-    if (data.age && document.getElementById('charAge')) {
-        document.getElementById('charAge').value = data.age;
-    }
-    if (data.gender && document.getElementById('charGender')) {
-        document.getElementById('charGender').value = data.gender;
-    }
-    if (data.occupation && document.getElementById('charOccupation')) {
-        document.getElementById('charOccupation').value = data.occupation;
-    }
-    if (data.feature && document.getElementById('charFeature')) {
-        document.getElementById('charFeature').value = data.feature;
-    }
-    if (data.birthday && document.getElementById('charBirthdate')) {
-        document.getElementById('charBirthdate').value = data.birthday;
-    }
-    
     // カラーコードの反映
     if (data.colorCode) {
-        const colorInput = document.getElementById('charThemeColor');
-        const colorText = document.getElementById('charThemeColorText');
-        if (colorInput) colorInput.value = data.colorCode;
-        if (colorText) colorText.value = data.colorCode;
-        
+        setFieldValueBySelector('#charThemeColor', data.colorCode);
+        setFieldValueBySelector('#charThemeColorText', data.colorCode);
         if (typeof handleThemeColorInput === 'function') {
             handleThemeColorInput(data.colorCode);
         }
     }
 
-    // 3. ステータス情報をメモ欄にまとめる処理（既存のまま）
-    let statusSummary = `【ステータス】\n` +
-        `STR:${data.str} / CON:${data.con} / POW:${data.pow} / DEX:${data.dex}\n` +
-        `APP:${data.app} / SIZ:${data.siz} / INT:${data.int} / EDU:${data.edu}\n` +
-        `HP:${data.hp} / SAN:${data.san} / 幸運:${data.luck}\n\n`;
+    // 3. 【重要】システムカスタムで動的に増減する項目（職業、特徴表、STR〜EDU、SAN等）への流し込み
+    // カスタム項目の管理キー（例: 'occupation', 'feature', 'str', 'con' など）に合わせて
+    // 画面上の動的入力欄を検索して値をセットするヘルパーを呼び出します。
+    
+    const dynamicFields = {
+        occupation: data.occupation,
+        feature: data.feature,
+        str: data.str,
+        con: data.con,
+        pow: data.pow,
+        dex: data.dex,
+        app: data.app,
+        siz: data.siz,
+        int: data.int,
+        edu: data.edu,
+        hp: data.hp,
+        san: data.san,
+        luck: data.luck,
+        birthday: data.birthday
+    };
 
-    const memoField = document.getElementById('charMemo');
-    if (memoField) {
-        memoField.value = statusSummary + memoField.value;
-        if (typeof autoResizeTextarea === 'function') {
-            autoResizeTextarea(memoField);
-        }
+    // 各カスタムフィールドのキー名に対応するDOM要素を探して代入する
+    for (const [fieldKey, value] of Object.entries(dynamicFields)) {
+        if (!value) continue;
+        setCustomFieldValue(fieldKey, value);
     }
 
-    // 4. 入力値が変わったことをフォーム全体に通知（プレビューやバリデーション連動のため）
-    // フォーム内の主要インプットに変更イベントを発火させると安全です
-    const formContainer = document.getElementById('characterForm') || document; 
-    // ※もしリアルタイムプレビュー等の関数があればここで呼ぶと確実です
-    // if (typeof updateCharacterPreview === 'function') updateCharacterPreview();
+    // 4. プレビュー更新や完了フィードバック
+    if (typeof updateCharacterPreview === 'function') {
+        updateCharacterPreview();
+    }
 
-    // 5. 完了のフィードバック（ボタンの見た目変更）
-    const btn = event.target;
-    const originalText = btn.textContent;
-    btn.textContent = '✔ 読み込み完了！';
-    btn.classList.add('bg-emerald-600', 'hover:bg-emerald-700');
-    btn.classList.remove('stone-800', 'hover:bg-stone-700');
-    
-    setTimeout(() => {
-        btn.textContent = originalText;
-        btn.classList.remove('bg-emerald-600', 'hover:bg-emerald-700');
-        btn.classList.add('stone-800', 'hover:bg-stone-700');
-    }, 1500);
+    const btn = event ? event.target : document.activeElement;
+    if (btn && btn.tagName === 'BUTTON') {
+        const originalText = btn.textContent;
+        btn.textContent = '✔ 読み込み完了！';
+        setTimeout(() => { btn.textContent = originalText; }, 1500);
+    }
 }
+
+// ----------------------------------------------------
+// 補助関数：動的カスタム項目をキー名で探して値をセットする仕組み
+// ----------------------------------------------------
+function setCustomFieldValue(key, value) {
+    // パターン1: data属性やname属性、あるいは独自のID命名規則（例: field_str, custom-str など）で要素を探す
+    // ※お使いの動的フォームのHTML構造に合わせてセレクタを調整してください
+    let targetEl = document.querySelector(`[name="${key}"], [data-field-key="${key}"], #field_${key}, #${key}`);
+    
+    if (targetEl) {
+        targetEl.value = value;
+        targetEl.dispatchEvent(new Event('input', { bubbles: true }));
+        targetEl.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+}
+
+// 固定要素用の安全なセッター
+function setFieldValueBySelector(selector, value) {
+    const el = document.querySelector(selector);
+    if (el && value !== undefined && value !== "") {
+        el.value = value;
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+        el.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+}
+
 window.importCharacterSheetText = importCharacterSheetText;
             </script>
       
