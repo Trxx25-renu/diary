@@ -4807,20 +4807,29 @@ function importCharacterSheetText(event) {
         renderCharacterForm();
     }
 
-    // 6. 完了のフィードバック（ボタンの見た目変更）
-    const btn = event ? event.target : document.activeElement;
-    if (btn && btn.tagName === 'BUTTON') {
-        const originalText = btn.textContent;
+// 6. 完了のフィードバック（「読み込み中…」→「完了！」の段階的アニメーション付き）
+const btn = event ? event.target : document.activeElement;
+if (btn && btn.tagName === 'BUTTON') {
+    const originalText = btn.textContent;
+    
+    // 読み込み中の表示
+    btn.textContent = '読み込み中…';
+    btn.classList.add('bg-amber-600', 'hover:bg-amber-700');
+    btn.classList.remove('stone-800', 'hover:bg-stone-700');
+
+    setTimeout(() => {
+        // 完了の表示
         btn.textContent = '✔ 読み込み完了！';
-        btn.classList.add('bg-emerald-600', 'hover:bg-emerald-700');
-        btn.classList.remove('stone-800', 'hover:bg-stone-700');
+        btn.classList.replace('bg-amber-600', 'bg-emerald-600');
+        btn.classList.replace('hover:bg-amber-700', 'hover:bg-emerald-700');
         
         setTimeout(() => {
+            // 元に戻す
             btn.textContent = originalText;
             btn.classList.remove('bg-emerald-600', 'hover:bg-emerald-700');
             btn.classList.add('stone-800', 'hover:bg-stone-700');
         }, 1500);
-    }
+    }, 400); // 0.4秒後に「完了！」に切り替わる
 }
 
 // 補助関数
