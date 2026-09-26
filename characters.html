@@ -4692,7 +4692,7 @@ window.importCharactersJSON = importCharactersJSON;
       <script src="coc-parser.js"></script>
               <script>
 // ==========================================
-// 💡 動的カスタム項目に対応したキャラシテキスト読み込み関数
+// 💡 キャラシテキスト読み込み・流し込み関数（全カスタムキー・ステータス完全対応版）
 // ==========================================
 function importCharacterSheetText(event) {
     const rawText = document.getElementById('sheetImportText').value;
@@ -4701,83 +4701,129 @@ function importCharacterSheetText(event) {
         return;
     }
 
-    // 1. パーサーでデータを抽出（`coc-parser.js`）
+    // 1. パーサー関数でデータを抽出
     const data = parseCoCText(rawText);
 
-    // 2. 抽出されたデータを動的項目も含めて流し込む
-    // 固定の基本情報（もし存在すれば）
-    setFieldValueBySelector('#charName', data.name);
-    setFieldValueBySelector('#charNameKana', data.nameKana);
-    setFieldValueBySelector('#charAge', data.age);
-    setFieldValueBySelector('#charGender', data.gender);
+    // 2. 基本情報（名前、ヨミガナ、年齢、性別、誕生日など）のセット
+    setFieldValue('charName', data.name);
+    setFieldValue('charNameKana', data.nameKana);
+    setFieldValue('charAge', data.age);
+    setFieldValue('charGender', data.gender);
+    setFieldValue('charBirthdate', data.birthday);
 
     // カラーコードの反映
     if (data.colorCode) {
-        setFieldValueBySelector('#charThemeColor', data.colorCode);
-        setFieldValueBySelector('#charThemeColorText', data.colorCode);
+        setFieldValue('charThemeColor', data.colorCode);
+        setFieldValue('charThemeColorText', data.colorCode);
         if (typeof handleThemeColorInput === 'function') {
             handleThemeColorInput(data.colorCode);
         }
     }
 
-    // 3. 【重要】システムカスタムで動的に増減する項目（職業、特徴表、STR〜EDU、SAN等）への流し込み
-    // カスタム項目の管理キー（例: 'occupation', 'feature', 'str', 'con' など）に合わせて
-    // 画面上の動的入力欄を検索して値をセットするヘルパーを呼び出します。
-    
-    const dynamicFields = {
-        occupation: data.occupation,
-        feature: data.feature,
-        str: data.str,
-        con: data.con,
-        pow: data.pow,
-        dex: data.dex,
-        app: data.app,
-        siz: data.siz,
-        int: data.int,
-        edu: data.edu,
-        hp: data.hp,
-        san: data.san,
-        luck: data.luck,
-        birthday: data.birthday
-    };
+    // 3. 編集中のキャラクターデータオブジェクト（例: `currentCharacter` 等）への直接代入
+    if (typeof currentCharacter !== 'undefined' && currentCharacter) {
+        
+        // トップレベルのプロパティ
+        if (data.name) currentCharacter.name = data.name;
+        if (data.nameKana) currentCharacter.nameKana = data.nameKana;
+        if (data.age) currentCharacter.age = Number(data.age) || data.age;
+        if (data.gender) currentCharacter.gender = data.gender;
+        if (data.birthday) currentCharacter.birthdate = data.birthday;
+        if (data.colorCode) currentCharacter.themeColor = data.colorCode;
 
-    // 各カスタムフィールドのキー名に対応するDOM要素を探して代入する
-    for (const [fieldKey, value] of Object.entries(dynamicFields)) {
-        if (!value) continue;
-        setCustomFieldValue(fieldKey, value);
+        // customValues の更新
+        if (!currentCharacter.customValues) {
+            currentCharacter.customValues = {};
+        }
+        const cv = currentCharacter.customValues;
+
+        // --- すべてのキーマップへの代入 ---
+        const statAssignments = {
+            // テキスト項目
+            'field_3w13t': data.occupation,  // 職業
+            'field_5hjcw': data.feature,     // 特徴表
+            
+            // ステータス・基本値
+            'field_swdfh': data.int,         // INT
+            'field_wd51b': data.edu,         // EDU
+            'field_sbqry': data.app,         // APP
+            'field_sv8he': data.con,         // CON (推測)
+            'field_rdwxj': data.dex,         // DEX
+            'field_p6s23': data.siz,         // SIZ
+            
+            // HP ＆ SAN (なければSTR / POWから自動補完)
+            'hp': data.hp || data.str,
+            'san': data.san || data.pow,
+            
+            // もしお手元に STR や POW 単体の field キーがあればここに追加できます
+        };
+
+        for (const [fieldKey, val] of Object.entries(statAssignments)) {
+            if (val === "" || val === undefined) continue;
+            
+            if (cv[fieldKey] !== undefined) {
+                if (typeof cv[fieldKey] === 'object' && cv[fieldKey] !== null && 'base' in cv[fieldKey]) {
+                    cv[fieldKey].base = Number(val) || val;
+                } else {
+                    cv[fieldKey] = val;
+                }
+            }
+        }
     }
 
-    // 4. プレビュー更新や完了フィードバック
+    // 4. 画面上の入力欄（DOM）を直接書き換えるフォールバック処理
+    const domMappings = {
+        'field_3w13t': data.occupation,
+        'field_5hjcw': data.feature,
+        'field_swdfh': data.int,
+        'field_wd51b': data.edu,
+        'field_sbqry': data.app,
+        'field_sv8he': data.con,
+        'field_rdwxj': data.dex,
+        'field_p6s23': data.siz,
+        'hp': data.hp || data.str,
+        'san': data.san || data.pow
+    };
+
+    for (const [key, val] of Object.entries(domMappings)) {
+        if (!val) continue;
+        const targets = document.querySelectorAll(`[name*="${key}"], #${key}, [data-field="${key}"]`);
+        targets.forEach(el => {
+            if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+                el.value = val;
+                el.dispatchEvent(new Event('input', { bubbles: true }));
+                el.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+        });
+    }
+
+    // 5. プレビュー更新やフォーム再描画の呼び出し
     if (typeof updateCharacterPreview === 'function') {
         updateCharacterPreview();
     }
+    if (typeof renderCharacterForm === 'function') {
+        renderCharacterForm();
+    }
 
+    // 6. 完了のフィードバック（ボタンの見た目変更）
     const btn = event ? event.target : document.activeElement;
     if (btn && btn.tagName === 'BUTTON') {
         const originalText = btn.textContent;
         btn.textContent = '✔ 読み込み完了！';
-        setTimeout(() => { btn.textContent = originalText; }, 1500);
+        btn.classList.add('bg-emerald-600', 'hover:bg-emerald-700');
+        btn.classList.remove('stone-800', 'hover:bg-stone-700');
+        
+        setTimeout(() => {
+            btn.textContent = originalText;
+            btn.classList.remove('bg-emerald-600', 'hover:bg-emerald-700');
+            btn.classList.add('stone-800', 'hover:bg-stone-700');
+        }, 1500);
     }
 }
 
-// ----------------------------------------------------
-// 補助関数：動的カスタム項目をキー名で探して値をセットする仕組み
-// ----------------------------------------------------
-function setCustomFieldValue(key, value) {
-    // パターン1: data属性やname属性、あるいは独自のID命名規則（例: field_str, custom-str など）で要素を探す
-    // ※お使いの動的フォームのHTML構造に合わせてセレクタを調整してください
-    let targetEl = document.querySelector(`[name="${key}"], [data-field-key="${key}"], #field_${key}, #${key}`);
-    
-    if (targetEl) {
-        targetEl.value = value;
-        targetEl.dispatchEvent(new Event('input', { bubbles: true }));
-        targetEl.dispatchEvent(new Event('change', { bubbles: true }));
-    }
-}
-
-// 固定要素用の安全なセッター
-function setFieldValueBySelector(selector, value) {
-    const el = document.querySelector(selector);
+// 補助関数
+function setFieldValue(id, value) {
+    const el = document.getElementById(id);
     if (el && value !== undefined && value !== "") {
         el.value = value;
         el.dispatchEvent(new Event('input', { bubbles: true }));
