@@ -1,5 +1,5 @@
 // ==========================================
-// 💡 CoCテキストパーサー（キャラクターシート保管所 ＆ いあきゃら 両対応版）
+// 💡 CoCテキストパーサー（保管所 ＆ いあきゃら 統合・変換対応版）
 // ==========================================
 function parseCoCText(rawText) {
     let data = {
@@ -18,18 +18,13 @@ function parseCoCText(rawText) {
 
     if (!rawText) return data;
 
-    // 1. 名前とヨミガナの抽出
-    // 例: 名前: ベアトリーチェ (Beatrice) 
-    // → 名前: ベアトリーチェ、ヨミガナ: Beatrice として抽出
+    // 1. 名前とヨミガナの抽出 (例: ベアトリーチェ (Beatrice) / 天城 翼(あまぎ つばさ))
     const nameLineMatch = rawText.match(/(?:キャラクター名|名前|タイトル)[：:\s]\s*(.+)/);
     if (nameLineMatch) {
         let rawNamePart = nameLineMatch[1].trim();
-        
-        // 括弧（全角・半角）の中身をヨミガナとして取得する
         const parenMatch = rawNamePart.match(/[\(（](.*?)[\)）]/);
         if (parenMatch) {
             data.nameKana = parenMatch[1].trim();
-            // メインの名前は括弧より前の部分にする
             data.name = rawNamePart.replace(/[\(（].*?[\)）]/g, '').trim();
         } else {
             data.name = rawNamePart;
@@ -52,9 +47,12 @@ function parseCoCText(rawText) {
         else data.gender = "不明";
     }
 
-    // 4. 生態情報の抽出（誕生日など）
-    const bdayMatch = rawText.match(/誕生日[：:\s]*([^\s\/]+)/);
-    if (bdayMatch) data.birthday = bdayMatch[1].trim();
+    // 4. 生態情報の抽出（誕生日を「11/29」等から「11月29日」に自動変換）
+    const bdayMatch = rawText.match(/誕生日[：:\s]*([^\s\/]+(?:\/[^\s\/]+)*)/);
+    if (bdayMatch) {
+        let rawBday = bdayMatch[1].trim();
+        data.birthday = formatBirthday(rawBday);
+    }
 
     // 5. 特徴表の抽出
     const featureMatch = rawText.match(/(?:特徴表|特徴)[：:\s【「]*(.+?)[」】\s]/);
@@ -64,12 +62,12 @@ function parseCoCText(rawText) {
 
     // 6. ステータス抽出（いあきゃら・保管所共通）
     function extractStat(key) {
-        // 表形式 (例: "STR       8")
+        // いあきゃら等の表形式 (行頭付近のKEYのあとにスペースと数字が続く)
         const tableRegex = new RegExp(`\\b${key}\\b\\s+(\\d+)`, 'i');
         const tableMatch = rawText.match(tableRegex);
         if (tableMatch) return tableMatch[1];
 
-        // 横並びやコロン形式
+        // 通常の横並びやコロン形式
         const directRegex = new RegExp(`(?:【)?\\b${key}\\b(?:】)?[^\\d]*(\\d+)`, 'i');
         const directMatch = rawText.match(directRegex);
         if (directMatch) return directMatch[1];
@@ -101,6 +99,17 @@ function parseCoCText(rawText) {
     }
 
     return data;
+}
+
+// 補助関数：誕生日文字列を「○月○日」にフォーマット
+function formatBirthday(bdayStr) {
+    if (!bdayStr) return "";
+    if (bdayStr.includes('月')) return bdayStr;
+    const match = bdayStr.match(/(\d+)[\/\-\.](\d+)/);
+    if (match) {
+        return `${match[1]}月${match[2]}日`;
+    }
+    return bdayStr;
 }
 
 // 🌐 グローバル登録
