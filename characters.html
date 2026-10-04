@@ -1950,16 +1950,16 @@ function renderCharacterDetail(characterId) {
     const sysFields = window.systemCustomFields[ch.systemId] || { status: [], text: [] };
     let customFieldsHtml = '';
 
-    const textFields = sysFields.text || [];
+const textFields = sysFields.text || [];
     if (textFields.length > 0) {
         customFieldsHtml += `<div class="space-y-3 mt-4 pt-4 border-t border-stone-100"><h4 class="text-xs md:text-sm font-bold text-stone-500">カスタム情報（ネタバレはクリックで表示）</h4>`;
         textFields.forEach(f => {
             const rawVal = ch.customValues && ch.customValues[f.id] !== undefined ? String(ch.customValues[f.id]) : '-';
             const parsedVal = typeof parseSpoilers === 'function' ? parseSpoilers(rawVal) : rawVal;
             customFieldsHtml += `
-                <div class="flex flex-col sm:flex-row sm:justify-between text-xs md:text-sm gap-1">
-                    <span class="font-medium text-stone-400 w-32 shrink-0">${f.label}:</span>
-                    <span class="text-stone-800 font-bold break-all">${parsedVal}</span>
+                <div class="flex items-start gap-3 text-xs md:text-sm py-1">
+                    <span class="font-bold text-stone-400 shrink-0 w-24">${f.label}:</span>
+                    <span class="text-stone-800 font-medium break-all leading-relaxed">${parsedVal}</span>
                 </div>
             `;
         });
