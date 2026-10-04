@@ -4792,9 +4792,9 @@ window.importCharacterSheetText = importCharacterSheetText;
                     <span>HP設定</span>
                 </button>
 
-                <button id="headerKeyBtn" onclick="handleHeaderKeyClick()" class="text-stone-600 hover:text-stone-800 transition-colors p-2 text-base" title="管理者ログイン">
-                    <i class="fa-solid fa-lock"></i>
-                </button>
+<button id="headerKeyBtn" onclick="handleHeaderKeyClick()" class="text-stone-600 hover:text-stone-800 transition-colors p-2 text-base" title="管理者ログイン">
+    <i id="authIcon" class="fa-solid fa-lock"></i>
+</button>
                 
                 <!-- 管理者ログイン時のみ表示されるPC追加ボタン -->
                 <button id="headerAddBtn" onclick="openCharacterModal()" class="admin-only bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold px-3.5 py-1.5 rounded-full shadow-sm transition-all flex items-center gap-1.5 hidden">
