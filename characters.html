@@ -1904,6 +1904,49 @@ function renderCharacterDetail(characterId) {
     }
 
 let epithetHtml = '';
+    if (ch.epithet && ch.epithet.trim() !== '') {
+        const kana = ch.epithetKana ? `<span class="text-xs font-medium text-stone-400 block mb-0.5">${ch.epithetKana}</span>` : '';
+        epithetHtml = `
+            <div class="mb-1">
+                ${kana}
+                <span class="text-xl md:text-2xl font-bold tracking-wider block leading-tight" style="color: color-mix(in srgb, ${themeColor} 75%, #1c1917);">${ch.epithet}</span>
+            </div>
+        `;
+    }
+
+    const nameKanaHtml = ch.nameKana ? `<span class="text-xs font-normal text-stone-400 block mb-0">${ch.nameKana}</span>` : '';
+    const nameRuby = `
+        <div>
+            ${nameKanaHtml}
+            <h2 class="text-xl md:text-2xl font-extrabold text-stone-950 tracking-tight leading-tight">${ch.name || ''}</h2>
+        </div>
+    `;
+
+    let linksList = [];
+    if (Array.isArray(ch.links) && ch.links.length > 0) {
+        linksList = ch.links;
+    } else if (ch.sheetUrl) {
+        linksList = [{ label: 'キャラクターシートを開く', url: ch.sheetUrl }];
+    }
+
+    let sheetLinkHtml = '';
+    if (linksList.length > 0) {
+        sheetLinkHtml = `
+            <div class="mt-4 pt-4 border-t border-stone-100">
+                <div class="flex items-center gap-2 flex-wrap">
+                    ${linksList.map(link => `
+                        <a href="${link.url}" target="_blank" rel="noopener noreferrer" 
+                           class="inline-flex items-center gap-2 text-xs md:text-sm font-bold px-4 py-2.5 rounded-xl shadow-sm hover:opacity-95 transition-all" 
+                           style="background-color: ${themeColor}; color:${badgeTextColor};">
+                            <i class="fa-solid fa-external-link-alt text-xs"></i>
+                            <span>${link.label || 'キャラクターシート'}</span>
+                        </a>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    }
+
     const sysFields = window.systemCustomFields[ch.systemId] || { status: [], text: [] };
     let customFieldsHtml = '';
 
