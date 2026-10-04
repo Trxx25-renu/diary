@@ -1817,11 +1817,11 @@ function renderCharacterDetail(characterId) {
             const tabBtn = document.getElementById(`gal-tab-${cat.key}`);
             if (tabBtn) {
                 if (cat.key === state.category) {
-                    tabBtn.className = "gallery-tab px-3.5 py-2 text-xs md:text-sm font-bold rounded-lg transition-all shadow-xs";
+                    tabBtn.className = "gallery-tab px-3.5 py-2 text-xs md:text-sm font-bold rounded-xl transition-all shadow-xs";
                     tabBtn.style.backgroundColor = themeColor;
                     tabBtn.style.color = badgeTextColor;
                 } else {
-                    tabBtn.className = "gallery-tab px-3.5 py-2 text-xs md:text-sm font-bold rounded-lg transition-all bg-stone-200/60 text-stone-600 hover:bg-stone-200";
+                    tabBtn.className = "gallery-tab px-3.5 py-2 text-xs md:text-sm font-bold rounded-xl transition-all bg-stone-100 text-stone-600 hover:bg-stone-200/70";
                     tabBtn.style.backgroundColor = "";
                     tabBtn.style.color = "";
                 }
@@ -1833,7 +1833,7 @@ function renderCharacterDetail(characterId) {
         if (thumbContainer && thumbWrapper) {
             if (currentImgs.length > 1) {
                 thumbContainer.innerHTML = currentImgs.map((img, idx) => `
-                    <button onclick="selectGalleryIndex(${idx})" class="relative w-14 h-14 rounded-xl overflow-hidden border-2 transition-all shrink-0 bg-white ${idx === state.index ? 'scale-105 shadow-md' : 'border-stone-200 opacity-60 hover:opacity-100'}" style="${idx === state.index ? `border-color: ${themeColor};` : ''}">
+                    <button onclick="selectGalleryIndex(${idx})" class="relative w-14 h-14 rounded-xl overflow-hidden border-2 transition-all shrink-0 bg-white ${idx === state.index ? 'scale-105 shadow-sm' : 'border-stone-200 opacity-60 hover:opacity-100'}" style="${idx === state.index ? `border-color: ${themeColor};` : ''}">
                         <img src="${img.url}" class="w-full h-full object-cover object-top">
                     </button>
                 `).join('');
@@ -1847,12 +1847,12 @@ function renderCharacterDetail(characterId) {
     const safeCatImages = avatars.filter(img => img.category === activeCat);
     const safeCurrentImg = safeCatImages[window._currentGalleryState.index] || safeCatImages[0];
     
-    let avatarHtml = `<div class="w-full h-64 sm:h-96 flex items-center justify-center text-stone-300 bg-stone-100 rounded-2xl border border-stone-200"><i class="fa-solid fa-user text-5xl"></i></div>`;
+    let avatarHtml = `<div class="w-full h-64 sm:h-96 flex items-center justify-center text-stone-300 bg-stone-50 rounded-2xl border border-stone-200/80"><i class="fa-solid fa-user text-5xl"></i></div>`;
     
     if (avatars.length > 0) {
         avatarHtml = `
-            <div class="p-2 space-y-4">
-                <div class="flex flex-wrap gap-1.5 border-b border-stone-200 pb-3">
+            <div class="space-y-4">
+                <div class="flex flex-wrap gap-1.5 border-b border-stone-200/60 pb-3">
                     ${galleryCategories.map(cat => {
                         const count = avatars.filter(img => img.category === cat.key).length;
                         if (count === 0) return '';
@@ -1860,7 +1860,7 @@ function renderCharacterDetail(characterId) {
                         return `
                             <button onclick="switchGalleryCategory('${cat.key}')" 
                                     id="gal-tab-${cat.key}" 
-                                    class="gallery-tab px-3.5 py-2 text-xs md:text-sm font-bold rounded-lg transition-all ${isActive ? 'shadow-xs' : 'bg-stone-200/60 text-stone-600 hover:bg-stone-200'}"
+                                    class="gallery-tab px-3.5 py-2 text-xs md:text-sm font-bold rounded-xl transition-all ${isActive ? 'shadow-xs' : 'bg-stone-100 text-stone-600 hover:bg-stone-200/70'}"
                                     style="${isActive ? `background-color: ${themeColor}; color: ${badgeTextColor};` : ''}">
                                 ${cat.name} (${count})
                             </button>
@@ -1868,32 +1868,32 @@ function renderCharacterDetail(characterId) {
                     }).join('')}
                 </div>
 
-                <div class="relative flex items-center justify-center rounded-2xl overflow-hidden border border-stone-200/60 shadow-inner bg-stone-50/50 p-2 min-h-[400px] sm:min-h-[500px]">
+                <div class="relative flex items-center justify-center rounded-2xl overflow-hidden border border-stone-200/80 shadow-inner bg-stone-50/50 p-2 min-h-[400px] sm:min-h-[500px]">
                     <div id="galleryImageContainer" class="w-full h-full flex items-center justify-center">
                         <img src="${safeCurrentImg ? safeCurrentImg.url : ''}" class="max-w-full h-auto max-h-[600px] object-contain rounded-xl transition-all duration-300">
                     </div>
 
                     ${safeCatImages.length > 1 ? `
-                        <button onclick="slideGalleryImage(-1)" class="absolute left-3 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/80 text-white w-9 h-9 rounded-full flex items-center justify-center transition-all shadow-md">
+                        <button onclick="slideGalleryImage(-1)" class="absolute left-3 top-1/2 -translate-y-1/2 bg-stone-900/60 hover:bg-stone-900/85 text-white w-9 h-9 rounded-full flex items-center justify-center transition-all shadow-md">
                             <i class="fa-solid fa-chevron-left text-xs"></i>
                         </button>
-                        <button onclick="slideGalleryImage(1)" class="absolute right-3 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/80 text-white w-9 h-9 rounded-full flex items-center justify-center transition-all shadow-md">
+                        <button onclick="slideGalleryImage(1)" class="absolute right-3 top-1/2 -translate-y-1/2 bg-stone-900/60 hover:bg-stone-900/85 text-white w-9 h-9 rounded-full flex items-center justify-center transition-all shadow-md">
                             <i class="fa-solid fa-chevron-right text-xs"></i>
                         </button>
                     ` : ''}
                     
-                    <div id="galleryImageLabel" class="absolute bottom-3 left-3 backdrop-blur-xs text-xs px-2.5 py-1 rounded-md shadow" style="background-color: ${themeColor}; color: ${badgeTextColor}; ${safeCurrentImg && safeCurrentImg.label ? 'display:block;' : (safeCatImages.length > 1 ? 'display:block;' : 'display:none;')}">
+                    <div id="galleryImageLabel" class="absolute bottom-3 left-3 backdrop-blur-xs text-xs px-2.5 py-1 rounded-lg shadow-xs" style="background-color: ${themeColor}; color: ${badgeTextColor}; ${safeCurrentImg && safeCurrentImg.label ? 'display:block;' : (safeCatImages.length > 1 ? 'display:block;' : 'display:none;')}">
                         ${safeCurrentImg && safeCurrentImg.label ? `<i class="fa-solid fa-tag text-[10px] mr-1"></i>${safeCurrentImg.label} (${window._currentGalleryState.index + 1}/${safeCatImages.length})` : `(${window._currentGalleryState.index + 1}/${safeCatImages.length})`}
                     </div>
                 </div>
 
-                <div id="galleryThumbnailsWrapper" class="bg-stone-50/70 p-3 rounded-2xl border border-stone-200/80 shadow-xs" style="${safeCatImages.length > 1 ? 'display:block;' : 'display:none;'}">
+                <div id="galleryThumbnailsWrapper" class="bg-stone-50/80 p-3 rounded-2xl border border-stone-200/80 shadow-2xs" style="${safeCatImages.length > 1 ? 'display:block;' : 'display:none;'}">
                     <div class="text-xs font-bold text-stone-500 mb-2 flex items-center gap-1.5">
                         <i class="fa-solid fa-images text-stone-400"></i> 差分一覧
                     </div>
                     <div id="galleryThumbnailsContainer" class="flex gap-2 overflow-x-auto pb-1 pt-1 scrollbar-thin">
                         ${safeCatImages.map((img, idx) => `
-                            <button onclick="selectGalleryIndex(${idx})" class="relative w-14 h-14 rounded-xl overflow-hidden border-2 transition-all shrink-0 bg-white ${idx === window._currentGalleryState.index ? 'scale-105 shadow-md' : 'border-stone-200 opacity-60 hover:opacity-100'}" style="${idx === window._currentGalleryState.index ? `border-color: ${themeColor};` : ''}">
+                            <button onclick="selectGalleryIndex(${idx})" class="relative w-14 h-14 rounded-xl overflow-hidden border-2 transition-all shrink-0 bg-white ${idx === window._currentGalleryState.index ? 'scale-105 shadow-sm' : 'border-stone-200 opacity-60 hover:opacity-100'}" style="${idx === window._currentGalleryState.index ? `border-color: ${themeColor};` : ''}">
                                 <img src="${img.url}" class="w-full h-full object-cover object-top">
                             </button>
                         `).join('')}
@@ -1905,20 +1905,20 @@ function renderCharacterDetail(characterId) {
 
     let epithetHtml = '';
     if (ch.epithet && ch.epithet.trim() !== '') {
-        const kana = ch.epithetKana ? `<span class="text-xs md:text-sm font-medium text-stone-400 block mb-1">${ch.epithetKana}</span>` : '';
+        const kana = ch.epithetKana ? `<span class="text-xs font-medium text-stone-400 block mb-0.5">${ch.epithetKana}</span>` : '';
         epithetHtml = `
-            <div class="mb-1.5">
+            <div class="mb-1">
                 ${kana}
-                <span class="text-lg md:text-xl font-bold tracking-wider block leading-tight" style="color: color-mix(in srgb, ${themeColor} 75%, #1c1917);">${ch.epithet}</span>
+                <span class="text-base md:text-lg font-bold tracking-wider block leading-tight" style="color: color-mix(in srgb, ${themeColor} 75%, #1c1917);">${ch.epithet}</span>
             </div>
         `;
     }
 
-    const nameKanaHtml = ch.nameKana ? `<span class="text-xs md:text-sm font-normal text-stone-400 block mb-0.5">${ch.nameKana}</span>` : '';
+    const nameKanaHtml = ch.nameKana ? `<span class="text-xs font-normal text-stone-400 block mb-0.5">${ch.nameKana}</span>` : '';
     const nameRuby = `
-        <div class="my-2">
+        <div class="mb-3">
             ${nameKanaHtml}
-            <h2 class="text-xl md:text-2xl font-extrabold text-stone-950 tracking-tight leading-tight">${ch.name || ''}</h2>
+            <h2 class="text-xl md:text-2xl font-extrabold text-stone-900 tracking-tight leading-tight">${ch.name || ''}</h2>
         </div>
     `;
 
@@ -1932,13 +1932,13 @@ function renderCharacterDetail(characterId) {
     let sheetLinkHtml = '';
     if (linksList.length > 0) {
         sheetLinkHtml = `
-            <div class="mt-4 pt-2">
+            <div class="mt-4 pt-3 border-t border-stone-100">
                 <div class="flex items-center gap-2 flex-wrap">
                     ${linksList.map(link => `
                         <a href="${link.url}" target="_blank" rel="noopener noreferrer" 
-                           class="inline-flex items-center gap-2 text-sm md:text-base font-bold px-4 py-2.5 rounded-xl shadow-sm hover:opacity-95 transition-all" 
+                           class="inline-flex items-center gap-2 text-xs md:text-sm font-bold px-3.5 py-2 rounded-xl shadow-xs hover:opacity-90 transition-all" 
                            style="background-color: ${themeColor}; color:${badgeTextColor};">
-                            <i class="fa-solid fa-external-link-alt text-xs"></i>
+                            <i class="fa-solid fa-external-link-alt text-[11px]"></i>
                             <span>${link.label || 'キャラクターシート'}</span>
                         </a>
                     `).join('')}
@@ -1957,17 +1957,17 @@ function renderCharacterDetail(characterId) {
             const rawVal = ch.customValues && ch.customValues[f.id] !== undefined ? String(ch.customValues[f.id]) : '-';
             const parsedVal = typeof parseSpoilers === 'function' ? parseSpoilers(rawVal) : rawVal;
             fieldsItemsHtml += `
-                <div class="flex items-baseline">
-                    <span class="text-stone-400 font-semibold mr-2">${f.label}:</span>
-                    <span class="text-stone-800 font-medium break-all">${parsedVal}</span>
+                <div class="flex items-baseline text-xs md:text-sm">
+                    <span class="text-stone-400 font-semibold mr-2 shrink-0">${f.label}:</span>
+                    <span class="text-stone-700 font-medium break-all">${parsedVal}</span>
                 </div>
             `;
         });
 
         customFieldsHtml = `
-            <div class="mt-5 pt-4 border-t border-stone-100">
-                <h4 class="text-sm md:text-base font-bold text-stone-400 mb-2">カスタム情報（ネタバレはクリックで表示）</h4>
-                <div class="space-y-2 text-sm md:text-base text-stone-700">
+            <div class="mt-4 pt-4 border-t border-stone-100">
+                <h4 class="text-xs md:text-sm font-bold text-stone-400 mb-2">カスタム情報（ネタバレはクリックで表示）</h4>
+                <div class="space-y-2">
                     ${fieldsItemsHtml}
                 </div>
             </div>
@@ -1977,7 +1977,10 @@ function renderCharacterDetail(characterId) {
     // 📊 ステータス / ゲージ描画
     const statusFields = sysFields.status || [];
     if (statusFields.length > 0) {
-        customFieldsHtml += `<div class="space-y-3.5 mt-4 pt-4 border-t border-stone-100"><h4 class="text-sm md:text-base font-bold text-stone-500">ステータス / ゲージ</h4>`;
+        customFieldsHtml += `
+            <div class="mt-4 pt-4 border-t border-stone-100 space-y-3">
+                <h4 class="text-xs md:text-sm font-bold text-stone-500">ステータス / ゲージ</h4>
+        `;
         
         statusFields.forEach(f => {
             const valObj = ch.customValues ? ch.customValues[f.id] : null;
@@ -2010,11 +2013,11 @@ function renderCharacterDetail(characterId) {
 
             customFieldsHtml += `
                 <div>
-                    <div class="flex justify-between text-sm md:text-base mb-1">
+                    <div class="flex justify-between text-xs md:text-sm mb-1">
                         <span class="font-medium text-stone-600">${f.label}</span>
                         <span><strong class="text-stone-800 font-mono">${displayText}</strong> ${badgeText}</span>
                     </div>
-                    <div class="w-full h-3 bg-stone-100 rounded-full overflow-hidden flex border border-stone-200/50 shadow-inner">
+                    <div class="w-full h-2.5 bg-stone-100 rounded-full overflow-hidden flex border border-stone-200/50 shadow-inner">
                         <div class="h-full transition-all duration-500" style="width: ${baseWidthPct}%; background-color: ${currentThemeColor};" title="基本値: ${baseVal}"></div>
                         <div class="h-full transition-all duration-500" style="width: ${growthWidthPct}%; background-color: ${currentGrowthColor};" title="成長値: ${growthVal}"></div>
                     </div>
@@ -2033,40 +2036,40 @@ function renderCharacterDetail(characterId) {
             <div class="mt-6 pt-6 border-t border-stone-100 space-y-4">
                 ${memo ? `
                     <div>
-                        <h4 class="text-sm md:text-base font-bold text-stone-500 mb-2 flex items-center gap-1.5">
+                        <h4 class="text-xs md:text-sm font-bold text-stone-500 mb-2 flex items-center gap-1.5">
                             <i class="fa-solid fa-note-sticky text-stone-400"></i> 設定 / メモ
                         </h4>
-                        <div class="bg-stone-50 rounded-2xl p-4 text-sm md:text-base text-stone-700 whitespace-pre-wrap border border-stone-100 leading-relaxed">${memo}</div>
+                        <div class="bg-stone-50/80 rounded-2xl p-4 text-xs md:text-sm text-stone-700 whitespace-pre-wrap border border-stone-200/60 leading-relaxed">${memo}</div>
                     </div>
                 ` : ''}
                 
                 ${secret ? `
-                <div class="mb-4">
-                    <h4 class="text-sm md:text-base font-bold text-rose-600 mb-2 flex items-center gap-1.5">
+                <div>
+                    <h4 class="text-xs md:text-sm font-bold text-rose-600 mb-2 flex items-center gap-1.5">
                         <i class="fa-solid fa-user-secret text-rose-500"></i> 秘匿メモ（ネタバレ）
                     </h4>
-                    <div class="relative bg-rose-50/40 text-stone-800 rounded-2xl p-4 border border-rose-200/70 cursor-pointer overflow-hidden transition-all shadow-xs group" onclick="
+                    <div class="relative bg-rose-50/30 text-stone-800 rounded-2xl p-4 border border-rose-200/60 cursor-pointer overflow-hidden transition-all shadow-2xs group" onclick="
                         const container = this;
                         const overlay = container.querySelector('.js-secret-overlay');
                         const isHidden = overlay.style.display !== 'none';
                         overlay.style.display = isHidden ? 'none' : 'flex';
                     ">
-                        <div class="flex items-center justify-between mb-2 pb-1.5 border-b border-rose-200/60 text-sm md:text-base text-rose-800 font-bold select-none">
+                        <div class="flex items-center justify-between mb-2 pb-1.5 border-b border-rose-200/50 text-xs md:text-sm text-rose-800 font-bold select-none">
                             <span class="flex items-center gap-1.5">
                                 <i class="fa-solid fa-triangle-exclamation text-rose-500"></i> ネタバレ防止用本文
                             </span>
-                            <span class="text-xs text-rose-400 font-normal">タップで切替</span>
+                            <span class="text-[11px] text-rose-400 font-normal">タップで切替</span>
                         </div>
                         
-                        <div class="w-full text-left text-sm md:text-base text-stone-800 font-medium leading-relaxed whitespace-pre-wrap py-1">
+                        <div class="w-full text-left text-xs md:text-sm text-stone-700 font-medium leading-relaxed whitespace-pre-wrap py-1">
                             ${secret}
                         </div>
                         
-                        <div class="js-secret-overlay absolute inset-0 bg-rose-50 flex flex-col items-center justify-center gap-1.5 text-stone-800 transition-all select-none z-10">
-                            <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center text-rose-600 text-sm shadow-xs group-hover:scale-110 transition-transform">
+                        <div class="js-secret-overlay absolute inset-0 bg-rose-50/95 backdrop-blur-xs flex flex-col items-center justify-center gap-1.5 text-stone-800 transition-all select-none z-10">
+                            <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center text-rose-600 text-xs shadow-xs group-hover:scale-110 transition-transform">
                                 <i class="fa-solid fa-eye-slash"></i>
                             </div>
-                            <span class="text-sm md:text-base font-bold text-rose-900">タップしてネタバレを表示</span>
+                            <span class="text-xs md:text-sm font-bold text-rose-900">タップしてネタバレを表示</span>
                         </div>
                     </div>
                 </div>
@@ -2075,8 +2078,8 @@ function renderCharacterDetail(characterId) {
         `;
     }
 
-// ==========================================
-    // 📜 通過シナリオ一覧 & 件数カウント処理（スッキリ・タイトル修正版）
+    // ==========================================
+    // 📜 通過シナリオ一覧 & 件数カウント処理
     // ==========================================
     const allEntries = window.entries || JSON.parse(localStorage.getItem('local_entries') || '[]');
     
@@ -2084,10 +2087,8 @@ function renderCharacterDetail(characterId) {
         entry.participantIds && entry.participantIds.map(String).includes(String(characterId))
     );
 
-    // シナリオタイトル単位でグループ化（entry.title または entry.scenarioTitle を優先）
     const scenarioMap = {};
     passedEntries.forEach(entry => {
-        // 本文を使わず、明示的なタイトルがなければ「無題のシナリオ」にする
         const title = entry.title || entry.scenarioTitle || '無題のシナリオ';
         if (!scenarioMap[title]) {
             scenarioMap[title] = [];
@@ -2095,13 +2096,10 @@ function renderCharacterDetail(characterId) {
         scenarioMap[title].push(entry);
     });
 
-    // 💡 日付の古い順（または新しい順）に並び替え。ここでは「古い日付が上（No.01が一番古く、下に行くにつれて新しい日付）」に統一します
     const scenarioGroups = Object.keys(scenarioMap).map(title => ({
         title: title,
-        // 各シナリオ内の日付を昇順（古い順）にソート
         entries: scenarioMap[title].sort((a, b) => (a.date || '').localeCompare(b.date || ''))
     })).sort((groupA, groupB) => {
-        // シナリオ全体のグループ自体も、最初の日付が古い順に並べる
         const dateA = groupA.entries[0]?.date || '';
         const dateB = groupB.entries[0]?.date || '';
         return dateA.localeCompare(dateB);
@@ -2110,14 +2108,13 @@ function renderCharacterDetail(characterId) {
     let scenariosContentHtml = '';
     if (scenarioGroups.length === 0) {
         scenariosContentHtml = `
-            <div class="bg-stone-50 rounded-2xl p-4 text-center text-xs md:text-sm text-stone-400 border border-stone-100">
+            <div class="bg-stone-50/80 rounded-2xl p-3 text-center text-xs text-stone-400 border border-stone-200/60">
                 <p>まだ通過シナリオが登録されていません。</p>
             </div>
         `;
     } else {
-        // 💡 縦長になりすぎないよう、アコーディオン（折りたたみ）にするか、高さを抑えたコンパクトなリストにする
         scenariosContentHtml = `
-            <div class="space-y-2 max-h-[350px] overflow-y-auto pr-1">
+            <div class="space-y-2 max-h-[320px] overflow-y-auto pr-1">
                 ${scenarioGroups.map((group, groupIdx) => {
                     const badgeHtml = `
                         <span class="inline-flex items-center justify-center px-2 py-0.5 rounded-md text-[10px] font-mono font-bold shrink-0 shadow-2xs" style="background-color: ${themeColor}15; color: ${themeColor}; border: 1px solid${themeColor}30;">
@@ -2125,22 +2122,21 @@ function renderCharacterDetail(characterId) {
                         </span>
                     `;
 
-                    // 本文を出さず、日付と「日記へ」ボタンを1行にまとめてスッキリさせる
                     const entriesRowsHtml = group.entries.map(entry => {
                         const dateStr = entry.date ? entry.date.replace(/-/g, '.') : '';
                         return `
-                            <div class="flex items-center justify-between py-1 px-2 hover:bg-white/90 rounded-lg transition-colors text-xs">
+                            <div class="flex items-center justify-between py-1 px-2 hover:bg-stone-100/80 rounded-lg transition-colors text-xs">
                                 <span class="text-stone-500 font-mono shrink-0">${dateStr}</span>
-<a href="diary.html#detail=${entry.id}" class="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md transition-all hover:opacity-80" style="background-color: ${themeColor}12; color:${themeColor};">
-    <span>日記へ</span>
-    <i class="fa-solid fa-arrow-right text-[9px]"></i>
-</a>
+                                <a href="diary.html#detail=${entry.id}" class="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md transition-all hover:opacity-80" style="background-color: ${themeColor}12; color:${themeColor};">
+                                    <span>日記へ</span>
+                                    <i class="fa-solid fa-arrow-right text-[9px]"></i>
+                                </a>
                             </div>
                         `;
                     }).join('');
 
                     return `
-                        <div class="bg-stone-50/80 rounded-xl p-2.5 border border-stone-200/60 shadow-2xs space-y-1">
+                        <div class="bg-stone-50/70 rounded-xl p-2.5 border border-stone-200/60 shadow-2xs space-y-1">
                             <div class="flex items-center justify-between gap-2 pb-1 border-b border-stone-200/40">
                                 <div class="flex items-center gap-2 overflow-hidden">
                                     ${badgeHtml}
@@ -2159,8 +2155,8 @@ function renderCharacterDetail(characterId) {
     }
 
     const scenariosHtml = `
-        <div class="mt-4 pt-4 border-t border-stone-100">
-            <div class="flex items-center justify-between mb-2">
+        <div class="mt-6 pt-6 border-t border-stone-100">
+            <div class="flex items-center justify-between mb-2.5">
                 <h4 class="text-xs md:text-sm font-bold text-stone-500 flex items-center gap-1.5">
                     <i class="fa-solid fa-book-bookmark text-stone-400"></i> 通過シナリオ一覧
                 </h4>
@@ -2169,33 +2165,32 @@ function renderCharacterDetail(characterId) {
             ${scenariosContentHtml}
         </div>
     `;
-   
 
     detailContainer.innerHTML = `
-        <div class="bg-white rounded-3xl p-6 md:p-8 border border-stone-200/85 shadow-sm space-y-6 relative overflow-hidden">
+        <div class="bg-white rounded-3xl p-6 md:p-8 border border-stone-200/80 shadow-sm space-y-6 relative overflow-hidden">
             <div class="flex flex-col md:flex-row gap-6 md:gap-8">
                 <div class="w-full md:w-1/2">
                     ${avatarHtml}
                 </div>
                 <div class="w-full md:w-1/2 flex flex-col justify-between">
                     <div>
-                        <div class="flex items-center justify-between mb-2">
-                            <span class="text-xs font-bold px-3 py-1 rounded-lg shadow-xs inline-block" style="background-color: ${themeColor}; color: ${badgeTextColor};">
+                        <div class="flex items-center justify-between mb-2.5">
+                            <span class="text-xs font-bold px-3 py-1 rounded-xl shadow-2xs inline-block" style="background-color: ${themeColor}; color: ${badgeTextColor};">
                                 ${window.systems.find(s => s.id === ch.systemId)?.name || 'システム'}
                             </span>
                         </div>
-${epithetHtml}${nameRuby}
+                        ${epithetHtml}${nameRuby}
                         
                         <div class="border-t border-stone-100 pt-3.5 mt-2">
-                            <div class="grid grid-cols-2 gap-x-4 gap-y-2.5 text-xs md:text-sm text-stone-600">
+                            <div class="grid grid-cols-2 gap-x-4 gap-y-2 text-xs md:text-sm text-stone-600">
                                 <p><strong class="text-stone-400 inline-block mr-1">年齢:</strong> ${ch.age ? ch.age + '歳' : '未設定'}</p>
                                 <p><strong class="text-stone-400 inline-block mr-1">性別:</strong> ${ch.gender || '未設定'}</p>
                                 <p><strong class="text-stone-400 inline-block mr-1">誕生日:</strong> ${ch.birthdate || '未設定'}</p>
-                                <p class="flex items-center gap-1.5"><strong class="text-stone-400 inline-block mr-1">カラー:</strong> <span class="w-3.5 h-3.5 rounded-full inline-block border border-stone-200" style="background-color: ${themeColor}"></span><span class="font-mono">${rawThemeColor}</span></p>
+                                <p class="flex items-center gap-1.5"><strong class="text-stone-400 inline-block mr-1">カラー:</strong> <span class="w-3.5 h-3.5 rounded-full inline-block border border-stone-200" style="background-color: ${themeColor}"></span><span class="font-mono text-xs">${rawThemeColor}</span></p>
                             </div>
                             
                             ${ch.scenario ? `
-                                <div class="mt-2.5 pt-2.5 border-t border-stone-100 text-xs md:text-sm flex items-start gap-2">
+                                <div class="mt-3 pt-3 border-t border-stone-100 text-xs md:text-sm flex items-start gap-2">
                                     <strong class="text-stone-400 shrink-0">出身シナリオ:</strong>
                                     <span class="text-stone-800 font-bold break-words flex-1">${ch.scenario}</span>
                                 </div>
@@ -2212,23 +2207,23 @@ ${epithetHtml}${nameRuby}
 
             <div class="pt-6 mt-6 border-t border-stone-100 flex items-center justify-between flex-wrap gap-3">
                 <div></div>
-                <div class="flex items-center gap-2.5 ml-auto">
+                <div class="flex items-center gap-2 ml-auto">
                     ${window.isAdmin ? `
-                        <button onclick="openEditCharacterModal('${characterId}')" class="flex items-center gap-1.5 text-xs md:text-sm font-bold text-stone-700 bg-white hover:bg-stone-50 border border-stone-300 px-4 py-2.5 rounded-xl shadow-xs hover:shadow transition-all">
-                            <i class="fa-solid fa-pen text-stone-500 text-xs"></i>
+                        <button onclick="openEditCharacterModal('${characterId}')" class="flex items-center gap-1.5 text-xs md:text-sm font-bold text-stone-700 bg-white hover:bg-stone-50 border border-stone-200 px-4 py-2 rounded-xl shadow-xs hover:shadow transition-all">
+                            <i class="fa-solid fa-pen text-stone-400 text-xs"></i>
                             <span>編集</span>
                         </button>
-                        <button onclick="exportCharacterJson('${characterId}')" class="flex items-center gap-1.5 text-xs md:text-sm font-bold text-stone-700 bg-white hover:bg-stone-50 border border-stone-300 px-3.5 py-2.5 rounded-xl shadow-xs hover:shadow transition-all" title="このキャラのJSONを書き出し">
-                            <i class="fa-solid fa-file-code text-stone-500 text-xs"></i>
+                        <button onclick="exportCharacterJson('${characterId}')" class="flex items-center gap-1.5 text-xs md:text-sm font-bold text-stone-700 bg-white hover:bg-stone-50 border border-stone-200 px-3.5 py-2 rounded-xl shadow-xs hover:shadow transition-all" title="このキャラのJSONを書き出し">
+                            <i class="fa-solid fa-file-code text-stone-400 text-xs"></i>
                             <span>JSON出力</span>
                         </button>
-                        <button onclick="deleteCharacter('${characterId}')" class="flex items-center gap-1.5 text-xs md:text-sm font-bold text-white bg-rose-600 hover:bg-rose-700 px-4 py-2.5 rounded-xl shadow-xs hover:shadow transition-all">
+                        <button onclick="deleteCharacter('${characterId}')" class="flex items-center gap-1.5 text-xs md:text-sm font-bold text-white bg-rose-600 hover:bg-rose-700 px-4 py-2 rounded-xl shadow-xs hover:shadow transition-all">
                             <i class="fa-solid fa-trash text-xs"></i>
                             <span>削除</span>
                         </button>
                     ` : ''}
-                    <button onclick="navigateTo('characterList', '${ch.systemId}')" class="flex items-center gap-1.5 text-xs md:text-sm font-bold text-stone-700 bg-stone-100 hover:bg-stone-200 px-4 py-2.5 rounded-xl transition-all">
-                        <i class="fa-solid fa-arrow-left text-stone-500 text-xs"></i>
+                    <button onclick="navigateTo('characterList', '${ch.systemId}')" class="flex items-center gap-1.5 text-xs md:text-sm font-bold text-stone-700 bg-stone-100 hover:bg-stone-200 px-4 py-2 rounded-xl transition-all">
+                        <i class="fa-solid fa-arrow-left text-stone-400 text-xs"></i>
                         <span>一覧に戻る</span>
                     </button>
                 </div>
