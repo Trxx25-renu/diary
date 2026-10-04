@@ -327,7 +327,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (headerAddBtn) headerAddBtn.classList.remove('hidden');
     }
 
-    // 🔍 日記から #detail/キャラID 付きで飛んできた場合に詳細を自動で開く
+// 🔍 日記から #detail/キャラID 付きで飛んできた場合に詳細を自動で開く
     const hash = window.location.hash; 
     
     if (hash && hash.startsWith('#detail/')) {
@@ -343,6 +343,11 @@ document.addEventListener("DOMContentLoaded", async () => {
                 }
             }, 300);
         }
+    }
+
+    // 💡 すべての初期化と描画準備が終わったここでローディングを消す！
+    if (typeof hideAppLoader === 'function') {
+        hideAppLoader();
     }
 
     console.log("🎉 キャラクター管理ページの初期化がすべて完了しました！");
