@@ -155,18 +155,35 @@ function updateAdminUI() {
 }
 window.updateAdminUI = updateAdminUI;
 
-// 🔑 ヘッダーの鍵ボタンが押されたときの入口（一番安全な切り分け）
+// 🔑 ヘッダーの鍵ボタンが押されたときの入口（安全な完全版）
 function handleHeaderKeyClick() {
-    if (window.isAdmin) {
-        // すでにログイン中なら、クリックでログアウト確認を出す
-        logoutAdmin();
+    // ログイン状態をストレージからも確実直近で再確認
+    const currentIsAdmin = window.isAdmin || localStorage.getItem('isAdminMode') === 'true';
+
+    if (currentIsAdmin) {
+        // すでにログイン中なら、共通のログアウト関数を安全に呼び出す
+        if (typeof logoutAdmin === 'function') {
+            logoutAdmin();
+        } else {
+            // フォールバック（もし logoutAdmin が見つからない場合の直接処理）
+            if (confirm('管理者モードからログアウトしますか？')) {
+                window.isAdmin = false;
+                localStorage.removeItem('isAdminMode');
+                if (typeof updateAdminUI === 'function') updateAdminUI();
+                location.reload();
+            }
+        }
     } else {
-        // ログアウト中なら認証モーダルを開く
-        openAuthModal();
+        // 未ログインなら、共通の認証モーダルを開く関数を安全に呼び出す
+        if (typeof openAuthModal === 'function') {
+            openAuthModal();
+        } else {
+            console.error("❌ openAuthModal が定義されていません");
+        }
     }
 }
 window.handleHeaderKeyClick = handleHeaderKeyClick;
-window.handleAuthAction = handleHeaderKeyClick; // 互換性のため両方対応
+window.handleAuthAction = handleHeaderKeyClick; // 互換性用
 
 // 🔑 パスコード検証関数
 function verifyPasscode() {
