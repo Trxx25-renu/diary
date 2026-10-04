@@ -1950,7 +1950,7 @@ function renderCharacterDetail(characterId) {
     const sysFields = window.systemCustomFields[ch.systemId] || { status: [], text: [] };
     let customFieldsHtml = '';
 
-    const textFields = sysFields.text || [];
+const textFields = sysFields.text || [];
     if (textFields.length > 0) {
         let fieldsItemsHtml = '';
         textFields.forEach(f => {
@@ -1966,14 +1966,14 @@ function renderCharacterDetail(characterId) {
 
         customFieldsHtml = `
             <div class="mt-5 pt-4 border-t border-stone-100">
-                <h4 class="text-xs font-bold text-stone-400 mb-2">カスタム情報（ネタバレはクリックで表示）</h4>
-                <div class="space-y-1.5 text-xs md:text-sm text-stone-600">
+                <h4 class="text-xs md:text-sm font-bold text-stone-400 mb-2">カスタム情報（ネタバレはクリックで表示）</h4>
+                <div class="space-y-2 text-sm md:text-base text-stone-700">
                     ${fieldsItemsHtml}
                 </div>
             </div>
         `;
     }
-
+   
     // 📊 ステータス / ゲージ描画
     const statusFields = sysFields.status || [];
     if (statusFields.length > 0) {
