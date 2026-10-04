@@ -4229,6 +4229,7 @@ function importCharacterFromJson(event) {
             if (document.getElementById('charAge')) document.getElementById('charAge').value = data.age ?? '';
             if (document.getElementById('charGender')) document.getElementById('charGender').value = data.gender || '';
             if (document.getElementById('charBirthdate')) document.getElementById('charBirthdate').value = data.birthdate || '';
+            if (document.getElementById('charScenario')) document.getElementById('charScenario').value = data.scenario || ''; // 👈 出身シナリオの復元を追加！
             
             if (document.getElementById('charThemeColor')) {
                 const tColor = data.themeColor || '#292524';
