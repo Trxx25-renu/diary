@@ -68,7 +68,7 @@
     <div id="bgOverlay" class="absolute inset-0 z-0 bg-white/60 pointer-events-none transition-all duration-300" style="display: none;"></div>
 
 
-    <!-- ヘッダー -->
+<!-- ヘッダー -->
     <header class="w-full bg-white/75 backdrop-blur-md border-b border-stone-200/60 flex-shrink-0 relative z-10">
         <div class="max-w-md mx-auto px-4 h-12 flex items-center justify-between">
             <h1 id="headerTitle" class="text-xs font-bold tracking-wider text-stone-700 flex items-center gap-2">
@@ -77,6 +77,13 @@
             </h1>
             <div class="flex items-center gap-2">
                 <span class="text-[10px] text-stone-400 font-medium">卓管理・アーカイブ</span>
+                
+                <!-- 💡ここに更新ボタンを追加（鍵ボタンと同じサイズ・ホバー感に統一） -->
+                <button onclick="location.reload()" class="w-7 h-7 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-500 flex items-center justify-center transition-colors text-xs" title="ページを更新">
+                    <i class="fa-solid fa-rotate-right"></i>
+                </button>
+
+                <!-- 管理者モードの鍵ボタン -->
                 <button onclick="handleAuthAction()" id="authButton" class="w-7 h-7 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-500 flex items-center justify-center transition-colors text-xs" title="管理者モード">
                     <i class="fa-solid fa-lock" id="authIcon"></i>
                 </button>
