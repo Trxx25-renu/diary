@@ -325,7 +325,7 @@
             }
         }
 
-        // 🌟 URLハッシュがある場合は navigateTo を使って安全に詳細を表示する
+// 🌟 URLハッシュがある場合は navigateTo を使って安全に詳細を表示する
         const currentHash = window.location.hash;
         if (currentHash && currentHash.startsWith('#detail=')) {
             const targetId = currentHash.replace('#detail=', '');
@@ -343,7 +343,13 @@
                 window.navigateTo('months');
             }
         }
-    });
+
+        // 💡 すべての初期化・画面描画ルーティングが完了したここでローダーを消す！
+        if (typeof hideAppLoader === 'function') {
+            hideAppLoader();
+        }
+
+    }); // ← ここのイベントリスナーを閉じるカッコの直前
 
 // ==========================================
 // 🌟 記事の詳細データを確実に探し出して画面に反映・表示する関数（リトライ回数制限つき安全版）
