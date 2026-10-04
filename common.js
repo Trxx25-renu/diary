@@ -230,27 +230,36 @@ function verifyPasscode() {
 }
 window.verifyPasscode = verifyPasscode;
 
-// 🔑 パスコード入力モーダルを開く関数（モーダルのクラスを完全に破壊せず、安全に表示）
+// 🔑 パスコード入力モーダルを開く関数（上寄り配置・レイアウト保持版）
 function openAuthModal() {
+    // すでに管理者ログイン中なら、直接ログアウト確認を走らせる
+    if (window.isAdmin) {
+        if (typeof logoutAdmin === 'function') {
+            logoutAdmin();
+        }
+        return;
+    }
+
     const modal = document.getElementById('authModal');
     if (!modal) {
         console.error("❌ #authModal が見つかりません");
         return;
     }
 
-    // 以前の縦長バグを防ぎつつ、元々のhiddenやopacityクラスを安全に外して表示する
-    modal.classList.remove('hidden', 'opacity-0', 'pointer-events-none');
-    modal.classList.add('flex', 'opacity-100', 'pointer-events-auto');
+    // 中央配置（items-center）を避け、上寄り（items-start pt-16）に設定して表示する
+    modal.classList.remove('hidden', 'opacity-0', 'pointer-events-none', 'items-center');
+    modal.classList.add('flex', 'items-start', 'pt-16', 'opacity-100', 'pointer-events-auto');
     modal.style.display = 'flex';
     modal.style.zIndex = '99999';
 
-    // 中身の箱の縦長を抑える安全な調整
+    // 中身の箱のアニメーション調整
     const innerDiv = modal.firstElementChild;
     if (innerDiv) {
         innerDiv.classList.remove('scale-95');
         innerDiv.classList.add('scale-100');
     }
 
+    // 入力欄にフォーカス
     const passInput = document.getElementById('inputPasscode') || modal.querySelector('input');
     if (passInput) {
         passInput.value = '';
