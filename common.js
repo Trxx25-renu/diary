@@ -92,8 +92,10 @@ async function loadCharactersFromLocal() {
     hideAppLoader();
 }
 
+
+
 // ==========================================
-// 🛡️ 権限チェック＆管理者UI一括管理システム (完全修正版)
+// 🛡️ 権限チェック＆管理者UI一括管理システム (修復版)
 // ==========================================
 
 // 1. 起動時に localStorage から状態と保存パスコードを復元
@@ -115,7 +117,6 @@ window.checkAdminPermission = checkAdminPermission;
 
 // 共通のUI更新（すべてのページの鍵アイコン・admin-only要素を同期）
 function updateAdminUI() {
-    // ヘッダーのボタン（IDが headerKeyBtn または authButton の両方に対応）
     const keyBtn = document.getElementById('headerKeyBtn') || document.getElementById('authButton');
     const authIcon = document.getElementById('authIcon');
 
@@ -123,14 +124,14 @@ function updateAdminUI() {
         if (window.isAdmin) {
             keyBtn.className = "text-emerald-600 hover:text-stone-800 transition-colors p-2 text-base";
             if (authIcon) {
-                // 【修正】しっかり輪っかが外に外れる「fa-lock-open」を指定！
+                // 輪っかが外れた「開いた鍵」アイコン＆緑色
                 authIcon.className = "fa-solid fa-lock-open text-emerald-600";
             }
             keyBtn.title = "管理者モード（クリックでログアウト）";
         } else {
             keyBtn.className = "text-stone-600 hover:text-stone-800 transition-colors p-2 text-base";
             if (authIcon) {
-                // 閉じた鍵アイコン
+                // 閉じた鍵アイコン＆通常の石色
                 authIcon.className = "fa-solid fa-lock text-stone-500";
             }
             keyBtn.title = "管理者ログイン";
@@ -154,22 +155,122 @@ function updateAdminUI() {
 }
 window.updateAdminUI = updateAdminUI;
 
-// 🔑 鍵ボタンが押されたときの入口
+// 🔑 ヘッダーの鍵ボタンが押されたときの入口（一番安全な切り分け）
 function handleHeaderKeyClick() {
     if (window.isAdmin) {
         // すでにログイン中なら、クリックでログアウト確認を出す
         logoutAdmin();
     } else {
         // ログアウト中なら認証モーダルを開く
-        if (typeof openAuthModal === 'function') {
-            openAuthModal();
-        } else {
-            console.error("❌ openAuthModal が定義されていません");
-        }
+        openAuthModal();
     }
 }
 window.handleHeaderKeyClick = handleHeaderKeyClick;
 window.handleAuthAction = handleHeaderKeyClick; // 互換性のため両方対応
+
+// 🔑 パスコード検証関数
+function verifyPasscode() {
+    const passInput = document.getElementById('inputPasscode') || document.getElementById('passcode') || document.getElementById('authPassword');
+    const err = document.getElementById('authErrorMsg');
+    const enteredValue = passInput ? passInput.value.trim() : '';
+
+    if (err) err.classList.add('hidden');
+
+    // 初回パスコード設定
+    if (!window.storedPasscode) {
+        if (!enteredValue) {
+            if (err) {
+                err.textContent = 'パスコードを入力してください';
+                err.classList.remove('hidden');
+            }
+            return;
+        }
+        window.storedPasscode = enteredValue;
+        localStorage.setItem('adminStoredPasscode', enteredValue);
+        
+        window.isAdmin = true;
+        localStorage.setItem('isAdminMode', 'true');
+        
+        updateAdminUI();
+        if (typeof showToast === 'function') showToast('初期パスコードを設定しました', 'success');
+        closeAuthModal();
+
+        if (typeof pendingAction === 'function') {
+            const action = pendingAction;
+            pendingAction = null;
+            action();
+        }
+        return;
+    }
+
+    // パスコード照合
+    if (enteredValue === window.storedPasscode) {
+        window.isAdmin = true;
+        localStorage.setItem('isAdminMode', 'true');
+        
+        updateAdminUI();
+        if (typeof showToast === 'function') showToast('管理者ログインしました', 'success');
+        closeAuthModal();
+
+        if (typeof pendingAction === 'function') {
+            const action = pendingAction;
+            pendingAction = null;
+            action();
+        }
+    } else {
+        if (err) {
+            err.textContent = 'パスコードが違います';
+            err.classList.remove('hidden');
+        }
+        if (passInput) {
+            passInput.value = '';
+            passInput.focus();
+        }
+    }
+}
+window.verifyPasscode = verifyPasscode;
+
+// 🔑 パスコード入力モーダルを開く関数（モーダルのクラスを完全に破壊せず、安全に表示）
+function openAuthModal() {
+    const modal = document.getElementById('authModal');
+    if (!modal) {
+        console.error("❌ #authModal が見つかりません");
+        return;
+    }
+
+    // 以前の縦長バグを防ぎつつ、元々のhiddenやopacityクラスを安全に外して表示する
+    modal.classList.remove('hidden', 'opacity-0', 'pointer-events-none');
+    modal.classList.add('flex', 'opacity-100', 'pointer-events-auto');
+    modal.style.display = 'flex';
+    modal.style.zIndex = '99999';
+
+    // 中身の箱の縦長を抑える安全な調整
+    const innerDiv = modal.firstElementChild;
+    if (innerDiv) {
+        innerDiv.classList.remove('scale-95');
+        innerDiv.classList.add('scale-100');
+    }
+
+    const passInput = document.getElementById('inputPasscode') || modal.querySelector('input');
+    if (passInput) {
+        passInput.value = '';
+        setTimeout(() => passInput.focus(), 50);
+    }
+}
+window.openAuthModal = openAuthModal;
+
+// モーダルを閉じる関数（もし定義されていなければ念のため用意）
+if (typeof closeAuthModal !== 'function') {
+    function closeAuthModal() {
+        const modal = document.getElementById('authModal');
+        if (modal) {
+            modal.classList.remove('flex', 'opacity-100', 'pointer-events-auto');
+            modal.classList.add('hidden', 'opacity-0', 'pointer-events-none');
+            modal.style.display = 'none';
+        }
+    }
+    window.closeAuthModal = closeAuthModal;
+}
 
 // ログアウト処理
 function logoutAdmin() {
