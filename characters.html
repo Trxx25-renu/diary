@@ -1947,12 +1947,12 @@ function renderCharacterDetail(characterId) {
         `;
     }
 
-    const sysFields = window.systemCustomFields[ch.systemId] || { status: [], text: [] };
+const sysFields = window.systemCustomFields[ch.systemId] || { status: [], text: [] };
     let customFieldsHtml = '';
 
-const textFields = sysFields.text || [];
+    const textFields = sysFields.text || [];
     if (textFields.length > 0) {
-        customFieldsHtml += `<div class="space-y-3 mt-4 pt-4 border-t border-stone-100"><h4 class="text-xs md:text-sm font-bold text-stone-500">カスタム情報（ネタバレはクリックで表示）</h4>`;
+        customFieldsHtml += `<div class="space-y-3 mt-4"><h4 class="text-xs md:text-sm font-bold text-stone-500">カスタム情報（ネタバレはクリックで表示）</h4>`;
         textFields.forEach(f => {
             const rawVal = ch.customValues && ch.customValues[f.id] !== undefined ? String(ch.customValues[f.id]) : '-';
             const parsedVal = typeof parseSpoilers === 'function' ? parseSpoilers(rawVal) : rawVal;
