@@ -93,7 +93,7 @@ async function loadCharactersFromLocal() {
 }
 
 // ==========================================
-// 🛡️ 権限チェック＆管理者UI一括管理システム (完全版)
+// 🛡️ 権限チェック＆管理者UI一括管理システム (完全修正版)
 // ==========================================
 
 // 1. 起動時に localStorage から状態と保存パスコードを復元
@@ -122,11 +122,17 @@ function updateAdminUI() {
     if (keyBtn) {
         if (window.isAdmin) {
             keyBtn.className = "text-emerald-600 hover:text-stone-800 transition-colors p-2 text-base";
-            if (authIcon) authIcon.className = "fa-solid fa-unlock text-emerald-600";
+            if (authIcon) {
+                // 【修正】しっかり輪っかが外に外れる「fa-lock-open」を指定！
+                authIcon.className = "fa-solid fa-lock-open text-emerald-600";
+            }
             keyBtn.title = "管理者モード（クリックでログアウト）";
         } else {
             keyBtn.className = "text-stone-600 hover:text-stone-800 transition-colors p-2 text-base";
-            if (authIcon) authIcon.className = "fa-solid fa-lock text-stone-500";
+            if (authIcon) {
+                // 閉じた鍵アイコン
+                authIcon.className = "fa-solid fa-lock text-stone-500";
+            }
             keyBtn.title = "管理者ログイン";
         }
     }
@@ -150,10 +156,16 @@ window.updateAdminUI = updateAdminUI;
 
 // 🔑 鍵ボタンが押されたときの入口
 function handleHeaderKeyClick() {
-    if (typeof openAuthModal === 'function') {
-        openAuthModal();
+    if (window.isAdmin) {
+        // すでにログイン中なら、クリックでログアウト確認を出す
+        logoutAdmin();
     } else {
-        console.error("❌ openAuthModal が定義されていません");
+        // ログアウト中なら認証モーダルを開く
+        if (typeof openAuthModal === 'function') {
+            openAuthModal();
+        } else {
+            console.error("❌ openAuthModal が定義されていません");
+        }
     }
 }
 window.handleHeaderKeyClick = handleHeaderKeyClick;
@@ -251,46 +263,44 @@ function verifyPasscode() {
 window.verifyPasscode = verifyPasscode;
 
 // ==========================================
-// 🔑 パスコード入力モーダルを開く（スマホ上部・PC中央対応版）
+// 🔑 パスコード入力モーダルを開く（コンパクト・中央配置版）
 // ==========================================
 function openAuthModal() {
+    // すでに管理者ログイン中なら、ここから直接ログアウト確認を走らせる
+    if (window.isAdmin) {
+        if (typeof logoutAdmin === 'function') {
+            logoutAdmin();
+        }
+        return;
+    }
+
     const modal = document.getElementById('authModal');
     if (!modal) {
         console.error("❌ #authModal が見つかりません");
         return;
     }
 
-    if (window.isAdmin) {
-        logoutAdmin();
-        return;
-    }
-
-    // 基本のコンテナ設定（スマホでは上部寄せ、sm以上（PC等）では中央配置）
+    // モーダルの全体背景（画面中央にしっかり配置）
     modal.style.position = 'fixed';
     modal.style.top = '0';
     modal.style.left = '0';
     modal.style.width = '100vw';
     modal.style.height = '100vh';
+    modal.style.zIndex = '99999';
+
+    // 縦長になってしまう原因だった余計なスタイルを外し、Tailwindのflex中央寄せを確実に適用
+    modal.className = "fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[99999] transition-opacity duration-200 opacity-100 pointer-events-auto";
     modal.style.display = 'flex';
-    modal.className = modal.className.replace(/items-\w+/g, '');
-    modal.style.alignItems = '';
+    modal.style.opacity = '1';
+    modal.style.pointerEvents = 'auto';
 
     const innerDiv = modal.firstElementChild;
     if (innerDiv) {
-        innerDiv.classList.remove('scale-95', 'scale-100');
-        innerDiv.classList.add('scale-100');
+        // 中身の箱が引き伸ばされないよう、最大幅とコンパクトなパディングを設定
+        innerDiv.className = "bg-white rounded-2xl max-w-sm w-full p-6 shadow-xl transform scale-100 transition-transform duration-200";
         innerDiv.style.transform = 'scale(1)';
         innerDiv.style.opacity = '1';
-
-        innerDiv.className = innerDiv.className.replace(/my-\w+|pt-\w+/g, '');
-        innerDiv.classList.add('pt-12', 'sm:my-auto', 'max-w-sm', 'w-full', 'mx-4');
     }
-
-    modal.style.zIndex = '99999';
-    modal.classList.remove('opacity-0', 'pointer-events-none', 'hidden');
-    modal.classList.add('opacity-100', 'flex');
-    modal.style.opacity = '1';
-    modal.style.pointerEvents = 'auto';
 
     const passInput = document.getElementById('inputPasscode') || modal.querySelector('input');
     if (passInput) {
