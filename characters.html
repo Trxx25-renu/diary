@@ -160,12 +160,7 @@ window.parseSpoilers = parseSpoilers;
 document.addEventListener("DOMContentLoaded", async () => {
     console.log("🚀 キャラクター管理ページ初期化開始...");
 
-    try {
-        if (sessionStorage.getItem('isAdminSession') === 'true') {
-            window.isAdmin = true;
-            console.log("🔒 管理者セッションを検出しました（操作権限有効）");
-        }
-    } catch (e) { console.error(e); }
+    // 💡 認証状態の復元や管理は common.js (`localStorage`) に一任したため、ここにあった古くて不要な sessionStorage チェックは削除しました！
 
     window.appId = "photo-journal-app";
 
@@ -194,7 +189,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         renderBreadcrumbAndActions('home');
     }
 
-    // 💡 起動時に管理者ステータスを即座に反映して不要なボタンを隠す
+    // 💡 起動時に管理者ステータスを即座に反映して UI や .admin-only 要素を同期
     if (typeof updateAdminUI === 'function') {
         updateAdminUI();
     }
@@ -245,7 +240,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 window.rosterSettings = { title: "", favicon: "" };
             }
 
-            // 📖 【追加】キャラクターページ側でもFirestoreから全日記データを取得して格納する
+            // 📖 キャラクターページ側でもFirestoreから全日記データを取得して格納する
             const entriesRef = collection(db, 'artifacts', window.appId, 'public', 'data', 'entries');
             const querySnap = await getDocs(entriesRef);
             const loaded = [];
@@ -288,7 +283,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     }
 
-    // 💡 設定データ読み込み完了後に、ファビコン＆スマホ用アイコンを動的に反映
+    // 設定データ読み込み完了後に、ファビコン＆スマホ用アイコンを動的に反映
     if (window.rosterSettings && window.rosterSettings.favicon) {
         const faviconUrl = window.rosterSettings.favicon;
         const faviconTag = document.getElementById('dynamicFavicon');
@@ -321,13 +316,12 @@ document.addEventListener("DOMContentLoaded", async () => {
         console.error("❌ 画面の描画処理でエラーが発生しました:", e);
     }
 
-    // 管理者の場合の処理
-    if (window.isAdmin) {
-        const headerAddBtn = document.getElementById('headerAddBtn');
-        if (headerAddBtn) headerAddBtn.classList.remove('hidden');
+    // 💡 管理者UIの同期をもう一度確実に行う（追加ボタン等の表示制御など）
+    if (typeof updateAdminUI === 'function') {
+        updateAdminUI();
     }
 
-// 🔍 日記から #detail/キャラID 付きで飛んできた場合に詳細を自動で開く
+    // 🔍 日記から #detail/キャラID 付きで飛んできた場合に詳細を自動で開く
     const hash = window.location.hash; 
     
     if (hash && hash.startsWith('#detail/')) {
@@ -345,7 +339,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     }
 
-    // 💡 すべての初期化と描画準備が終わったここでローディングを消す！
+    // すべての初期化と描画準備が終わったここでローディングを消す
     if (typeof hideAppLoader === 'function') {
         hideAppLoader();
     }
@@ -1044,7 +1038,7 @@ async function saveCharacter(event) {
     const gender = document.getElementById('charGender')?.value?.trim() || '';
     const birthdate = document.getElementById('charBirthdate')?.value?.trim() || '';
     const occupation = document.getElementById('charOccupation')?.value?.trim() || '';
-    const scenario = document.getElementById('charScenario')?.value?.trim() || ''; // 👈 出身シナリオの取得を追加
+    const scenario = document.getElementById('charScenario')?.value?.trim() || ''; // 出身シナリオ
     const themeColor = document.getElementById('charThemeColor')?.value || '#292524';
     const sheetUrl = document.getElementById('charSheetUrl')?.value?.trim() || '';
     const memo = document.getElementById('charMemo')?.value || '';
@@ -1067,7 +1061,7 @@ async function saveCharacter(event) {
     // 🌟 ターゲットとなるキャラクターIDを事前に確定
     let targetCharacterId = window.editingCharacterId || ('char_' + Math.random().toString(36).substring(2, 11));
 
-    // 🌟 【スッキリ整理】モーダルを開いた時に保持したスナップショットを比較元（oldCharacter）としてそのまま直結！
+    // 🌟 編集前の状態（スナップショット）
     let oldCharacter = window.originalCharacterState || null;
 
     // 🌟 画像データの処理（未アップロードのファイルがあればFirebase Storageへ自動アップロードして永続URLに変換）
@@ -1140,7 +1134,7 @@ async function saveCharacter(event) {
         return (url && !url.startsWith('blob:')) ? url : '';
     }
 
-    // 各カテゴリの画像をループ処理してURLを完全なものに確定
+    // 各カテゴリの画像をループ処理してURLを確定
     for (const [category, list] of Object.entries(rawImages)) {
         images[category] = [];
         if (Array.isArray(list)) {
@@ -1196,7 +1190,7 @@ async function saveCharacter(event) {
         systemId, name, nameKana, epithet, epithetKana,
         age: age ? Number(age) : '',
         gender, birthdate, occupation,
-        scenario, // 👈 ここに出身シナリオを追加！
+        scenario, 
         themeColor, 
         sheetUrl: links.length > 0 ? links[0].url : sheetUrl,
         links, memo, secret, thumbnail, avatar, images,
@@ -1205,17 +1199,9 @@ async function saveCharacter(event) {
     };
 
     try {
-        // 🌟 削除処理の動作確認用デバッグログ
-        console.log("🔍 [DEBUG 削除チェック] oldCharacter (スナップショット):", !!oldCharacter);
-        console.log("🔍 [DEBUG 削除チェック] window.storage:", !!window.storage);
-        console.log("🔍 [DEBUG 削除チェック] window.ref:", !!window.ref);
-        console.log("🔍 [DEBUG 削除チェック] window.deleteObject:", !!window.deleteObject);
-
-        // 🌟 【追加・重要】編集によって「削除された画像」を検出し、ストレージからも完全に消去する
-        if (oldCharacter && window.storage && window.ref && window.deleteObject) {
-            console.log("✨ 削除処理の条件を満たしました。処理を開始します。");
-
-            // 1. 編集前のキャラクターが持っていたすべての画像URLを抽出
+        // 🌟 編集によって「削除された画像」を検出し、ストレージからも完全に消去する
+        const storageInstance = typeof window.getStorage === 'function' ? window.getStorage() : window.storage;
+        if (oldCharacter && storageInstance && typeof window.ref === 'function' && typeof window.deleteObject === 'function') {
             const oldUrls = new Set();
             if (oldCharacter.images && typeof oldCharacter.images === 'object') {
                 Object.values(oldCharacter.images).forEach(catArray => {
@@ -1230,7 +1216,6 @@ async function saveCharacter(event) {
             if (oldCharacter.thumbnail?.startsWith('https://firebasestorage.googleapis.com')) oldUrls.add(oldCharacter.thumbnail);
             if (oldCharacter.avatar?.startsWith('https://firebasestorage.googleapis.com')) oldUrls.add(oldCharacter.avatar);
 
-            // 2. 今回保存する新しいデータに残っている画像URLを抽出
             const newUrls = new Set();
             if (images && typeof images === 'object') {
                 Object.values(images).forEach(catArray => {
@@ -1245,31 +1230,18 @@ async function saveCharacter(event) {
             if (thumbnail.startsWith('https://firebasestorage.googleapis.com')) newUrls.add(thumbnail);
             if (avatar.startsWith('https://firebasestorage.googleapis.com')) newUrls.add(avatar);
 
-            // 3. 「昔はあったが、今回消された（新リストに含まれない）」URLを割り出す
             const urlsToDelete = [...oldUrls].filter(url => !newUrls.has(url));
 
-            // 🌟 比較結果をコンソールにしっかり吐き出させる
-            console.log("🔍 [DEBUG] 編集前の画像URLs (oldUrls):", [...oldUrls]);
-            console.log("🔍 [DEBUG] 今回の画像URLs (newUrls):", [...newUrls]);
-            console.log("🔍 [DEBUG] 削除判定されたURLs (urlsToDelete):", urlsToDelete);
-            console.log("🔍 [DEBUG] 削除対象の数:", urlsToDelete.length);
-
-            // 4. ストレージから該当のファイルを非同期で一括削除
             if (urlsToDelete.length > 0) {
                 await Promise.all(urlsToDelete.map(async (url) => {
                     try {
-                        const imageRef = window.ref(window.storage, url);
+                        const imageRef = window.ref(storageInstance, url);
                         await window.deleteObject(imageRef);
-                        console.log("🔥 編集により不要になった画像をストレージから削除しました:", url);
                     } catch (delErr) {
-                        console.error("❌ 削除失敗の詳細 -> code:", delErr.code, "message:", delErr.message, delErr);
+                        console.warn("❌ 不要画像のストレージ削除スキップ/失敗:", delErr.message);
                     }
                 }));
-            } else {
-                console.log("ℹ️ 削除対象の画像が0件のため、ストレージ削除はスキップしました。");
             }
-        } else {
-            console.warn("⚠️ 削除処理の条件（oldCharacter または Firebase関数）が満たされていないためスキップされました。");
         }
 
         if (!window.characters) window.characters = [];
@@ -1282,7 +1254,7 @@ async function saveCharacter(event) {
             window.characters.push(charData);
         }
 
-        // 🌟 Base64の自動クリーンアップ
+        // Base64の自動クリーンアップ
         function removeBase64Recursive(obj) {
             if (obj === null || typeof obj !== 'object') {
                 if (typeof obj === 'string' && obj.startsWith('data:image/')) {
@@ -1302,7 +1274,7 @@ async function saveCharacter(event) {
 
         window.characters = removeBase64Recursive(window.characters);
 
-        // 🌟 Firestoreが拒絶する undefined を null に一掃するサニタイズ
+        // Firestoreが拒絶する undefined を null に一掃するサニタイズ
         function sanitizeForFirestore(obj) {
             if (obj === null || typeof obj !== 'object') {
                 return obj === undefined ? null : obj;
@@ -1324,11 +1296,11 @@ async function saveCharacter(event) {
 
         const cleanCharacters = sanitizeForFirestore(window.characters);
 
-        // 💡 ① 手元のブラウザ（localStorage）に即座に保存
+        // ① 手元のブラウザ（localStorage）に即座に保存
         const jsonString = JSON.stringify(cleanCharacters);
         localStorage.setItem('local_characters', jsonString);
 
-        // 💡 ② Firestore（クラウド）へ同期
+        // ② Firestore（クラウド）へ同期
         if (typeof showToast === 'function') showToast("Firestoreへ同期中...", "info");
 
         const charDocRef = window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'characters', 'master');
@@ -1337,16 +1309,18 @@ async function saveCharacter(event) {
             updatedAt: new Date().toISOString()
         });
 
-        // 💡 ③ 保存成功のトースト
+        // ③ 保存成功のトースト
         if (typeof showToast === 'function') {
             showToast("キャラクターを保存・同期しました！", "info");
         }
 
         // モーダルを閉じる
-        closeCharacterModal();
+        if (typeof closeCharacterModal === 'function') {
+            closeCharacterModal();
+        }
         if (typeof renderSystemFolders === 'function') renderSystemFolders();
 
-        // 💡 ④ 詳細画面へ遷移
+        // ④ 詳細画面へ遷移
         setTimeout(() => {
             if (targetCharacterId) {
                 if (typeof navigateTo === 'function') {
@@ -2297,13 +2271,23 @@ function closeConfirmModal() {
 }
 window.closeConfirmModal = closeConfirmModal;
        
-    // ==========================================
+// ==========================================
 // 💡 設定モーダルを開く関数（完全管理者専用ガード付き）
 // ==========================================
 function handleOpenSettingsModal() {
-    // 🔒 ログインしていなければ強制的に処理を中断（パス入力を出さずにブロック）
+    // 🔒 ログインしていなければ強制的に処理を中断し、ユーザーにフィードバックを返す
     if (!window.isAdmin) {
         console.warn('管理者権限がないため設定を開けません。');
+        if (typeof showToast === 'function') {
+            showToast("管理者権限が必要です。ログインしてください。", "error");
+        } else if (typeof checkAdminPermission === 'function') {
+            // common.js等に認証モーダルを開く関数があればそちらに委譲するのも手です
+            checkAdminPermission(() => {
+                handleOpenSettingsModal();
+            });
+        } else {
+            alert("管理者権限がありません。");
+        }
         return; 
     }
 
@@ -2342,9 +2326,13 @@ function handleOpenSettingsModal() {
     // 4. システムの並び順・カスタム項目エディタの描画を実行
     if (typeof renderSettingsEditors === 'function') {
         renderSettingsEditors();
-    } else if (typeof renderSettingsSystemsEditor === 'function' && typeof renderSettingsFieldsEditor === 'function') {
-        renderSettingsSystemsEditor();
-        renderSettingsFieldsEditor();
+    } else {
+        if (typeof renderSettingsSystemsEditor === 'function') {
+            renderSettingsSystemsEditor();
+        }
+        if (typeof renderSettingsFieldsEditor === 'function') {
+            renderSettingsFieldsEditor();
+        }
     }
 
     // 5. モーダルを表示
@@ -3358,7 +3346,7 @@ window.openEditCharacterModal = openEditCharacterModal;
 // 💡 HP設定（全体設定）を保存する関数（管理者専用ガード・グローバル関数対応版）
 // ==========================================
 async function saveRosterSettings(event) {
-    event.preventDefault();
+    if (event) event.preventDefault();
 
     // 🔒 ログインしていなければ即座に処理を中断
     if (!window.isAdmin) {
@@ -3372,7 +3360,12 @@ async function saveRosterSettings(event) {
 
     const titleInput = document.getElementById('settingTitleInput');
     const title = titleInput ? titleInput.value.trim() : '';
-    const favicon = window.currentFaviconBase64 || window.rosterSettings?.favicon || "";
+    let favicon = window.currentFaviconBase64 || window.rosterSettings?.favicon || "";
+
+    // ファビコンが不正な文字列や不完全なBase64データになっていないか念のため保護
+    if (favicon.startsWith('data:image/') && favicon.length < 50) {
+        favicon = "";
+    }
 
     const galleryCategories = {
         base: document.getElementById('catNameBase')?.value.trim() || '基本',
@@ -3389,7 +3382,7 @@ async function saveRosterSettings(event) {
         galleryCategories 
     };
 
-try {
+    try {
         if (typeof showToast === 'function') showToast("設定を保存中...", "info");
 
         // 🌟 window.doc と window.setDoc を使用してエラーを回避
@@ -3399,6 +3392,8 @@ try {
         // 🌟 index.html（卓ポータル）から即座に読み込めるようにlocalStorageにも保存する
         if (favicon) {
             localStorage.setItem('characterFavicon', favicon);
+        } else {
+            localStorage.removeItem('characterFavicon');
         }
         
         window.rosterSettings = newSettings;
@@ -3411,7 +3406,7 @@ try {
         }
     } catch (e) {
         console.error("Settings save error:", e);
-        alert("設定の保存に失敗しました。コンソールを確認してください。");
+        alert(e.message || "設定の保存に失敗しました。コンソールを確認してください。");
     }
 }
 window.saveRosterSettings = saveRosterSettings;
@@ -3618,9 +3613,19 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ==========================================
-// 💡 4. 新規キャラクター登録モーダルを開く関数（自動リサイズ対応版）
+// 💡 4. 新規キャラクター登録モーダルを開く関数（自動リサイズ・管理者ガード対応版）
 // ==========================================
 function openCharacterModal() {
+    // 🔒 ログインしていなければ強制的に中断
+    if (!window.isAdmin) {
+        if (typeof showToast === 'function') {
+            showToast("管理者権限がありません。", "error");
+        } else {
+            alert("管理者権限がありません。");
+        }
+        return;
+    }
+
     const modal = document.getElementById('characterModal');
     if (modal) {
         window.editingCharacterId = null;
@@ -3693,7 +3698,7 @@ function closeCharacterModal() {
 
     window.editingCharacterId = null;
 
-    // 🌟 【追加】モーダルを閉じるときに編集前のスナップショットや一時データを完全に破棄
+    // 🌟 モーダルを閉じるときに編集前のスナップショットや一時データを完全に破棄
     window.originalCharacterState = null;
     window.editingCharacterImages = null;
     window.editingCharacterLinks = null;
@@ -3777,6 +3782,16 @@ window.handleAvatarFileSelect = handleAvatarFileSelect;
 // 💡 キャラクター削除関数（Firestore完全同期・ストレージ画像クリーンアップ対応版）
 // ==========================================
 async function deleteCharacter(characterId) {
+    // 🔒 ログインしていなければ強制的に中断
+    if (!window.isAdmin) {
+        if (typeof showToast === 'function') {
+            showToast("管理者権限がありません。", "error");
+        } else {
+            alert("管理者権限がありません。");
+        }
+        return;
+    }
+
     if (!confirm('本当にこのキャラクターを削除しますか？')) {
         return;
     }
@@ -3807,12 +3822,13 @@ async function deleteCharacter(characterId) {
             if (targetChar.icon) urlsToDelete.push(targetChar.icon);
 
             // Firebase Storage等のURLからファイルを非同期で一括削除
-            if (urlsToDelete.length > 0 && window.storage && window.ref && window.deleteObject) {
+            const storageInstance = typeof window.getStorage === 'function' ? window.getStorage() : window.storage;
+            if (urlsToDelete.length > 0 && storageInstance && typeof window.ref === 'function' && typeof window.deleteObject === 'function') {
                 await Promise.all(urlsToDelete.map(async (url) => {
                     try {
                         // Firebase StorageのURLである場合のみ削除を実行
                         if (typeof url === 'string' && url.startsWith('https://firebasestorage.googleapis.com')) {
-                            const imageRef = window.ref(window.storage, url);
+                            const imageRef = window.ref(storageInstance, url);
                             await window.deleteObject(imageRef);
                             console.log("🔥 ストレージから画像を削除しました:", url);
                         }
@@ -3856,12 +3872,12 @@ async function deleteCharacter(characterId) {
 
     } catch (e) {
         console.error("Delete & Sync error:", e);
-        alert("削除またはFirestore同期に失敗しました。コンソールを確認してください。");
+        alert(e.message || "削除またはFirestore同期に失敗しました。コンソールを確認してください。");
     }
 }
 window.deleteCharacter = deleteCharacter;
 
-// 設定を画面に適用する関数
+// 💡 設定を画面に適用する関数
 function applyRosterSettings(settings) {
     if (!settings) return;
     window.rosterSettings = settings;
@@ -3893,7 +3909,7 @@ function applyRosterSettings(settings) {
         const faviconEl = document.getElementById('faviconIcon') || document.getElementById('dynamicFavicon') || document.querySelector("link[rel*='icon']");
         if (faviconEl) faviconEl.href = settings.favicon;
 
-        const appleIconEl = document.getElementById('appleTouchIcon');
+        const appleIconEl = document.getElementById('appleTouchIcon') || document.getElementById('dynamicAppleTouchIcon');
         if (appleIconEl) appleIconEl.href = settings.favicon;
     }
 
@@ -3907,7 +3923,7 @@ function applyRosterSettings(settings) {
 }
 window.applyRosterSettings = applyRosterSettings;
 
-// パスコード送信処理
+// 💡 パスコード送信処理（common.js の localStorage 認証方式と完全同期）
 function handleAuthSubmit(e) {
     e.preventDefault();
     const passInput = document.getElementById('inputPasscode');
@@ -3919,10 +3935,10 @@ function handleAuthSubmit(e) {
         window.storedPasscode = enteredPass;
 
         window.isAdmin = true;
-        sessionStorage.setItem('isAdminSession', 'true');
+        localStorage.setItem('isAdminMode', 'true'); // sessionStorage から localStorage に統一して一元管理
 
-        closeAuthModal();
-        updateAdminUI();
+        if (typeof closeAuthModal === 'function') closeAuthModal();
+        if (typeof updateAdminUI === 'function') updateAdminUI();
         
         if (typeof showToast === 'function') {
             showToast('パスコードを設定し、ログインしました', 'success');
@@ -3934,10 +3950,10 @@ function handleAuthSubmit(e) {
         if (err) err.classList.add('hidden');
         
         window.isAdmin = true;
-        sessionStorage.setItem('isAdminSession', 'true');
+        localStorage.setItem('isAdminMode', 'true'); // sessionStorage から localStorage に統一
 
-        closeAuthModal();
-        updateAdminUI();
+        if (typeof closeAuthModal === 'function') closeAuthModal();
+        if (typeof updateAdminUI === 'function') updateAdminUI();
 
         if (typeof showToast === 'function') {
             showToast('管理者としてログインしました', 'success');
