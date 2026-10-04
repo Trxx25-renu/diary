@@ -1662,7 +1662,7 @@ window.switchViewMode = switchViewMode;
     
 
 // ==========================================
-// 💡 3. キャラクター詳細描画関数（完全統合・通過シナリオ＆文字サイズ調整版）
+// 💡 3. キャラクター詳細描画関数（完全統合・文字サイズ統一＆線整理版）
 // ==========================================
 window._currentGalleryState = window._currentGalleryState || { characterId: null, category: 'base', index: 0 };
 
@@ -1734,7 +1734,7 @@ function renderCharacterDetail(characterId) {
         window._currentGalleryState.index = 0;
     }
 
-// ------------------------------------------
+    // ------------------------------------------
     // 🖼️ ギャラリー描画用ヘルパー関数
     // ------------------------------------------
     window.switchGalleryCategory = function(catKey) {
@@ -1905,7 +1905,7 @@ function renderCharacterDetail(characterId) {
 
     let epithetHtml = '';
     if (ch.epithet && ch.epithet.trim() !== '') {
-        const kana = ch.epithetKana ? `<span class="text-xs font-medium text-stone-400 block mb-1">${ch.epithetKana}</span>` : '';
+        const kana = ch.epithetKana ? `<span class="text-xs md:text-sm font-medium text-stone-400 block mb-1">${ch.epithetKana}</span>` : '';
         epithetHtml = `
             <div class="mb-1.5">
                 ${kana}
@@ -1914,7 +1914,7 @@ function renderCharacterDetail(characterId) {
         `;
     }
 
-    const nameKanaHtml = ch.nameKana ? `<span class="text-xs font-normal text-stone-400 block mb-0.5">${ch.nameKana}</span>` : '';
+    const nameKanaHtml = ch.nameKana ? `<span class="text-xs md:text-sm font-normal text-stone-400 block mb-0.5">${ch.nameKana}</span>` : '';
     const nameRuby = `
         <div class="my-2">
             ${nameKanaHtml}
@@ -1932,11 +1932,11 @@ function renderCharacterDetail(characterId) {
     let sheetLinkHtml = '';
     if (linksList.length > 0) {
         sheetLinkHtml = `
-            <div class="mt-4 pt-2 border-t border-stone-100">
+            <div class="mt-4 pt-2">
                 <div class="flex items-center gap-2 flex-wrap">
                     ${linksList.map(link => `
                         <a href="${link.url}" target="_blank" rel="noopener noreferrer" 
-                           class="inline-flex items-center gap-2 text-xs md:text-sm font-bold px-4 py-2.5 rounded-xl shadow-sm hover:opacity-95 transition-all" 
+                           class="inline-flex items-center gap-2 text-sm md:text-base font-bold px-4 py-2.5 rounded-xl shadow-sm hover:opacity-95 transition-all" 
                            style="background-color: ${themeColor}; color:${badgeTextColor};">
                             <i class="fa-solid fa-external-link-alt text-xs"></i>
                             <span>${link.label || 'キャラクターシート'}</span>
@@ -1950,7 +1950,7 @@ function renderCharacterDetail(characterId) {
     const sysFields = window.systemCustomFields[ch.systemId] || { status: [], text: [] };
     let customFieldsHtml = '';
 
-const textFields = sysFields.text || [];
+    const textFields = sysFields.text || [];
     if (textFields.length > 0) {
         let fieldsItemsHtml = '';
         textFields.forEach(f => {
@@ -1966,7 +1966,7 @@ const textFields = sysFields.text || [];
 
         customFieldsHtml = `
             <div class="mt-5 pt-4 border-t border-stone-100">
-                <h4 class="text-xs md:text-sm font-bold text-stone-400 mb-2">カスタム情報（ネタバレはクリックで表示）</h4>
+                <h4 class="text-sm md:text-base font-bold text-stone-400 mb-2">カスタム情報（ネタバレはクリックで表示）</h4>
                 <div class="space-y-2 text-sm md:text-base text-stone-700">
                     ${fieldsItemsHtml}
                 </div>
@@ -1977,7 +1977,7 @@ const textFields = sysFields.text || [];
     // 📊 ステータス / ゲージ描画
     const statusFields = sysFields.status || [];
     if (statusFields.length > 0) {
-        customFieldsHtml += `<div class="space-y-3.5 mt-4 pt-4 border-t border-stone-100"><h4 class="text-xs md:text-sm font-bold text-stone-500">ステータス / ゲージ</h4>`;
+        customFieldsHtml += `<div class="space-y-3.5 mt-4 pt-4 border-t border-stone-100"><h4 class="text-sm md:text-base font-bold text-stone-500">ステータス / ゲージ</h4>`;
         
         statusFields.forEach(f => {
             const valObj = ch.customValues ? ch.customValues[f.id] : null;
@@ -2010,7 +2010,7 @@ const textFields = sysFields.text || [];
 
             customFieldsHtml += `
                 <div>
-                    <div class="flex justify-between text-xs md:text-sm mb-1">
+                    <div class="flex justify-between text-sm md:text-base mb-1">
                         <span class="font-medium text-stone-600">${f.label}</span>
                         <span><strong class="text-stone-800 font-mono">${displayText}</strong> ${badgeText}</span>
                     </div>
@@ -2033,16 +2033,16 @@ const textFields = sysFields.text || [];
             <div class="mt-6 pt-6 border-t border-stone-100 space-y-4">
                 ${memo ? `
                     <div>
-                        <h4 class="text-xs md:text-sm font-bold text-stone-500 mb-2 flex items-center gap-1.5">
+                        <h4 class="text-sm md:text-base font-bold text-stone-500 mb-2 flex items-center gap-1.5">
                             <i class="fa-solid fa-note-sticky text-stone-400"></i> 設定 / メモ
                         </h4>
-                        <div class="bg-stone-50 rounded-2xl p-4 text-xs md:text-sm text-stone-700 whitespace-pre-wrap border border-stone-100 leading-relaxed">${memo}</div>
+                        <div class="bg-stone-50 rounded-2xl p-4 text-sm md:text-base text-stone-700 whitespace-pre-wrap border border-stone-100 leading-relaxed">${memo}</div>
                     </div>
                 ` : ''}
                 
                 ${secret ? `
                 <div class="mb-4">
-                    <h4 class="text-xs md:text-sm font-bold text-rose-600 mb-2 flex items-center gap-1.5">
+                    <h4 class="text-sm md:text-base font-bold text-rose-600 mb-2 flex items-center gap-1.5">
                         <i class="fa-solid fa-user-secret text-rose-500"></i> 秘匿メモ（ネタバレ）
                     </h4>
                     <div class="relative bg-rose-50/40 text-stone-800 rounded-2xl p-4 border border-rose-200/70 cursor-pointer overflow-hidden transition-all shadow-xs group" onclick="
@@ -2051,14 +2051,14 @@ const textFields = sysFields.text || [];
                         const isHidden = overlay.style.display !== 'none';
                         overlay.style.display = isHidden ? 'none' : 'flex';
                     ">
-                        <div class="flex items-center justify-between mb-2 pb-1.5 border-b border-rose-200/60 text-xs md:text-sm text-rose-800 font-bold select-none">
+                        <div class="flex items-center justify-between mb-2 pb-1.5 border-b border-rose-200/60 text-sm md:text-base text-rose-800 font-bold select-none">
                             <span class="flex items-center gap-1.5">
                                 <i class="fa-solid fa-triangle-exclamation text-rose-500"></i> ネタバレ防止用本文
                             </span>
-                            <span class="text-[10px] text-rose-400 font-normal">タップで切替</span>
+                            <span class="text-xs text-rose-400 font-normal">タップで切替</span>
                         </div>
                         
-                        <div class="w-full text-left text-xs md:text-sm text-stone-800 font-medium leading-relaxed whitespace-pre-wrap py-1">
+                        <div class="w-full text-left text-sm md:text-base text-stone-800 font-medium leading-relaxed whitespace-pre-wrap py-1">
                             ${secret}
                         </div>
                         
@@ -2066,7 +2066,7 @@ const textFields = sysFields.text || [];
                             <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center text-rose-600 text-sm shadow-xs group-hover:scale-110 transition-transform">
                                 <i class="fa-solid fa-eye-slash"></i>
                             </div>
-                            <span class="text-xs md:text-sm font-bold text-rose-900">タップしてネタバレを表示</span>
+                            <span class="text-sm md:text-base font-bold text-rose-900">タップしてネタバレを表示</span>
                         </div>
                     </div>
                 </div>
