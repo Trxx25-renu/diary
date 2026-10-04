@@ -67,12 +67,14 @@
     <div id="bgImageLayer" class="absolute inset-0 z-0 bg-cover bg-center pointer-events-none transition-all duration-300" style="display: none;"></div>
     <div id="bgOverlay" class="absolute inset-0 z-0 bg-white/60 pointer-events-none transition-all duration-300" style="display: none;"></div>
 
-    <div id="pullRefreshIndicator">
-        <div class="bg-white/90 backdrop-blur-md px-4 py-1.5 rounded-full shadow-md border border-stone-200 text-stone-600 text-xs font-bold flex items-center gap-2">
-            <i id="refreshIcon" class="fa-solid fa-rotate-right transition-transform duration-200"></i>
-            <span id="refreshText">下に引っ張って更新</span>
-        </div>
+<!-- index側のプル・トゥ・リフレッシュ用HTML -->
+<div id="pullToRefreshIndicator" class="fixed top-0 left-0 right-0 z-50 flex justify-center pointer-events-none transition-transform duration-200" style="transform: translateY(-100%);">
+    <div class="bg-white/90 backdrop-blur-md px-4 py-1.5 rounded-full shadow-md border border-stone-200 text-stone-600 text-xs font-bold flex items-center gap-2">
+        <i id="pullIcon" class="fa-solid fa-arrow-down text-stone-500 transition-transform"></i>
+        <span id="pullText">下に引っ張って更新</span>
     </div>
+</div>
+
 
     <!-- ヘッダー -->
     <header class="w-full bg-white/75 backdrop-blur-md border-b border-stone-200/60 flex-shrink-0 relative z-10">
@@ -626,6 +628,83 @@
                 hideAppLoader();
             }
         });
+        
+        // ==========================================
+// 💡 引っ張り更新（プル・トゥ・リフレッシュ・index対応版）
+// ==========================================
+document.addEventListener('DOMContentLoaded', () => {
+    let startY = 0;
+    let currentY = 0;
+    let isPulling = false;
+    let isRefreshing = false;
+    
+    const indicator = document.getElementById('pullToRefreshIndicator');
+    const pullIcon = document.getElementById('pullIcon');
+    const pullText = document.getElementById('pullText');
+    const threshold = 90; 
+
+    if (!indicator) return;
+
+    // 💡 indexは #mainContainer がスクロールし、他のページは window がスクロールするため自動判別
+    const scrollTarget = document.getElementById('mainContainer') || window;
+
+    function getScrollTop() {
+        return scrollTarget === window ? window.scrollY : scrollTarget.scrollTop;
+    }
+
+    scrollTarget.addEventListener('touchstart', (e) => {
+        if (getScrollTop() <= 0 && !isRefreshing) {
+            startY = e.touches[0].clientY;
+            isPulling = true;
+        }
+    }, { passive: true });
+
+    scrollTarget.addEventListener('touchmove', (e) => {
+        if (!isPulling || isRefreshing) return;
+
+        currentY = e.touches[0].clientY;
+        const diff = currentY - startY;
+
+        if (diff > 0 && getScrollTop() <= 0) {
+            const pullDistance = Math.min(diff * 0.3, 100);
+            indicator.style.transform = `translateY(${pullDistance - 64}px)`;
+
+            if (pullDistance > threshold) {
+                pullIcon.className = "fa-solid fa-arrow-rotate-right text-stone-800 dark:text-stone-200 animate-spin";
+                pullText.textContent = "指を離して更新";
+            } else {
+                pullIcon.className = "fa-solid fa-arrow-down text-stone-500 transition-transform";
+                pullText.textContent = "下に引っ張って更新";
+            }
+        } else {
+            indicator.style.transform = `translateY(-100%)`;
+        }
+    }, { passive: true });
+
+    scrollTarget.addEventListener('touchend', () => {
+        if (!isPulling || isRefreshing) return;
+        isPulling = false;
+
+        const diff = currentY - startY;
+        const pullDistance = diff * 0.3;
+
+        if (pullDistance > threshold) {
+            isRefreshing = true;
+            indicator.style.transform = `translateY(0px)`;
+            pullText.textContent = "更新中...";
+            
+            setTimeout(() => {
+                location.reload();
+            }, 500);
+        } else {
+            indicator.style.transform = `translateY(-100%)`;
+        }
+        
+        startY = 0;
+        currentY = 0;
+    });
+});
+        
     </script>
 </body>
 </html>
