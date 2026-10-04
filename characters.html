@@ -3430,7 +3430,7 @@ function openEditCharacterModal(characterId, retryCount = 0) {
         // 🌟 グローバルにも保持しておく（デバッグや外部参照用）
         window.currentEditingCharacter = ch;
 
-        console.log(`⏱️ [計測] 1. キャラ取得まで: ${Math.round(performance.now() - t0)}ms`);
+        console.log(`⏱️️ [計測] 1. キャラ取得まで: ${Math.round(performance.now() - t0)}ms`);
 
         // 2. システムの選択肢を生成
         if (typeof renderCharacterModalSystemSelect === 'function') {
@@ -3453,6 +3453,7 @@ function openEditCharacterModal(characterId, retryCount = 0) {
         const genderInput = document.getElementById('charGender');
         const birthdateInput = document.getElementById('charBirthdate');
         const occupationInput = document.getElementById('charOccupation');
+        const scenarioInput = document.getElementById('charScenario'); // 👈 出身シナリオの入力欄を取得
         const colorInput = document.getElementById('charThemeColor');
         const sheetUrlInput = document.getElementById('charSheetUrl');
         const memoInput = document.getElementById('charMemo');
@@ -3466,6 +3467,7 @@ function openEditCharacterModal(characterId, retryCount = 0) {
         if (genderInput) genderInput.value = ch.gender || '';
         if (birthdateInput) birthdateInput.value = ch.birthdate || '';
         if (occupationInput) occupationInput.value = ch.occupation || '';
+        if (scenarioInput) scenarioInput.value = ch.scenario || ''; // 👈 編集画面へ出身シナリオの値をセット！
         if (colorInput) colorInput.value = ch.themeColor || '#292524';
         if (sheetUrlInput) sheetUrlInput.value = ch.sheetUrl || '';
         if (memoInput) memoInput.value = ch.memo || '';
