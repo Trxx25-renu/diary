@@ -1734,7 +1734,7 @@ function renderCharacterDetail(characterId) {
         window._currentGalleryState.index = 0;
     }
 
-    // ------------------------------------------
+// ------------------------------------------
     // 🖼️ ギャラリー描画用ヘルパー関数
     // ------------------------------------------
     window.switchGalleryCategory = function(catKey) {
@@ -1903,7 +1903,7 @@ function renderCharacterDetail(characterId) {
         `;
     }
 
-let epithetHtml = '';
+    let epithetHtml = '';
     if (ch.epithet && ch.epithet.trim() !== '') {
         const kana = ch.epithetKana ? `<span class="text-xs font-medium text-stone-400 block mb-1">${ch.epithetKana}</span>` : '';
         epithetHtml = `
