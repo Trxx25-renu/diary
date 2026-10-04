@@ -1,5 +1,5 @@
 // ==========================================
-// 💡 共通処理（全ページ共通で読み込むスクリプト）
+// 💡 共通処理：ローダー管理 ＆ スマート・データローディング
 // ==========================================
 
 // 1. ページ読み込み時に自動でローディング画面を挿入
@@ -17,16 +17,79 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// 2. データの準備が完了したときにローディングを非表示にする関数
+// ローダーを安全に消す関数
 function hideAppLoader() {
     const loader = document.getElementById('app-loader');
     if (loader) {
         loader.style.opacity = '0';
         loader.style.pointerEvents = 'none';
         setTimeout(() => {
-            loader.remove(); // 要素自体を削除
+            loader.remove();
         }, 300);
     }
+}
+
+// 2. 💡 ちらつきを完全になくした「いい塩梅」のデータ読み込み関数
+async function loadCharactersFromLocal() {
+    let hasLocalData = false;
+
+    // A. まずローカルストレージを確認
+    try {
+        const saved = localStorage.getItem('local_characters');
+        if (saved) {
+            const parsed = JSON.parse(saved);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+                window.characters = parsed;
+                if (typeof normalizeCharacterStats === 'function') {
+                    normalizeCharacterStats();
+                }
+                hasLocalData = true;
+                console.log(`📂 ローカルキャッシュから ${window.characters.length}件 を即座にロードしました`);
+            }
+        }
+    } catch (e) {
+        console.warn('ローカル読み込みエラー', e);
+    }
+
+    // B. ローカルデータがある場合は、すぐに描画してローダーを消す（0件の瞬間を作らない！）
+    if (hasLocalData) {
+        if (typeof handleHashRoute === 'function') {
+            handleHashRoute();
+        }
+        hideAppLoader();
+    }
+
+    // C. 裏側（またはローカルがない場合はローダーを出したまま）でFirestoreから最新データを取得
+    try {
+        const charDocRef = doc(db, 'artifacts', window.appId, 'public', 'data', 'characters', 'master');
+        const charSnap = await getDoc(charDocRef);
+        
+        if (charSnap.exists() && charSnap.data().list) {
+            const remoteList = charSnap.data().list;
+            
+            // ローカルがなかった場合、あるいはデータ数・内容が違う場合のみ更新して再描画
+            const localString = localStorage.getItem('local_characters');
+            const remoteString = JSON.stringify(remoteList);
+
+            if (!hasLocalData || localString !== remoteString) {
+                window.characters = remoteList;
+                if (typeof normalizeCharacterStats === 'function') {
+                    normalizeCharacterStats();
+                }
+                localStorage.setItem('local_characters', remoteString);
+                console.log('📂 Firestoreの最新データと同期しました');
+
+                if (typeof handleHashRoute === 'function') {
+                    handleHashRoute();
+                }
+            }
+        }
+    } catch (e) {
+        console.warn('⚠️ Firestoreからのデータ同期に失敗しましたが、ローカルデータで継続します', e);
+    }
+
+    // D. もしローカルデータが最初からなくて、Firestoreの取得にも時間がかかった場合の保険（ローダーを必ず消す）
+    hideAppLoader();
 }
 
 // ==========================================
@@ -188,7 +251,7 @@ function verifyPasscode() {
 window.verifyPasscode = verifyPasscode;
 
 // ==========================================
-// 🔑 パスコード入力モーダルを開く
+// 🔑 パスコード入力モーダルを開く（スマホ上部・PC中央対応版）
 // ==========================================
 function openAuthModal() {
     const modal = document.getElementById('authModal');
@@ -202,28 +265,36 @@ function openAuthModal() {
         return;
     }
 
+    // 基本のコンテナ設定（スマホでは上部寄せ、sm以上（PC等）では中央配置）
     modal.style.position = 'fixed';
     modal.style.top = '0';
     modal.style.left = '0';
     modal.style.width = '100vw';
     modal.style.height = '100vh';
     modal.style.display = 'flex';
-    modal.style.alignItems = 'center';
-    modal.style.justifyContent = 'center';
-    modal.style.zIndex = '99999';
-
-    modal.classList.remove('opacity-0', 'pointer-events-none', 'hidden');
-    modal.classList.add('opacity-100');
-    modal.style.opacity = '1';
-    modal.style.pointerEvents = 'auto';
+    // 💡 変更点: スマホは items-start（上部）、sm以上は items-center（中央）
+    modal.className = modal.className.replace(/items-\w+/g, ''); // 既存のitems-*クラスをクリア
+    modal.style.alignItems = ''; // Tailwindのクラス側で制御するため空に
 
     const innerDiv = modal.firstElementChild;
     if (innerDiv) {
-        innerDiv.classList.remove('scale-95');
+        // 💡 変更点: スマホでは上に少し余白（mt-12 等）を持たせ、PCでは中央に
+        innerDiv.classList.remove('scale-95', 'scale-100');
         innerDiv.classList.add('scale-100');
         innerDiv.style.transform = 'scale(1)';
         innerDiv.style.opacity = '1';
+
+        // スマホでキーボードが出て見えなくならないよう、上下の配置をクラスで動的調整
+        // スマホ: pt-10 (上部に配置)、PC: my-auto (中央配置)
+        innerDiv.className = innerDiv.className.replace(/my-\w+|pt-\w+/g, '');
+        innerDiv.classList.add('pt-12', 'sm:my-auto', 'max-w-sm', 'w-full', 'mx-4');
     }
+
+    modal.style.zIndex = '99999';
+    modal.classList.remove('opacity-0', 'pointer-events-none', 'hidden');
+    modal.classList.add('opacity-100', 'flex');
+    modal.style.opacity = '1';
+    modal.style.pointerEvents = 'auto';
 
     const passInput = document.getElementById('inputPasscode') || modal.querySelector('input');
     if (passInput) {
