@@ -272,20 +272,16 @@ function openAuthModal() {
     modal.style.width = '100vw';
     modal.style.height = '100vh';
     modal.style.display = 'flex';
-    // 💡 変更点: スマホは items-start（上部）、sm以上は items-center（中央）
-    modal.className = modal.className.replace(/items-\w+/g, ''); // 既存のitems-*クラスをクリア
-    modal.style.alignItems = ''; // Tailwindのクラス側で制御するため空に
+    modal.className = modal.className.replace(/items-\w+/g, '');
+    modal.style.alignItems = '';
 
     const innerDiv = modal.firstElementChild;
     if (innerDiv) {
-        // 💡 変更点: スマホでは上に少し余白（mt-12 等）を持たせ、PCでは中央に
         innerDiv.classList.remove('scale-95', 'scale-100');
         innerDiv.classList.add('scale-100');
         innerDiv.style.transform = 'scale(1)';
         innerDiv.style.opacity = '1';
 
-        // スマホでキーボードが出て見えなくならないよう、上下の配置をクラスで動的調整
-        // スマホ: pt-10 (上部に配置)、PC: my-auto (中央配置)
         innerDiv.className = innerDiv.className.replace(/my-\w+|pt-\w+/g, '');
         innerDiv.classList.add('pt-12', 'sm:my-auto', 'max-w-sm', 'w-full', 'mx-4');
     }
@@ -325,7 +321,59 @@ function closeAuthModal() {
 }
 window.closeAuthModal = closeAuthModal;
 
+// ==========================================
+// ⚙️ ポータル設定保存時のパスコード変更連動関数
+// ==========================================
+function savePortalSettings() {
+    // 💡 1. パスコード入力欄（#inputAdminPass）の値を確認
+    const passInput = document.getElementById('inputAdminPass');
+    if (passInput) {
+        const newPass = passInput.value.trim();
+        // 何か入力されている場合のみパスコードを上書き更新
+        if (newPass !== '') {
+            window.storedPasscode = newPass;
+            localStorage.setItem('adminStoredPasscode', newPass);
+            console.log('🔑 管理者パスコードが更新されました');
+        }
+    }
+
+    // --- 2. その他の設定保存処理（必要に応じてここに記述・拡張） ---
+    const portalTitleInput = document.getElementById('inputPortalTitle');
+    if (portalTitleInput) {
+        const portalTitle = portalTitleInput.value.trim();
+        if (portalTitle) {
+            localStorage.setItem('portalTitle', portalTitle);
+        }
+    }
+
+    // --- 3. 完了通知 ＆ モーダルを閉じる ---
+    if (typeof closeEditModal === 'function') {
+        closeEditModal();
+    } else {
+        const editModal = document.getElementById('editModal');
+        if (editModal) editModal.style.display = 'none';
+    }
+
+    if (typeof showToast === 'function') {
+        showToast('設定を保存しました', 'success');
+    } else {
+        alert('設定を保存しました');
+    }
+
+    // 画面のタイトルなどを即座に反映させたい場合のフック
+    if (typeof window.onPortalSettingsSaved === 'function') {
+        window.onPortalSettingsSaved();
+    }
+}
+window.savePortalSettings = savePortalSettings;
+
 // ページ読み込み時に自動でUIを同期
 document.addEventListener('DOMContentLoaded', () => {
     updateAdminUI();
+
+    // 設定モーダルのパスコード入力欄に、現在保存されているパスコードをプレースホルダーや初期値として出したい場合はここで行えます
+    const passInput = document.getElementById('inputAdminPass');
+    if (passInput && window.storedPasscode) {
+        passInput.placeholder = '変更する場合のみ入力';
+    }
 });
