@@ -260,7 +260,9 @@ if (typeof closeAuthModal !== 'function') {
     window.closeAuthModal = closeAuthModal;
 }
 
-// ログアウト処理
+// ==========================================
+// 🔑 ログアウト処理（ページ構造に依存しない安全版）
+// ==========================================
 function logoutAdmin() {
     const doLogout = () => {
         window.isAdmin = false;
@@ -277,9 +279,14 @@ function logoutAdmin() {
         location.reload();
     };
 
-    if (typeof showConfirm === 'function') {
+    // ページ内に確認用カスタムモーダルのHTMLが存在するか厳密にチェックする
+    const confirmModalExists = document.getElementById('confirmModal') || document.getElementById('customConfirmModal');
+
+    if (typeof showConfirm === 'function' && confirmModalExists) {
+        // インデックスなど、専用HTMLがあるページではカスタムモーダルを使用
         showConfirm('ログアウト', '管理者モードからログアウトしますか？', doLogout);
     } else {
+        // キャラクター一覧など、専用HTMLがないページではブラウザ標準の確認ダイアログを使用
         if (confirm('管理者モードからログアウトしますか？')) {
             doLogout();
         }
