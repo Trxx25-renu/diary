@@ -3923,47 +3923,17 @@ function applyRosterSettings(settings) {
 }
 window.applyRosterSettings = applyRosterSettings;
 
-// 💡 パスコード送信処理（common.js の localStorage 認証方式と完全同期）
+// 💡 パスコード送信処理（common.js の verifyPasscode に完全に委譲する）
 function handleAuthSubmit(e) {
-    e.preventDefault();
-    const passInput = document.getElementById('inputPasscode');
-    const err = document.getElementById('authErrorMsg');
-    const enteredPass = passInput ? passInput.value : '';
-
-    if (!window.storedPasscode) {
-        if (!enteredPass) return;
-        window.storedPasscode = enteredPass;
-
-        window.isAdmin = true;
-        localStorage.setItem('isAdminMode', 'true'); // sessionStorage から localStorage に統一して一元管理
-
-        if (typeof closeAuthModal === 'function') closeAuthModal();
-        if (typeof updateAdminUI === 'function') updateAdminUI();
-        
-        if (typeof showToast === 'function') {
-            showToast('パスコードを設定し、ログインしました', 'success');
-        }
-        return;
+    if (e && typeof e.preventDefault === 'function') {
+        e.preventDefault();
     }
 
-    if (enteredPass === window.storedPasscode) {
-        if (err) err.classList.add('hidden');
-        
-        window.isAdmin = true;
-        localStorage.setItem('isAdminMode', 'true'); // sessionStorage から localStorage に統一
-
-        if (typeof closeAuthModal === 'function') closeAuthModal();
-        if (typeof updateAdminUI === 'function') updateAdminUI();
-
-        if (typeof showToast === 'function') {
-            showToast('管理者としてログインしました', 'success');
-        }
+    // 共通設定側の verifyPasscode を呼び出す
+    if (typeof verifyPasscode === 'function') {
+        verifyPasscode();
     } else {
-        if (err) err.classList.remove('hidden');
-        if (passInput) {
-            passInput.value = '';
-            passInput.focus();
-        }
+        console.error("❌ verifyPasscode が見つかりません");
     }
 }
 window.handleAuthSubmit = handleAuthSubmit;
