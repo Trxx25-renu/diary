@@ -1038,6 +1038,7 @@ async function saveCharacter(event) {
     const gender = document.getElementById('charGender')?.value?.trim() || '';
     const birthdate = document.getElementById('charBirthdate')?.value?.trim() || '';
     const occupation = document.getElementById('charOccupation')?.value?.trim() || '';
+    const scenario = document.getElementById('charScenario')?.value?.trim() || ''; // 👈 出身シナリオの取得を追加
     const themeColor = document.getElementById('charThemeColor')?.value || '#292524';
     const sheetUrl = document.getElementById('charSheetUrl')?.value?.trim() || '';
     const memo = document.getElementById('charMemo')?.value || '';
@@ -1188,7 +1189,9 @@ async function saveCharacter(event) {
         id: targetCharacterId,
         systemId, name, nameKana, epithet, epithetKana,
         age: age ? Number(age) : '',
-        gender, birthdate, occupation, themeColor, 
+        gender, birthdate, occupation,
+        scenario, // 👈 ここに出身シナリオを追加！
+        themeColor, 
         sheetUrl: links.length > 0 ? links[0].url : sheetUrl,
         links, memo, secret, thumbnail, avatar, images,
         customValues,
@@ -5161,7 +5164,7 @@ window.importCharacterSheetText = importCharacterSheetText;
                     </div>
                 </div>
 
-                <!-- 詳細プロフィール（年齢・性別・誕生日・テーマカラー） -->
+<!-- 詳細プロフィール（年齢・性別・誕生日・テーマカラー） -->
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     <div>
                         <label class="block text-xs font-bold text-stone-700 mb-1">年齢</label>
@@ -5189,6 +5192,12 @@ window.importCharacterSheetText = importCharacterSheetText;
                     </div>
                 </div>
 
+                <!-- 👇 ここから下を新規追加：出身シナリオの入力欄（1列・全幅） -->
+                <div class="mt-3">
+                    <label class="block text-xs font-bold text-stone-700 mb-1">出身シナリオ</label>
+                    <input type="text" id="charScenario" placeholder="例: 〇〇シナリオ名" class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-xs text-stone-800 focus:outline-none focus:border-stone-400">
+                </div>
+               
                 <!-- 関連リンク -->
                 <div class="space-y-2">
                     <div class="flex justify-between items-center">
