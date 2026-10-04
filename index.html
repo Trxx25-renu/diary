@@ -620,6 +620,11 @@
         window.addEventListener('DOMContentLoaded', () => {
             loadSettings();
             updateAdminUI();
+
+            // 💡 設定の読み込みとUI更新が終わったここでローダーを消す！
+            if (typeof hideAppLoader === 'function') {
+                hideAppLoader();
+            }
         });
     </script>
 </body>
