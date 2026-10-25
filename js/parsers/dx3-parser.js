@@ -182,3 +182,5 @@ function setFieldValue(id, value) {
 }
 
 window.importCharacterSheetText = importCharacterSheetText;
+
+window.parseDX3Text = parseDX3Text;
