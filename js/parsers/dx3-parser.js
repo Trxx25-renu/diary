@@ -183,4 +183,5 @@ function setFieldValue(id, value) {
 
 window.importCharacterSheetText = importCharacterSheetText;
 
+// 🌐 グローバル登録
 window.parseDX3Text = parseDX3Text;
