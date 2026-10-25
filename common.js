@@ -185,7 +185,10 @@ function handleHeaderKeyClick() {
 window.handleHeaderKeyClick = handleHeaderKeyClick;
 window.handleAuthAction = handleHeaderKeyClick; // 互換性用
 
+
+// ==========================================
 // 🔑 パスコード検証関数
+// ==========================================
 function verifyPasscode() {
     const passInput = document.getElementById('inputPasscode') || document.getElementById('passcode') || document.getElementById('authPassword');
     const err = document.getElementById('authErrorMsg');
@@ -247,18 +250,6 @@ function verifyPasscode() {
 }
 window.verifyPasscode = verifyPasscode;
 
-// モーダルを閉じる関数（もし定義されていなければ念のため用意）
-if (typeof closeAuthModal !== 'function') {
-    function closeAuthModal() {
-        const modal = document.getElementById('authModal');
-        if (modal) {
-            modal.classList.remove('flex', 'opacity-100', 'pointer-events-auto');
-            modal.classList.add('hidden', 'opacity-0', 'pointer-events-none');
-            modal.style.display = 'none';
-        }
-    }
-    window.closeAuthModal = closeAuthModal;
-}
 
 // ==========================================
 // 🔑 ログアウト処理（ページ構造に依存しない安全版）
@@ -294,69 +285,6 @@ function logoutAdmin() {
 }
 window.logoutAdmin = logoutAdmin;
 
-// ==========================================
-// 🔑 パスコード検証関数
-// ==========================================
-function verifyPasscode() {
-    const passInput = document.getElementById('inputPasscode') || document.getElementById('passcode') || document.getElementById('authPassword');
-    const err = document.getElementById('authErrorMsg');
-    const enteredValue = passInput ? passInput.value.trim() : '';
-
-    if (err) err.classList.add('hidden');
-
-    // 初回パスコード設定
-    if (!window.storedPasscode) {
-        if (!enteredValue) {
-            if (err) {
-                err.textContent = 'パスコードを入力してください';
-                err.classList.remove('hidden');
-            }
-            return;
-        }
-        window.storedPasscode = enteredValue;
-        localStorage.setItem('adminStoredPasscode', enteredValue);
-        
-        window.isAdmin = true;
-        localStorage.setItem('isAdminMode', 'true');
-        
-        updateAdminUI();
-        if (typeof showToast === 'function') showToast('初期パスコードを設定しました', 'success');
-        closeAuthModal();
-
-        if (typeof pendingAction === 'function') {
-            const action = pendingAction;
-            pendingAction = null;
-            action();
-        }
-        return;
-    }
-
-    // パスコード照合
-    if (enteredValue === window.storedPasscode) {
-        window.isAdmin = true;
-        localStorage.setItem('isAdminMode', 'true');
-        
-        updateAdminUI();
-        if (typeof showToast === 'function') showToast('管理者ログインしました', 'success');
-        closeAuthModal();
-
-        if (typeof pendingAction === 'function') {
-            const action = pendingAction;
-            pendingAction = null;
-            action();
-        }
-    } else {
-        if (err) {
-            err.textContent = 'パスコードが違います';
-            err.classList.remove('hidden');
-        }
-        if (passInput) {
-            passInput.value = '';
-            passInput.focus();
-        }
-    }
-}
-window.verifyPasscode = verifyPasscode;
 
 // ==========================================
 // 🔑 パスコード入力モーダルを開く関数（上寄り・完全版）
@@ -418,6 +346,7 @@ function openAuthModal() {
 }
 window.openAuthModal = openAuthModal;
 
+
 // ==========================================
 // 🔒 パスコード入力モーダルを閉じる
 // ==========================================
@@ -439,6 +368,7 @@ function closeAuthModal() {
 }
 window.closeAuthModal = closeAuthModal;
 
+
 // ==========================================
 // ⚙️ ポータル設定保存時のパスコード変更連動関数
 // ==========================================
@@ -455,7 +385,7 @@ function savePortalSettings() {
         }
     }
 
-    // --- 2. その他の設定保存処理（必要に応じてここに記述・拡張） ---
+    // --- 2. その他の設定保存処理 ---
     const portalTitleInput = document.getElementById('inputPortalTitle');
     if (portalTitleInput) {
         const portalTitle = portalTitleInput.value.trim();
@@ -478,18 +408,17 @@ function savePortalSettings() {
         alert('設定を保存しました');
     }
 
-    // 画面のタイトルなどを即座に反映させたい場合のフック
     if (typeof window.onPortalSettingsSaved === 'function') {
         window.onPortalSettingsSaved();
     }
 }
 window.savePortalSettings = savePortalSettings;
 
+
 // ページ読み込み時に自動でUIを同期
 document.addEventListener('DOMContentLoaded', () => {
     updateAdminUI();
 
-    // 設定モーダルのパスコード入力欄に、現在保存されているパスコードをプレースホルダーや初期値として出したい場合はここで行えます
     const passInput = document.getElementById('inputAdminPass');
     if (passInput && window.storedPasscode) {
         passInput.placeholder = '変更する場合のみ入力';
