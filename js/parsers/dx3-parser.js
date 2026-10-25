@@ -1,5 +1,5 @@
 // ==========================================
-// 🔍 DX3rd テキスト解析パーサー（全角/半角括弧・揺れ完全対応版）
+// 🔍 DX3rd テキスト解析パーサー（■その他■からの読み仮名抽出・完全対応版）
 // ==========================================
 function parseDX3Text(text, targetSysId) {
     const result = {
@@ -41,32 +41,14 @@ function parseDX3Text(text, targetSysId) {
         return str.replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0)).trim();
     };
 
-    // ==========================================
-    // 🌟 1. 名前とヨミガナの抽出（全角・半角の括弧に対応）
-    // ==========================================
+    // 1. 名前とコードネームの基本抽出（上部から）
     const nameMatch = mainPart.match(/(?:キャラクター名|名前)[：:\s]+([^\r\n（\(]+?)(?:[\s ]*[\（\(](.*?)[\）\)])?$/m) ||
                       mainPart.match(/(?:キャラクター名|名前)[：:\s]+([^\r\n]+)/);
     if (nameMatch) {
         result.name = nameMatch[1].trim();
-        if (nameMatch[2]) result.nameKana = nameMatch[2].trim();
     }
 
-    const pcKanaMatch = mainPart.match(/^PC[：:\s]+([^\r\n]+)/m);
-    if (pcKanaMatch) {
-        let pcText = pcKanaMatch[1].trim();
-        if (!result.nameKana || result.nameKana.length > 20 || result.nameKana.includes('ダメージ')) {
-            result.nameKana = pcText;
-        }
-    }
-    if (result.nameKana && (result.nameKana.includes('ダメージ') || result.nameKana.length > 25)) {
-        result.nameKana = '';
-    }
-
-    // ==========================================
-    // 🌟 2. 二つ名・コードネーム・CNの抽出（全角・半角の括弧、スペース区切りに対応）
-    // ==========================================
     const codeLineMatch = mainPart.match(/(?:コードネーム|二つ名)[：:\s]+([^\r\n]+)/);
-    
     let cnRaw = "";
     const directCnMatch = text.match(/CN[：:\s]+([^\r\n]+)/);
     if (directCnMatch) {
@@ -76,26 +58,48 @@ function parseDX3Text(text, targetSysId) {
     }
 
     if (cnRaw) {
-        // パターンA: 括弧つき（全角・半角両対応 例: 光輪の小爪（スタークロウ） / 光輪の小爪(スタークロウ)）
         const parenMatch = cnRaw.match(/^([^\r\n（\(]+?)[\s ]*[\（\(](.*?)[\）\)]/);
         if (parenMatch) {
             result.codeName = parenMatch[1].replace(/[「“"‘」”"’]/g, '').trim();
             result.codeNameKana = parenMatch[2].trim();
         } else {
-            // パターンB: カギ括弧やスペース区切り（例: “Spinel” スピネル）
-            const quoteWrappedMatch = cnRaw.match(/^([“"‘「„‚].*?[”"’」”‘]|[^\s ]+)(?:[\s ]+)(.+)$/);
-            if (quoteWrappedMatch) {
-                result.codeName = quoteWrappedMatch[1].replace(/[「“"‘」”"’]/g, '').trim();
-                result.codeNameKana = quoteWrappedMatch[2].replace(/[「“"‘」”"’]/g, '').trim();
-            } else {
-                const spaceParts = cnRaw.split(/[\s ]+/);
-                if (spaceParts.length >= 2) {
-                    result.codeName = spaceParts[0].replace(/[「“"‘」”"’]/g, '').trim();
-                    result.codeNameKana = spaceParts.slice(1).join(' ').replace(/[「“"‘」”"’]/g, '').trim();
-                } else {
-                    result.codeName = cnRaw.replace(/[「“"‘」”"’]/g, '').trim();
-                }
-            }
+            result.codeName = cnRaw.replace(/[「“"‘」”"’]/g, '').trim();
+        }
+    }
+
+    // ==========================================
+    // 🌟 2. ■その他■（下部コマ欄など）から正確な読み仮名を補完抽出
+    // ==========================================
+    const otherSectionMatch = text.match(/■その他■[\s\S]*/);
+    const searchTarget = otherSectionMatch ? otherSectionMatch[0] : text;
+
+    // A. 名前の読み仮名抽出（例：春宮 小毬(はるみや こまり) または 春宮 小毬（はるみや こまり））
+    if (result.name) {
+        // エスケープ処理をした名前で正規表現を動的生成
+        const escapedName = result.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const nameKanaRegex = new RegExp(`${escapedName}[\\s ]*[（\\(](.*?)?[\\）\\)]`, 'u');
+        const nKanaMatch = searchTarget.match(nameKanaRegex);
+        if (nKanaMatch && nKanaMatch[1]) {
+            result.nameKana = nKanaMatch[1].trim();
+        }
+    }
+
+    // B. コードネームの読み仮名抽出（例：光輪の小爪 (スタークロウ) または 光輪の小爪(スタークロウ)）
+    if (result.codeName) {
+        const escapedCn = result.codeName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const cnKanaRegex = new RegExp(`${escapedCn}[\\s ]*[（\\(](.*?)?[\\）\\)]`, 'u');
+        const cKanaMatch = searchTarget.match(cnKanaRegex);
+        if (cKanaMatch && cKanaMatch[1]) {
+            result.codeNameKana = cKanaMatch[1].trim();
+        }
+    }
+
+    // 万が一、上部からコードネームが取れていなくて下部（■その他■）にある場合
+    if (!result.codeName) {
+        const altCnMatch = searchTarget.match(/(?:コードネーム|CN)[：:\s]*([^\s（\(]+)[\s ]*[（\(](.*?)?[）\)]/);
+        if (altCnMatch) {
+            result.codeName = altCnMatch[1].trim();
+            result.codeNameKana = altCnMatch[2] ? altCnMatch[2].trim() : '';
         }
     }
 
@@ -111,7 +115,7 @@ function parseDX3Text(text, targetSysId) {
         else result.gender = gRaw || '不明';
     }
 
-    // 4. ワークス・カヴァー
+    // 4. ワークス・カヴァー・シンドローム
     const worksMatch = mainPart.match(/ワークス[：:\s]*([^\r\n\/]+)/);
     if (worksMatch) result.works = worksMatch[1].replace(/^[：:\s]+/, '').trim();
 
@@ -133,12 +137,33 @@ function parseDX3Text(text, targetSysId) {
     const syndMatch = mainPart.match(/シンドローム[：:\s]*([^\r\n]+)/);
     if (syndMatch) result.syndrome = syndMatch[1].trim();
 
-    const dRoyceMatch = mainPart.match(/([^\r\n]+)\s*\/\s*Dロイス/) || mainPart.match(/Dロイス[：:\s]*([^\r\n]+)/);
-    if (dRoyceMatch) {
-        result.dRoyce = dRoyceMatch[1].trim();
+    // 5. Dロイスの抽出（ロイスセクション内または / Dロイス から正確に取得）
+    let dRoyceName = '';
+    const roiseSectionMatch = text.match(/■ロイス■[\s\S]*?(?=■|$)/);
+    if (roiseSectionMatch) {
+        const roiseText = roiseSectionMatch[0];
+        const droyceLineMatch = roiseText.match(/[\|]?\s*([^\r\n\|\/]+?)\s*\/+\s*Dロイス/);
+        if (droyceLineMatch) {
+            dRoyceName = droyceLineMatch[1].trim();
+        }
+    }
+    if (!dRoyceName) {
+        const lines = text.split('\n');
+        for (const line of lines) {
+            if (line.includes('Dロイス') && !line.includes('エフェクト') && !line.includes('マイナー')) {
+                const match = line.match(/[\|]?\s*([^\r\n\|\/]+?)\s*\/+\s*Dロイス/);
+                if (match) {
+                    dRoyceName = match[1].trim();
+                    break;
+                }
+            }
+        }
+    }
+    if (dRoyceName) {
+        result.dRoyce = dRoyceName;
     }
 
-    // 5. 誕生日の抽出
+    // 6. 誕生日の抽出
     const bdayMatch = text.match(/誕生日[\s\u3000:|｜]*([^\s\u3000|｜]+)/);
     if (bdayMatch) {
         let bdayStr = bdayMatch[1].trim();
@@ -152,14 +177,14 @@ function parseDX3Text(text, targetSysId) {
         }
     }
 
-    // 6. カラーコードの抽出
+    // 7. カラーコードの抽出
     const colorMatch = text.match(/(?:カラーコード|カラー|色|背景)[\s\u3000:|｜]*#?([0-9a-fA-F]{6}|[0-9a-fA-F]{3})/i) || text.match(/(?<![#0-9a-fA-F])([0-9a-fA-F]{6}|[0-9a-fA-F]{3})(?![0-9a-fA-F])/);
     if (colorMatch) {
         let rawColor = colorMatch[1] || colorMatch[0];
         result.colorCode = rawColor.startsWith('#') ? rawColor : `#${rawColor}`;
     }
 
-    // 7. 能力値
+    // 8. 能力値
     const extractDXStat = (key) => {
         const regA = new RegExp(`(?:【)?${key}(?:】)?[：:\\s]*([0-9０-９]+)`, 'i');
         const mA = text.match(regA);
@@ -181,7 +206,7 @@ function parseDX3Text(text, targetSysId) {
     result.erosion = extractDXStat('侵蝕基本値') || extractDXStat('侵蝕');
     result.action = extractDXStat('行動値') || extractDXStat('行動');
 
-    // 8. 動的カスタムフィールド定義との突合
+    // 9. 動的カスタムフィールド定義との突合
     const extractedValues = {
         "ワークス": result.works,
         "カヴァー": result.cover,
