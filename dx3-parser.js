@@ -1,7 +1,7 @@
 // ==========================================
 // 💡 ダブルクロス (DX3rd) テキストパーサー
 // ==========================================
-function parseDX3Text(rawText) {
+function parseDX3Text(rawText, targetSysId) {
     let data = {
         name: "",
         nameKana: "",
@@ -9,14 +9,15 @@ function parseDX3Text(rawText) {
         codeNameKana: "",
         age: "",
         gender: "不明",
-        occupation: "", // ワークスまたはカヴァー
+        occupation: "", // ワークスやカヴァー
         birthday: "",
-        colorCode: "#f43f5e" // デフォルトテーマカラー
+        colorCode: "#f43f5e", // デフォルトテーマカラー
+        fields: {} // 動的カスタムフィールド用の格納先
     };
 
     if (!rawText) return data;
 
-    // 1. 名前とヨミガナの抽出 (例: 宝生 スピナ / 括弧書き、または PC：行)
+    // 1. 基本プロフィール抽出
     const nameLineMatch = rawText.match(/(?:キャラクター名|名前|タイトル)[：:\s]\s*(.+)/);
     if (nameLineMatch) {
         let rawNamePart = nameLineMatch[1].trim();
@@ -29,13 +30,11 @@ function parseDX3Text(rawText) {
         }
     }
 
-    // 「■その他■」の PC：行（例: PC：ほうしょう すぴな）から読み仮名を補完
     const pcKanaMatch = rawText.match(/PC[：:\s]+([^\r\n]+)/);
     if (pcKanaMatch && !data.nameKana) {
         data.nameKana = pcKanaMatch[1].trim();
     }
 
-    // 2. コードネーム（二つ名）とヨミガナの抽出
     const codeNameMatch = rawText.match(/コードネーム[：:\s]\s*(.+)/);
     if (codeNameMatch) {
         let rawCodePart = codeNameMatch[1].trim();
@@ -48,7 +47,6 @@ function parseDX3Text(rawText) {
         }
     }
 
-    // 「■その他■」の CN：行（例: CN：“Spinel” スピネル）から補完
     const cnMatch = rawText.match(/CN[：:\s]+([^\r\n]+)/);
     if (cnMatch) {
         let cnText = cnMatch[1].trim();
@@ -61,7 +59,6 @@ function parseDX3Text(rawText) {
         }
     }
 
-    // 3. 年齢と性別の抽出
     const ageMatch = rawText.match(/年齢[：:\s]*(\d+)/);
     if (ageMatch) data.age = ageMatch[1].trim();
 
@@ -73,34 +70,45 @@ function parseDX3Text(rawText) {
         else data.gender = gText || "不明";
     }
 
-    // 4. 職業・ワークス・カヴァーの抽出
     const worksMatch = rawText.match(/ワークス[：:\s]*([^\s\/]+)/);
     const coverMatch = rawText.match(/カヴァー[：:\s]*([^\s\/]+)/);
-    if (worksMatch) {
-        data.occupation = worksMatch[1].trim();
-    } else if (coverMatch) {
-        data.occupation = coverMatch[1].trim();
+    const syndromeMatch = rawText.match(/シンドローム[：:\s]*([^\r\n]+)/);
+
+    if (worksMatch) data.occupation = worksMatch[1].trim();
+    else if (coverMatch) data.occupation = coverMatch[1].trim();
+
+    // Dロイスの抽出
+    let dRoyce = "";
+    const dRoyceMatch = rawText.match(/([^\r\n]+)\s*\/\s*Dロイス/);
+    if (dRoyceMatch) {
+        dRoyce = dRoyceMatch[1].trim();
     }
 
-    // 5. 生態情報・誕生日の抽出
-    const bdayMatch = rawText.match(/誕生日[：:\s]*([^\s\/]+(?:\/[^\s\/]+)*)/);
-    if (bdayMatch) {
-        let rawBday = bdayMatch[1].trim();
-        data.birthday = formatDX3Birthday(rawBday);
+    // 2. 抽出したテキスト項目の値マップ
+    const extractedValues = {
+        "カヴァー": coverMatch ? coverMatch[1].trim() : (worksMatch ? worksMatch[1].trim() : ""),
+        "シンドローム": syndromeMatch ? syndromeMatch[1].trim() : "",
+        "Dロイス": dRoyce,
+        "ワークス": worksMatch ? worksMatch[1].trim() : "",
+        "コードネーム": data.codeName
+    };
+
+    // 3. 選択されているシステムのカスタムフィールド設定（window.systemCustomFields）と突合してIDを割り当て
+    if (targetSysId && window.systemCustomFields && window.systemCustomFields[targetSysId]) {
+        const sysFields = window.systemCustomFields[targetSysId];
+        
+        // テキスト項目を走査してラベルが一致すればセット
+        if (sysFields.text) {
+            sysFields.text.forEach(field => {
+                // フィールドのラベル名（例: "カヴァー"）に一致する抽出データがあれば代入
+                if (extractedValues[field.label] !== undefined) {
+                    data.fields[field.id] = extractedValues[field.label];
+                }
+            });
+        }
     }
 
     return data;
-}
-
-// 補助関数：誕生日フォーマット
-function formatDX3Birthday(bdayStr) {
-    if (!bdayStr) return "";
-    if (bdayStr.includes('月')) return bdayStr;
-    const match = bdayStr.match(/(\d+)[\/\-\.](\d+)/);
-    if (match) {
-        return `${match[1]}月${match[2]}日`;
-    }
-    return bdayStr;
 }
 
 // 🌐 グローバル登録
