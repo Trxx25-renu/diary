@@ -1,7 +1,7 @@
 // ==========================================
-// 💡 CoCテキストパーサー（保管所 ＆ いあきゃら 統合・変換対応版）
+// 💡 CoCテキストパーサー（動的フィールドマッピング対応版）
 // ==========================================
-function parseCoCText(rawText) {
+function parseCoCText(rawText, targetSysId) {
     let data = {
         name: "",
         nameKana: "",
@@ -13,12 +13,13 @@ function parseCoCText(rawText) {
         feature: "なし",
         str: "", con: "", pow: "", dex: "",
         app: "", siz: "", int: "", edu: "",
-        hp: "", san: "", luck: ""
+        hp: "", san: "", luck: "",
+        fields: {} // 動的カスタムフィールド用の格納先
     };
 
     if (!rawText) return data;
 
-    // 1. 名前とヨミガナの抽出 (例: ベアトリーチェ (Beatrice) / 天城 翼(あまぎ つばさ))
+    // 1. 名前とヨミガナの抽出
     const nameLineMatch = rawText.match(/(?:キャラクター名|名前|タイトル)[：:\s]\s*(.+)/);
     if (nameLineMatch) {
         let rawNamePart = nameLineMatch[1].trim();
@@ -47,7 +48,7 @@ function parseCoCText(rawText) {
         else data.gender = "不明";
     }
 
-    // 4. 生態情報の抽出（誕生日を「11/29」等から「11月29日」に自動変換）
+    // 4. 生態情報の抽出（誕生日）
     const bdayMatch = rawText.match(/誕生日[：:\s]*([^\s\/]+(?:\/[^\s\/]+)*)/);
     if (bdayMatch) {
         let rawBday = bdayMatch[1].trim();
@@ -62,12 +63,10 @@ function parseCoCText(rawText) {
 
     // 6. ステータス抽出（いあきゃら・保管所共通）
     function extractStat(key) {
-        // いあきゃら等の表形式 (行頭付近のKEYのあとにスペースと数字が続く)
         const tableRegex = new RegExp(`\\b${key}\\b\\s+(\\d+)`, 'i');
         const tableMatch = rawText.match(tableRegex);
         if (tableMatch) return tableMatch[1];
 
-        // 通常の横並びやコロン形式
         const directRegex = new RegExp(`(?:【)?\\b${key}\\b(?:】)?[^\\d]*(\\d+)`, 'i');
         const directMatch = rawText.match(directRegex);
         if (directMatch) return directMatch[1];
@@ -85,17 +84,59 @@ function parseCoCText(rawText) {
     data.edu = extractStat('EDU');
     data.hp = extractStat('HP');
 
-    // 正気度
     const sanMatch = rawText.match(/(?:正気度|SAN)[^\d]*(\d+)/i);
     if (sanMatch) data.san = sanMatch[1];
 
-    // 幸運
     data.luck = extractStat('幸運') || extractStat('LUCK');
 
     // 7. カラーコードの抽出
     const colorMatch = rawText.match(/#([0-9a-fA-F]{6}|[0-9a-fA-F]{3})/);
     if (colorMatch) {
         data.colorCode = colorMatch[0];
+    }
+
+    // ==========================================
+    // 💡 抽出した値をシステムのカスタムフィールド定義と突合してマッピング
+    // ==========================================
+    const extractedValues = {
+        "STR": data.str,
+        "CON": data.con,
+        "POW": data.pow,
+        "DEX": data.dex,
+        "APP": data.app,
+        "SIZ": data.siz,
+        "INT": data.int,
+        "EDU": data.edu,
+        "HP": data.hp,
+        "SAN": data.san,
+        "正気度": data.san,
+        "幸運": data.luck,
+        "LUCK": data.luck,
+        "職業": data.occupation,
+        "特徴": data.feature,
+        "特徴表": data.feature
+    };
+
+    if (targetSysId && window.systemCustomFields && window.systemCustomFields[targetSysId]) {
+        const sysFields = window.systemCustomFields[targetSysId];
+        
+        // ステータス項目（数値）の突合
+        if (sysFields.status) {
+            sysFields.status.forEach(field => {
+                if (extractedValues[field.label] !== undefined && extractedValues[field.label] !== "") {
+                    data.fields[field.id] = extractedValues[field.label];
+                }
+            });
+        }
+
+        // テキスト項目の突合
+        if (sysFields.text) {
+            sysFields.text.forEach(field => {
+                if (extractedValues[field.label] !== undefined && extractedValues[field.label] !== "") {
+                    data.fields[field.id] = extractedValues[field.label];
+                }
+            });
+        }
     }
 
     return data;
