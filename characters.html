@@ -4492,8 +4492,49 @@ function importCharacterSheetText(event) {
         return;
     }
 
-    // 1. パーサー関数でテキストからデータを抽出
-    const data = parseCoCText(rawText);
+    // 1. 現在選択されているシステムのIDを取得（selectタグのidに合わせて適宜調整）
+    const systemSelect = document.getElementById('systemSelect') || document.getElementById('characterSystemSelect');
+    const targetSysId = systemSelect ? systemSelect.value : '';
+
+    // システム名やテキスト内容からDX3rdかどうかを判定
+    const currentSys = window.systems ? window.systems.find(s => s.id === targetSysId) : null;
+    const sysName = currentSys ? currentSys.name : targetSysId;
+    const isDX3 = sysName.includes('ダブルクロス') || sysName.includes('DX3') || targetSysId === 'dx3' || rawText.includes('シンドローム') || rawText.includes('侵蝕基本値');
+
+    let data;
+    let mappings = {};
+
+    if (isDX3) {
+        // DX3rd用パーサーの呼び出し
+        data = parseDX3Text(rawText, targetSysId);
+        
+        // DX3rd用のフィールドマッピング定義
+        mappings = {
+            'field_1788365237023': data.cover,       // カヴァー
+            'field_1788365256743': data.syndrome,    // シンドローム
+            'field_budvu': data.dRoyce,              // Dロイス
+            'codeName': data.codeName,               // コードネーム
+            ...data.fields                           // 動的カスタムフィールド
+        };
+    } else {
+        // CoC用パーサーの呼び出し
+        data = parseCoCText(rawText, targetSysId);
+
+        // CoC用のフィールドマッピング定義
+        mappings = {
+            'field_3w13t': data.occupation,  // 職業
+            'field_5hjcw': data.feature,     // 特徴表
+            'field_swdfh': data.int,         // INT
+            'field_wd51b': data.edu,         // EDU
+            'field_sbqry': data.app,         // APP
+            'field_rdwxj': data.con,         // CON
+            'field_sv8he': data.dex,         // DEX
+            'field_p6s23': data.siz,         // SIZ
+            'hp': data.str,                  // STR（hpのbaseへ）
+            'san': data.pow,                 // POW（sanのbaseへ）
+            ...data.fields                   // 動的カスタムフィールド
+        };
+    }
 
     // 2. 基本情報（名前、ヨミガナ、年齢、性別、誕生日）のセット
     setFieldValue('charName', data.name);
@@ -4501,8 +4542,12 @@ function importCharacterSheetText(event) {
     setFieldValue('charAge', data.age);
     setFieldValue('charGender', data.gender);
     setFieldValue('charBirthdate', data.birthday);
+    if (data.codeName) {
+        setFieldValue('codeName', data.codeName);
+        setFieldValue('codeNameKana', data.codeNameKana);
+    }
 
-    // 3. カラーコードの反映（#なし・大文字小文字対応、#を必ず付与して themeColor へ）
+    // 3. カラーコードの反映
     if (data.colorCode) {
         const colorVal = data.colorCode.startsWith('#') ? data.colorCode : `#${data.colorCode}`;
         
@@ -4519,32 +4564,14 @@ function importCharacterSheetText(event) {
         }
     }
 
-    // 4. マッピング定義（カスタムID ＆ STR→hp, POW→san の直代入）
-    const mappings = {
-        // テキスト項目
-        'field_3w13t': data.occupation,  // 職業
-        'field_5hjcw': data.feature,     // 特徴表
-        
-        // 各カスタムIDステータス
-        'field_swdfh': data.int,         // INT
-        'field_wd51b': data.edu,         // EDU
-        'field_sbqry': data.app,         // APP
-        'field_rdwxj': data.con,         // CON
-        'field_sv8he': data.dex,         // DEX
-        'field_p6s23': data.siz,         // SIZ
-        
-        // ご指定の直代入（hpにSTR、sanにPOWを格納）
-        'hp': data.str,                  // STR（hpキーのbaseへ）
-        'san': data.pow                  // POW（sanキーのbaseへ）
-    };
-
-    // A. 編集中のキャラクターデータオブジェクト（currentCharacter）の base に直接反映
+    // A. 編集中のキャラクターデータオブジェクト（currentCharacter）への反映
     if (typeof currentCharacter !== 'undefined' && currentCharacter) {
         if (data.name) currentCharacter.name = data.name;
         if (data.nameKana) currentCharacter.nameKana = data.nameKana;
         if (data.age) currentCharacter.age = Number(data.age) || data.age;
         if (data.gender) currentCharacter.gender = data.gender;
         if (data.birthday) currentCharacter.birthdate = data.birthday;
+        if (data.codeName) currentCharacter.codeName = data.codeName;
 
         if (!currentCharacter.customValues) {
             currentCharacter.customValues = {};
@@ -4562,6 +4589,8 @@ function importCharacterSheetText(event) {
                 } else {
                     cv[key] = val;
                 }
+            } else {
+                cv[key] = val;
             }
         }
     }
@@ -4600,7 +4629,7 @@ function importCharacterSheetText(event) {
         renderCharacterForm();
     }
 
-    // 6. 完了のフィードバック（イベント有無に関わらずボタンを確実に見つけてアニメーション）
+    // 6. 完了のフィードバック（ボタンアニメーション）
     const btn = (event && event.target) || document.querySelector('button[onclick*="importCharacterSheetText"]') || document.activeElement;
     if (btn && btn.tagName === 'BUTTON') {
         const originalText = btn.textContent;
@@ -4623,10 +4652,11 @@ function importCharacterSheetText(event) {
     }
 }
 
+
 // ==========================================
-// 🔍 CoCテキスト解析パーサー（保管庫・いあきゃら共通 / 変動履歴除外版）
+// 🔍 CoCテキスト解析パーサー（変更なし・安全維持）
 // ==========================================
-function parseCoCText(text) {
+function parseCoCText(text, targetSysId) {
     const result = {
         name: '',
         nameKana: '',
@@ -4637,13 +4667,12 @@ function parseCoCText(text) {
         feature: '',
         colorCode: '',
         memo: '',
-        str: '', con: '', pow: '', dex: '', app: '', siz: '', int: '', edu: '', hp: '', mp: '', san: ''
+        str: '', con: '', pow: '', dex: '', app: '', siz: '', int: '', edu: '', hp: '', mp: '', san: '',
+        fields: {}
     };
 
-    // メモ欄（自由記述）の分離と保持
     let mainPart = text;
     let memoPart = '';
-    
     const memoSplitKeyword = text.includes('【メモ】') ? '【メモ】' : (text.includes('メモ：') ? 'メモ：' : null);
     if (memoSplitKeyword) {
         const parts = text.split(memoSplitKeyword);
@@ -4652,13 +4681,10 @@ function parseCoCText(text) {
         result.memo = memoSplitKeyword + memoPart.trim();
     }
 
-    // 1. 基本情報の解析（mainPartから取得）
     const nameMatch = mainPart.match(/(?:キャラクター名|名前)[：:]\s*(.+?)(?:\((.*?)\))?$/m);
     if (nameMatch) {
         result.name = nameMatch[1].trim();
-        if (nameMatch[2]) {
-            result.nameKana = nameMatch[2].trim();
-        }
+        if (nameMatch[2]) result.nameKana = nameMatch[2].trim();
     }
 
     const ageMatch = mainPart.match(/年齢[：:]\s*([0-9０-９]+)/);
@@ -4666,29 +4692,22 @@ function parseCoCText(text) {
         result.age = ageMatch[1].replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0));
     }
 
-    // 性別の変換処理（「男」「女」→「男性」「女性」へ変換）
     const genderMatch = mainPart.match(/性別[：:]\s*([男女不明ほか]+)/);
     if (genderMatch) {
         const gRaw = genderMatch[1].trim();
-        if (gRaw === '男' || gRaw === '男性') {
-            result.gender = '男性';
-        } else if (gRaw === '女' || gRaw === '女性') {
-            result.gender = '女性';
-        } else {
-            result.gender = gRaw || '不明';
-        }
+        if (gRaw === '男' || gRaw === '男性') result.gender = '男性';
+        else if (gRaw === '女' || gRaw === '女性') result.gender = '女性';
+        else result.gender = gRaw || '不明';
     }
 
     const jobMatch = mainPart.match(/職業[：:]\s*(.+)/);
     if (jobMatch) result.occupation = jobMatch[1].trim();
 
-    // 2. 自由記述欄やテキスト全体から「特徴表」「誕生日」「カラーコード」をサルベージ
     const featureMatch = text.match(/特徴表[：\s]*(?:【([^】]+)】|(.+))/);
     if (featureMatch) {
         result.feature = (featureMatch[1] || featureMatch[2]).trim();
     }
 
-    // 誕生日の取得と「〇月〇日」形式への変換（例: 7/11 → 7月11日）
     const bdayMatch = text.match(/誕生日[：:]\s*([^\s（）]+)/);
     if (bdayMatch) {
         let bdayStr = bdayMatch[1].trim();
@@ -4702,16 +4721,13 @@ function parseCoCText(text) {
         }
     }
 
-    // カラーコードの取得（#なし・大文字小文字に対応、様々なラベル名や単体配置もキャッチ）
     const colorMatch = text.match(/(?:カラー|color|色|背景)[：:\s]*#?([0-9a-fA-F]{6}|[0-9a-fA-F]{3})/i) || text.match(/(?<![#0-9a-fA-F])([0-9a-fA-F]{6}|[0-9a-fA-F]{3})(?![0-9a-fA-F])/);
     if (colorMatch) {
         let rawColor = colorMatch[1] || colorMatch[0];
         result.colorCode = rawColor.startsWith('#') ? rawColor : `#${rawColor}`;
     }
 
-    // 3. 能力値の抽出（保管庫の =合計= 行を最優先、なければ個別抽出。矢印付き履歴は除外）
     const totalLineMatch = mainPart.match(/=合計=[^\d]*([0-9]+)\s+([0-9]+)\s+([0-9]+)\s+([0-9]+)\s+([0-9]+)\s+([0-9]+)\s+([0-9]+)\s+([0-9]+)/);
-    
     if (totalLineMatch) {
         result.str = totalLineMatch[1];
         result.con = totalLineMatch[2];
@@ -4724,24 +4740,208 @@ function parseCoCText(text) {
     } else {
         const stats = ['STR', 'CON', 'POW', 'DEX', 'APP', 'SIZ', 'INT', 'EDU'];
         stats.forEach(stat => {
-            // 後ろに「→」や「↔︎」が続く数値（変動履歴）を無視する正規表現
             const regex = new RegExp(`${stat}\\s*[:：]?\\s*([0-9]+)(?!\\s*[→↔︎])`, 'i');
             const match = mainPart.match(regex);
-            if (match) {
-                result[stat.toLowerCase()] = match[1];
+            if (match) result[stat.toLowerCase()] = match[1];
+        });
+    }
+
+    const hpMatch = mainPart.match(/(?:HP|H P)[：:\s]*([0-9]+)/i);
+    if (hpMatch) result.hp = hpMatch[1];
+    const mpMatch = mainPart.match(/(?:MP|M P)[：:\s]*([0-9]+)/i);
+    if (mpMatch) result.mp = mpMatch[1];
+    const sanMatch = mainPart.match(/(?:正気度|SAN)[：:\s]*([0-9]+)/i);
+    if (sanMatch) result.san = sanMatch[1];
+
+    // 動的カスタムフィールドとの突合
+    const extractedValues = {
+        "STR": result.str, "CON": result.con, "POW": result.pow, "DEX": result.dex,
+        "APP": result.app, "SIZ": result.siz, "INT": result.int, "EDU": result.edu,
+        "HP": result.hp, "SAN": result.san, "正気度": result.san, "幸運": result.luck,
+        "職業": result.occupation, "特徴": result.feature, "特徴表": result.feature
+    };
+
+    if (targetSysId && window.systemCustomFields && window.systemCustomFields[targetSysId]) {
+        const sysFields = window.systemCustomFields[targetSysId];
+        ['status', 'text'].forEach(type => {
+            if (sysFields[type]) {
+                sysFields[type].forEach(field => {
+                    if (extractedValues[field.label] !== undefined && extractedValues[field.label] !== "") {
+                        result.fields[field.id] = extractedValues[field.label];
+                    }
+                });
             }
         });
     }
 
-    // HP, MP, SAN値の抽出
-    const hpMatch = mainPart.match(/(?:HP|H P)[：:\s]*([0-9]+)/i);
+    return result;
+}
+
+
+// ==========================================
+// 🔍 DX3rd テキスト解析パーサー（新規追加）
+// ==========================================
+function parseDX3Text(text, targetSysId) {
+    const result = {
+        name: '',
+        nameKana: '',
+        codeName: '',
+        codeNameKana: '',
+        age: '',
+        gender: '',
+        birthday: '',
+        works: '',
+        cover: '',
+        syndrome: '',
+        dRoyce: '',
+        colorCode: '',
+        memo: '',
+        body: '',
+        sensation: '',
+        mind: '',
+        social: '',
+        hp: '',
+        erosion: '',
+        action: '',
+        move: '',
+        fields: {}
+    };
+
+    let mainPart = text;
+    let memoPart = '';
+    const memoSplitKeyword = text.includes('【メモ】') ? '【メモ】' : (text.includes('メモ：') ? 'メモ：' : null);
+    if (memoSplitKeyword) {
+        const parts = text.split(memoSplitKeyword);
+        mainPart = parts[0];
+        memoPart = parts.slice(1).join(memoSplitKeyword);
+        result.memo = memoSplitKeyword + memoPart.trim();
+    }
+
+    // 名前とヨミガナ
+    const nameMatch = mainPart.match(/(?:キャラクター名|名前)[：:]\s*(.+?)(?:\((.*?)\))?$/m);
+    if (nameMatch) {
+        result.name = nameMatch[1].trim();
+        if (nameMatch[2]) result.nameKana = nameMatch[2].trim();
+    }
+    const pcKanaMatch = mainPart.match(/PC[：:]\s*([^\r\n]+)/);
+    if (pcKanaMatch && !result.nameKana) {
+        result.nameKana = pcKanaMatch[1].trim();
+    }
+
+    // コードネームとヨミガナ
+    const codeMatch = mainPart.match(/コードネーム[：:]\s*(.+?)(?:\((.*?)\))?$/m);
+    if (codeMatch) {
+        result.codeName = codeMatch[1].trim();
+        if (codeMatch[2]) result.codeNameKana = codeMatch[2].trim();
+    }
+    const cnMatch = mainPart.match(/CN[：:]\s*([^\r\n]+)/);
+    if (cnMatch) {
+        let cnText = cnMatch[1].trim();
+        if (!result.codeName) {
+            const qMatch = cnText.match(/[「“"‘](.+?)[」”"’]/);
+            if (qMatch) result.codeName = qMatch[1];
+        }
+        if (!result.codeNameKana) {
+            result.codeNameKana = cnText.replace(/[「“"‘].*?[」”"’]/g, '').trim();
+        }
+    }
+
+    // 年齢・性別
+    const ageMatch = mainPart.match(/年齢[：:]\s*([0-9０-９]+)/);
+    if (ageMatch) {
+        result.age = ageMatch[1].replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0));
+    }
+    const genderMatch = mainPart.match(/性別[：:]\s*([男女不明ほか]+)/);
+    if (genderMatch) {
+        const gRaw = genderMatch[1].trim();
+        if (gRaw === '男' || gRaw === '男性') result.gender = '男性';
+        else if (gRaw === '女' || gRaw === '女性') result.gender = '女性';
+        else result.gender = gRaw || '不明';
+    }
+
+    // ワークス・カヴァー・シンドローム
+    const worksMatch = mainPart.match(/ワークス[：:]\s*([^\r\n]+)/);
+    if (worksMatch) result.works = worksMatch[1].trim();
+
+    const coverMatch = mainPart.match(/カヴァー[：:]\s*([^\r\n]+)/);
+    if (coverMatch) result.cover = coverMatch[1].trim();
+
+    const syndMatch = mainPart.match(/シンドローム[：:]\s*([^\r\n]+)/);
+    if (syndMatch) result.syndrome = syndMatch[1].trim();
+
+    // Dロイスの抽出
+    const dRoyceMatch = mainPart.match(/([^\r\n]+)\s*\/\s*Dロイス/) || text.match(/([^\r\n]+)\s*Dロイス/);
+    if (dRoyceMatch) {
+        result.dRoyce = dRoyceMatch[1].trim();
+    }
+
+    // 誕生日
+    const bdayMatch = text.match(/誕生日[：:]\s*([^\s（）]+)/);
+    if (bdayMatch) {
+        let bdayStr = bdayMatch[1].trim();
+        const slashMatch = bdayStr.match(/^([0-9０-９]{1,2})[/／]([0-9０-９]{1,2})$/);
+        if (slashMatch) {
+            const m = slashMatch[1].replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0));
+            const d = slashMatch[2].replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0));
+            result.birthday = `${m}月${d}日`;
+        } else {
+            result.birthday = bdayStr;
+        }
+    }
+
+    // カラーコード
+    const colorMatch = text.match(/(?:カラー|color|色|背景)[：:\s]*#?([0-9a-fA-F]{6}|[0-9a-fA-F]{3})/i) || text.match(/(?<![#0-9a-fA-F])([0-9a-fA-F]{6}|[0-9a-fA-F]{3})(?![0-9a-fA-F])/);
+    if (colorMatch) {
+        let rawColor = colorMatch[1] || colorMatch[0];
+        result.colorCode = rawColor.startsWith('#') ? rawColor : `#${rawColor}`;
+    }
+
+    // 能力値
+    const bodyMatch = mainPart.match(/【肉体】[：:\s]*([0-9]+)/);
+    if (bodyMatch) result.body = bodyMatch[1];
+    const sensMatch = mainPart.match(/【感覚】[：:\s]*([0-9]+)/);
+    if (sensMatch) result.sensation = sensMatch[1];
+    const mindMatch = mainPart.match(/【精神】[：:\s]*([0-9]+)/);
+    if (mindMatch) result.mind = mindMatch[1];
+    const socMatch = mainPart.match(/【社会】[：:\s]*([0-9]+)/);
+    if (socMatch) result.social = socMatch[1];
+
+    // サブステータス
+    const hpMatch = mainPart.match(/【ＨＰ】[：:\s]*([0-9]+)/);
     if (hpMatch) result.hp = hpMatch[1];
+    const erosionMatch = mainPart.match(/【侵蝕基本値】[：:\s]*([0-9]+)/);
+    if (erosionMatch) result.erosion = erosionMatch[1];
+    const actionMatch = mainPart.match(/【行動値】[：:\s]*([0-9]+)/);
+    if (actionMatch) result.action = actionMatch[1];
 
-    const mpMatch = mainPart.match(/(?:MP|M P)[：:\s]*([0-9]+)/i);
-    if (mpMatch) result.mp = mpMatch[1];
+    // 動的カスタムフィールドとの突合
+    const extractedValues = {
+        "ワークス": result.works,
+        "カヴァー": result.cover,
+        "シンドローム": result.syndrome,
+        "Dロイス": result.dRoyce,
+        "コードネーム": result.codeName,
+        "肉体": result.body,
+        "感覚": result.sensation,
+        "精神": result.mind,
+        "社会": result.social,
+        "HP": result.hp,
+        "侵蝕基本値": result.erosion,
+        "行動値": result.action
+    };
 
-    const sanMatch = mainPart.match(/(?:正気度|SAN)[：:\s]*([0-9]+)/i);
-    if (sanMatch) result.san = sanMatch[1];
+    if (targetSysId && window.systemCustomFields && window.systemCustomFields[targetSysId]) {
+        const sysFields = window.systemCustomFields[targetSysId];
+        ['status', 'text'].forEach(type => {
+            if (sysFields[type]) {
+                sysFields[type].forEach(field => {
+                    if (extractedValues[field.label] !== undefined && extractedValues[field.label] !== "") {
+                        result.fields[field.id] = extractedValues[field.label];
+                    }
+                });
+            }
+        });
+    }
 
     return result;
 }
@@ -4757,6 +4957,8 @@ function setFieldValue(id, value) {
 }
 
 window.importCharacterSheetText = importCharacterSheetText;
+window.parseCoCText = parseCoCText;
+window.parseDX3rdText = parseDX3Text;
             </script>
 
         
