@@ -1,5 +1,5 @@
 // ==========================================
-// 🔍 DX3rd テキスト解析パーサー（CN読み仮名抽出・完全対応版）
+// 🔍 DX3rd テキスト解析パーサー（全角/半角括弧・揺れ完全対応版）
 // ==========================================
 function parseDX3Text(text, targetSysId) {
     const result = {
@@ -41,8 +41,10 @@ function parseDX3Text(text, targetSysId) {
         return str.replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0)).trim();
     };
 
-    // 1. 名前とヨミガナの抽出
-    const nameMatch = mainPart.match(/(?:キャラクター名|名前)[：:\s]+([^\r\n（\(]+?)(?:\((.*?)\))?$/m) ||
+    // ==========================================
+    // 🌟 1. 名前とヨミガナの抽出（全角・半角の括弧に対応）
+    // ==========================================
+    const nameMatch = mainPart.match(/(?:キャラクター名|名前)[：:\s]+([^\r\n（\(]+?)(?:[\s ]*[\（\(](.*?)[\）\)])?$/m) ||
                       mainPart.match(/(?:キャラクター名|名前)[：:\s]+([^\r\n]+)/);
     if (nameMatch) {
         result.name = nameMatch[1].trim();
@@ -60,7 +62,9 @@ function parseDX3Text(text, targetSysId) {
         result.nameKana = '';
     }
 
-    // 2. 二つ名・コードネーム・CNの抽出
+    // ==========================================
+    // 🌟 2. 二つ名・コードネーム・CNの抽出（全角・半角の括弧、スペース区切りに対応）
+    // ==========================================
     const codeLineMatch = mainPart.match(/(?:コードネーム|二つ名)[：:\s]+([^\r\n]+)/);
     
     let cnRaw = "";
@@ -72,11 +76,13 @@ function parseDX3Text(text, targetSysId) {
     }
 
     if (cnRaw) {
-        const parenMatch = cnRaw.match(/^([^\r\n（\(]+)\((.*?)\)/);
+        // パターンA: 括弧つき（全角・半角両対応 例: 光輪の小爪（スタークロウ） / 光輪の小爪(スタークロウ)）
+        const parenMatch = cnRaw.match(/^([^\r\n（\(]+?)[\s ]*[\（\(](.*?)[\）\)]/);
         if (parenMatch) {
             result.codeName = parenMatch[1].replace(/[「“"‘」”"’]/g, '').trim();
             result.codeNameKana = parenMatch[2].trim();
         } else {
+            // パターンB: カギ括弧やスペース区切り（例: “Spinel” スピネル）
             const quoteWrappedMatch = cnRaw.match(/^([“"‘「„‚].*?[”"’」”‘]|[^\s ]+)(?:[\s ]+)(.+)$/);
             if (quoteWrappedMatch) {
                 result.codeName = quoteWrappedMatch[1].replace(/[「“"‘」”"’]/g, '').trim();
