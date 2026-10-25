@@ -1,5 +1,5 @@
 // ==========================================
-// 💡 DX3rd テキストパーサー（プロフィール抽出対応版）
+// 💡 ダブルクロス (DX3rd) テキストパーサー
 // ==========================================
 function parseDX3Text(rawText) {
     let data = {
@@ -9,14 +9,14 @@ function parseDX3Text(rawText) {
         codeNameKana: "",
         age: "",
         gender: "不明",
-        occupation: "", // DX3rdではワークスやカヴァーを割り当て
+        occupation: "", // ワークスまたはカヴァー
         birthday: "",
-        colorCode: "#f43f5e" // デフォルトのアクセントカラー
+        colorCode: "#f43f5e" // デフォルトテーマカラー
     };
 
     if (!rawText) return data;
 
-    // 1. 名前とヨミガナの抽出 (例: 宝生 スピナ / 括弧書き、または「■その他■」のPC行)
+    // 1. 名前とヨミガナの抽出 (例: 宝生 スピナ / 括弧書き、または PC：行)
     const nameLineMatch = rawText.match(/(?:キャラクター名|名前|タイトル)[：:\s]\s*(.+)/);
     if (nameLineMatch) {
         let rawNamePart = nameLineMatch[1].trim();
@@ -29,7 +29,7 @@ function parseDX3Text(rawText) {
         }
     }
 
-    // 「■その他■」などのPC行（例: PC：ほうしょう すぴな）から読み仮名を補完
+    // 「■その他■」の PC：行（例: PC：ほうしょう すぴな）から読み仮名を補完
     const pcKanaMatch = rawText.match(/PC[：:\s]+([^\r\n]+)/);
     if (pcKanaMatch && !data.nameKana) {
         data.nameKana = pcKanaMatch[1].trim();
@@ -48,7 +48,7 @@ function parseDX3Text(rawText) {
         }
     }
 
-    // 「■その他■」などのCN行（例: CN：“Spinel” スピネル）から補完
+    // 「■その他■」の CN：行（例: CN：“Spinel” スピネル）から補完
     const cnMatch = rawText.match(/CN[：:\s]+([^\r\n]+)/);
     if (cnMatch) {
         let cnText = cnMatch[1].trim();
@@ -82,18 +82,18 @@ function parseDX3Text(rawText) {
         data.occupation = coverMatch[1].trim();
     }
 
-    // 5. 生態情報・誕生日の抽出（もしテキスト内にあれば）
+    // 5. 生態情報・誕生日の抽出
     const bdayMatch = rawText.match(/誕生日[：:\s]*([^\s\/]+(?:\/[^\s\/]+)*)/);
     if (bdayMatch) {
         let rawBday = bdayMatch[1].trim();
-        data.birthday = formatBirthday(rawBday);
+        data.birthday = formatDX3Birthday(rawBday);
     }
 
     return data;
 }
 
-// 補助関数：誕生日文字列を「○月○日」にフォーマット
-function formatBirthday(bdayStr) {
+// 補助関数：誕生日フォーマット
+function formatDX3Birthday(bdayStr) {
     if (!bdayStr) return "";
     if (bdayStr.includes('月')) return bdayStr;
     const match = bdayStr.match(/(\d+)[\/\-\.](\d+)/);
