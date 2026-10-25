@@ -1,5 +1,5 @@
 // ==========================================
-// 🔍 DX3rd テキスト解析パーサー（■その他■からの読み仮名抽出・完全対応版）
+// 🔍 DX3rd テキスト解析パーサー（正規表現エスケープ修正・完全版）
 // ==========================================
 function parseDX3Text(text, targetSysId) {
     const result = {
@@ -75,9 +75,9 @@ function parseDX3Text(text, targetSysId) {
 
     // A. 名前の読み仮名抽出（例：春宮 小毬(はるみや こまり) または 春宮 小毬（はるみや こまり））
     if (result.name) {
-        // エスケープ処理をした名前で正規表現を動的生成
         const escapedName = result.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        const nameKanaRegex = new RegExp(`${escapedName}[\\s ]*[（\\(](.*?)?[\\）\\)]`, 'u');
+        // 文字クラス内での不要なエスケープを削除して修正
+        const nameKanaRegex = new RegExp(escapedName + '[\\s ]*[（(](.*?)[）)]', 'u');
         const nKanaMatch = searchTarget.match(nameKanaRegex);
         if (nKanaMatch && nKanaMatch[1]) {
             result.nameKana = nKanaMatch[1].trim();
@@ -87,7 +87,7 @@ function parseDX3Text(text, targetSysId) {
     // B. コードネームの読み仮名抽出（例：光輪の小爪 (スタークロウ) または 光輪の小爪(スタークロウ)）
     if (result.codeName) {
         const escapedCn = result.codeName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        const cnKanaRegex = new RegExp(`${escapedCn}[\\s ]*[（\\(](.*?)?[\\）\\)]`, 'u');
+        const cnKanaRegex = new RegExp(escapedCn + '[\\s ]*[（(](.*?)[）)]', 'u');
         const cKanaMatch = searchTarget.match(cnKanaRegex);
         if (cKanaMatch && cKanaMatch[1]) {
             result.codeNameKana = cKanaMatch[1].trim();
@@ -96,7 +96,7 @@ function parseDX3Text(text, targetSysId) {
 
     // 万が一、上部からコードネームが取れていなくて下部（■その他■）にある場合
     if (!result.codeName) {
-        const altCnMatch = searchTarget.match(/(?:コードネーム|CN)[：:\s]*([^\s（\(]+)[\s ]*[（\(](.*?)?[）\)]/);
+        const altCnMatch = searchTarget.match(/(?:コードネーム|CN)[：:\s]*([^\s（\(]+)[\s ]*[（(](.*?)?[）\)]/);
         if (altCnMatch) {
             result.codeName = altCnMatch[1].trim();
             result.codeNameKana = altCnMatch[2] ? altCnMatch[2].trim() : '';
