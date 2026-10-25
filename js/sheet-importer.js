@@ -192,9 +192,10 @@ function importCharacterSheetText(event) {
         }
     }
 
-    // 4. プレビュー更新やモーダル内フォーム再描画の呼び出し
+    // 4. プレビュー更新やモーダル内フォーム再描画の呼び出し（安全な変数経由）
     if (typeof handleSystemChangeInModal === 'function') {
-        handleSystemChangeInModal(currentCharacter?.customValues || {}, targetSysId, true);
+        const safeCustomValues = (typeof currentCharacter !== 'undefined' && currentCharacter && currentCharacter.customValues) ? currentCharacter.customValues : {};
+        handleSystemChangeInModal(safeCustomValues, targetSysId, true);
     }
     if (typeof updateCharacterPreview === 'function') {
         updateCharacterPreview();
