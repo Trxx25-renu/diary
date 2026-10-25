@@ -5193,18 +5193,19 @@ window.parseDX3Text = parseDX3Text;
     </select>
 </div>
 
-                <!-- 🌟 キャラシテキスト自動流し込みエリア -->
-                <div class="p-3 bg-stone-50 border border-stone-200 rounded-xl space-y-2">
-                    <label class="block text-xs font-bold text-stone-700 flex items-center gap-1.5">
-                        <i class="fa-solid fa-wand-magic-sparkles text-amber-600"></i> キャラシテキスト自動流し込み
-                    </label>
-                    <textarea id="sheetImportText" rows="3" placeholder="キャラクターシートのテキスト（テキスト出力やコピーした内容）をここに貼り付け..." class="w-full bg-white border border-stone-300 rounded-lg px-3 py-2 text-xs text-stone-800 focus:outline-none focus:border-stone-400 auto-resize"></textarea>
-                    <div class="flex justify-end">
-                        <button type="button" onclick="importCharacterSheetText(event)" class="bg-stone-800 hover:bg-stone-700 text-white text-xs font-bold px-4 py-1.5 rounded-lg transition-all shadow-sm">
-                            テキストから読み込む
-                        </button>
-                    </div>
-                </div>
+              <!-- 🌟 キャラシテキスト自動流し込みエリア -->
+<div class="p-3 bg-stone-50 border border-stone-200 rounded-xl space-y-2">
+    <label class="block text-xs font-bold text-stone-700 flex items-center gap-1.5">
+        <i class="fa-solid fa-wand-magic-sparkles text-amber-600"></i> キャラシテキスト自動流し込み
+    </label>
+    <!-- 🌟 変更点: auto-resize を外し、h-28（約7〜8行分の固定高さ）と overflow-y-auto（内部スクロール）、resize-none（ユーザーによる手動リサイズ禁止）を付与 -->
+    <textarea id="sheetImportText" rows="4" placeholder="キャラクターシートのテキスト（テキスト出力やコピーした内容）をここに貼り付け..." class="w-full h-28 max-h-28 overflow-y-auto resize-none bg-white border border-stone-300 rounded-lg px-3 py-2 text-xs text-stone-800 focus:outline-none focus:border-stone-400"></textarea>
+    <div class="flex justify-end">
+        <button type="button" onclick="importCharacterSheetText(event)" class="bg-stone-800 hover:bg-stone-700 text-white text-xs font-bold px-4 py-1.5 rounded-lg transition-all shadow-sm">
+            テキストから読み込む
+        </button>
+    </div>
+</div>
 
                 <!-- 称号・ルビ等 -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
